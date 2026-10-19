@@ -1,0 +1,58 @@
+{
+  "name": "josbeir/cakephp-interact",
+  "description": "Reactive server-rendered PHP islands for CakePHP.",
+  "type": "cakephp-plugin",
+  "license": "MIT",
+  "require": {
+    "php": "^8.5",
+    "cakephp/cakephp": "^6.0@dev"
+  },
+  "require-dev": {
+    "cakephp/mago-rules": "dev-main",
+    "carthage-software/mago": "^1.47",
+    "phpunit/phpunit": "^12.5",
+    "rector/rector": "^2.7"
+  },
+  "autoload": {
+    "psr-4": {
+      "Interact\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Interact\\Test\\": "tests/",
+      "TestApp\\": "tests/test_app/src/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit",
+    "test-coverage": [
+      "phpunit --coverage-clover=build/clover.xml",
+      "@php scripts/check-coverage.php build/clover.xml"
+    ],
+    "analyze": "mago analyze",
+    "lint": "mago lint",
+    "format-check": "mago format --check",
+    "format": "mago format",
+    "lint-fix": "mago lint --fix --format-after-fix --fail-on-remaining",
+    "rector": "rector process --dry-run",
+    "rector-fix": [
+      "rector process",
+      "@format"
+    ],
+    "check": [
+      "@test",
+      "@analyze",
+      "@lint",
+      "@rector",
+      "@format-check"
+    ],
+    "test-coverage-branches": "phpunit --path-coverage --coverage-text=build/php-branches.txt"
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": false
+  },
+  "prefer-stable": true,
+  "minimum-stability": "dev"
+}

@@ -1,0 +1,19 @@
+<?php
+declare(strict_types=1);
+
+namespace Interact\Test\Fixture;
+
+use Interact\Attribute\AsIsland;
+use Interact\Attribute\State;
+use Interact\Island;
+
+/**
+ * Marks protected state for transport to verify that internal application fields cannot enter
+ * snapshots.
+ */
+#[AsIsland('hidden-state', template: 'Islands/counter')]
+class HiddenStateIsland extends Island
+{
+    #[State]
+    protected int $count = 0;
+}

@@ -1,0 +1,12 @@
+/vendor/
+/node_modules/
+/build/
+/.phpunit.cache/
+/.mago*/
+/test-results/
+/playwright-report/
+/docs/.vitepress/cache/
+/docs/.vitepress/dist/
+/tests/test_app/tmp/
+/tests/test_app/logs/
+/webroot/js/

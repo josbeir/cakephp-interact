@@ -1,0 +1,15 @@
+extends = "vendor/cakephp/mago-rules/cakephp.mago.toml"
+php-version = "8.5"
+
+[source]
+paths = ["src", "tests", "templates", "scripts", "rector.php"]
+includes = ["vendor"]
+
+[formatter]
+excludes = []
+
+# Typed fluent APIs keep their setters and property hooks on the owning class.
+# Keep size checks enabled without forcing single-consumer traits or base classes.
+[linter.rules]
+too-many-methods = { threshold = 30 }
+too-many-properties = { threshold = 30 }
