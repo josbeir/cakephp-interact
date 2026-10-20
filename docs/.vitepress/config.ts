@@ -34,6 +34,7 @@ export default defineConfig({
           { text: 'Actions and feedback', link: '/guide/actions' },
           { text: 'Search and pagination', link: '/guide/search' },
           { text: 'Forms and validation', link: '/guide/forms' },
+          { text: 'Failures and recovery', link: '/guide/failures' },
           { text: 'Nested islands and events', link: '/guide/nesting' },
           { text: 'Whole-page islands', link: '/guide/page-islands' },
         ],

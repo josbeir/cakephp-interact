@@ -17,6 +17,14 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Use native fetch, Alpine, and Alpine Morph. Phase 2 owns navigation and URL-state features; defer form-adapter integration.
 - Use Alpine shorthand consistently in code and documentation: `@event` for event listeners and `:attribute` for bindings.
 
+## Usability and cognitive load
+
+- Follow CakePHP's convention-driven usability: make ordinary tasks work with familiar concepts, sensible defaults, and minimal application plumbing.
+- Evaluate public APIs from the application author's perspective. Consider the setup, repeated markup, callbacks, imports, and concepts required for a complete working interaction, not just the size of the plugin implementation.
+- Prefer handling routine framework integration and bookkeeping inside the plugin. Keep application decisions such as authorization, validation rules, persistence, and presentation explicit.
+- Introduce new abstractions and mandatory configuration only when they solve a concrete need. Offer advanced control without making every application configure the advanced path.
+- Treat simplicity as a design preference, not an absolute rule. Evaluate tradeoffs for each feature; retain explicit setup or handling when it materially improves correctness, security, clarity, or application control, and explain why it is needed.
+
 ## CakePHP and PHP
 
 - Use `declare(strict_types=1);`, PSR-4, explicit types, and CakePHP conventions.
@@ -109,6 +117,7 @@ Required Composer scripts:
 
 ## Documentation style
 
+- Keep `README.md` a concise introduction and entry point to the documentation. Include the purpose, current compatibility/status, a small set of useful documentation links, and the license. Put installation steps, extended examples, demo commands, API contracts, troubleshooting, and contributor workflows in the docs rather than duplicating them in the README.
 - Lead with a concrete task and a small working example, then explain the result. Teach ordinary usage before advanced variations; keep exhaustive contracts in reference pages.
 - Keep the homepage short and show cooperating PHP classes, elements, and mount calls in labeled code tabs. Identify file paths, imports, prerequisites, and application-supplied data.
 - Give new users a complete path from installation to a working interaction. Keep development-package and browser-asset requirements visible rather than hiding them in optional details.

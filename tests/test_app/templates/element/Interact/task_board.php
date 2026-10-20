@@ -32,5 +32,5 @@ use function Cake\Core\h;
         <?php endforeach; ?>
         <div class="form-footer"><button type="submit" class="button-primary" :disabled="$server.busy">Add task <span aria-hidden="true">+</span></button><span class="quiet">Up to 12 tasks · Resets on reload</span></div>
     </form>
-    <p class="request-error" role="alert" x-text="$server.error"></p>
+    <p class="request-error" role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 </section>

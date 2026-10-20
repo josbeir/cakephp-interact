@@ -67,7 +67,7 @@ declare(strict_types=1);
     :disabled="$server.busy">
     Add one
 </button>
-<p role="alert" x-text="$server.error"></p>
+<p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
 ```php [templates/Articles/index.php]

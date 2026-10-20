@@ -67,7 +67,7 @@ $errorId = 'article-' . (string)$articleId . '-title-errors';
         </div>
     <?php endif; ?>
     <button type="submit" :disabled="$server.busy">Save article</button>
-    <p role="alert" x-text="$server.error"></p>
+    <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 </form>
 ```
 

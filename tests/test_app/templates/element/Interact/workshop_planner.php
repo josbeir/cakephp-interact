@@ -47,6 +47,6 @@ use function Cake\Core\h;
         <?php if ($confirmed): ?>
             <p class="success-message" role="status" x-show="!$server.dirty">Quote confirmed. This is a demo; no booking was made.</p>
         <?php endif; ?>
-        <p class="request-error" role="alert" x-text="$server.error"></p>
+        <p class="request-error" role="alert" x-text="$server.error ? $server.error.message : ''"></p>
     </form>
 </section>

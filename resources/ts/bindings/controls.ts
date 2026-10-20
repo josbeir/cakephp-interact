@@ -79,8 +79,7 @@ export class Controls {
       );
       if (form) {
         event.preventDefault();
-        this.captureAll();
-        this.report(this.bridge.call(form.dataset.interactSubmit ?? ''));
+        void this.bridge.call(form.dataset.interactSubmit ?? '');
       }
       return;
     }
@@ -88,8 +87,7 @@ export class Controls {
       const button = target.closest<HTMLElement>('[data-interact-click]');
       if (button && !button.hasAttribute('disabled')) {
         event.preventDefault();
-        this.captureAll();
-        this.report(this.bridge.call(button.dataset.interactClick ?? ''));
+        void this.bridge.call(button.dataset.interactClick ?? '');
       }
       return;
     }
@@ -104,12 +102,13 @@ export class Controls {
     )
       return;
     captureControl(target, this.bridge.state, this.writable());
+    if (this.bridge.paused) return;
     const timing = target.dataset.interactUpdate;
     if (
       (timing === 'blur' && event.type === 'focusout') ||
       (timing === 'change' && event.type === 'change')
     )
-      this.report(this.bridge.sync());
+      void this.bridge.sync();
     if (
       timing === 'input' &&
       event.type === 'input' &&
@@ -124,7 +123,7 @@ export class Controls {
         name,
         setTimeout(() => {
           this.timers.delete(name);
-          this.report(this.bridge.sync());
+          void this.bridge.sync();
         }, delay),
       );
     }
@@ -143,14 +142,5 @@ export class Controls {
         control.closest('[data-interact-id]') === this.root &&
         !control.disabled,
     );
-  }
-
-  /**
-   * Handle delegated-call promises; the client exposes failures through state and events.
-   */
-  private report(promise: Promise<void>): void {
-    void promise.catch(() => {
-      /* The island client exposes failures through the reactive error state and interact:error. */
-    });
   }
 }

@@ -45,23 +45,13 @@ export function write(value: State, name: string, replacement: Json): void {
   let current: Record<string, Json> | Json[] = value;
   for (const [index, part] of parts.entries()) {
     if (index === parts.length - 1) {
-      Object.defineProperty(current, part, {
-        value: replacement,
-        writable: true,
-        configurable: true,
-        enumerable: true,
-      });
+      assign(current, part, replacement);
       return;
     }
     let child: Json | undefined = Reflect.get(current, part);
     if (child === undefined) {
       child = /^\d+$/.test(parts[index + 1] ?? '') ? [] : {};
-      Object.defineProperty(current, part, {
-        value: child,
-        writable: true,
-        configurable: true,
-        enumerable: true,
-      });
+      assign(current, part, child);
     }
     // PHP's empty array can become a record once an application binds a named field.
     const next = parts[index + 1] ?? '';
@@ -71,12 +61,7 @@ export function write(value: State, name: string, replacement: Json): void {
         fields[String(index)] = entry;
       });
       child = fields;
-      Object.defineProperty(current, part, {
-        value: child,
-        writable: true,
-        configurable: true,
-        enumerable: true,
-      });
+      assign(current, part, child);
     }
     if (child === null || typeof child !== 'object')
       throw new Error('Cannot traverse scalar state.');
@@ -95,4 +80,15 @@ function isArrayIndex(value: string): boolean {
     number < 4294967295 &&
     String(number) === value
   );
+}
+
+/**
+ * Use the proxy's set trap so Alpine observes edits, including newly created containers.
+ */
+function assign(
+  target: Record<string, Json> | Json[],
+  key: string,
+  value: Json,
+): void {
+  if (!Reflect.set(target, key, value)) throw new Error('Cannot update state.');
 }

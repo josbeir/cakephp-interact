@@ -7,6 +7,7 @@ import { clone, equal } from './state/values';
 import { readMetadata } from './transport/metadata';
 import type { MountMetadata } from './transport/metadata';
 import { postUpdate, readResponse } from './transport/request';
+import { IslandRequestError, requestError } from './transport/failure';
 import type {
   Fetcher,
   Invocation,
@@ -14,6 +15,7 @@ import type {
   IslandResponse,
   Json,
   Patcher,
+  RequestResult,
   State,
   Writable,
 } from './types';
@@ -35,6 +37,7 @@ export class IslandClient {
   private baseline: State;
   private writable: Writable;
   private disposed = false;
+  private readonly activity: { paused: boolean };
 
   /**
    * Initialize the bridge and request-scoped collaborators from PHP-rendered metadata.
@@ -50,6 +53,8 @@ export class IslandClient {
     reactive: <T extends object>(value: T) => T,
     private readonly fetcher: Fetcher = (url, init) => fetch(url, init),
   ) {
+    this.activity = reactive({ paused: false });
+    const activity = this.activity;
     this.metadata = readMetadata(root);
     this.snapshot = this.metadata.snapshot;
     this.baseline = clone(this.metadata.state);
@@ -60,11 +65,20 @@ export class IslandClient {
       busy: false,
       errors: {},
       error: null,
+      get paused() {
+        return activity.paused;
+      },
+      exportDraft: () =>
+        JSON.stringify(
+          changedWritable(this.bridge.state, {}, this.writable),
+          null,
+          2,
+        ),
       get dirty() {
         return dirty();
       },
-      sync: () => this.enqueue(null, []),
-      call: (action: string, ...args: Json[]) => this.enqueue(action, args),
+      sync: () => this.request(null, []),
+      call: (action: string, ...args: Json[]) => this.request(action, args),
     });
     this.queue = new RequestQueue(
       (invocation) => this.execute(invocation),
@@ -86,10 +100,51 @@ export class IslandClient {
   }
 
   /**
+   * Settle application calls without requiring error callbacks in ordinary templates.
+   *
+   * The queue publishes failures before this result settles. Detached islands report
+   * cancellation only to their callers, without resurrecting removed UI feedback.
+   */
+  private async request(
+    action: string | null,
+    args: Json[],
+  ): Promise<RequestResult> {
+    try {
+      await this.enqueue(action, args);
+      if (!this.disposed) return { ok: true };
+    } catch (cause: unknown) {
+      if (!this.disposed) {
+        const error =
+          cause instanceof IslandRequestError
+            ? cause
+            : requestError('client_error', null, cause);
+        return { ok: false, error: error.failure };
+      }
+    }
+    return { ok: false, error: requestError('cancelled', null).failure };
+  }
+
+  /**
    * Flush scheduled debounce timers before routing all bridge calls through one queue.
    */
   private enqueue(action: string | null, args: Json[]): Promise<void> {
     this.controls.clearPending();
+    if (this.disposed) return Promise.reject(new Error('Island was removed.'));
+    if (this.bridge.paused && this.bridge.error?.recovery !== 'retry')
+      return Promise.reject(
+        new IslandRequestError(
+          this.bridge.error ?? requestError('client_error', null).failure,
+        ),
+      );
+    try {
+      this.controls.captureAll();
+    } catch (cause: unknown) {
+      const error = requestError('client_error', null, cause);
+      this.failed(error);
+      return Promise.reject(error);
+    }
+    this.bridge.error = null;
+    this.activity.paused = false;
     return this.queue.enqueue({ action, args });
   }
 
@@ -98,7 +153,6 @@ export class IslandClient {
    */
   private async execute(invocation: Invocation): Promise<void> {
     this.bridge.busy = true;
-    this.bridge.error = null;
     this.root.setAttribute('aria-busy', 'true');
     try {
       const sent = clone(this.bridge.state);
@@ -115,7 +169,21 @@ export class IslandClient {
       );
       if (this.disposed) return;
       const payload = await readResponse(result, this.metadata.id);
-      if (!this.disposed) this.apply(payload, sent);
+      if (this.disposed) return;
+      let replacement: HTMLElement;
+      try {
+        replacement = readRoot(payload.html, this.metadata.id);
+      } catch (cause: unknown) {
+        throw requestError('invalid_response', result.status, cause);
+      }
+      try {
+        this.apply(payload, sent, replacement);
+      } catch (cause: unknown) {
+        throw requestError('client_error', result.status, cause);
+      }
+    } catch (cause: unknown) {
+      if (cause instanceof IslandRequestError) throw cause;
+      throw requestError('client_error', null, cause);
     } finally {
       this.bridge.busy = false;
       this.root.removeAttribute('aria-busy');
@@ -125,18 +193,37 @@ export class IslandClient {
   /**
    * Morph accepted markup, restore newer drafts and selection, then dispatch response effects.
    */
-  private apply(payload: IslandResponse, sent: State): void {
-    const replacement = readRoot(payload.html, this.metadata.id);
+  private apply(
+    payload: IslandResponse,
+    sent: State,
+    replacement: HTMLElement,
+  ): void {
     const newer = changedWritable(this.bridge.state, sent, this.writable);
     const restoreSelection = preserveSelection(this.root);
-    this.patch(this.root, replacement);
-    this.snapshot = payload.snapshot;
-    this.baseline = clone(payload.state);
-    this.writable = payload.writable;
-    this.bridge.state = { ...payload.state, ...newer };
-    this.bridge.errors = payload.errors;
-    this.controls.refresh();
-    restoreSelection();
+    const previous = {
+      state: this.bridge.state,
+      errors: this.bridge.errors,
+      snapshot: this.snapshot,
+      baseline: this.baseline,
+      writable: this.writable,
+    };
+    try {
+      this.patch(this.root, replacement);
+      this.snapshot = payload.snapshot;
+      this.baseline = clone(payload.state);
+      this.writable = payload.writable;
+      this.bridge.state = { ...payload.state, ...newer };
+      this.bridge.errors = payload.errors;
+      this.controls.refresh();
+      restoreSelection();
+    } catch (cause: unknown) {
+      this.bridge.state = previous.state;
+      this.bridge.errors = previous.errors;
+      this.snapshot = previous.snapshot;
+      this.baseline = previous.baseline;
+      this.writable = previous.writable;
+      throw cause;
+    }
     for (const effect of payload.events)
       this.root.dispatchEvent(
         new CustomEvent(effect.name, { detail: effect.detail, bubbles: true }),
@@ -147,10 +234,16 @@ export class IslandClient {
    * Publish a request failure through reactive feedback and a native browser event.
    */
   private failed(error: Error): void {
-    this.bridge.error = error.message;
+    this.controls.clearPending();
+    this.activity.paused = true;
+    const failure =
+      error instanceof IslandRequestError
+        ? error.failure
+        : requestError('client_error', null, error).failure;
+    this.bridge.error = failure;
     this.root.dispatchEvent(
       new CustomEvent('interact:error', {
-        detail: { message: error.message },
+        detail: { ...failure },
         bubbles: true,
       }),
     );

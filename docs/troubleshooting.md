@@ -74,6 +74,9 @@ the rendering factory. See [rendering and services](/reference/rendering#add-app
 
 ## An old page stops accepting updates
 
+For identifying the failure and preserving local edits, see
+[failures and recovery](/guide/failures).
+
 Snapshots expire after 30 minutes by default and are bound to their issuing
 session and middleware scope. Logging out, changing the session, rotating the
 signing secret, or using another scope can invalidate them too.

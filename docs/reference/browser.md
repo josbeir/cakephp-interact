@@ -40,14 +40,30 @@ mechanisms to the same event on a control.
 | `busy`                  | A request is in flight                                     |
 | `dirty`                 | Local edits are waiting to synchronize                     |
 | `errors`                | Current field feedback as a map of message lists           |
-| `error`                 | Request failure message, or null                           |
+| `error`                 | Structured request failure, or null                        |
+| `paused`                | Automatic updates are paused after a failure               |
+| `exportDraft()`         | Export all current writable values as formatted JSON       |
 | `sync()`                | Request synchronization without an action                  |
 | `call(action, ...args)` | Queue an exposed PHP action with JSON-compatible arguments |
 
 Use the native model attributes for form controls; reading `state` does not make
-PHP-only state writable. The bridge's `sync()` and `call()` return `Promise<void>`
-for their scheduled work, not an action return value. Request failures are
-reported through `error`; renderable validation feedback is available in `errors`.
+PHP-only state writable. The bridge's `sync()` and `call()` return
+`Promise<RequestResult>`: `{ ok: true }` after an accepted render, or
+`{ ok: false, error }` after a request failure. Ordinary handlers need no catch
+callback. A renderable HTTP 422 is an accepted render with field errors available
+in `errors`; `ok` does not mean the application saved successfully.
+
+For JavaScript that needs to inspect a request outcome:
+
+```ts
+const result = await server.call('save');
+if (!result.ok) {
+  console.log(result.error.code);
+}
+```
+
+Here `server` is the owning island's bridge. Errors are also exposed through
+`$server.error` and `interact:error`, so application markup can simply bind them.
 
 ```html
 <button
@@ -57,13 +73,22 @@ reported through `error`; renderable validation feedback is available in `errors
 >
   Add five
 </button>
-<p role="alert" x-text="$server.error"></p>
+<p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
 `dirty` describes synchronization, not whether the database was saved. HTTP 422
 validation is renderable feedback; a request/transport failure appears in
 `error`. Render errors accessibly and keep an intentional recovery path for your
 application.
+
+## Structured failures
+
+`error` is null or `{ code, message, status, recovery }`. `status` is the actual
+HTTP status, or null without a readable response. Recovery is `retry`, `reload`,
+`authenticate`, or `none`; it is guidance, never an automatic action.
+
+For all categories, paused requests, draft export, cancellation, and the
+`interact:error` event, see [failures and recovery](/guide/failures).
 
 ## Scheduling and DOM behavior
 

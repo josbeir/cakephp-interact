@@ -24,6 +24,6 @@ use function Cake\Core\h;
             <p class="success-message" role="status" x-show="!$server.dirty">Saved.</p>
         <?php endif; ?>
         </div>
-        <p class="request-error" role="alert" x-text="$server.error"></p>
+        <p class="request-error" role="alert" x-text="$server.error ? $server.error.message : ''"></p>
     </form>
 </article>

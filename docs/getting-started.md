@@ -69,7 +69,7 @@ declare(strict_types=1);
     :disabled="$server.busy">
     Add one
 </button>
-<p role="alert" x-text="$server.error"></p>
+<p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
 `data-interact-click` calls the PHP action. The Alpine shorthand

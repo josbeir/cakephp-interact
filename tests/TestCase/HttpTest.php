@@ -6,7 +6,6 @@ namespace Interact\Test\TestCase;
 use Cake\AttributeResolver\AttributeResolver;
 use Cake\Core\Configure;
 use Cake\Error\Renderer\WebExceptionRenderer;
-use Cake\Http\Exception\InvalidCsrfTokenException;
 use Cake\Http\Response;
 use Cake\Routing\Router;
 use Cake\TestSuite\IntegrationTestTrait;
@@ -382,6 +381,7 @@ class HttpTest extends TestCase
         $this->assertResponseCode(403);
         $this->assertContentType('application/json');
         $this->assertResponseNotContains('Fatal error');
+        $this->assertResponseContains('csrf_failed');
     }
 
     public function testSearchUpdateDoesNotRerunTheControllerOrLayout(): void
@@ -460,11 +460,12 @@ class HttpTest extends TestCase
     {
         $mount = $this->mounted();
         $this->requestAsJson();
-        $this->expectException(InvalidCsrfTokenException::class);
         $this->post('/_interact/update', json_encode([
             'version' => 1,
             'snapshot' => $mount['snapshot'],
         ], JSON_THROW_ON_ERROR));
+        $this->assertResponseCode(403);
+        $this->assertResponseContains('csrf_failed');
     }
 
     public function testAttributeRoleRouteChangesTheCurrentSession(): void
@@ -474,5 +475,25 @@ class HttpTest extends TestCase
         $this->post('/demo/role/viewer');
         $this->assertResponseOk();
         $this->assertSession('viewer', 'demo.role');
+    }
+
+    public function testMiddlewareAndUnexpectedExceptionsUseTheSameSafeContract(): void
+    {
+        Configure::write('Error.exceptionRenderer', WebExceptionRenderer::class);
+        Configure::write('Error.log', false);
+        $mount = $this->mounted(4, '/playground');
+        foreach ([
+            ['server',          500, 'server_error'],
+            ['unavailable',     503, 'server_error'],
+            ['unauthenticated', 401, 'unauthenticated'],
+            ['expired',         409, 'snapshot_expired'],
+            ['session',         409, 'session_changed'],
+        ] as [$failure, $status, $code]) {
+            $this->update(['snapshot' => $mount['snapshot'], 'action' => 'simulate', 'args' => [$failure]]);
+            $this->assertResponseCode($status);
+            $this->assertResponseContains($code);
+            $this->assertResponseNotContains('Private fixture diagnostics');
+            $this->assertHeader('Cache-Control', 'no-store');
+        }
     }
 }

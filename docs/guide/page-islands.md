@@ -69,7 +69,7 @@ class CountersController extends AppController
 <button type="button" data-interact-click="increment" :disabled="$server.busy">
     Add one
 </button>
-<p role="alert" x-text="$server.error"></p>
+<p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
 :::

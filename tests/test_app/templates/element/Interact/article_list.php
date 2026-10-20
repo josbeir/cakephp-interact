@@ -32,5 +32,5 @@ use function Cake\Core\h;
         <p class="empty-state">No articles here. Try another search or go back a page.</p>
     <?php endif; ?>
     <div class="pagination"><button type="button" data-interact-click="previous" :disabled="$server.busy || <?= $page <= 1 ? 'true' : 'false' ?>">Previous page</button><button type="button" data-interact-click="next" :disabled="$server.busy || <?= $page >= $totalPages ? 'true' : 'false' ?>">Next page <span aria-hidden="true">→</span></button></div>
-    <p class="request-error" role="alert" x-text="$server.error"></p>
+    <p class="request-error" role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 </section>
