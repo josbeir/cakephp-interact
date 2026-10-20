@@ -161,12 +161,15 @@ for (const [name, status, body] of [
     });
     await page.route('**/_interact/update', async (route) => {
       if (status === 0) await route.abort('failed');
+      else if (status === 302)
+        await route.continue({
+          url: new URL('/demo/redirect', route.request().url()).href,
+        });
       else
         await route.fulfill({
           status,
           body,
           contentType: 'text/html',
-          headers: status === 302 ? { Location: '/login' } : {},
         });
     });
     await region
@@ -175,6 +178,8 @@ for (const [name, status, body] of [
     await region.getByRole('button', { name: 'Accept draft' }).click();
     await expect(region.getByRole('alert')).toBeVisible();
     await expect(region.getByRole('alert')).not.toContainText('Private');
+    if (status === 302)
+      await expect(region.getByRole('alert')).toContainText('redirected');
     const sent = requests;
     await region
       .getByLabel('Recovery draft', { exact: true })
