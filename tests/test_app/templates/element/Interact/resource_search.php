@@ -87,5 +87,5 @@ use function Cake\Core\h;
         <button type="button" @click="$server.call('goTo', <?= (string)($page + 1) ?>)" :disabled="$server.busy || <?= $page >= $totalPages ? 'true' : 'false' ?>">Next <span aria-hidden="true">→</span></button>
         <button type="button" @click="$server.call('goTo', <?= (string)$totalPages ?>)" :disabled="$server.busy || <?= $page >= $totalPages ? 'true' : 'false' ?>">Last</button>
     </div></div>
-    <p class="request-error" role="alert" x-text="$server.error"></p>
+    <p class="request-error" role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 </section>

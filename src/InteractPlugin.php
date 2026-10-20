@@ -15,6 +15,8 @@ use Cake\Event\EventManagerInterface;
 use Cake\Routing\RouteBuilder;
 use Cake\Utility\Security;
 use Interact\Discovery\Registry;
+use Interact\Http\FailureResponder;
+use Interact\Http\UpdateErrorListener;
 use Interact\Runtime\Factory;
 use Interact\Security\SnapshotCodec;
 
@@ -57,6 +59,14 @@ class InteractPlugin extends BasePlugin
      */
     public function services(ContainerInterface $container): void
     {
+        if (!$container->hasDefinition(FailureResponder::class)) {
+            $container->addShared(FailureResponder::class);
+        }
+
+        if (!$container->hasDefinition(UpdateErrorListener::class)) {
+            $container->addShared(UpdateErrorListener::class)->addArgument(FailureResponder::class);
+        }
+
         if (!$container->hasDefinition(Registry::class)) {
             $container->addShared(Registry::class, static fn(): Registry => new Registry($container));
         }
@@ -71,6 +81,16 @@ class InteractPlugin extends BasePlugin
         if (!$container->hasDefinition(Factory::class)) {
             $container->addShared(Factory::class)->addArguments([Registry::class, SnapshotCodec::class]);
         }
+    }
+
+    /**
+     * Resolve the update exception listener through the application's container.
+     *
+     * @return list<class-string<\Cake\Event\EventListenerInterface>>
+     */
+    public function eventListeners(): array
+    {
+        return [UpdateErrorListener::class];
     }
 
     /**

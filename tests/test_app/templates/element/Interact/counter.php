@@ -18,5 +18,5 @@ use function Cake\Core\h;
         <button type="button" class="button-text" data-interact-click="reset" :disabled="$server.busy">Reset</button>
     </div>
     <p class="field-hint">A server-owned value, bounded between 0 and 99.</p>
-    <p class="request-error" role="alert" x-text="$server.error"></p>
+    <p class="request-error" role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 </section>

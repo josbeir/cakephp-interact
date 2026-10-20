@@ -40,6 +40,44 @@ export interface IslandResponse {
 }
 
 /**
+ * Stable failure categories shared by application markup and request error handlers.
+ */
+export type FailureCode =
+  | 'snapshot_expired'
+  | 'session_changed'
+  | 'invalid_snapshot'
+  | 'unauthenticated'
+  | 'csrf_failed'
+  | 'forbidden'
+  | 'invalid_request'
+  | 'server_error'
+  | 'http_error'
+  | 'network_error'
+  | 'unexpected_redirect'
+  | 'invalid_response'
+  | 'client_error'
+  | 'cancelled';
+
+/**
+ * Safe request feedback; retry means a fresh explicit attempt, never automatic replay.
+ */
+export interface RequestFailure {
+  readonly code: FailureCode;
+  readonly message: string;
+  readonly status: number | null;
+  readonly recovery: 'retry' | 'reload' | 'authenticate' | 'none';
+}
+
+/**
+ * A settled request outcome; expected failures are also published through state and events.
+ *
+ * A renderable 422 response is accepted successfully and supplies field errors separately.
+ */
+export type RequestResult =
+  | { readonly ok: true }
+  | { readonly ok: false; readonly error: RequestFailure };
+
+/**
  * Reactive application API exposed through Alpine's `$server` magic.
  *
  * Editing state creates a draft. Calling sync() or call() sends it through the
@@ -57,18 +95,25 @@ export interface IslandBridge {
   /**
    * A transport or protocol failure, separate from application validation.
    */
-  error: string | null;
+  error: RequestFailure | null;
+  readonly paused: boolean;
+
+  /**
+   * Export all current writable values, including synchronized but unsaved drafts.
+   */
+  exportDraft(): string;
+
   readonly dirty: boolean;
 
   /**
    * Synchronize current writable drafts, coalescing with pending synchronization.
    */
-  sync(): Promise<void>;
+  sync(): Promise<RequestResult>;
 
   /**
    * Queue an explicit action after earlier calls, using validated JSON arguments.
    */
-  call(action: string, ...args: Json[]): Promise<void>;
+  call(action: string, ...args: Json[]): Promise<RequestResult>;
 }
 
 /**

@@ -21,3 +21,4 @@ declare(strict_types=1);
     <?= $this->Interact->render('workshop-planner') ?>
     <?= $this->Interact->render('task-board') ?>
 </div>
+<?= $this->Interact->render('recovery') ?>

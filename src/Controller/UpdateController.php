@@ -6,6 +6,7 @@ namespace Interact\Controller;
 use Cake\Controller\Controller;
 use Cake\Http\Exception\HttpException;
 use Cake\Http\Response;
+use Interact\Http\FailureResponder;
 use Interact\IslandContext;
 use Interact\Runtime\Factory;
 use Interact\Runtime\Values;
@@ -25,7 +26,7 @@ class UpdateController extends Controller
     /**
      * Return a versioned JSON result; never mix login/error documents into island markup.
      */
-    public function update(Factory $factory): Response
+    public function update(Factory $factory, FailureResponder $failures): Response
     {
         $this->getRequest()->allowMethod(['post']);
         $this->disableAutoRender();
@@ -50,12 +51,12 @@ class UpdateController extends Controller
             $result = $runtime->update(Values::map($body), $context);
 
             return $this->json($result->payload(), $result->errors === [] ? 200 : 422);
-        } catch (InvalidSnapshotException $exception) {
-            return $this->json(['error' => $exception->getMessage()], 409);
-        } catch (InvalidArgumentException $exception) {
-            return $this->json(['error' => $exception->getMessage()], 400);
-        } catch (HttpException $exception) {
-            return $this->json(['error' => $exception->getMessage()], (int)$exception->getCode());
+        } catch (InvalidSnapshotException|InvalidArgumentException|HttpException $exception) {
+            if ($exception instanceof HttpException && $exception->getCode() >= 500) {
+                throw $exception;
+            }
+
+            return $failures->fromException($exception);
         }
     }
 

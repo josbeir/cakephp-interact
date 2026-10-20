@@ -62,3 +62,6 @@ Escape application text and attribute values with CakePHP's helpers/functions. R
 The standalone runtime uses Alpine's CSP build and requires no `unsafe-eval`. Load scripts according to the application's CSP and nonce policy. Do not load the standalone bundle alongside an existing Alpine instance; use npm integration instead.
 
 Binding, nesting, and transport payload sizes/depths are bounded. Prototype-related state keys and arbitrary PHP object restoration are rejected. Expired snapshots require a fresh mount, not an automatic replay of an action.
+
+For safe error responses and middleware integration, see
+[failures and recovery](/guide/failures#server-integration).

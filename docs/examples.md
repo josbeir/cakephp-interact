@@ -37,6 +37,9 @@ example. Keep real credentials and private data out of it.
 | `/search`     | Filter 1,200 resources; sort, change page size, and paginate         | [Search and pagination](/guide/search)                                                                             |
 | `/page`       | Update a whole-page listing while its layout stays in place          | [Whole-page islands](/guide/page-islands)                                                                          |
 
+The `/playground` **Failure recovery** card demonstrates the
+[failure and recovery workflow](/guide/failures).
+
 Playground state resets on reload. Article saves persist in the local fixture
 database. Search filters are interaction state; they do not update the URL.
 

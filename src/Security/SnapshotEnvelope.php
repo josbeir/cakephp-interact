@@ -48,8 +48,19 @@ final readonly class SnapshotEnvelope
      */
     public function verify(int $now, string $binding, string $scope): void
     {
-        if ($this->expires <= $now || $this->binding !== $binding || $this->scope !== $scope) {
-            throw new InvalidSnapshotException('Snapshot expired or belongs to another session or scope.');
+        if ($this->scope !== $scope) {
+            throw new InvalidSnapshotException('Snapshot belongs to another scope.');
+        }
+
+        if (!hash_equals($this->binding, $binding)) {
+            throw new InvalidSnapshotException(
+                'Snapshot belongs to another session.',
+                reason: SnapshotFailureReason::SessionChanged,
+            );
+        }
+
+        if ($this->expires <= $now) {
+            throw new InvalidSnapshotException('Snapshot expired.', reason: SnapshotFailureReason::Expired);
         }
     }
 }

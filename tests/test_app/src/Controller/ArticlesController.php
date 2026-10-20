@@ -58,4 +58,13 @@ class ArticlesController extends Controller
 
         return $this->getResponse()->withType('application/json')->withStringBody('{"ok":true}');
     }
+
+    /**
+     * Return a real login redirect so browser tests exercise manual fetch handling consistently.
+     */
+    #[Post('/demo/redirect', name: 'demo:redirect')]
+    public function loginRedirect(): ?Response
+    {
+        return $this->redirect('/login');
+    }
 }

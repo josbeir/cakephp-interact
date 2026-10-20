@@ -75,12 +75,12 @@ Put feedback inside the owning island:
 ```html
 <p role="status" x-show="$server.busy" x-cloak>Updating…</p>
 <p x-show="$server.dirty" x-cloak>There are local edits.</p>
-<p role="alert" x-text="$server.error"></p>
+<p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
 `busy` means a request is running. `dirty` means there are local edits waiting
 to synchronize; it does **not** mean an entity differs from its saved database
-version. `$server.error` is a request failure; field validation feedback lives in
+version. `$server.error` is a structured request failure; field validation feedback lives in
 `$server.errors` and the template's `$errors` variable.
 
 If you use `x-cloak`, add this rule to your application's stylesheet:
@@ -106,3 +106,5 @@ Each island processes one request at a time. Pending syncs coalesce; actions
 queue in order. Later typing remains local and survives an older response.
 Interact does not automatically retry actions: after a connection failure, the
 server may already have completed the operation.
+
+For request feedback and recovery, see [failures and recovery](/guide/failures).

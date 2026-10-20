@@ -115,10 +115,17 @@ describe('island lifecycle and transport', () => {
     const fetcher = vi.fn<Fetcher>();
     const value = client(root, fetcher);
     value.bridge.state.amount = Number.NaN;
-    await expect(value.bridge.sync()).rejects.toThrow('Invalid state');
+    await expect(value.bridge.sync()).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'client_error' },
+    });
     expect(fetcher).not.toHaveBeenCalled();
     expect(value.bridge.busy).toBe(false);
-    expect(value.bridge.error).toBe('Invalid state.');
+    expect(value.bridge.error).toMatchObject({
+      code: 'client_error',
+      status: null,
+      recovery: 'reload',
+    });
   });
   it('validates initial metadata, identity, and same-origin endpoints', () => {
     const root = element();
@@ -152,7 +159,7 @@ describe('island lifecycle and transport', () => {
     await value.bridge.call('save', 7);
     const options = fetcher.mock.calls[0]?.[1];
     expect(options?.credentials).toBe('same-origin');
-    expect(options?.redirect).toBe('error');
+    expect(options?.redirect).toBe('manual');
     expect(options?.headers).toMatchObject({ 'X-CSRF-Token': 'csrf' });
     expect(JSON.parse(String(options?.body))).toMatchObject({
       version: 1,
@@ -176,9 +183,12 @@ describe('island lifecycle and transport', () => {
       .mockReturnValueOnce(pending)
       .mockResolvedValue(result(payload(root, { ...initial, title: 'newer' })));
     const value = client(root, fetcher);
-    value.bridge.state.title = 'sent';
+    const input = control(root, 'input', HTMLInputElement);
+    input.value = 'sent';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
     const first = value.bridge.call('save');
-    value.bridge.state.title = 'newer';
+    input.value = 'newer';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
     const second = value.bridge.call('save');
     expect(fetcher).toHaveBeenCalledOnce();
     finish(result(payload(root, { ...initial, title: 'sent' })));
@@ -230,7 +240,9 @@ describe('island lifecycle and transport', () => {
       const value = client(root, fetcher);
       const error = vi.fn();
       root.addEventListener('interact:error', error);
-      await expect(value.bridge.call('save')).rejects.toThrow();
+      await expect(value.bridge.call('save')).resolves.toMatchObject({
+        ok: false,
+      });
       expect(fetcher).toHaveBeenCalledOnce();
       expect(error).toHaveBeenCalledOnce();
       expect(value.bridge.error).not.toBeNull();
@@ -248,7 +260,10 @@ describe('island lifecycle and transport', () => {
         .fn<Fetcher>()
         .mockResolvedValue(result(payload(root, initial, { html }))),
     );
-    await expect(value.bridge.sync()).rejects.toThrow('markup');
+    await expect(value.bridge.sync()).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'invalid_response', status: 200 },
+    });
   });
   it('fails pending work after a transport error without replaying actions', async () => {
     const root = element();
@@ -261,8 +276,14 @@ describe('island lifecycle and transport', () => {
     const value = client(root, fetcher);
     const first = value.bridge.call('save');
     const second = value.bridge.call('save');
-    const firstFailure = expect(first).rejects.toThrow('request failed');
-    const secondFailure = expect(second).rejects.toThrow('request failed');
+    const firstFailure = expect(first).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'network_error', status: null },
+    });
+    const secondFailure = expect(second).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'network_error', status: null },
+    });
     reject('network lost');
     await Promise.all([firstFailure, secondFailure]);
     expect(fetcher).toHaveBeenCalledOnce();
@@ -284,12 +305,18 @@ describe('island lifecycle and transport', () => {
     );
     const first = value.bridge.call('save');
     const second = value.bridge.call('save');
-    const rejection = expect(second).rejects.toThrow('removed');
+    const rejection = expect(second).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'cancelled' },
+    });
     value.dispose();
     finish(result(payload(root, { ...initial, title: 'late' })));
     await Promise.all([first, rejection]);
     expect(value.bridge.state.title).not.toBe('late');
-    await expect(value.bridge.sync()).rejects.toThrow('removed');
+    await expect(value.bridge.sync()).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'cancelled' },
+    });
     await vi.runAllTimersAsync();
     expect(fetcher).toHaveBeenCalledOnce();
   });

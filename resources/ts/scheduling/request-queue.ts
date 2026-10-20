@@ -67,19 +67,21 @@ export class RequestQueue {
     const task = this.pending.shift();
     if (!task) return;
     this.running = true;
+    let failure: Error | null = null;
     try {
       await this.execute({ action: task.action, args: task.args });
       task.resolve.forEach((resolve) => resolve());
     } catch (error: unknown) {
-      const failure =
+      const rejected =
         error instanceof Error ? error : new Error('Island request failed.');
-      if (!this.disposed) this.onFailure(failure);
-      task.reject.forEach((reject) => reject(failure));
-      this.rejectPending(failure);
+      failure = rejected;
+      task.reject.forEach((reject) => reject(rejected));
+      this.rejectPending(rejected);
     } finally {
       this.running = false;
-      void this.drain();
     }
+    if (failure !== null && !this.disposed) this.onFailure(failure);
+    void this.drain();
   }
 
   /**

@@ -57,7 +57,7 @@ use function Cake\Core\h;
         data-interact-model="name" data-interact-update="input">
 </label>
 <p aria-live="polite"><?= (string)h($salutation) ?> <?= (string)h($name) ?></p>
-<p role="alert" x-text="$server.error"></p>
+<p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
 :::

@@ -2,7 +2,12 @@ import morph from '@alpinejs/morph';
 import type { Alpine } from 'alpinejs';
 import { IslandClient } from './client';
 import { morphRoot } from './dom/morph';
-export type { IslandBridge } from './types';
+export type {
+  IslandBridge,
+  RequestFailure,
+  FailureCode,
+  RequestResult,
+} from './types';
 export { IslandClient } from './client';
 const installed = new WeakSet<Alpine>();
 

@@ -157,6 +157,43 @@ describe('Alpine installation and morphing', () => {
       expect(element.getAttribute('aria-busy')).toBeNull(),
     );
   });
+  it('updates draft exports reactively and handles inline request failures without callbacks in the CSP build', async () => {
+    install(Alpine);
+    const element = root(
+      'feedback',
+      '<input data-interact-model="title" value="original"><textarea readonly :value="$server.exportDraft()"></textarea><button @click="$server.call(\'save\')">Save</button><span x-text="$server.paused ? \'Paused\' : \'Ready\'"></span><p x-text="$server.error ? $server.error.message : \'\'"></p>',
+    );
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(new Response('', { status: 503 }));
+    vi.stubGlobal('fetch', fetcher);
+    document.body.append(element);
+    Alpine.initTree(element);
+    const input = element.querySelector('input');
+    if (!(input instanceof HTMLInputElement)) throw new Error('Missing input');
+    input.value = 'editable draft';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.waitFor(() =>
+      expect(element.querySelector('textarea')?.value).toContain(
+        'editable draft',
+      ),
+    );
+    element.querySelector('button')?.click();
+    await vi.waitFor(() =>
+      expect(element.querySelector('span')?.textContent).toBe('Paused'),
+    );
+    expect(element.querySelector('p')?.textContent).toContain(
+      'Check the result',
+    );
+    input.value = 'still editable';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.waitFor(() =>
+      expect(element.querySelector('textarea')?.value).toContain(
+        'still editable',
+      ),
+    );
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
   it('starts the standalone CSP build and prevents a second Alpine runtime', async () => {
     delete window.Alpine;
     const start = vi.spyOn(Alpine, 'start').mockImplementation(() => {});
