@@ -346,6 +346,76 @@ describe('Alpine modelable bindings', () => {
     expect(fetcher).toHaveBeenCalledOnce();
   });
 
+  it('skips a queued live synchronization while disabled and resumes on a new enabled edit', async () => {
+    vi.useFakeTimers();
+    const root = mount(custom('.live.debounce.400ms'));
+    const fetcher = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(reply(root, { title: 'enabled edit' })),
+      );
+    vi.stubGlobal('fetch', fetcher);
+    edit(root, 'queued draft');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(bridge(root).state.title).toBe('queued draft');
+    wrapper(root).setAttribute('disabled', '');
+    await vi.advanceTimersByTimeAsync(400);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(bridge(root).state.title).toBe('queued draft');
+    wrapper(root).removeAttribute('disabled');
+    edit(root, 'enabled edit');
+    await vi.advanceTimersByTimeAsync(399);
+    expect(fetcher).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(requestBody(fetcher)).toMatchObject({
+      updates: { title: 'enabled edit' },
+    });
+  });
+
+  it('does not send a queued live edit through a wrapper’s former island after moving', async () => {
+    vi.useFakeTimers();
+    const root = mount(custom('.live.debounce.400ms'));
+    const fetcher = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(reply(root, { title: 'queued draft' })),
+      );
+    vi.stubGlobal('fetch', fetcher);
+    edit(root, 'queued draft');
+    await vi.advanceTimersByTimeAsync(0);
+    const child = mount('');
+    child.append(wrapper(root));
+    await vi.advanceTimersByTimeAsync(400);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it('also checks native disabled controls before sending a queued live edit', async () => {
+    vi.useFakeTimers();
+    const root = mount('<input x-interact:model.live.debounce.400ms="title">');
+    const input = root.querySelector('input');
+    if (!input) throw new Error('Missing native model.');
+    const fetcher = vi
+      .fn()
+      .mockImplementation(() =>
+        Promise.resolve(reply(root, { title: 'enabled edit' })),
+      );
+    vi.stubGlobal('fetch', fetcher);
+    input.value = 'queued draft';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.disabled = true;
+    await vi.advanceTimersByTimeAsync(400);
+    expect(fetcher).not.toHaveBeenCalled();
+    input.disabled = false;
+    input.value = 'enabled edit';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(400);
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(requestBody(fetcher)).toMatchObject({
+      updates: { title: 'enabled edit' },
+    });
+  });
+
   it('flushes a pending debounce into an explicit action instead of sending a second request', async () => {
     vi.useFakeTimers();
     const root = mount(custom('.live'));

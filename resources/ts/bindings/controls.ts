@@ -104,6 +104,7 @@ export class Controls {
       model.capture(!this.disabled(element));
       if (!equal(before, read(this.bridge.state, model.binding.path)))
         this.schedule(
+          element,
           model.binding,
           model.binding.timing === 'change' ? 'change' : 'input',
         );
@@ -226,7 +227,7 @@ export class Controls {
         ) {
           try {
             model.capture();
-            this.schedule(model.binding, 'focusout');
+            this.schedule(element, model.binding, 'focusout');
           } catch (cause: unknown) {
             this.onFailure(cause);
           }
@@ -252,6 +253,7 @@ export class Controls {
       return;
     }
     this.schedule(
+      control,
       model.binding,
       event.type,
       event instanceof InputEvent && event.isComposing,
@@ -259,9 +261,10 @@ export class Controls {
   }
 
   /**
-   * Schedule native and custom edits through the same synchronization policy.
+   * Schedule edits and recheck their source before delayed synchronization.
    */
   private schedule(
+    element: HTMLElement,
     binding: ModelBinding,
     event: string,
     composing = false,
@@ -278,6 +281,7 @@ export class Controls {
         binding.path,
         setTimeout(() => {
           this.timers.delete(binding.path);
+          if (!this.owns(element) || this.disabled(element)) return;
           void this.bridge.sync();
         }, binding.delay),
       );
