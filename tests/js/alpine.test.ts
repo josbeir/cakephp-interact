@@ -36,6 +36,7 @@ afterEach(() => {
     Alpine.destroyTree(element);
   document.body.innerHTML = '';
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe('Alpine installation and morphing', () => {
@@ -193,6 +194,48 @@ describe('Alpine installation and morphing', () => {
       ),
     );
     expect(fetcher).toHaveBeenCalledOnce();
+  });
+  it('updates targeted pending and delayed feedback with CSP object selectors', async () => {
+    vi.useFakeTimers();
+    install(Alpine);
+    const element = root(
+      'feedback-targets',
+      "<button @click=\"$server.call('remove', 42)\" :disabled=\"$server.pending('remove', 42)\">Remove</button><span x-show=\"$server.loading({ action: 'remove', args: [42], delay: 300 })\" :class=\"{ 'pending-row': $server.loading('remove', 42) }\">Removing</span><p x-show=\"$server.pending('remove', 43)\">Other row</p>",
+    );
+    const html = element.outerHTML;
+    let complete: (response: Response) => void = () => {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockReturnValue(
+        new Promise<Response>((resolve) => {
+          complete = resolve;
+        }),
+      ),
+    );
+    document.body.append(element);
+    Alpine.initTree(element);
+    await Promise.resolve();
+    const button = element.querySelector('button');
+    const span = element.querySelector('span');
+    if (!button || !span) throw new Error('Missing loading fixture.');
+    expect(span.style.display).toBe('none');
+    button.click();
+    await Promise.resolve();
+    expect(button.disabled).toBe(true);
+    expect(element.querySelector('p')?.style.display).toBe('none');
+    await vi.advanceTimersByTimeAsync(200);
+    expect(span.classList.contains('pending-row')).toBe(true);
+    expect(span.style.display).toBe('none');
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.waitFor(() => expect(span.style.display).not.toBe('none'));
+    complete(reply(element, html));
+    await vi.waitFor(() => {
+      expect(element.querySelector('button')?.disabled).toBe(false);
+      expect(element.querySelector('span')?.style.display).toBe('none');
+      expect(
+        element.querySelector('span')?.classList.contains('pending-row'),
+      ).toBe(false);
+    });
   });
   it('starts the standalone CSP build and prevents a second Alpine runtime', async () => {
     delete window.Alpine;

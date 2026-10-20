@@ -76,7 +76,7 @@ use function Cake\Core\h;
             <?php endforeach; ?>
         <?php endforeach; ?>
         <div class="quote-summary" aria-live="polite"><div><span class="eyebrow">Estimated total</span><p class="quote-total">€<?= number_format($total, 2) ?></p></div><span class="quiet">€<?= (string)$rate ?> per person<br>plus your selected extras</span></div>
-        <div class="form-footer"><?= $this->Form->button('Confirm quote', ['class' => 'button-primary', ':disabled' => '$server.busy']) ?><span class="quiet" x-show="$server.busy" x-cloak>Calculating…</span></div>
+        <div class="form-footer"><?= $this->Form->button('Confirm quote', ['class' => 'button-primary']) ?><span class="quiet" x-show="$server.loading()" x-cloak>Calculating…</span></div>
         <?php if ($confirmed): ?>
             <p class="success-message" role="status" x-show="!$server.dirty">Quote confirmed. This is a demo; no booking was made.</p>
         <?php endif; ?>

@@ -22,7 +22,7 @@ declare(strict_types=1);
             'data-interact-debounce' => 250,
         ]) ?>
     <?= $this->Form->end() ?>
-    <div class="list-toolbar"><div class="page-count"><p class="quiet">Page <?= (string)$page ?></p><span class="quiet">of <?= (string)$totalPages ?></span></div><span class="quiet" x-show="$server.busy" x-cloak>Updating…</span>
+    <div class="list-toolbar"><div class="page-count"><p class="quiet">Page <?= (string)$page ?></p><span class="quiet">of <?= (string)$totalPages ?></span></div><span class="quiet" x-show="$server.loading(null)" x-cloak>Updating…</span>
         <div x-data="{ open: false }">
             <button type="button" class="button-text" @click="open = !open" :aria-expanded="open">Toggle help</button>
             <p class="help-note" x-show="open" x-cloak>Search and edit without leaving the page.</p>

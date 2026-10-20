@@ -1,6 +1,8 @@
 import { Controls } from './bindings/controls';
 import { readRoot } from './dom/markup';
 import { preserveSelection } from './dom/selection';
+import { RequestActivity } from './scheduling/request-activity';
+import { copyArguments } from './scheduling/targets';
 import { RequestQueue } from './scheduling/request-queue';
 import { changedWritable } from './state/drafts';
 import { clone, equal } from './state/values';
@@ -32,6 +34,7 @@ export class IslandClient {
   private readonly metadata: MountMetadata;
   private readonly controls: Controls;
   private readonly queue: RequestQueue;
+  private readonly requests: RequestActivity;
   private readonly lifetime = new AbortController();
   private snapshot: string;
   private baseline: State;
@@ -53,6 +56,7 @@ export class IslandClient {
     reactive: <T extends object>(value: T) => T,
     private readonly fetcher: Fetcher = (url, init) => fetch(url, init),
   ) {
+    this.requests = new RequestActivity(reactive);
     this.activity = reactive({ paused: false });
     const activity = this.activity;
     this.metadata = readMetadata(root);
@@ -63,6 +67,8 @@ export class IslandClient {
     this.bridge = reactive({
       state: this.metadata.state,
       busy: false,
+      pending: (selector, ...args) => this.requests.pending(selector, ...args),
+      loading: (selector, ...args) => this.requests.loading(selector, ...args),
       errors: {},
       error: null,
       get paused() {
@@ -83,6 +89,7 @@ export class IslandClient {
     this.queue = new RequestQueue(
       (invocation) => this.execute(invocation),
       (error) => this.failed(error),
+      (requests) => this.requests.update(requests),
     );
     this.controls = new Controls(root, this.bridge, () => this.writable);
   }
@@ -97,6 +104,7 @@ export class IslandClient {
     this.lifetime.abort();
     this.controls.dispose();
     this.queue.dispose();
+    this.requests.dispose();
   }
 
   /**
@@ -137,6 +145,7 @@ export class IslandClient {
         ),
       );
     try {
+      args = copyArguments(args);
       this.controls.captureAll();
     } catch (cause: unknown) {
       const error = requestError('client_error', null, cause);
@@ -208,6 +217,7 @@ export class IslandClient {
       writable: this.writable,
     };
     try {
+      this.controls.beforeMorph();
       this.patch(this.root, replacement);
       this.snapshot = payload.snapshot;
       this.baseline = clone(payload.state);
@@ -222,6 +232,7 @@ export class IslandClient {
       this.snapshot = previous.snapshot;
       this.baseline = previous.baseline;
       this.writable = previous.writable;
+      this.controls.refresh();
       throw cause;
     }
     for (const effect of payload.events)

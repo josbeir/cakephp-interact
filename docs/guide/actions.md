@@ -33,20 +33,8 @@ Add `use InvalidArgumentException;` to the class file's imports.
 Call the action through Alpine's `$server` bridge:
 
 ```html [Inside the counter element]
-<button
-  type="button"
-  @click="$server.call('adjust', -1)"
-  :disabled="$server.busy"
->
-  Subtract one
-</button>
-<button
-  type="button"
-  @click="$server.call('adjust', 5)"
-  :disabled="$server.busy"
->
-  Add five
-</button>
+<button type="button" @click="$server.call('adjust', -1)">Subtract one</button>
+<button type="button" @click="$server.call('adjust', 5)">Add five</button>
 ```
 
 The argument must satisfy the PHP type and your application rules. Only methods
@@ -65,28 +53,75 @@ For an island with a writable `title` and an exposed `save()` action:
         'value' => $title,
         'data-interact-model' => 'title',
     ]) ?>
-    <?= $this->Form->button('Save', [':disabled' => '$server.busy']) ?>
+    <?= $this->Form->button('Save') ?>
 <?= $this->Form->end() ?>
 ```
 
-FormHelper generates the form and input markup. Interact captures the submit event, sends current bound controls, and calls
-`save()`. Pressing Enter uses the same path. The action decides whether and how
-to save; see the complete [article editing example](/guide/forms).
+FormHelper generates native markup. Interact handles the form's submit event,
+flushes bound controls, and calls `save()`. Pressing Enter and `requestSubmit()`
+use the same path. The action decides whether and how to save; see the complete
+[article editing example](/guide/forms).
 
-## Show progress and failures
+While that submission waits or runs, Interact blocks repeated submissions and
+disables its submit buttons. Inputs stay editable. Success, validation feedback,
+or a request failure releases the protection while preserving application-owned
+disabled states. Other forms and nested islands remain independent.
 
-Put feedback inside the owning island:
+This works with any helper or handwritten HTML producing `data-interact-submit`
+and the normal model attributes. It does not depend on CakePHP FormHelper.
+Direct `form.submit()` bypasses browser submit events; use `requestSubmit()`.
+Custom Alpine submit handlers and `$server.call()` retain their normal queueing
+behavior. Browser protection is not server-side idempotency.
 
-```html
-<p role="status" x-show="$server.busy" x-cloak>Updating…</p>
-<p x-show="$server.dirty" x-cloak>There are local edits.</p>
-<p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
+<span id="show-progress-and-failures"></span>
+
+## Show feedback for one action
+
+For an island exposing a `remove(int $id)` action, use `pending()` to disable a button as soon as its action is queued. Use
+`loading()` for visual feedback after the action has remained pending for 200 ms:
+
+```html [Inside the owning island]
+<button
+  type="button"
+  @click="$server.call('remove', 42)"
+  :disabled="$server.pending('remove', 42)"
+>
+  Remove
+</button>
+<span x-show="$server.loading('remove', 42)" x-cloak role="status">
+  Removing…
+</span>
+<section :class="{ 'opacity-50': $server.loading('save') }">…</section>
 ```
 
-`busy` means a request is running. `dirty` means there are local edits waiting
-to synchronize; it does **not** mean an entity differs from its saved database
-version. `$server.error` is a structured request failure; field validation feedback lives in
-`$server.errors` and the template's `$errors` variable.
+The class name is supplied by the application. Only row 42 shows this removal feedback. An action without arguments, such as
+`pending('remove')`, matches every invocation of that action. Without a target,
+`pending()` and `loading()` match any accepted request. Passing `null` targets
+synchronization only: `$server.loading(null)` is useful for a live search.
+Both helpers include queued work, not just the executing request; unsent debounce
+timers do not count. Ordinary action buttons remain repeatable unless you choose
+to disable them.
+
+For a custom visual delay, use the options form:
+
+```html
+<span
+  x-show="$server.loading({ action: 'remove', args: [42], delay: 500 })"
+  x-cloak
+  role="status"
+>
+  Removing…
+</span>
+```
+
+The delay affects feedback only. It never delays requests or submission protection.
+Use `delay: 0` for immediate visibility. See the
+[browser reference](/reference/browser#request-activity) for targeting contracts.
+
+`busy` still means a request is executing. `dirty` means local edits need
+synchronization; it does not indicate whether database changes were saved.
+For field feedback use `$errors` or `$server.errors`; for request failures use
+`$server.error` and the [failure guide](/guide/failures).
 
 If you use `x-cloak`, add this rule to your application's stylesheet:
 

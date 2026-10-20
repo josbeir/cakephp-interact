@@ -1,3 +1,4 @@
+import { FormSubmissions } from './form-submissions';
 import { captureControl, refreshControl } from './control-values';
 import type { Control } from './control-values';
 import type { IslandBridge, Writable } from '../types';
@@ -10,6 +11,7 @@ import type { IslandBridge, Writable } from '../types';
  */
 export class Controls {
   private readonly lifetime = new AbortController();
+  private readonly submissions: FormSubmissions;
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
 
   /**
@@ -20,6 +22,7 @@ export class Controls {
     private readonly bridge: IslandBridge,
     private readonly writable: () => Writable,
   ) {
+    this.submissions = new FormSubmissions(root);
     for (const event of ['input', 'change', 'focusout', 'click', 'submit'])
       root.addEventListener(event, (event) => this.handle(event), {
         signal: this.lifetime.signal,
@@ -32,15 +35,24 @@ export class Controls {
   dispose(): void {
     this.lifetime.abort();
     this.clearPending();
+    this.submissions.dispose();
   }
 
   /**
    * Apply reconciled state to surviving native controls after a server render.
    */
   refresh(): void {
+    this.submissions.refresh();
     this.controls().forEach((control) =>
       refreshControl(control, this.bridge.state),
     );
+  }
+
+  /**
+   * Release form mutations before morphing updates application-owned attributes.
+   */
+  beforeMorph(): void {
+    this.submissions.beforeMorph();
   }
 
   /**
@@ -79,7 +91,9 @@ export class Controls {
       );
       if (form) {
         event.preventDefault();
-        void this.bridge.call(form.dataset.interactSubmit ?? '');
+        this.submissions.submit(form, () =>
+          this.bridge.call(form.dataset.interactSubmit ?? ''),
+        );
       }
       return;
     }

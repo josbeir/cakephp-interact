@@ -20,7 +20,7 @@ use function Cake\Core\h;
             'data-interact-model' => 'message',
             'data-interact-update' => 'input',
         ]) ?>
-        <?= $this->Form->button('Accept draft', [':disabled' => '$server.busy']) ?>
+        <?= $this->Form->button('Accept draft') ?>
         <p role="status">Accepted <?= (string)$saves ?> times.</p>
     <?= $this->Form->end() ?>
     <div class="button-row">

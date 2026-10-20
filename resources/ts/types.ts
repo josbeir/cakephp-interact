@@ -28,6 +28,23 @@ export interface Invocation {
 }
 
 /**
+ * Select accepted requests by action and, optionally, a complete argument tuple.
+ *
+ * Omitted actions match all requests; null selects synchronization only.
+ */
+export interface RequestTarget {
+  action?: string | null;
+  args?: Json[];
+}
+
+/**
+ * Configure visual feedback without delaying execution or submission protection.
+ */
+export interface LoadingTarget extends RequestTarget {
+  delay?: number;
+}
+
+/**
  * Verified server render accepted from the versioned update endpoint.
  *
  * Validation feedback uses the same envelope as a successful render. Events are
@@ -91,6 +108,16 @@ export type RequestResult =
 export interface IslandBridge {
   state: State;
   busy: boolean;
+
+  /**
+   * Match queued and executing requests immediately, optionally by exact arguments.
+   */
+  pending(selector?: string | null | RequestTarget, ...args: Json[]): boolean;
+
+  /**
+   * Match continuously pending work after 200 ms, or the target's delay override.
+   */
+  loading(selector?: string | null | LoadingTarget, ...args: Json[]): boolean;
 
   /**
    * Application validation feedback returned by the last accepted render.

@@ -16,7 +16,7 @@ type Pending = Invocation & {
  */
 export class RequestQueue {
   private readonly pending: Pending[] = [];
-  private running = false;
+  private active: Pending | undefined;
   private disposed = false;
 
   /**
@@ -25,6 +25,9 @@ export class RequestQueue {
   constructor(
     private readonly execute: (invocation: Invocation) => Promise<void>,
     private readonly onFailure: (error: Error) => void,
+    private readonly onChange: (
+      requests: readonly Invocation[],
+    ) => void = () => {},
   ) {}
 
   /**
@@ -47,6 +50,7 @@ export class RequestQueue {
           reject: [reject],
         });
       }
+      this.publish();
       void this.drain();
     });
   }
@@ -57,16 +61,17 @@ export class RequestQueue {
   dispose(): void {
     this.disposed = true;
     this.rejectPending(new Error('Island was removed.'));
+    this.publish();
   }
 
   /**
    * Execute at most one invocation and propagate failures to every pending caller.
    */
   private async drain(): Promise<void> {
-    if (this.running || this.disposed) return;
+    if (this.active || this.disposed) return;
     const task = this.pending.shift();
     if (!task) return;
-    this.running = true;
+    this.active = task;
     let failure: Error | null = null;
     try {
       await this.execute({ action: task.action, args: task.args });
@@ -78,10 +83,22 @@ export class RequestQueue {
       task.reject.forEach((reject) => reject(rejected));
       this.rejectPending(rejected);
     } finally {
-      this.running = false;
+      this.active = undefined;
+      this.publish();
     }
     if (failure !== null && !this.disposed) this.onFailure(failure);
     void this.drain();
+  }
+
+  /**
+   * Publish one snapshot of accepted work, including the executing invocation.
+   */
+  private publish(): void {
+    this.onChange(
+      this.disposed
+        ? []
+        : [...(this.active ? [this.active] : []), ...this.pending],
+    );
   }
 
   /**

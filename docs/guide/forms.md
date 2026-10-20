@@ -74,7 +74,7 @@ $errorId = 'article-' . (string)$articleId . '-title-errors';
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
-    <?= $this->Form->button('Save article', [':disabled' => '$server.busy']) ?>
+    <?= $this->Form->button('Save article') ?>
     <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 <?= $this->Form->end() ?>
 ```
