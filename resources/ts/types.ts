@@ -1,3 +1,4 @@
+import type { UploadField, UploadJob, UploadMetadata } from './uploads/types';
 /**
  * Values accepted by the JSON transport, including nested lists and records.
  */
@@ -25,6 +26,8 @@ export type Writable = Record<string, { type: string; nullable: boolean }>;
 export interface Invocation {
   action: string | null;
   args: Json[];
+  upload?: UploadJob;
+  uploadRevision?: number;
 }
 
 /**
@@ -51,6 +54,7 @@ export interface LoadingTarget extends RequestTarget {
  * browser effects rather than trusted authorization or durable business messages.
  */
 export interface IslandResponse {
+  uploads?: UploadMetadata;
   version: 1;
   id: string;
   html: string;
@@ -72,6 +76,7 @@ export type FailureCode =
   | 'csrf_failed'
   | 'forbidden'
   | 'invalid_request'
+  | 'upload_too_large'
   | 'server_error'
   | 'http_error'
   | 'network_error'
@@ -106,6 +111,7 @@ export type RequestResult =
  * island's queue; synchronization alone never implies application persistence.
  */
 export interface IslandBridge {
+  uploads: Record<string, UploadField>;
   state: State;
   busy: boolean;
 

@@ -40,6 +40,59 @@ Configure that view's Interact helper with `scope: 'admin'` and the URL generate
 
 Override `authorize(IslandContext $context)` to check current resource access on every request. Treat action arguments as untrusted resource identifiers and authorize their use. Signing a record ID does not permanently authorize it.
 
+## Custom endpoints
+
+Use the shared `Interact\Http\UpdateHandler` service when an island endpoint
+should belong to your application controller. CakePHP injects it into the action;
+returning its Response avoids automatic template rendering.
+
+```php [Inside an application controller]
+use Cake\Http\Response;
+use Cake\Routing\Attribute\Post;
+use Interact\Http\UpdateHandler;
+
+#[Post(
+    '/islands/update',
+    name: 'app:interact',
+    defaults: ['interactScope' => 'default'],
+)]
+public function update(UpdateHandler $interact): Response
+{
+    return $interact->handle(
+        $this->getRequest(),
+        $this->getResponse(),
+    );
+}
+```
+
+The `interactScope` route default marks the endpoint early enough for middleware
+exceptions to receive Interact's safe JSON errors. Set it in server route
+configuration. The handler processes ordinary updates and file transfers through
+the same lifecycle and preserves the supplied response's application headers and
+cookies. Expected failures become JSON; unexpected failures retain normal
+CakePHP logging.
+
+Point the rendering controller's helper at the named route:
+
+```php [Inside the rendering controller's initialize()]
+// Import Cake\Routing\Router in this controller.
+$this->viewBuilder()->addHelper('Interact', [
+    'className' => 'Interact.Interact',
+    'endpoint' => Router::url(['_name' => 'app:interact']),
+    'scope' => 'default',
+]);
+```
+
+The helper and route must declare the same scope. Apply the application's normal
+middleware to the custom action. You can disable the plugin's default route when
+you only use application-owned endpoints; the service remains available.
+
+:::: details Tested custom endpoint implementation
+
+<<< @/../tests/test_app/src/Controller/UploadsController.php
+
+::::
+
 ## Snapshots
 
 Snapshots are signed, session-bound, scope-bound JSON with a 30-minute default lifetime. The default signing service uses CakePHP's security salt with domain separation. Replace `SnapshotCodec` through the application container to configure a dedicated key or lifetime. Use a strong secret and keep it out of source control.

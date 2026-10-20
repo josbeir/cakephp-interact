@@ -4,15 +4,8 @@ declare(strict_types=1);
 namespace Interact\Controller;
 
 use Cake\Controller\Controller;
-use Cake\Http\Exception\HttpException;
 use Cake\Http\Response;
-use Interact\Http\FailureResponder;
-use Interact\IslandContext;
-use Interact\Runtime\Factory;
-use Interact\Runtime\Values;
-use Interact\Security\InvalidSnapshotException;
-use Interact\View\TemplateView;
-use InvalidArgumentException;
+use Interact\Http\UpdateHandler;
 
 /**
  * Processes versioned AJAX updates after the application's normal middleware stack.
@@ -26,51 +19,8 @@ class UpdateController extends Controller
     /**
      * Return a versioned JSON result; never mix login/error documents into island markup.
      */
-    public function update(Factory $factory, FailureResponder $failures): Response
+    public function update(UpdateHandler $handler): Response
     {
-        $this->getRequest()->allowMethod(['post']);
-        $this->disableAutoRender();
-
-        $request = $this->getRequest();
-
-        /** @var mixed $scope */
-        $scope = $request->getParam('interactScope', 'default');
-        /** @var mixed $body */
-        $body = $request->getData();
-        try {
-            if (
-                !is_array($body)
-                || ($body['version'] ?? null) !== 1
-                || strlen((string)$request->getBody()) > 1_048_576
-            ) {
-                throw new InvalidArgumentException('Invalid island request.');
-            }
-
-            $context = new IslandContext($request, (string)$scope, $request->getUri()->getPath());
-            $runtime = $factory->create(new TemplateView($request), $context);
-            $result = $runtime->update(Values::map($body), $context);
-
-            return $this->json($result->payload(), $result->errors === [] ? 200 : 422);
-        } catch (InvalidSnapshotException|InvalidArgumentException|HttpException $exception) {
-            if ($exception instanceof HttpException && $exception->getCode() >= 500) {
-                throw $exception;
-            }
-
-            return $failures->fromException($exception);
-        }
-    }
-
-    /**
-     * Encode a result or expected application error as an uncached JSON response.
-     *
-     * @param array<string, mixed> $data A result or a safe application error.
-     */
-    protected function json(array $data, int $status): Response
-    {
-        return $this->getResponse()
-            ->withStatus($status)
-            ->withType('application/json')
-            ->withHeader('Cache-Control', 'no-store')
-            ->withStringBody(json_encode($data, JSON_THROW_ON_ERROR | JSON_HEX_TAG));
+        return $handler->handle($this->getRequest(), $this->getResponse());
     }
 }

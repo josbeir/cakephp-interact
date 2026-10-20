@@ -14,8 +14,9 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Reuse native templates and elements. Page islands can reuse action templates; embedded islands must not recursively render their hosting template.
 - Supply island template data consistently on initial and subsequent renders. Controller view variables are not implicitly transported.
 - Keep validation and persistence in the application. Synchronization never implies saving.
-- Use native fetch, Alpine, and Alpine Morph. Phase 2 owns navigation and URL-state features; defer form-adapter integration.
+- Use native fetch, Alpine, and Alpine Morph. Native XMLHttpRequest is reserved for upload progress and cancellation. Phase 2 owns navigation and URL-state features; defer form-adapter integration.
 - Use `x-interact:model` with synchronization modifiers and `x-interact:submit` for native form protection. Actions use `$server.call()` in Alpine expressions; ordinary events and presentation use Alpine directives. Keep generated `data-interact-*` metadata runtime-owned, without parallel public binding attributes.
+- Declare files with `#[Upload]`; keep PSR file objects request-local and transport only owned opaque references. Render accepted files in PHP and use `$server.uploads` for transfer feedback and controls. Image processing and preview URLs belong to the application.
 - Use `x-interact:poll` for managed periodic refreshes. Keep refreshes and actions on the existing `$server` bridge, and use Alpine conditions for application-controlled pauses or completion.
 - Use Alpine shorthand consistently in code and documentation: `@event` for event listeners and `:attribute` for bindings.
 

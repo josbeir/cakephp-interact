@@ -86,6 +86,22 @@ collaborators, not snapshot state. Read the current identity from
 observe accepted draft changes; authorize any record IDs carried by an action
 argument in the action's application flow as well.
 
+### Upload properties
+
+`#[Upload]` declares a public nullable `UploadedFileInterface` initialized to
+`null`. `#[Upload(multiple: true)]` declares a public array initialized to `[]`.
+Both attributes are imported from `Interact\Attribute`; the interface is
+`Psr\Http\Message\UploadedFileInterface`. Uploads cannot also be props or state.
+
+Upload properties are request-local objects and template variables. Snapshots
+contain owned opaque references; browser metadata contains IDs, names, and sizes.
+The writable JSON state map cannot assign upload references. Successful staging
+invokes `updated()` for the affected top-level field after current authorization.
+
+See [file uploads](/guide/uploads) for FormHelper examples, validation, permanent
+storage, quotas, and cleanup. Templates receive Interact's `TemporaryUpload`,
+which implements the PSR interface and exposes an opaque read-only `id`.
+
 ### Hooks and helpers
 
 | Method                                             | Purpose                                                            |

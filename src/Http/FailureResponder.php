@@ -38,6 +38,7 @@ class FailureResponder
             },
             $exception instanceof InvalidCsrfTokenException => FailureCode::CsrfFailed,
             $status === 400 => FailureCode::InvalidRequest,
+            $status === 413 => FailureCode::UploadTooLarge,
             $status === 401 => FailureCode::Unauthenticated,
             $status === 403 => FailureCode::Forbidden,
             $status >= 500 => FailureCode::ServerError,

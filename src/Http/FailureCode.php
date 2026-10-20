@@ -19,6 +19,7 @@ enum FailureCode: string
     case CsrfFailed = 'csrf_failed';
     case Forbidden = 'forbidden';
     case InvalidRequest = 'invalid_request';
+    case UploadTooLarge = 'upload_too_large';
     case ServerError = 'server_error';
     case HttpError = 'http_error';
 
@@ -43,6 +44,10 @@ enum FailureCode: string
             self::InvalidRequest => __d(
                 'interact',
                 'The update was rejected. Check your input before submitting again.',
+            ),
+            self::UploadTooLarge => __d(
+                'interact',
+                'The upload exceeds the server size limit. Choose a smaller file.',
             ),
             self::ServerError => __d(
                 'interact',

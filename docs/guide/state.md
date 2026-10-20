@@ -130,7 +130,8 @@ Dotted paths address nested arrays, for example:
 
 Declare the owning `form` property as writable array state and initialize its
 shape. Use distinct stable control IDs when rendering repeated fields.
-File inputs are outside the current binding implementation.
+File inputs use explicit `#[Upload]` properties rather than JSON state. See
+[file uploads](/guide/uploads) for staged transfers and native PHP file objects.
 
 ## Compute data for a render
 

@@ -51,6 +51,7 @@ class FailureTest extends TestCase
         yield 'csrf' => [new InvalidCsrfTokenException('private'), 403, 'csrf_failed'];
         yield 'unauthenticated' => [new HttpException('private', 401), 401, 'unauthenticated'];
         yield 'forbidden' => [new HttpException('private', 403), 403, 'forbidden'];
+        yield 'upload too large' => [new HttpException('private', 413), 413, 'upload_too_large'];
         yield 'bad request' => [new HttpException('private', 400), 400, 'invalid_request'];
         yield 'missing resource' => [new HttpException('private', 404), 404, 'http_error'];
         yield 'unavailable' => [new HttpException('private', 503), 503, 'server_error'];
@@ -110,9 +111,9 @@ class FailureTest extends TestCase
         foreach ([
             [],
             ['request' => $request],
-            ['request' => $request->withParam('plugin', null), 'exception' => new RuntimeException()],
-            ['request' => $request->withParam('controller', 'Articles'), 'exception' => new RuntimeException()],
-            ['request' => $request->withParam('action', 'index'), 'exception' => new RuntimeException()],
+            ['request' => $request->withParam('interactScope', null), 'exception' => new RuntimeException()],
+            ['request' => $request->withParam('interactScope', 42), 'exception' => new RuntimeException()],
+            ['request' => $request->withParam('interactScope', false), 'exception' => new RuntimeException()],
         ] as $data) {
             $ignored = new Event('Exception.beforeRender', data: $data);
             $listener->render($ignored);
@@ -149,6 +150,7 @@ class FailureTest extends TestCase
             'plugin' => 'Interact',
             'controller' => 'Update',
             'action' => 'update',
+            'interactScope' => 'default',
         ]]);
         $exception = new RuntimeException('Private diagnostic');
         $trap = $this->createMock(ExceptionTrap::class);

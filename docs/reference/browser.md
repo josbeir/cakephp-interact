@@ -49,7 +49,8 @@ the same form. Use one model binding per control; do not combine `x-model` with
 Native text inputs, textareas, selects, multiple selects, radio groups, numeric
 values, boolean checkboxes, and array checkbox groups are supported. Empty
 nullable numbers can remain null; false, zero, and empty strings are distinct
-values. File binding is not implemented. A directive must be inside an island.
+values. File inputs bind to explicitly declared uploads; see [File transfers](#file-transfers).
+A directive must be inside an island.
 Invalid declarations fail during Alpine initialization; runtime expression and
 capture failures use the island's normal failure feedback.
 
@@ -217,3 +218,43 @@ npm plugin before `Alpine.start()`, and omit the standalone bundle. See
 
 Treat generated `data-interact-*` root metadata as runtime-owned. Snapshots and
 HTTP envelopes are an implementation protocol, not a public custom-client API.
+
+## File transfers
+
+Native file inputs bind to declared `#[Upload]` fields with `x-interact:model` and
+no timing modifiers. A `multiple` input must match a multiple-file declaration.
+Selection starts staging immediately; PHP objects and file bytes never become
+`$server.state` values.
+
+Optional PHP `#[Upload(maxFileSize: '1MB')]` and
+`#[Upload(multiple: true, maxFiles: 3)]` declarations lower the global staging
+ceilings. The browser checks size and accepted slots before each queued transfer;
+PHP enforces actual bytes and count capacity independently. Extra files in a batch
+fail without replacing accepted files or sending their bytes. See
+[field limits](/guide/uploads#set-limits-for-each-upload-field) for inheritance,
+global ceilings, and application validation.
+
+`$server.uploads.<field>` exposes `pending`, `progress`, and `files`, plus
+`cancel(id?)`, `remove(id?)`, and `retry(id?)`. Files expose opaque `id`, `name`,
+`size`, `status`, and `progress`; status is `queued`, `uploading`, `ready`, or
+`failed`. Progress is 0–100 or `null` when unavailable. Removal accepts browser
+item IDs or PHP `TemporaryUpload::id` values. IDs confer no access outside their
+verified session, route scope, island, and field.
+
+Cancel is browser-local and does not guarantee PHP stopped processing. Remove
+and retry settle like other bridge requests without requiring `.catch()` markup.
+Retry transfers files only, never a previously blocked application action.
+
+Unqualified request feedback includes transfers; action selectors continue to
+match PHP actions. Saves wait for preceding transfers and do not execute after
+failed or cancelled prerequisites. Failed selections count as dirty; accepted
+staged files are synchronized but remain unsaved application data. Polling skips
+unfinished/failed selections. Draft export excludes files and their references.
+
+The native multipart transport uses XMLHttpRequest for upload progress. Ordinary
+JSON updates retain fetch. Both use the same endpoint, CSRF protection, response
+validation, and reconciliation. Upload declarations and disposal retain nested
+island ownership.
+
+The [upload guide](/guide/uploads) includes PHP rendering, complete FormHelper
+examples, controls, retention settings, and cleanup.

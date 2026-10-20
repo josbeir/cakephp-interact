@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Runtime;
 
+use Interact\Upload\UploadOperation;
 use InvalidArgumentException;
 
 /**
@@ -18,6 +19,11 @@ readonly class UpdateRequest
     public array $updates;
 
     public ?string $action;
+
+    /**
+     * Internal staging/removal operation, never a callable PHP action.
+     */
+    public ?UploadOperation $upload;
 
     /**
      * @var list<mixed> Explicit action arguments, checked against the exposed method signature.
@@ -52,6 +58,8 @@ readonly class UpdateRequest
             throw new InvalidArgumentException('Invalid island update envelope.');
         }
 
+        $this->upload = isset($request['upload']) ? new UploadOperation($request['upload']) : null;
+        $this->upload?->assertTransferOnly($action, $arguments);
         $this->snapshot = $snapshot;
         $this->updates = Values::map($updates);
         $this->action = $action;

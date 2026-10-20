@@ -26,6 +26,8 @@ export class RequestQueue {
     private readonly execute: (invocation: Invocation) => Promise<void>,
     private readonly onFailure: (error: Error) => void,
     private readonly onChange: (requests: readonly Invocation[]) => void,
+    private readonly continueAfterFailure: (error: Error) => boolean = () =>
+      false,
   ) {}
 
   /**
@@ -35,8 +37,13 @@ export class RequestQueue {
     if (this.disposed) return Promise.reject(new Error('Island was removed.'));
     return new Promise((resolve, reject) => {
       const existing =
-        invocation.action === null
-          ? this.pending.find((task) => task.action === null)
+        invocation.action === null && invocation.upload === undefined
+          ? this.pending.find(
+              (task) =>
+                task.action === null &&
+                task.upload === undefined &&
+                task.uploadRevision === invocation.uploadRevision,
+            )
           : undefined;
       if (existing) {
         existing.resolve.push(resolve);
@@ -72,19 +79,31 @@ export class RequestQueue {
     this.active = task;
     let failure: Error | null = null;
     try {
-      await this.execute({ action: task.action, args: task.args });
+      await this.execute({
+        action: task.action,
+        args: task.args,
+        ...(task.upload ? { upload: task.upload } : {}),
+        ...(task.uploadRevision === undefined
+          ? {}
+          : { uploadRevision: task.uploadRevision }),
+      });
       task.resolve.forEach((resolve) => resolve());
     } catch (error: unknown) {
       const rejected =
         error instanceof Error ? error : new Error('Island request failed.');
       failure = rejected;
       task.reject.forEach((reject) => reject(rejected));
-      this.rejectPending(rejected);
+      if (!this.continueAfterFailure(rejected)) this.rejectPending(rejected);
     } finally {
       this.active = undefined;
       this.publish();
     }
-    if (failure !== null && !this.disposed) this.onFailure(failure);
+    if (
+      failure !== null &&
+      !this.disposed &&
+      !this.continueAfterFailure(failure)
+    )
+      this.onFailure(failure);
     void this.drain();
   }
 

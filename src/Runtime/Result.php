@@ -17,6 +17,11 @@ readonly class Result
     public array $state;
 
     /**
+     * @var array<string, array{multiple: bool, maxSize: int, maxFiles: int, files: list<array{id: string, name: string, size: int}>}> Declared upload selections.
+     */
+    public array $uploads;
+
+    /**
      * @var array<string, array{type: string, nullable: bool}> Browser-editable properties.
      */
     public array $writable;
@@ -35,6 +40,7 @@ readonly class Result
      * Collect markup, a signed snapshot, validation feedback, and browser effects.
      *
      * @param array{
+     *     uploads?: array<string, array{multiple: bool, maxSize: int, maxFiles: int, files: list<array{id: string, name: string, size: int}>}>,
      *     state?: array<string, mixed>,
      *     writable?: array<string, array{type: string, nullable: bool}>,
      *     errors?: array<string, list<string>>,
@@ -43,6 +49,7 @@ readonly class Result
      */
     public function __construct(public string $id, public string $html, public string $snapshot, array $data = [])
     {
+        $this->uploads = $data['uploads'] ?? [];
         $this->state = $data['state'] ?? [];
         $this->writable = $data['writable'] ?? [];
         $this->errors = $data['errors'] ?? [];
@@ -58,6 +65,7 @@ readonly class Result
     {
         return [
             'version' => 1,
+            ...($this->uploads === [] ? [] : ['uploads' => (object)$this->uploads]),
             'id' => $this->id,
             'html' => $this->html,
             'snapshot' => $this->snapshot,

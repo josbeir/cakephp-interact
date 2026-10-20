@@ -6,6 +6,10 @@ const server = spawn(
   [
     '-d',
     'opcache.enable=0',
+    '-d',
+    'upload_max_filesize=2M',
+    '-d',
+    'post_max_size=8M',
     '-S',
     '127.0.0.1:8765',
     '-t',

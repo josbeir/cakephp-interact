@@ -230,8 +230,8 @@ Validation still runs in the application's Table and action. Forms created with
 the JSON update protocol. Keep protection on ordinary form endpoints and scope
 update-route middleware appropriately; do not disable application protections.
 
-The current layer does not provide file uploads, entity transport, or form-plugin
-integration. Use explicit state and actions. Navigation and automatic saving are not
+For file inputs, see [file uploads](/guide/uploads). Entity transport and form-plugin
+integration remain deferred. Use explicit state and actions. Navigation and automatic saving are not
 part of the form's synchronization behavior.
 
 **Next:** [Refresh a parent listing after a save](/guide/nesting).

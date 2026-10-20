@@ -114,6 +114,7 @@ the count is interaction state, and this example does not save it to a database.
 | ------------------------------------------------------ | ----------------------------------------- |
 | Bind an input or pass an initial value                 | [State and input binding](/guide/state)   |
 | Call an action with arguments or show loading feedback | [Actions and feedback](/guide/actions)    |
+| Upload and validate files                              | [File uploads](/guide/uploads)            |
 | Filter a larger model-backed listing                   | [Search and pagination](/guide/search)    |
 | Validate and save an editable record                   | [Forms and validation](/guide/forms)      |
 | Reuse a controller action's template                   | [Whole-page islands](/guide/page-islands) |

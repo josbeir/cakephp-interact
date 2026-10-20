@@ -82,6 +82,7 @@ A status of null means no readable HTTP response is available.
 | `unauthenticated`     | Authentication is required (401)                               | Application sign-in flow                           |
 | `csrf_failed`         | CakePHP rejected the security token (403)                      | Reload                                             |
 | `forbidden`           | Current access is denied (403)                                 | Application decision                               |
+| `upload_too_large`    | Server rejected an oversized upload (413)                      | Choose a smaller file, then submit explicitly      |
 | `invalid_request`     | Update input was rejected (400)                                | Correct input, then explicitly try again           |
 | `server_error`        | Server returned a 5xx response                                 | Verify the outcome before another explicit attempt |
 | `http_error`          | Another HTTP error status                                      | Application decision                               |
