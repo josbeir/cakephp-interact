@@ -48,11 +48,10 @@ export async function readResponse(
   result: Response,
   id: string,
 ): Promise<IslandResponse> {
-  if (
-    (!result.ok && result.status !== 422) ||
-    !result.headers.get('content-type')?.includes('application/json')
-  )
+  if (!result.ok && result.status !== 422)
     throw new Error(`Island request failed (${result.status}).`);
+  if (!result.headers.get('content-type')?.includes('application/json'))
+    throw new Error(`Expected a JSON island response (${result.status}).`);
   const payload: unknown = await result.json();
   if (!response(payload) || payload.id !== id)
     throw new Error('Invalid island response.');

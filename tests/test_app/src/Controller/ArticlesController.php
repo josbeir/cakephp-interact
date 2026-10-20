@@ -23,7 +23,16 @@ class ArticlesController extends Controller
     #[Get('/', name: 'demo:index')]
     public function index(): void
     {
-        $this->set('title', __('Interact demo'));
+        $this->set('title', __('Small islands. Real interactions.'));
+        $this->viewBuilder()->addHelper('Interact', ['className' => InteractHelper::class]);
+    }
+
+    /**
+     * Mount independent examples of typed actions, conditional inputs, and dynamic collections.
+     */
+    #[Get('/playground', name: 'demo:playground')]
+    public function playground(): void
+    {
         $this->viewBuilder()->addHelper('Interact', ['className' => InteractHelper::class]);
     }
 

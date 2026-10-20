@@ -5,8 +5,10 @@ namespace Interact\Test\TestCase;
 
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\TestSuite\TestCase;
+use InvalidArgumentException;
 use TestApp\Model\Table\ArticlesTable;
 use TestApp\Model\Table\CitiesTable;
+use TestApp\Model\Table\ResourcesTable;
 
 /**
  * Verifies the demo's domain finders against SQLite, including access scopes and dependent
@@ -47,5 +49,71 @@ class ModelFinderTest extends TestCase
         static::assertSame(0, $cities->find('inCountry', country: 'unknown')->count());
         static::assertSame(1, $cities->find('selection', country: 'BE', cityId: 1)->count());
         static::assertSame(0, $cities->find('selection', country: 'NL', cityId: 1)->count());
+    }
+
+    public function testResourceSearchMatchesWordsAcrossColumnsAndKeepsFiltersComposable(): void
+    {
+        $resources = $this->fetchTable('Resources');
+        static::assertInstanceOf(ResourcesTable::class, $resources);
+        static::assertSame(1200, $resources->find('listing')->count());
+        static::assertSame(150, $resources->find('listing', search: 'CakePHP')->count());
+        static::assertSame(15, $resources->find('listing', search: '  CAKEPHP   validation  ')->count());
+        static::assertSame(
+            5,
+            $resources->find('listing', search: 'validation', category: 'cakephp', level: 'beginner')->count(),
+        );
+        static::assertSame(80, $resources->find('listing', search: 'practical guide beginner')->count());
+        static::assertSame(
+            1,
+            $resources->find('matching', search: 'Custom finders')->where(['Resources.id' => 1])->count(),
+        );
+    }
+
+    public function testResourceSearchTreatsWildcardsAndSqlAsLiteralText(): void
+    {
+        $resources = $this->fetchTable('Resources');
+        static::assertInstanceOf(ResourcesTable::class, $resources);
+        foreach (['%', '_', "' OR 1=1 --", '<script>', 'no such resource'] as $search) {
+            static::assertSame(0, $resources->find('listing', search: $search)->count(), $search);
+        }
+    }
+
+    public function testResourceOrderingIsStableAcrossPagesAndReadingTimeSorts(): void
+    {
+        $resources = $this->fetchTable('Resources');
+        static::assertInstanceOf(ResourcesTable::class, $resources);
+        $first = $resources->find('listing')->limit(20)->page(1)->all()->extract('id')->toList();
+        $second = $resources->find('listing')->limit(20)->page(2)->all()->extract('id')->toList();
+        static::assertCount(20, $first);
+        static::assertCount(20, $second);
+        static::assertSame([], array_intersect($first, $second));
+        static::assertSame($first, $resources->find('listing')->limit(20)->page(1)->all()->extract('id')->toList());
+        static::assertSame(
+            [4, 4, 4],
+            $resources->find('listing', sort: 'shortest')->limit(3)->all()->extract('minutes')->toList(),
+        );
+        static::assertSame(
+            [25, 25, 25],
+            $resources->find('listing', sort: 'longest')->limit(3)->all()->extract('minutes')->toList(),
+        );
+    }
+
+    public function testResourceFinderRejectsUnrecognizedFilterAndSortChoices(): void
+    {
+        $resources = $this->fetchTable('Resources');
+        static::assertInstanceOf(ResourcesTable::class, $resources);
+        foreach ([
+            ['category' => 'unknown'],
+            ['level' => 'unknown'],
+            ['sort' => 'Resources.id; DROP TABLE resources'],
+            ['search' => str_repeat('x', 201)],
+        ] as $arguments) {
+            try {
+                $resources->find('listing', ...$arguments)->count();
+                static::fail('An unsupported resource search choice must be rejected.');
+            } catch (InvalidArgumentException $exception) {
+                static::assertNotSame('', $exception->getMessage());
+            }
+        }
     }
 }

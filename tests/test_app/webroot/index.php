@@ -5,6 +5,13 @@ use Cake\Http\Server;
 use TestApp\Application;
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if ($path === '/demo.css') {
+    header('Content-Type: text/css; charset=utf-8');
+    readfile(__DIR__ . '/demo.css');
+
+    return;
+}
+
 if (is_string($path) && $path === '/interact/js/runtime.js') {
     header('Content-Type: text/javascript');
     readfile(dirname(__DIR__, 3) . '/webroot/js/runtime.js');
@@ -13,5 +20,11 @@ if (is_string($path) && $path === '/interact/js/runtime.js') {
 }
 
 require dirname(__DIR__, 3) . '/vendor/autoload.php';
+if (PHP_SAPI === 'cli-server') {
+    // The router handles every URL; nested action paths are not separate PHP scripts.
+    $_SERVER['SCRIPT_NAME'] = '/index.php';
+    $_SERVER['PHP_SELF'] = '/index.php';
+}
+
 $server = new Server(new Application(dirname(__DIR__) . '/config/'));
 $server->emit($server->run());

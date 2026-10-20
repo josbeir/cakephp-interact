@@ -1,5 +1,6 @@
 import type { Json, State } from '../types';
 import { forbidden } from './values';
+
 /**
  * Parse a dotted property path and reject malformed or prototype-related segments.
  *
@@ -13,6 +14,7 @@ export function path(value: string): string[] {
     throw new Error('Unsafe state path.');
   return parts;
 }
+
 /**
  * Read an owned nested value without traversing inherited object properties.
  */
@@ -29,6 +31,7 @@ export function read(value: State, name: string): Json | undefined {
   }
   return current;
 }
+
 /**
  * Apply a local draft at a validated nested path.
  *
@@ -80,6 +83,7 @@ export function write(value: State, name: string, replacement: Json): void {
     current = child;
   }
 }
+
 /**
  * Recognize canonical JSON-list indices rather than array properties or leading-zero keys.
  */

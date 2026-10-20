@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace TestApp;
 
+use Cake\Core\Configure;
+use Cake\Error\Middleware\ErrorHandlerMiddleware;
 use Cake\Http\BaseApplication;
 use Cake\Http\Middleware\BodyParserMiddleware;
 use Cake\Http\Middleware\CsrfProtectionMiddleware;
@@ -22,6 +24,11 @@ use TestApp\Middleware\DemoIdentityMiddleware;
 class Application extends BaseApplication
 {
     /**
+     * Keep the demo's CSRF token separate from other applications on the same hostname.
+     */
+    public const string CSRF_COOKIE = 'interact_demo_csrf';
+
+    /**
      * Load deterministic test configuration and the plugin through normal CakePHP hooks.
      */
     public function bootstrap(): void
@@ -37,7 +44,12 @@ class Application extends BaseApplication
      */
     public function middleware(MiddlewareQueue $middlewareQueue): MiddlewareQueue
     {
-        return $middlewareQueue->add(new RoutingMiddleware($this))
+        /** @var mixed $errorConfig */
+        $errorConfig = Configure::read('Error', []);
+        assert(is_array($errorConfig), 'The demo error handler configuration must be an array.');
+
+        return $middlewareQueue->add(new ErrorHandlerMiddleware($errorConfig, $this))
+            ->add(new RoutingMiddleware($this))
             ->add(
                 static fn(
                     ServerRequestInterface $request,
@@ -48,7 +60,7 @@ class Application extends BaseApplication
                 ),
             )
             ->add(new BodyParserMiddleware())
-            ->add(new CsrfProtectionMiddleware(['httponly' => true]))
+            ->add(new CsrfProtectionMiddleware(['cookieName' => self::CSRF_COOKIE, 'httponly' => true]))
             ->add(new DemoIdentityMiddleware());
     }
 

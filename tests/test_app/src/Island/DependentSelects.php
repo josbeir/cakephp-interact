@@ -28,6 +28,9 @@ class DependentSelects extends Island
     #[State(writable: true)]
     public string $notes = '';
 
+    #[State]
+    public bool $confirmed = false;
+
     /**
      * Clear the selected city when its owning country changes.
      *
@@ -35,6 +38,7 @@ class DependentSelects extends Island
      */
     public function updated(array $paths): void
     {
+        $this->confirmed = false;
         if (in_array('country', $paths, true)) {
             $this->cityId = null;
         }
@@ -52,7 +56,11 @@ class DependentSelects extends Island
             || !$this->cities()->find('selection', country: $this->country, cityId: $this->cityId)->count()
         ) {
             $this->setErrors(['cityId' => ['Choose a city in the selected country.']]);
+
+            return;
         }
+
+        $this->confirmed = true;
     }
 
     /**

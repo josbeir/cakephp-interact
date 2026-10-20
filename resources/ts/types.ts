@@ -48,19 +48,23 @@ export interface IslandResponse {
 export interface IslandBridge {
   state: State;
   busy: boolean;
+
   /**
    * Application validation feedback returned by the last accepted render.
    */
   errors: Record<string, string[]>;
+
   /**
    * A transport or protocol failure, separate from application validation.
    */
   error: string | null;
   readonly dirty: boolean;
+
   /**
    * Synchronize current writable drafts, coalescing with pending synchronization.
    */
   sync(): Promise<void>;
+
   /**
    * Queue an explicit action after earlier calls, using validated JSON arguments.
    */

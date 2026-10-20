@@ -94,6 +94,22 @@ afterEach(() => {
 });
 
 describe('island lifecycle and transport', () => {
+  it('ignores a response body that finishes parsing after disposal', async () => {
+    const root = element();
+    let finish: (payload: unknown) => void = () => {};
+    const body = new Promise<unknown>((resolve) => {
+      finish = resolve;
+    });
+    const reply = result(payload(root));
+    const parse = vi.spyOn(reply, 'json').mockReturnValue(body);
+    const value = client(root, vi.fn<Fetcher>().mockResolvedValue(reply));
+    const pending = value.bridge.sync();
+    await vi.waitFor(() => expect(parse).toHaveBeenCalledOnce());
+    value.dispose();
+    finish(payload(root, { ...initial, title: 'late body' }));
+    await pending;
+    expect(value.bridge.state.title).toBe('old');
+  });
   it('rejects non-JSON drafts without hanging the queue or sending a request', async () => {
     const root = element();
     const fetcher = vi.fn<Fetcher>();

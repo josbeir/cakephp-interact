@@ -91,6 +91,8 @@ if ($connection->execute('SELECT COUNT(*) FROM cities')->fetchColumn(0) === 0) {
     }
 }
 
+require __DIR__ . '/seed_resources.php';
+
 AttributeResolver::setConfig('interact', ['paths' => ['src/Island/*.php'], 'basePath' => APP, 'cache' => false]);
 AttributeResolver::setConfig('interactDemoRoutes', [
     'paths' => ['src/Controller/*.php'],

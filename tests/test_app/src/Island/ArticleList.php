@@ -61,7 +61,7 @@ class ArticleList extends Island
     #[Action]
     public function next(): void
     {
-        $this->page++;
+        $this->page = min($this->page + 1, $this->totalPages());
     }
 
     /**
@@ -81,6 +81,7 @@ class ArticleList extends Island
     public function viewData(): array
     {
         return [
+            'totalPages' => $this->totalPages(),
             'articles' => $this->articles()
                 ->find(
                     'listing',
@@ -91,6 +92,16 @@ class ArticleList extends Island
                 ->page($this->page)
                 ->all(),
         ];
+    }
+
+    /**
+     * Bound pagination to the current visible search results, including an empty first page.
+     */
+    protected function totalPages(): int
+    {
+        $count = $this->articles()->find('listing', ownerId: $this->ownerId, search: $this->search)->count();
+
+        return max(1, (int)ceil($count / 3));
     }
 
     /**

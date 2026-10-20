@@ -6,12 +6,14 @@ use function Cake\Core\h;
  * @var string $country
  * @var int|null $cityId
  * @var string $notes
+ * @var bool $confirmed
  * @var iterable<\Cake\Datasource\EntityInterface> $cities
  * @var array<string, list<string>> $errors
  */
 ?>
-<section aria-label="Dependent choices">
-    <h2>Dependent choices</h2>
+<section class="demo-card" aria-label="Dependent choices">
+    <div class="card-heading"><div><p class="eyebrow">02 / Connected fields</p><h2>Dependent choices</h2></div></div>
+    <p class="card-description">Pick a country to load its cities. Your notes stay with you when the options change.</p>
     <form data-interact-submit="confirm">
         <label>
             Country
@@ -31,11 +33,15 @@ use function Cake\Core\h;
         </label>
         <label>
             Notes
-            <input data-interact-model="notes" value="<?= (string)h($notes) ?>">
+            <textarea data-interact-model="notes" rows="3" placeholder="Keep a little draft here…"><?= (string)h($notes) ?></textarea>
         </label>
         <?php foreach ($errors['cityId'] ?? [] as $error): ?>
-            <p role="alert"><?= (string)h($error) ?></p>
+            <p role="alert" class="field-error"><?= (string)h($error) ?></p>
         <?php endforeach; ?>
-        <button type="submit">Confirm city</button>
+        <button type="submit" class="button-primary" :disabled="$server.busy">Confirm city</button>
+        <?php if ($confirmed): ?>
+            <p class="success-message" role="status" x-show="!$server.dirty">City confirmed. Your notes are still here.</p>
+        <?php endif; ?>
+        <p class="request-error" role="alert" x-text="$server.error"></p>
     </form>
 </section>

@@ -1,5 +1,145 @@
 import { expect, test } from '@playwright/test';
 
+test('playground counters keep independent state and accept typed action arguments', async ({
+  page,
+}) => {
+  await page.goto('/playground');
+  const first = page.getByRole('region', {
+    name: 'First counter',
+    exact: true,
+  });
+  const second = page.getByRole('region', {
+    name: 'Second counter',
+    exact: true,
+  });
+  await first.getByRole('button', { name: 'Add five' }).click();
+  await expect(first.locator('.counter-value')).toHaveText('Count: 5');
+  await expect(second.locator('.counter-value')).toHaveText('Count: 5');
+  await second.getByRole('button', { name: 'Decrease by one' }).click();
+  await expect(second.locator('.counter-value')).toHaveText('Count: 4');
+  await expect(first.locator('.counter-value')).toHaveText('Count: 5');
+  await first.getByRole('button', { name: 'Reset' }).click();
+  await expect(first.locator('.counter-value')).toHaveText('Count: 0');
+});
+
+test('workshop planner recalculates a quote and validates conditional company details', async ({
+  page,
+}) => {
+  await page.goto('/playground');
+  const planner = page.getByRole('region', {
+    name: 'Workshop planner',
+    exact: true,
+  });
+  await expect(planner.locator('.quote-total')).toHaveText('€90.00');
+  await planner.getByLabel('Workshop format').selectOption('studio');
+  await expect(planner.locator('.quote-total')).toHaveText('€150.00');
+  await planner.getByLabel(/^Printed materials/).check();
+  await expect(planner.locator('.quote-total')).toHaveText('€180.00');
+  await planner.getByLabel(/^Session recording/).check();
+  await expect(planner.locator('.quote-total')).toHaveText('€210.00');
+  await planner.getByLabel(/^Book for a company/).check();
+  await expect(planner.getByLabel('Company name')).toBeVisible();
+  await planner.getByRole('button', { name: 'Confirm quote' }).click();
+  await expect(
+    planner.getByRole('alert').filter({ hasText: 'Enter a company name' }),
+  ).toBeVisible();
+  await planner.getByLabel('Company name').fill('Cake Studio');
+  await planner.getByRole('button', { name: 'Confirm quote' }).click();
+  await expect(planner.getByRole('status')).toContainText('Quote confirmed.');
+  await planner.getByLabel(/^Book for a company/).uncheck();
+  await expect(planner.getByLabel('Company name')).toHaveCount(0);
+  await planner.getByLabel(/^Book for a company/).check();
+  await expect(planner.getByLabel('Company name')).toHaveValue('Cake Studio');
+});
+
+test('task board validates, adds, completes, and removes a task without losing its draft', async ({
+  page,
+}) => {
+  await page.goto('/playground');
+  const board = page.getByRole('region', { name: 'Task board', exact: true });
+  await board.getByRole('button', { name: 'Add task', exact: true }).click();
+  await expect(
+    board.getByRole('alert').filter({ hasText: 'Use 1 to 80 characters' }),
+  ).toBeVisible();
+  await board.getByLabel('Add a task').fill('Try typed actions');
+  await board.getByRole('button', { name: 'Add task', exact: true }).click();
+  await expect(
+    board.getByText('Try typed actions', { exact: true }),
+  ).toBeVisible();
+  await expect(board.getByLabel('Add a task')).toHaveValue('');
+  await board.getByLabel('Add a task').fill('Keep my next task');
+  const complete = board.getByRole('button', {
+    name: 'Complete Try typed actions',
+    exact: true,
+  });
+  await complete.click();
+  await expect(complete).toHaveAttribute('aria-pressed', 'true');
+  await expect(board.getByLabel('Add a task')).toHaveValue('Keep my next task');
+  await board
+    .getByRole('button', { name: 'Remove Try typed actions', exact: true })
+    .click();
+  await expect(
+    board.getByText('Try typed actions', { exact: true }),
+  ).toHaveCount(0);
+  await expect(board.getByLabel('Add a task')).toHaveValue('Keep my next task');
+});
+
+test('demo pages keep their navigation and forms within a narrow viewport', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const path of ['/', '/playground', '/search', '/page']) {
+    await page.goto(path);
+    await expect(
+      page.getByRole('navigation', { name: 'Demo pages' }),
+    ).toBeVisible();
+    await expect(page.locator('main h1')).toBeVisible();
+    await expect(page.locator('link[rel="stylesheet"]')).toHaveAttribute(
+      'href',
+      '/demo.css',
+    );
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      )
+      .toBe(true);
+  }
+});
+
+test('submits with a foreign CakePHP CSRF cookie already present', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const foreignCookie = Buffer.from('x'.repeat(56)).toString('base64');
+  await context.addCookies([
+    {
+      name: 'csrfToken',
+      value: foreignCookie,
+      url: baseURL ?? 'http://127.0.0.1:8765',
+    },
+  ]);
+  await page.goto('/');
+  const cookies = await context.cookies();
+  expect(
+    cookies.find((cookie) => cookie.name === 'interact_demo_csrf'),
+  ).toBeDefined();
+  expect(cookies.find((cookie) => cookie.name === 'csrfToken')?.value).toBe(
+    foreignCookie,
+  );
+  const editor = page.getByRole('article', { name: 'Article 1', exact: true });
+  const response = page.waitForResponse((response) =>
+    response.url().endsWith('/_interact/update'),
+  );
+  await editor.getByRole('button', { name: 'Save article' }).click();
+  const update = await response;
+  expect(update.status()).toBe(200);
+  expect(update.headers()['content-type']).toContain('application/json');
+  await expect(editor.getByRole('status')).toHaveText('Saved.');
+});
+
 test('search preserves matching child drafts and local Alpine state', async ({
   page,
 }) => {
@@ -58,7 +198,9 @@ test('dependent choices preserve notes and reject an empty selection', async ({
   ).toHaveCount(1);
   await expect(choices.getByLabel('Notes')).toHaveValue('Keep my draft');
   await choices.getByRole('button', { name: 'Confirm city' }).click();
-  await expect(choices.getByRole('alert')).toContainText('Choose a city');
+  await expect(
+    choices.getByRole('alert').filter({ hasText: 'Choose a city' }),
+  ).toBeVisible();
 });
 
 test('whole-page islands retain their layout through pagination', async ({

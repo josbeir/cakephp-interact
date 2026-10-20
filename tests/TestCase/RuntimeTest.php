@@ -22,6 +22,9 @@ use stdClass;
  */
 class RuntimeTest extends TestCase
 {
+    /**
+     * Create a request with a stable test session and explicit update scope.
+     */
     protected function context(string $scope = 'default'): IslandContext
     {
         $session = new Session(['defaults' => 'php', 'ini' => ['session.use_cookies' => 0]]);
@@ -30,6 +33,9 @@ class RuntimeTest extends TestCase
         return new IslandContext($request->withAttribute('csrfToken', 'csrf-test'), $scope, '/_interact/update');
     }
 
+    /**
+     * Assemble a counter runtime with real discovery, signing, and a replaceable renderer.
+     */
     protected function runtime(?CallbackRenderer $renderer = null): Runtime
     {
         $registry = new Registry(collection: 'explicit');

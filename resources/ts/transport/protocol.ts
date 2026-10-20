@@ -1,5 +1,6 @@
 import type { IslandResponse, Writable } from '../types';
 import { forbidden, record, state } from '../state/values';
+
 /**
  * Validate browser-write metadata against the supported native PHP property types.
  */
@@ -16,6 +17,7 @@ export function writable(value: unknown): value is Writable {
     )
   );
 }
+
 /**
  * Check the complete update envelope before any server state or effects are applied.
  */

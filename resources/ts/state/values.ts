@@ -1,5 +1,10 @@
 import type { Json, State } from '../types';
+
+/**
+ * Exclude property names that could traverse or mutate object prototypes.
+ */
 export const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
+
 /**
  * Recognize plain records without accepting class instances or arrays.
  */
@@ -11,6 +16,7 @@ export function record(value: unknown): value is Record<string, unknown> {
       Object.getPrototypeOf(value) === null)
   );
 }
+
 /**
  * Check the finite JSON value vocabulary and reject unsafe keys or excessive nesting.
  *
@@ -30,12 +36,14 @@ export function json(value: unknown, depth = 0): value is Json {
     )
   );
 }
+
 /**
  * Require a plain property record containing only supported JSON values.
  */
 export function state(value: unknown): value is State {
   return record(value) && json(value);
 }
+
 /**
  * Copy validated state through JSON without sharing mutable nested values.
  *
@@ -47,6 +55,7 @@ export function clone(value: State): State {
   if (!state(decoded)) throw new Error('Invalid state.');
   return decoded;
 }
+
 /**
  * Compare transport values while keeping missing values distinct from explicit null.
  */

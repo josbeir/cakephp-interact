@@ -42,6 +42,7 @@ export class Controls {
       refreshControl(control, this.bridge.state),
     );
   }
+
   /**
    * Read the latest DOM values before submitting an action or form.
    */

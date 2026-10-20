@@ -6,6 +6,7 @@ import type { Json, State, Writable } from '../types';
  */
 export type Control =
   HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+
 /**
  * Read a native control into its writable property without sending a request.
  *

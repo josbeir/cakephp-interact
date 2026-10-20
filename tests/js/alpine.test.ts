@@ -126,6 +126,37 @@ describe('Alpine installation and morphing', () => {
     const options: unknown = fetcher.mock.calls[0]?.[1];
     expect(options).toHaveProperty('signal.aborted', true);
   });
+  it('evaluates shorthand actions with typed arguments in the CSP build', async () => {
+    install(Alpine);
+    const element = root(
+      'arguments',
+      '<button @click="$server.call(\'adjust\', -1)" :disabled="$server.busy">Decrease</button>',
+    );
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(reply(element, element.outerHTML));
+    vi.stubGlobal('fetch', fetcher);
+    document.body.append(element);
+    Alpine.initTree(element);
+    element.querySelector('button')?.click();
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+    const options: unknown = fetcher.mock.calls[0]?.[1];
+    expect(options).toHaveProperty('body');
+    if (
+      typeof options !== 'object' ||
+      options === null ||
+      !('body' in options) ||
+      typeof options.body !== 'string'
+    )
+      throw new Error('Missing JSON request body');
+    expect(JSON.parse(options.body)).toMatchObject({
+      action: 'adjust',
+      args: [-1],
+    });
+    await vi.waitFor(() =>
+      expect(element.getAttribute('aria-busy')).toBeNull(),
+    );
+  });
   it('starts the standalone CSP build and prevents a second Alpine runtime', async () => {
     delete window.Alpine;
     const start = vi.spyOn(Alpine, 'start').mockImplementation(() => {});
