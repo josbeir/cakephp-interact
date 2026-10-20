@@ -25,9 +25,7 @@ export class RequestQueue {
   constructor(
     private readonly execute: (invocation: Invocation) => Promise<void>,
     private readonly onFailure: (error: Error) => void,
-    private readonly onChange: (
-      requests: readonly Invocation[],
-    ) => void = () => {},
+    private readonly onChange: (requests: readonly Invocation[]) => void,
   ) {}
 
   /**

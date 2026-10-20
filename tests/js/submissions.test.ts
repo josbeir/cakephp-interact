@@ -158,4 +158,55 @@ describe('native submission protection', () => {
     await pending;
     expect(root.querySelector('form')?.hasAttribute('aria-busy')).toBe(false);
   });
+  it('does not transfer a removed form lock to unrelated forms or child islands', async () => {
+    const { root, form, guard, pending, complete } = setup();
+    guard.submit(form, () => pending);
+    guard.beforeMorph();
+    root.innerHTML =
+      '<form data-interact-submit="save"><button>Unkeyed</button></form><form id="other" data-interact-submit="save"><button>Other key</button></form><form id="save-form" data-interact-submit="delete"><button>Other action</button></form><div data-interact-id="child"><form data-interact-key="save-form" data-interact-submit="save"><button>Child</button></form></div>';
+    guard.refresh();
+    for (const candidate of root.querySelectorAll('form')) {
+      expect(candidate.hasAttribute('aria-busy')).toBe(false);
+      expect(candidate.querySelector('button')).toHaveProperty(
+        'disabled',
+        false,
+      );
+    }
+    complete({ ok: true });
+    await pending;
+    expect(root.querySelectorAll('button:disabled')).toHaveLength(0);
+  });
+  it('keeps application field availability independent of the submit lock', async () => {
+    const { form, button, input, guard, pending, complete } = setup();
+    guard.submit(form, () => pending);
+    input.disabled = true;
+    await Promise.resolve();
+    expect(input.disabled).toBe(true);
+    expect(button.disabled).toBe(true);
+    input.disabled = false;
+    await Promise.resolve();
+    expect(input.disabled).toBe(false);
+    expect(button.disabled).toBe(true);
+    complete({ ok: true });
+    await pending;
+    expect(input.disabled).toBe(false);
+    expect(button.disabled).toBe(false);
+  });
+  it('does not restore form or button state after ownership moves to a child island', async () => {
+    const { root, form, button, guard, pending, complete } = setup();
+    guard.submit(form, () => pending);
+    const child = root.querySelector('[data-interact-id="child"]');
+    if (!child) throw new Error('Missing child island.');
+    child.append(form);
+    form.setAttribute('aria-busy', 'child-owned');
+    await Promise.resolve();
+    complete({ ok: true });
+    await pending;
+    expect(button.disabled).toBe(true);
+    expect(form.getAttribute('aria-busy')).toBe('child-owned');
+    expect(root.querySelector('button[form]')).toHaveProperty(
+      'disabled',
+      false,
+    );
+  });
 });

@@ -148,4 +148,37 @@ describe('targeted request activity', () => {
       'failure',
     );
   });
+  it('rejects work accepted after disposal without executing or publishing it', async () => {
+    const execute = vi.fn<(invocation: Invocation) => Promise<void>>();
+    const onFailure = vi.fn<(error: Error) => void>();
+    const onChange = vi.fn<(requests: readonly Invocation[]) => void>();
+    const queue = new RequestQueue(execute, onFailure, onChange);
+    queue.dispose();
+    expect(onChange).toHaveBeenCalledExactlyOnceWith([]);
+    await expect(queue.enqueue({ action: 'save', args: [] })).rejects.toThrow(
+      'Island was removed.',
+    );
+    expect(execute).not.toHaveBeenCalled();
+    expect(onFailure).not.toHaveBeenCalled();
+    expect(onChange).toHaveBeenCalledOnce();
+  });
+  it('normalizes unknown execution failures and clears queued work before recovery', async () => {
+    const value = activity();
+    const execute = vi.fn(async () => {
+      throw 'transport failure';
+    });
+    const onFailure = vi.fn((error: Error) => {
+      expect(error.message).toBe('Island request failed.');
+      expect(value.pending()).toBe(false);
+    });
+    const queue = new RequestQueue(execute, onFailure, (requests) =>
+      value.update(requests),
+    );
+    const first = queue.enqueue({ action: 'save', args: [] });
+    const second = queue.enqueue({ action: 'remove', args: [42] });
+    await expect(first).rejects.toThrow('Island request failed.');
+    await expect(second).rejects.toThrow('Island request failed.');
+    expect(execute).toHaveBeenCalledOnce();
+    expect(onFailure).toHaveBeenCalledOnce();
+  });
 });
