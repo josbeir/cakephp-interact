@@ -15,14 +15,16 @@ collects the PHP contracts; [browser bindings](/reference/browser) and
 
 Import attributes from `Interact\Attribute` and extend `Interact\Island`.
 
-| Declaration                                        | Contract                                                       |
-| -------------------------------------------------- | -------------------------------------------------------------- |
-| `#[AsIsland('alias', element: 'Interact/name')]`   | Discover a class by alias and render a native element          |
-| `#[AsIsland('alias', template: 'Articles/index')]` | Render a native template instead                               |
-| `#[Prop]`                                          | Public typed parameter supplied on mount; not browser-writable |
-| `#[State]`                                         | Public typed transported value; only PHP can assign it         |
-| `#[State(writable: true)]`                         | Explicitly accept browser edits to this state                  |
-| `#[Action]`                                        | Expose a public instance method with typed arguments           |
+| Declaration                                        | Contract                                                                          |
+| -------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `#[AsIsland('alias', element: 'Interact/name')]`   | Discover a class by alias and render a native element                             |
+| `#[AsIsland('alias', template: 'Articles/index')]` | Render a native template instead                                                  |
+| `#[Prop]`                                          | Public typed parameter supplied on mount; not browser-writable                    |
+| `#[State]`                                         | Public typed transported value; only PHP can assign it                            |
+| `#[State(writable: true)]`                         | Explicitly accept browser edits to this state                                     |
+| `#[Upload]`                                        | Request-local nullable PSR uploaded file; snapshots contain only owned references |
+| `#[Upload(multiple: true)]`                        | Request-local ordered list of uploaded files, initialized to `[]`                 |
+| `#[Action]`                                        | Expose a public instance method with typed arguments                              |
 
 Declare exactly one `template` or `element`. Aliases start with a lowercase
 letter and then use lowercase letters, digits, `_`, `.`, or `-`.
@@ -97,6 +99,20 @@ Upload properties are request-local objects and template variables. Snapshots
 contain owned opaque references; browser metadata contains IDs, names, and sizes.
 The writable JSON state map cannot assign upload references. Successful staging
 invokes `updated()` for the affected top-level field after current authorization.
+
+Optional upload arguments:
+
+| Argument      | Default | Contract                                                                                                   |
+| ------------- | ------- | ---------------------------------------------------------------------------------------------------------- |
+| `multiple`    | `false` | Nullable `UploadedFileInterface` for one file; an array for multiple files                                 |
+| `maxFileSize` | `null`  | Positive integer bytes or a CakePHP size string such as `'1MB'`; omitted values inherit the global ceiling |
+| `maxFiles`    | `null`  | Positive integer for multiple-upload fields; omitted values inherit the global ceiling                     |
+
+Field limits cannot raise the global `Interact.uploads` ceilings. Single-file
+fields always hold at most one file; declaring `maxFiles` on them is invalid.
+The browser checks the effective limits before transferring, and PHP enforces
+actual bytes and storage capacity independently. These are staging limits;
+application file validation and permanent storage remain explicit.
 
 See [file uploads](/guide/uploads) for FormHelper examples, validation, permanent
 storage, quotas, and cleanup. Templates receive Interact's `TemporaryUpload`,

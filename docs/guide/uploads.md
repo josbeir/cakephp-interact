@@ -10,8 +10,9 @@ uploads selected files into private temporary storage; your application decides
 when and where to keep them permanently.
 
 Follow the [installation](/installation) and [first island](/getting-started)
-setup. To try the complete example, [run the demo](/examples) and open `/uploads`.
-It accepts PDF and text documents up to 1 MiB each, including up to three optional attachments.
+setup. The example below saves **one document** through a normal CakePHP entity
+and Table. Multiple files and transfer controls are optional additions later on
+this page. The broader [demo](/examples) at `/uploads` also shows attachments.
 
 ## Declare a file and bind its input
 
@@ -92,61 +93,216 @@ serves temporary files; an opaque ID alone does not grant access.
 
 ## Validate and save explicitly
 
-Use your application's CakePHP Form, Table validator, or validation service.
-The demo delegates both validation and saving to `DocumentForm`:
+Use `newEntity()` and `save()` as you would in a controller. The Table validates
+the uploaded file, and the same entity supplies FormHelper's errors.
 
-```php [Inside DocumentUpload::save()]
-$this->form = new DocumentForm();
-if (!$this->form->execute([
-    'title' => $this->title,
-    'document' => $this->document,
-    'attachments' => $this->attachments,
-])) {
-    $this->setErrors($this->form->getErrors());
+For this example, create a `documents` table with your normal migration:
 
-    return;
-}
+| Column     | Type                          |
+| ---------- | ----------------------------- |
+| `id`       | Auto-incrementing primary key |
+| `filename` | String, up to 255 characters  |
 
-$this->savedFiles = $this->form->saved();
-```
-
-Import the application's `DocumentForm` class. Keep the Form in a protected
-request-local property and return it through `viewData()` so FormHelper retains
-its validation errors. The complete source below shows these declarations.
-
-The Form uses CakePHP's `uploadedFile()` rule to check size and detected MIME
-type. The input's `accept` attribute helps the chooser; validation checks the
-actual file independently of the supplied name and media type.
-
-On success, the demo's Form calls `moveTo()` with a random filename inside its
-own private storage directory. That consumes the temporary upload and clears
-its selection on the next render. If your application copies the stream to a
-storage service instead, clear the property explicitly after successful saving:
-
-```php [After application-owned storage succeeds]
-$this->document = null;
-$this->attachments = [];
-```
-
-Application validation errors return HTTP 422 and retain staged files. Correcting
-a title and submitting again does not resend file contents. If earlier feedback
-is useful, validate the upload in the ordinary `updated()` hook.
-
-:::: details Complete island, element, application Form, and mount
+`document` is a transient entity field used for validation, **not** a database
+column. Create a writable `storage/documents` directory in your application root,
+outside the webroot. Files use the generated record ID as their storage name;
+the original filename is display metadata only.
 
 ::: code-group
 
-<<< @/../tests/test_app/src/Island/DocumentUpload.php [Island]
+```php [Island]
+<?php
+declare(strict_types=1);
 
-<<< @/../tests/test_app/templates/element/Interact/document_upload.php [Element]
+namespace App\Island;
 
-<<< @/../tests/test_app/src/Form/DocumentForm.php [Application Form]
+use Cake\Datasource\EntityInterface;
+use Cake\ORM\Locator\LocatorAwareTrait;
+use Interact\Attribute\Action;
+use Interact\Attribute\AsIsland;
+use Interact\Attribute\Upload;
+use Interact\Island;
+use Psr\Http\Message\UploadedFileInterface;
 
-```php [Page template]
+/**
+ * Creates a document record from one staged file using normal Table validation.
+ *
+ * The entity stays on the server so FormHelper can render its validation errors.
+ *
+ * Save as src/Island/DocumentUpload.php.
+ */
+#[AsIsland('document-upload', element: 'Interact/document_upload')]
+class DocumentUpload extends Island
+{
+    use LocatorAwareTrait;
+
+    #[Upload(maxFileSize: '1MB')]
+    public ?UploadedFileInterface $document = null;
+
+    protected ?EntityInterface $record = null;
+
+    /**
+     * Validate and save the record, then move the file into private storage.
+     */
+    #[Action]
+    public function save(): void
+    {
+        $documents = $this->fetchTable('Documents');
+        $this->record = $documents->newEntity([
+            'filename' => $this->document?->getClientFilename(),
+            'document' => $this->document,
+        ]);
+
+        if (!$documents->save($this->record)) {
+            $this->setErrors($this->record->getErrors() ?: ['_form' => ['Unable to save the document.']]);
+
+            return;
+        }
+
+        $this->document?->moveTo(ROOT . '/storage/documents/' . $this->record->get('id') . '.upload');
+        $this->document = null;
+    }
+
+    /**
+     * Give FormHelper the current entity, including validation or staging errors.
+     *
+     * @return array{record: EntityInterface} Request-local form context.
+     */
+    public function viewData(): array
+    {
+        $record = $this->record ?? $this->fetchTable('Documents')->newEmptyEntity();
+        $record->setErrors($record->getErrors() + $this->errors());
+
+        return ['record' => $record];
+    }
+}
+```
+
+```php [Element]
+<?php
+declare(strict_types=1);
+
+use function Cake\Core\h;
+
+/**
+ * templates/element/Interact/document_upload.php
+ *
+ * @var \Interact\View\TemplateView $this
+ * @var \Cake\Datasource\EntityInterface $record
+ * @var \Psr\Http\Message\UploadedFileInterface|null $document
+ * @var array<string, list<string>> $errors
+ */
+?>
+<?= $this->Form->create($record, [
+    'url' => false,
+    'type' => 'file',
+    'x-interact:submit' => '$server.call("save")',
+]) ?>
+    <?= $this->Form->control('document', [
+        'type' => 'file',
+        'label' => 'Document',
+        'accept' => '.pdf,.txt',
+        'x-interact:model' => 'document',
+    ]) ?>
+    <?php if ($document !== null): ?>
+        <p>Selected: <?= h($document->getClientFilename()) ?></p>
+    <?php endif; ?>
+    <?php foreach ($errors['_form'] ?? [] as $message): ?>
+        <p role="alert"><?= h($message) ?></p>
+    <?php endforeach; ?>
+    <?= $this->Form->button('Save document') ?>
+    <?php if (!$record->isNew()): ?>
+        <p role="status">Document saved.</p>
+    <?php endif; ?>
+    <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
+<?= $this->Form->end() ?>
+```
+
+```php [Table]
+<?php
+declare(strict_types=1);
+
+namespace App\Model\Table;
+
+use Cake\ORM\Table;
+use Cake\Validation\Validator;
+
+/**
+ * Validates document records and their transient uploaded-file field before saving.
+ *
+ * Save as src/Model/Table/DocumentsTable.php.
+ */
+class DocumentsTable extends Table
+{
+    /**
+     * Require a PDF or text document and keep its display name within the column size.
+     */
+    public function validationDefault(Validator $validator): Validator
+    {
+        return $validator->maxLength('filename', 255)
+            ->requirePresence('document', 'create')
+            ->notEmptyFile('document', 'Choose a document.')
+            ->uploadedFile(
+                'document',
+                ['types' => ['application/pdf', 'text/plain'], 'maxSize' => 1024 * 1024],
+                'Choose a PDF or text file up to 1 MiB.',
+            );
+    }
+}
+```
+
+```php [Mount]
 <?= $this->Interact->render('document-upload') ?>
 ```
 
 :::
+
+On validation failure, `save()` returns false and the entity keeps its errors.
+`setErrors($record->getErrors())` also supplies Interact's field feedback and
+selects HTTP 422. `viewData()` passes that same entity to FormHelper. Staging
+errors are attached there too, so they appear beside the file input.
+
+The file stays staged after validation fails. Correcting the form and submitting
+again does not resend its contents. The input's `accept` attribute helps the
+chooser; CakePHP checks the actual file's MIME type and size on the server.
+
+On success, the action saves the record and moves the file. `moveTo()` consumes
+Interact's temporary file, and clearing `$document` leaves the chooser ready for
+another selection.
+
+The private directory and storage name are application choices, not Interact
+configuration. Existing applications can keep storage in their normal Table
+behavior or service; no CakePHP `Form` class is required. If storage copies the
+stream instead of calling `moveTo()`, also clear the upload property after
+successful saving so Interact can release its staging record.
+
+:::: details Coordinate database and file-storage failures
+
+The introductory example saves the row before moving the file. If the move
+fails, that row already exists. In your application's storage workflow, decide
+how to roll back or clean up a partially completed save.
+
+For example, wrap the save and move together so a move exception also rolls back
+the database insert:
+
+```php [Inside save(), after creating the entity]
+$saved = $documents->getConnection()->transactional(function () use ($documents): bool {
+    if (!$documents->save($this->record)) {
+        return false;
+    }
+
+    $this->document?->moveTo(ROOT . '/storage/documents/' . $this->record->get('id') . '.upload');
+
+    return true;
+});
+```
+
+Handle a false `$saved` result with the same entity-error branch above, and clear
+`$document` only on success. CakePHP's `save()` is already transactional; the
+outer transaction extends that boundary around the move. It does not make the
+filesystem transactional: file cleanup after a database commit failure still
+belongs to your application. An existing storage service or Table behavior can
+own this coordination instead of the island.
 
 ::::
 
@@ -259,8 +415,8 @@ rejections appear in field errors. Transport failures pause automatic work;
 reselection or `.retry()` is explicit recovery. No transfer is retried
 automatically. Polling skips unfinished or failed selections.
 
-The demo passes staging errors into its request-local Form with `setErrors()`,
-so FormHelper displays them beside the file input too.
+The entity example above attaches staging errors in `viewData()`, so FormHelper
+displays them beside the file input too.
 
 Changing a file selection while an action waits also discards that queued action.
 Submit again when the intended selection is ready. An action already executing on
