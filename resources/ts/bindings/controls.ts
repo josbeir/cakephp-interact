@@ -1,11 +1,24 @@
 import { FormSubmissions } from './form-submissions';
-import { captureControl, refreshControl } from './control-values';
+import { captureControl, captureValue, refreshControl } from './control-values';
 import type { Control } from './control-values';
+import type { CustomModel } from './custom-model';
 import type { ModelBinding } from './model';
 import type { IslandBridge, Writable } from '../types';
+import { read } from '../state/paths';
+import { equal } from '../state/values';
 
 /**
- * Coordinates Alpine-registered native controls for one island.
+ * Share request timing and ownership across native controls and modelable wrappers.
+ */
+interface RegisteredModel {
+  binding: ModelBinding;
+  capture(enabled?: boolean): void;
+  refresh(): void;
+  custom: boolean;
+}
+
+/**
+ * Coordinates Alpine-registered native controls and custom values for one island.
  *
  * Bindings update local drafts immediately while explicit timing governs server
  * synchronization. The same registry flushes current DOM values before actions,
@@ -13,7 +26,7 @@ import type { IslandBridge, Writable } from '../types';
  */
 export class Controls {
   private readonly lifetime = new AbortController();
-  private readonly models = new Map<Control, ModelBinding>();
+  private readonly models = new Map<HTMLElement, RegisteredModel>();
   private readonly submissions: FormSubmissions;
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -37,15 +50,81 @@ export class Controls {
    * Register a native model for its Alpine directive's lifetime.
    */
   bindModel(control: Control, binding: ModelBinding): () => void {
+    return this.register(control, {
+      binding,
+      custom: false,
+      capture: () =>
+        captureControl(
+          control,
+          binding.path,
+          this.bridge.state,
+          this.writable(),
+        ),
+      refresh: () => refreshControl(control, binding.path, this.bridge.state),
+    });
+  }
+
+  /**
+   * Bind a widget's exposed value while retaining normal draft and timing behavior.
+   */
+  bindCustomModel(
+    element: HTMLElement,
+    binding: ModelBinding,
+    source: CustomModel,
+  ): () => void {
+    return this.register(element, {
+      binding,
+      custom: true,
+      capture: (enabled = true) => {
+        // Keep reactive dependencies even while a wrapper is disabled.
+        const value = source.read();
+        if (!enabled) return;
+        if (value === undefined) {
+          if (read(this.bridge.state, binding.path) === undefined) return;
+          throw new Error('Custom models require JSON values.');
+        }
+        if (equal(value, read(this.bridge.state, binding.path))) return;
+        captureValue(value, binding.path, this.bridge.state, this.writable());
+      },
+      refresh: () => {
+        const value = read(this.bridge.state, binding.path);
+        if (!equal(source.read(), value)) source.write(value);
+      },
+    });
+  }
+
+  /**
+   * Capture reactive widget edits without echoing accepted server values as requests.
+   */
+  customChanged(element: HTMLElement): void {
+    const model = this.models.get(element);
+    if (!model || !this.owns(element)) return;
+    try {
+      const before = read(this.bridge.state, model.binding.path);
+      model.capture(!this.disabled(element));
+      if (!equal(before, read(this.bridge.state, model.binding.path)))
+        this.schedule(
+          model.binding,
+          model.binding.timing === 'change' ? 'change' : 'input',
+        );
+    } catch (cause: unknown) {
+      this.onFailure(cause);
+    }
+  }
+
+  /**
+   * Register one source and release its unsent synchronization when removed.
+   */
+  private register(control: HTMLElement, model: RegisteredModel): () => void {
     if (this.models.has(control))
       throw new Error('Use one x-interact:model binding per control.');
-    this.models.set(control, binding);
-    refreshControl(control, binding.path, this.bridge.state);
+    model.refresh();
+    this.models.set(control, model);
     return () => {
-      if (this.models.get(control) !== binding) return;
+      if (this.models.get(control) !== model) return;
       this.models.delete(control);
-      clearTimeout(this.timers.get(binding.path));
-      this.timers.delete(binding.path);
+      clearTimeout(this.timers.get(model.binding.path));
+      this.timers.delete(model.binding.path);
     };
   }
 
@@ -84,8 +163,7 @@ export class Controls {
    */
   refresh(): void {
     this.submissions.refresh();
-    for (const [control, binding] of this.controls())
-      refreshControl(control, binding.path, this.bridge.state);
+    for (const [, model] of this.controls()) model.refresh();
   }
 
   /**
@@ -96,11 +174,19 @@ export class Controls {
   }
 
   /**
-   * Capture native DOM values even when a control has not emitted its edit event.
+   * Capture native and custom values even before their edit effects have run.
    */
   captureAll(): void {
-    for (const [control, binding] of this.controls())
-      captureControl(control, binding.path, this.bridge.state, this.writable());
+    for (const [, model] of this.controls()) model.capture();
+  }
+
+  /**
+   * Flush custom values before reconciliation without replacing native event-captured drafts.
+   */
+  captureCustom(): void {
+    for (const [, model] of this.controls()) {
+      if (model.custom) model.capture();
+    }
   }
 
   /**
@@ -124,6 +210,30 @@ export class Controls {
   private handle(event: Event): void {
     const control = event.target;
     if (
+      event.type === 'focusout' &&
+      control instanceof HTMLElement &&
+      this.owns(control)
+    ) {
+      for (const [element, model] of this.controls()) {
+        if (
+          model.custom &&
+          element.contains(control) &&
+          !(
+            event instanceof FocusEvent &&
+            event.relatedTarget instanceof Node &&
+            element.contains(event.relatedTarget)
+          )
+        ) {
+          try {
+            model.capture();
+            this.schedule(model.binding, 'focusout');
+          } catch (cause: unknown) {
+            this.onFailure(cause);
+          }
+        }
+      }
+    }
+    if (
       !(
         control instanceof HTMLInputElement ||
         control instanceof HTMLSelectElement ||
@@ -133,25 +243,36 @@ export class Controls {
       control.disabled
     )
       return;
-    const binding = this.models.get(control);
-    if (!binding) return;
+    const model = this.models.get(control);
+    if (!model || model.custom) return;
     try {
-      captureControl(control, binding.path, this.bridge.state, this.writable());
+      model.capture();
     } catch (cause: unknown) {
       this.onFailure(cause);
       return;
     }
+    this.schedule(
+      model.binding,
+      event.type,
+      event instanceof InputEvent && event.isComposing,
+    );
+  }
+
+  /**
+   * Schedule native and custom edits through the same synchronization policy.
+   */
+  private schedule(
+    binding: ModelBinding,
+    event: string,
+    composing = false,
+  ): void {
     if (this.bridge.paused) return;
     if (
-      (binding.timing === 'blur' && event.type === 'focusout') ||
-      (binding.timing === 'change' && event.type === 'change')
+      (binding.timing === 'blur' && event === 'focusout') ||
+      (binding.timing === 'change' && event === 'change')
     )
       void this.bridge.sync();
-    if (
-      binding.timing === 'live' &&
-      event.type === 'input' &&
-      !(event instanceof InputEvent && event.isComposing)
-    ) {
+    if (binding.timing === 'live' && event === 'input' && !composing) {
       clearTimeout(this.timers.get(binding.path));
       this.timers.set(
         binding.path,
@@ -166,9 +287,9 @@ export class Controls {
   /**
    * Select enabled registered models without crossing nested island ownership.
    */
-  private controls(): [Control, ModelBinding][] {
+  private controls(): [HTMLElement, RegisteredModel][] {
     return [...this.models].filter(
-      ([control]) => this.owns(control) && !control.disabled,
+      ([control]) => this.owns(control) && !this.disabled(control),
     );
   }
 
@@ -180,5 +301,12 @@ export class Controls {
       this.root.contains(element) &&
       element.closest('[data-interact-id]') === this.root
     );
+  }
+
+  /**
+   * Honor native disabled controls and explicitly disabled custom model wrappers.
+   */
+  private disabled(element: HTMLElement): boolean {
+    return element.hasAttribute('disabled');
   }
 }

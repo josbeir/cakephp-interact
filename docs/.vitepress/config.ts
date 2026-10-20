@@ -87,10 +87,12 @@ export default defineConfig({
         text: 'Build interactive pages',
         items: [
           { text: 'State and input binding', link: '/guide/state' },
+          { text: 'Alpine and $server', link: '/guide/alpine' },
           { text: 'Actions and feedback', link: '/guide/actions' },
           { text: 'Search and pagination', link: '/guide/search' },
           { text: 'Polling', link: '/guide/polling' },
           { text: 'File uploads', link: '/guide/uploads' },
+          { text: 'JavaScript widgets', link: '/guide/javascript-widgets' },
           { text: 'Forms and validation', link: '/guide/forms' },
           { text: 'Failures and recovery', link: '/guide/failures' },
           { text: 'Nested islands and events', link: '/guide/nesting' },

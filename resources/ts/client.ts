@@ -5,6 +5,7 @@ import type { UploadJob, Uploader } from './uploads/types';
 import { Controls } from './bindings/controls';
 import type { Control } from './bindings/control-values';
 import type { ModelBinding } from './bindings/model';
+import type { CustomModel } from './bindings/custom-model';
 import type { PollBinding } from './bindings/poll';
 import { readRoot } from './dom/markup';
 import { preserveSelection } from './dom/selection';
@@ -132,6 +133,24 @@ export class IslandClient {
     if (control instanceof HTMLInputElement && control.type === 'file')
       return this.uploads.bind(control, binding);
     return this.controls.bindModel(control, binding);
+  }
+
+  /**
+   * Connect an application-owned Alpine value to the existing model coordinator.
+   */
+  bindCustomModel(
+    element: HTMLElement,
+    binding: ModelBinding,
+    source: CustomModel,
+  ): () => void {
+    return this.controls.bindCustomModel(element, binding, source);
+  }
+
+  /**
+   * Capture an observed custom value using the same failure feedback as native edits.
+   */
+  customChanged(element: HTMLElement): void {
+    this.controls.customChanged(element);
   }
 
   /**
@@ -367,6 +386,7 @@ export class IslandClient {
     replacement: HTMLElement,
     upload?: UploadJob,
   ): void {
+    this.controls.captureCustom();
     const newer = changedWritable(this.bridge.state, sent, this.writable);
     const restoreSelection = preserveSelection(this.root);
     const previous = {

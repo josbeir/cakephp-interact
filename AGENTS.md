@@ -18,6 +18,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Use `x-interact:model` with synchronization modifiers and `x-interact:submit` for native form protection. Actions use `$server.call()` in Alpine expressions; ordinary events and presentation use Alpine directives. Keep generated `data-interact-*` metadata runtime-owned, without parallel public binding attributes.
 - Declare files with `#[Upload]`; keep PSR file objects request-local and transport only owned opaque references. Render accepted files in PHP and use `$server.uploads` for transfer feedback and controls. Image processing and preview URLs belong to the application.
 - Use `x-interact:poll` for managed periodic refreshes. Keep refreshes and actions on the existing `$server` bridge, and use Alpine conditions for application-controlled pauses or completion.
+- Use `x-interact:ignore` for widget-owned DOM and `x-modelable` with `x-interact:model` for custom values. Keep library instances outside reactive state, manage their lifecycle through application Alpine wrappers, and leave server-rendered errors outside protected regions.
 - Use Alpine shorthand consistently in code and documentation: `@event` for event listeners and `:attribute` for bindings.
 
 ## Usability and cognitive load

@@ -10,4 +10,5 @@
 /tests/test_app/tmp/
 /tests/test_app/logs/
 /webroot/js/
+/tests/test_app/webroot/js/
 .vitest/

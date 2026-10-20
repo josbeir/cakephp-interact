@@ -43,6 +43,21 @@ export function captureControl(
   }
   if (control instanceof HTMLSelectElement && control.multiple)
     value = Array.from(control.selectedOptions, (option) => option.value);
+  captureValue(value, name, current, fields);
+}
+
+/**
+ * Apply native numeric conversion and writable-path checks to any model source.
+ */
+export function captureValue(
+  value: Json,
+  name: string,
+  current: State,
+  fields: Writable,
+): void {
+  const first = path(name)[0];
+  const field = first === undefined ? undefined : fields[first];
+  if (!field) throw new Error('This state is not writable.');
   if (field.type === 'int' || field.type === 'float') {
     if (value === '' && field.nullable) value = null;
     else if (

@@ -26,3 +26,7 @@ declare(strict_types=1);
     <?= $this->Interact->render('server-clock') ?>
     <?= $this->Interact->render('job-progress') ?>
 </div>
+<div class="widget-examples">
+    <?= $this->Interact->render('morph-protection') ?>
+    <?= $this->Interact->render('enhanced-select') ?>
+</div>

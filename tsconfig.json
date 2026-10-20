@@ -13,5 +13,11 @@
     "skipLibCheck": true,
     "types": ["node", "vite-plus/test/globals"]
   },
-  "include": ["resources/ts", "tests/js", "tests/browser", "*.ts"]
+  "include": [
+    "resources/ts",
+    "tests/js",
+    "tests/browser",
+    "tests/test_app/resources/ts",
+    "*.ts"
+  ]
 }

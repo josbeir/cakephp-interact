@@ -26,6 +26,12 @@ export function morphRoot(Alpine: Alpine): Patcher {
             node.getAttribute('data-interact-id')
         )
           skip();
+        else if (
+          node instanceof Element &&
+          node !== root &&
+          node.hasAttribute(Alpine.prefixed('interact:ignore'))
+        )
+          skip();
       },
     });
   };

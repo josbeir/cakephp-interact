@@ -5,8 +5,9 @@ description: Alpine model and submission directives, the server bridge, scheduli
 
 # Browser API
 
-The [state guide](/guide/state) and [action guide](/guide/actions) show practical
-usage. All bindings operate inside an island created by `InteractHelper`.
+The [Alpine and `$server` guide](/guide/alpine), [state guide](/guide/state), and
+[action guide](/guide/actions) show practical usage. All bindings operate inside
+an island created by `InteractHelper`.
 
 <span id="native-attributes"></span>
 
@@ -24,6 +25,7 @@ Use Alpine `@event`, `:attribute`, `x-show`, and `:class` for events and present
 | `x-interact:model.change` | Synchronize on the native change event                       |
 | `x-interact:submit`       | Protect native submission while its expression settles       |
 | `x-interact:poll`         | Refresh periodically, or evaluate a polling expression       |
+| `x-interact:ignore`       | Preserve an element and its subtree during server morphs     |
 
 For example, bind `title` with a 400 ms typing delay:
 
@@ -53,6 +55,32 @@ values. File inputs bind to explicitly declared uploads; see [File transfers](#f
 A directive must be inside an island.
 Invalid declarations fail during Alpine initialization; runtime expression and
 capture failures use the island's normal failure feedback.
+
+## Widget-owned DOM and custom models
+
+`x-interact:ignore` skips attribute and descendant morphing for an existing element.
+Alpine initialization and local reactivity still run. Removal and replacement by
+a changed key or element type remain possible. The directive accepts no expression
+or modifiers and must be below an island root. Wrap widget-owned markup only;
+keep server-rendered errors and other islands outside it. This is independent of
+Alpine's `x-ignore`, which prevents Alpine initialization.
+
+An element exposing `x-modelable="value"` can use `x-interact:model="country"`
+to connect its local value to writable island state. The modelable expression
+must be a property path. Values must be JSON-compatible; library instances and
+DOM nodes belong outside reactive state. Do not combine this with `x-model`.
+
+Default bindings defer synchronization. For custom models, `.change` synchronizes
+exposed-value changes, `.live` debounces them, and `.blur` waits until focus leaves
+the entire wrapper. Accepted server values update the wrapper without another
+request. Custom values are captured synchronously before requests and response
+reconciliation, retaining newer drafts. A `disabled` wrapper is excluded from
+capture and automatic synchronization; disabling the actual widget remains the
+application's responsibility.
+
+Use Alpine `init()` and `destroy()` for application-owned library instances. See
+[JavaScript widgets](/guide/javascript-widgets) for the visual comparison and a
+complete enhanced-select example.
 
 ## Polling
 
