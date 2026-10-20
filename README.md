@@ -34,7 +34,7 @@ class ArticleList extends Island
 
 The initial HTML is server-rendered. Later requests reconstruct the island, authorize the current request, and morph only its region. Alpine handles local interactions. Ordinary CakePHP routing and navigation remain unchanged.
 
-See [getting started](docs/getting-started.md), [API and lifecycle](docs/api.md), [security](docs/security.md), and [contributing](docs/contributing.md).
+Read the [documentation](https://josbeir.github.io/cakephp-interact/), or browse [getting started](docs/getting-started.md), [API and lifecycle](docs/api.md), [security](docs/security.md), and [contributing](docs/contributing.md) in this repository.
 
 ## Run the demo
 

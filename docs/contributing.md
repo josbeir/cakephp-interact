@@ -67,6 +67,8 @@ npm run package:composer
 npm pack --dry-run
 ```
 
-The docs use the `/cakephp-interact/` Pages base. Package builds supply an npm module with declarations and a standalone `webroot/js/runtime.js` for Composer users. The `package:composer` command builds a reproducible archive under `build/releases/` with PHP source, the standalone bundle, and third-party licenses. Source checkouts require a browser build. Publishing to Packagist must use a distribution containing those generated assets; a default GitHub source archive does not contain them. The workflow validates packages but does not publish them.
+The docs use the `/cakephp-interact/` Pages base and are published at [josbeir.github.io/cakephp-interact](https://josbeir.github.io/cakephp-interact/). The Documentation workflow builds documentation changes on pull requests and pushes to `main`. Only `main` can deploy to the `github-pages` environment; pull requests build without deployment permissions. A manual workflow run can also publish `main`. Repository Pages settings must use **GitHub Actions** as the source.
+
+Package builds supply an npm module with declarations and a standalone `webroot/js/runtime.js` for Composer users. The `package:composer` command builds a reproducible archive under `build/releases/` with PHP source, the standalone bundle, and third-party licenses. Source checkouts require a browser build. Publishing to Packagist must use a distribution containing those generated assets; a default GitHub source archive does not contain them. The Quality workflow validates packages but does not publish them.
 
 Report actual checks and unavailable tooling. Do not commit installed dependencies, reports, caches, credentials, or temporary outputs.
