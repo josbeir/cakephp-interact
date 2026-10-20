@@ -1,3 +1,4 @@
+import type { Uploader } from '../../resources/ts/uploads/types';
 import Alpine from '@alpinejs/csp';
 import { IslandClient } from '../../resources/ts/client';
 import { registerBindings } from '../../resources/ts/bindings/alpine';
@@ -23,6 +24,7 @@ export function mountClient(
   patch: Patcher = (from, to) => {
     from.innerHTML = to.innerHTML;
   },
+  uploader?: Uploader,
 ): IslandClient {
   root.setAttribute('x-data', '{}');
   const client = new IslandClient(
@@ -39,6 +41,7 @@ export function mountClient(
     },
     Alpine.reactive,
     fetcher,
+    uploader,
   );
   clients.set(root, client);
   Alpine.initTree(root);

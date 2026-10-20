@@ -3,10 +3,15 @@ declare(strict_types=1);
 
 namespace Interact\Runtime;
 
+use Interact\Discovery\Definition;
 use Interact\Discovery\Registry;
+use Interact\Island;
 use Interact\IslandContext;
 use Interact\Rendering\RendererInterface;
 use Interact\Security\SnapshotCodec;
+use Interact\Upload\UploadManager;
+use Interact\Upload\UploadOperation;
+use InvalidArgumentException;
 
 /**
  * Coordinates initial mounts and verified updates through fresh island instances.
@@ -33,9 +38,10 @@ class Runtime
         protected readonly SnapshotCodec $snapshots,
         protected readonly RendererInterface $renderer,
         protected readonly State $state = new State(),
+        protected readonly UploadManager $uploads = new UploadManager(),
     ) {
         $this->stack = new RenderStack();
-        $this->html = new HtmlRenderer($renderer, $snapshots, $this->stack, $this->state);
+        $this->html = new HtmlRenderer($renderer, $snapshots, $this->stack, $this->state, $this->uploads);
         $this->actions = new ActionInvoker();
         $this->hydrator = new Hydrator($this->state);
     }
@@ -83,8 +89,27 @@ class Runtime
         $this->actions->validate($definition, $input->action, $input->arguments);
         $island = $this->registry->create($definition);
         $this->hydrator->restore($island, $definition, $data->state);
+
+        return $this->updateIsland($island, $definition, $data, $input, $context);
+    }
+
+    /**
+     * Apply verified drafts and execute only after current access and upload availability checks.
+     */
+    protected function updateIsland(
+        Island $island,
+        Definition $definition,
+        SnapshotData $data,
+        UpdateRequest $input,
+        IslandContext $context,
+    ): Result {
         $paths = $this->state->apply($island, $definition, $input->updates);
-        $island->authorize($context);
+        $uploadPaths = $this->authorizeUploads($island, $definition, $data, $input, $context);
+        if ($uploadPaths === null) {
+            return $this->html->render($island, $definition, $data, $context);
+        }
+
+        $paths = [...$paths, ...$uploadPaths];
         if ($paths !== []) {
             $island->updated($paths);
         }
@@ -92,5 +117,41 @@ class Runtime
         $this->actions->invoke($definition, $island, $input);
 
         return $this->html->render($island, $definition, $data, $context);
+    }
+
+    /**
+     * Check current access and return upload changes, or feedback that blocks application execution.
+     *
+     * @return list<string>|null Changed upload fields, or null when reselection is required.
+     */
+    protected function authorizeUploads(
+        Island $island,
+        Definition $definition,
+        SnapshotData $data,
+        UpdateRequest $input,
+        IslandContext $context,
+    ): ?array {
+        $uploadErrors = $this->uploads->restore($island, $definition, $data, $context);
+        $island->authorize($context);
+        if ($uploadErrors !== []) {
+            $island->setErrors($uploadErrors);
+
+            return null;
+        }
+
+        if ($input->upload instanceof UploadOperation) {
+            $field = $this->uploads->apply($island, $definition, $data, $context, $input->upload);
+            if ($field === null) {
+                return null;
+            }
+
+            return [$field];
+        }
+
+        if ($context->request->getUploadedFiles() !== []) {
+            throw new InvalidArgumentException('Unexpected incoming upload.');
+        }
+
+        return [];
     }
 }

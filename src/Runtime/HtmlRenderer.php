@@ -8,6 +8,7 @@ use Interact\Island;
 use Interact\IslandContext;
 use Interact\Rendering\RendererInterface;
 use Interact\Security\SnapshotCodec;
+use Interact\Upload\UploadManager;
 use InvalidArgumentException;
 
 /**
@@ -26,6 +27,7 @@ class HtmlRenderer
         protected readonly SnapshotCodec $snapshots,
         protected readonly RenderStack $stack,
         protected readonly State $state = new State(),
+        protected readonly UploadManager $uploads = new UploadManager(),
     ) {
     }
 
@@ -42,11 +44,15 @@ class HtmlRenderer
         try {
             $state = $this->state->export($island, $definition);
             $data = $island->viewData();
-            if (array_intersect_key($data, $state + ['errors' => true]) !== []) {
+            $uploads = $this->uploads->export($island, $definition, $identity, $context);
+            if (array_intersect_key($data, $state + $uploads['values'] + ['errors' => true]) !== []) {
                 throw new InvalidArgumentException('View data cannot shadow declared state, props, or errors.');
             }
 
-            $content = $this->renderer->render($definition, $state + ['errors' => $island->errors()] + $data);
+            $content = $this->renderer->render(
+                $definition,
+                $state + $uploads['values'] + ['errors' => $island->errors()] + $data,
+            );
             $snapshot = $this->snapshots->seal(
                 [
                     'alias' => $definition->declaration->name,
@@ -54,6 +60,7 @@ class HtmlRenderer
                     'key' => $identity->key,
                     'state' => $state,
                     'children' => $frame->children,
+                    ...($uploads['references'] === [] ? [] : ['uploads' => $uploads['references']]),
                 ],
                 $context->binding(),
                 $context->scope,
@@ -67,15 +74,15 @@ class HtmlRenderer
                 $writable[$name] = ['type' => $property->type, 'nullable' => $property->nullable];
             }
 
-            $attributes = [
-                'x-data' => 'interact',
-                'data-interact-id' => $identity->id,
-                'data-interact-snapshot' => $snapshot,
-                'data-interact-state' => json_encode((object)$state, JSON_THROW_ON_ERROR | JSON_HEX_TAG),
-                'data-interact-writable' => json_encode((object)$writable, JSON_THROW_ON_ERROR),
-                'data-interact-endpoint' => $context->endpoint,
-                'data-interact-csrf' => (string)$context->request->getAttribute('csrfToken', ''),
+            $values = [
+                'state' => $state,
+                'uploads' => $uploads['metadata'],
+                'writable' => $writable,
+                'errors' => $island->errors(),
+                'events' => $island->errors() === [] ? $island->events() : [],
             ];
+            Values::validate($values['events']);
+            $attributes = $this->attributes(new Result($identity->id, '', $snapshot, $values), $context);
             $tag = $definition->declaration->tag;
             $html = '<' . $tag;
             foreach ($attributes as $name => $value) {
@@ -83,17 +90,36 @@ class HtmlRenderer
             }
 
             $html .= '>' . $content . '</' . $tag . '>';
-            $events = $island->errors() === [] ? $island->events() : [];
-            Values::validate($events);
 
-            return new Result($identity->id, $html, $snapshot, [
-                'state' => $state,
-                'writable' => $writable,
-                'errors' => $island->errors(),
-                'events' => $events,
-            ]);
+            return new Result($identity->id, $html, $snapshot, $values);
         } finally {
             $this->stack->pop();
         }
+    }
+
+    /**
+     * Encode generated browser metadata without exposing request-local file objects.
+     *
+     * @return array<string, string> Escaped by the root-markup builder.
+     */
+    protected function attributes(Result $result, IslandContext $context): array
+    {
+        $attributes = [
+            'x-data' => 'interact',
+            'data-interact-id' => $result->id,
+            'data-interact-snapshot' => $result->snapshot,
+            'data-interact-state' => json_encode((object)$result->state, JSON_THROW_ON_ERROR | JSON_HEX_TAG),
+            'data-interact-writable' => json_encode((object)$result->writable, JSON_THROW_ON_ERROR),
+            'data-interact-endpoint' => $context->endpoint,
+            'data-interact-csrf' => (string)$context->request->getAttribute('csrfToken', ''),
+        ];
+        if ($result->uploads !== []) {
+            $attributes['data-interact-uploads'] = json_encode(
+                $result->uploads,
+                JSON_THROW_ON_ERROR | JSON_HEX_TAG,
+            );
+        }
+
+        return $attributes;
     }
 }

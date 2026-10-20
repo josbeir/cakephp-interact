@@ -19,6 +19,8 @@ use Interact\Http\FailureResponder;
 use Interact\Http\UpdateErrorListener;
 use Interact\Runtime\Factory;
 use Interact\Security\SnapshotCodec;
+use Interact\Upload\UploadManager;
+use Interact\Upload\UploadServices;
 
 /**
  * Connects island discovery, dependency construction, routing, and view integration.
@@ -78,8 +80,10 @@ class InteractPlugin extends BasePlugin
             );
         }
 
+        new UploadServices()->register($container);
         if (!$container->hasDefinition(Factory::class)) {
-            $container->addShared(Factory::class)->addArguments([Registry::class, SnapshotCodec::class]);
+            $container->addShared(Factory::class)
+                ->addArguments([Registry::class, SnapshotCodec::class, UploadManager::class]);
         }
     }
 

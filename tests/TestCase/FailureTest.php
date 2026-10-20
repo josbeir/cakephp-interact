@@ -110,9 +110,9 @@ class FailureTest extends TestCase
         foreach ([
             [],
             ['request' => $request],
-            ['request' => $request->withParam('plugin', null), 'exception' => new RuntimeException()],
-            ['request' => $request->withParam('controller', 'Articles'), 'exception' => new RuntimeException()],
-            ['request' => $request->withParam('action', 'index'), 'exception' => new RuntimeException()],
+            ['request' => $request->withParam('interactScope', null), 'exception' => new RuntimeException()],
+            ['request' => $request->withParam('interactScope', 42), 'exception' => new RuntimeException()],
+            ['request' => $request->withParam('interactScope', false), 'exception' => new RuntimeException()],
         ] as $data) {
             $ignored = new Event('Exception.beforeRender', data: $data);
             $listener->render($ignored);
@@ -149,6 +149,7 @@ class FailureTest extends TestCase
             'plugin' => 'Interact',
             'controller' => 'Update',
             'action' => 'update',
+            'interactScope' => 'default',
         ]]);
         $exception = new RuntimeException('Private diagnostic');
         $trap = $this->createMock(ExceptionTrap::class);

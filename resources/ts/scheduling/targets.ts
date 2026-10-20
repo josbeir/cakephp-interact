@@ -60,6 +60,8 @@ export function canonical(value: Json): string {
  */
 export function matches(query: RequestTarget, invocation: Invocation): boolean {
   return (
+    (invocation.upload === undefined ||
+      (query.action === undefined && query.args === undefined)) &&
     (query.action === undefined || query.action === invocation.action) &&
     (query.args === undefined ||
       canonical(query.args) === canonical(invocation.args))

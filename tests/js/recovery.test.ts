@@ -277,9 +277,9 @@ describe('explicit failure recovery', () => {
   });
   it('reports invalid control capture without sending and stays blocked when feedback is dismissed', async () => {
     const element = root();
-    input(element).type = 'file';
     const fetcher = vi.fn<Fetcher>();
     const value = client(element, fetcher);
+    input(element).type = 'file';
     await expect(value.bridge.sync()).resolves.toMatchObject({
       error: { code: 'client_error', status: null },
     });

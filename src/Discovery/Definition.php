@@ -7,7 +7,9 @@ use Interact\Attribute\Action;
 use Interact\Attribute\AsIsland;
 use Interact\Attribute\Prop;
 use Interact\Attribute\State;
+use Interact\Attribute\Upload;
 use Interact\Island;
+use Interact\Upload\UploadProperty;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionMethod;
@@ -26,6 +28,11 @@ readonly class Definition
      * @var array<string, \Interact\Discovery\Property> Props and transported state.
      */
     public array $properties;
+
+    /**
+     * @var array<string, UploadProperty> Request-local file declarations, excluded from JSON state.
+     */
+    public array $uploads;
 
     /**
      * @var array<string, \ReflectionMethod> Explicitly exposed application methods.
@@ -47,11 +54,17 @@ readonly class Definition
 
         $this->declaration = $attributes[0]->newInstance();
         $properties = [];
+        $uploads = [];
         foreach ($reflection->getProperties() as $property) {
             $prop = $property->getAttributes(Prop::class);
             $state = $property->getAttributes(State::class);
-            if ($prop !== [] && $state !== []) {
-                throw new InvalidArgumentException('A property cannot be both a prop and state.');
+            $upload = $property->getAttributes(Upload::class);
+            if ((int)($prop !== []) + (int)($state !== []) + (int)($upload !== []) > 1) {
+                throw new InvalidArgumentException('A property can declare only one of Prop, State, or Upload.');
+            }
+
+            if ($upload !== []) {
+                $uploads[$property->getName()] = new UploadProperty($property, $upload[0]->newInstance());
             }
 
             if ($prop !== [] || $state !== []) {
@@ -83,6 +96,7 @@ readonly class Definition
         }
 
         $this->properties = $properties;
+        $this->uploads = $uploads;
         $this->actions = $actions;
     }
 }

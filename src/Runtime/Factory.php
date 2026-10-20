@@ -8,6 +8,7 @@ use Interact\Discovery\Registry;
 use Interact\IslandContext;
 use Interact\Rendering\PhpRenderer;
 use Interact\Security\SnapshotCodec;
+use Interact\Upload\UploadManager;
 use Interact\View\Helper\InteractHelper;
 use Interact\View\TemplateView;
 
@@ -22,8 +23,11 @@ class Factory
     /**
      * Reuse immutable signing configuration and declaration discovery, not island instances.
      */
-    public function __construct(protected readonly Registry $registry, protected readonly SnapshotCodec $snapshots)
-    {
+    public function __construct(
+        protected readonly Registry $registry,
+        protected readonly SnapshotCodec $snapshots,
+        protected readonly UploadManager $uploads = new UploadManager(),
+    ) {
     }
 
     /**
@@ -32,7 +36,7 @@ class Factory
     public function create(View $host, IslandContext $context): Runtime
     {
         $view = $this->createView($host);
-        $runtime = new Runtime($this->registry, $this->snapshots, new PhpRenderer($view));
+        $runtime = new Runtime($this->registry, $this->snapshots, new PhpRenderer($view), uploads: $this->uploads);
         if ($view->helpers()->has('Interact')) {
             $helper = $view->helpers()->get('Interact');
             assert(

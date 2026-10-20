@@ -1,3 +1,6 @@
+import { UploadFields } from './uploads/fields';
+import { postUpload } from './uploads/transport';
+import type { UploadJob, Uploader } from './uploads/types';
 import { Controls } from './bindings/controls';
 import type { Control } from './bindings/control-values';
 import type { ModelBinding } from './bindings/model';
@@ -46,6 +49,7 @@ export class IslandClient {
   private disposed = false;
   private readonly activity: { paused: boolean };
   private poller: Poller | undefined;
+  private readonly uploads: UploadFields;
 
   /**
    * Initialize the bridge and request-scoped collaborators from PHP-rendered metadata.
@@ -60,6 +64,7 @@ export class IslandClient {
     private readonly patch: Patcher,
     reactive: <T extends object>(value: T) => T,
     private readonly fetcher: Fetcher = (url, init) => fetch(url, init),
+    private readonly uploader: Uploader = postUpload,
   ) {
     this.requests = new RequestActivity(reactive);
     this.activity = reactive({ paused: false });
@@ -68,8 +73,20 @@ export class IslandClient {
     this.snapshot = this.metadata.snapshot;
     this.baseline = clone(this.metadata.state);
     this.writable = this.metadata.writable;
-    const dirty = () => !equal(this.bridge.state, this.baseline);
+    this.uploads = new UploadFields(
+      this.metadata.uploads,
+      reactive,
+      (job) => this.request(null, [], job),
+      (element) =>
+        this.root.contains(element) &&
+        element.closest('[data-interact-id]') === this.root,
+    );
+    const dirty = () =>
+      this.uploads.pending() ||
+      this.uploads.blocked() ||
+      !equal(this.bridge.state, this.baseline);
     this.bridge = reactive({
+      uploads: this.uploads.fields,
       state: this.metadata.state,
       busy: false,
       pending: (selector, ...args) => this.requests.pending(selector, ...args),
@@ -95,6 +112,9 @@ export class IslandClient {
       (invocation) => this.execute(invocation),
       (error) => this.failed(error),
       (requests) => this.requests.update(requests),
+      (error) =>
+        error instanceof IslandRequestError &&
+        error.failure.code === 'cancelled',
     );
     this.controls = new Controls(
       root,
@@ -108,6 +128,8 @@ export class IslandClient {
    * Register a native model for the lifetime managed by its Alpine directive.
    */
   bindModel(control: Control, binding: ModelBinding): () => void {
+    if (control instanceof HTMLInputElement && control.type === 'file')
+      return this.uploads.bind(control, binding);
     return this.controls.bindModel(control, binding);
   }
 
@@ -156,6 +178,7 @@ export class IslandClient {
     this.disposed = true;
     this.lifetime.abort();
     this.poller?.dispose();
+    this.uploads.dispose();
     this.controls.dispose();
     this.queue.dispose();
     this.requests.dispose();
@@ -189,9 +212,10 @@ export class IslandClient {
   private async request(
     action: string | null,
     args: Json[],
+    upload?: UploadJob,
   ): Promise<RequestResult> {
     try {
-      await this.enqueue(action, args);
+      await this.enqueue(action, args, upload);
       if (!this.disposed) return { ok: true };
     } catch (cause: unknown) {
       if (!this.disposed) {
@@ -208,7 +232,11 @@ export class IslandClient {
   /**
    * Flush scheduled debounce timers before routing all bridge calls through one queue.
    */
-  private enqueue(action: string | null, args: Json[]): Promise<void> {
+  private enqueue(
+    action: string | null,
+    args: Json[],
+    upload?: UploadJob,
+  ): Promise<void> {
     this.controls.clearPending();
     if (this.disposed) return Promise.reject(new Error('Island was removed.'));
     if (this.bridge.paused && this.bridge.error?.recovery !== 'retry')
@@ -220,6 +248,7 @@ export class IslandClient {
     try {
       args = copyArguments(args);
       this.controls.captureAll();
+      if (!upload) this.uploads.captureAll();
     } catch (cause: unknown) {
       const error = requestError('client_error', null, cause);
       this.failed(error);
@@ -227,39 +256,76 @@ export class IslandClient {
     }
     this.bridge.error = null;
     this.activity.paused = false;
-    return this.queue.enqueue({ action, args });
+    return this.queue.enqueue({
+      action,
+      args,
+      ...(upload ? { upload } : { uploadRevision: this.uploads.revision }),
+    });
   }
 
   /**
    * Submit the current draft and apply a verified response while the island still exists.
    */
   private async execute(invocation: Invocation): Promise<void> {
+    const upload = invocation.upload;
+    if (
+      upload
+        ? !this.uploads.start(upload)
+        : this.uploads.blocked() ||
+          invocation.uploadRevision !== this.uploads.revision
+    )
+      throw requestError('cancelled', null);
     this.bridge.busy = true;
     this.root.setAttribute('aria-busy', 'true');
     try {
       const sent = clone(this.bridge.state);
-      const result = await postUpdate(
-        this.metadata,
-        {
-          version: 1,
-          snapshot: this.snapshot,
-          updates: changedWritable(sent, this.baseline, this.writable),
-          ...invocation,
-        },
-        this.lifetime.signal,
-        this.fetcher,
-      );
+      const payload = {
+        version: 1 as const,
+        snapshot: this.snapshot,
+        updates: changedWritable(sent, this.baseline, this.writable),
+        action: invocation.action,
+        args: invocation.args,
+        ...(upload
+          ? {
+              upload: {
+                kind: upload.kind,
+                field: upload.field,
+                ...(upload.kind === 'remove' && upload.id !== undefined
+                  ? { id: upload.id }
+                  : {}),
+              },
+            }
+          : {}),
+      };
+      const result =
+        upload?.kind === 'stage'
+          ? await this.uploader(
+              this.metadata.endpoint,
+              this.metadata.csrf,
+              payload,
+              upload.file,
+              upload.signal,
+              (value) => this.uploads.progress(upload, value),
+            )
+          : await postUpdate(
+              this.metadata,
+              payload,
+              this.lifetime.signal,
+              this.fetcher,
+            );
+      if (upload?.kind === 'stage' && upload.signal.aborted)
+        throw requestError('cancelled', null);
       if (this.disposed) return;
-      const payload = await readResponse(result, this.metadata.id);
+      const accepted = await readResponse(result, this.metadata.id);
       if (this.disposed) return;
       let replacement: HTMLElement;
       try {
-        replacement = readRoot(payload.html, this.metadata.id);
+        replacement = readRoot(accepted.html, this.metadata.id);
       } catch (cause: unknown) {
         throw requestError('invalid_response', result.status, cause);
       }
       try {
-        this.apply(payload, sent, replacement);
+        this.apply(accepted, sent, replacement, upload);
       } catch (cause: unknown) {
         throw requestError('client_error', result.status, cause);
       }
@@ -279,6 +345,7 @@ export class IslandClient {
     payload: IslandResponse,
     sent: State,
     replacement: HTMLElement,
+    upload?: UploadJob,
   ): void {
     const newer = changedWritable(this.bridge.state, sent, this.writable);
     const restoreSelection = preserveSelection(this.root);
@@ -297,6 +364,7 @@ export class IslandClient {
       this.writable = payload.writable;
       this.bridge.state = { ...payload.state, ...newer };
       this.bridge.errors = payload.errors;
+      this.uploads.accept(payload.uploads ?? {}, upload);
       this.controls.refresh();
       restoreSelection();
     } catch (cause: unknown) {

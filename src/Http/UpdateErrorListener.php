@@ -46,9 +46,7 @@ class UpdateErrorListener implements EventListenerInterface
             $event->getResult() !== null
             || !$request instanceof ServerRequest
             || !$exception instanceof Throwable
-            || $request->getParam('plugin') !== 'Interact'
-            || $request->getParam('controller') !== 'Update'
-            || $request->getParam('action') !== 'update'
+            || !is_string($request->getParam('interactScope'))
         ) {
             return;
         }

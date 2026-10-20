@@ -11,6 +11,12 @@ export type {
   RequestTarget,
   LoadingTarget,
 } from './types';
+export type {
+  UploadField,
+  UploadItem,
+  UploadedFileInfo,
+  Uploader,
+} from './uploads/types';
 export { IslandClient } from './client';
 const installed = new WeakSet<Alpine>();
 

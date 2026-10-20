@@ -44,8 +44,11 @@ search and pagination, nested islands, browser events, and whole-page islands.
 It uses its own fetch protocol, Alpine, and Alpine Morph, independently of Livewire
 and htmx.
 
+File uploads use explicit declarations, temporary staging, and normal CakePHP
+validation; see [file uploads](/guide/uploads).
+
 Links still use normal CakePHP navigation. Enhanced navigation and URL-bound state
-are planned for phase 2. Upload binding, automatic entity transport, and a form
+are planned for phase 2. Automatic entity transport and a form
 adapter are outside the current implementation. Public APIs may change before release.
 
 [Build your first island](/getting-started) · [Try the demo](/examples)

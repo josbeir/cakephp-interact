@@ -19,7 +19,7 @@ $currentPath = $this->getRequest()->getUri()->getPath();
     <header class="site-header">
         <a class="brand" href="/" aria-label="Interact home"><span class="brand-mark" aria-hidden="true">i.</span>interact<span class="brand-context">/ CakePHP</span></a>
         <nav aria-label="Demo pages">
-            <?php foreach (['/' => 'Embedded islands', '/playground' => 'Playground', '/search' => 'Search library', '/page' => 'Whole-page island'] as $path => $label): ?>
+            <?php foreach (['/' => 'Embedded islands', '/playground' => 'Playground', '/search' => 'Search library', '/uploads' => 'Uploads', '/page' => 'Whole-page island'] as $path => $label): ?>
                 <a href="<?= (string)h($path) ?>" <?= $currentPath === $path ? 'aria-current="page"' : '' ?>><?= (string)h($label) ?></a>
             <?php endforeach; ?>
         </nav>
