@@ -117,8 +117,13 @@ outside that boundary.
 ## Connect a widget value to PHP
 
 An Alpine wrapper is an application JavaScript object registered with
-`Alpine.data()`. Put its registration in your JavaScript source, such as
-`resources/js/enhanced-select.js`, and load it through your application bundle.
+`Alpine.data()`. With the Composer bundle, register it through `window.Alpine`
+in an external script's `alpine:init` listener. The
+[Alpine guide](/guide/alpine#access-server-from-a-javascript-file) shows the
+JavaScript file and layout order; custom behavior does not require rebuilding
+Interact. Applications that own Alpine can register wrappers in their existing
+bundle instead.
+
 `x-data="enhancedSelect"` creates an instance for that element: Alpine calls its
 `init()` when the element appears and `destroy()` when it disappears.
 
@@ -181,8 +186,16 @@ The example uses a native FormHelper select. Its choices and initial value come
 from PHP; the Alpine wrapper owns the library instance. Validation errors render
 outside the ignored subtree and describe the generated control accessibly.
 
-For an application-owned bundle, install `tom-select`, register the wrapper
+The demo keeps Interact's Composer runtime and exposes `window.Alpine`. A separate
+application bundle contains Tom Select and the wrapper; its entry point registers
+the wrapper in an `alpine:init` listener before Interact starts Alpine. Only the
+widget code and its library need that application build. Load its script before
+Interact's runtime and include the library's stylesheet.
+
+If your application already owns Alpine, install `tom-select`, register the wrapper
 before `Alpine.start()`, and include its stylesheet:
+
+::: details Application-owned Alpine registration
 
 ```ts
 import Alpine from 'alpinejs';
@@ -196,8 +209,12 @@ Alpine.start();
 ```
 
 Follow the [application-owned Alpine setup](/installation#application-owned-alpine)
-including disabling Interact's automatic script. The wrapper below belongs to
-your application; copy and adapt it to your library and field names.
+including disabling Interact's automatic script.
+
+:::
+
+The wrapper below belongs to your application; copy and adapt it to your library
+and field names.
 
 :::: details Complete enhanced-select example
 
@@ -208,6 +225,8 @@ your application; copy and adapt it to your library and field names.
 <<< @/../tests/test_app/templates/element/Interact/enhanced_select.php [Element]
 
 <<< @/../tests/test_app/resources/ts/enhanced-select.ts [JavaScript]
+
+<<< @/../tests/test_app/resources/ts/widgets.ts [Registration]
 
 ```php [Mount]
 <?php
@@ -222,11 +241,9 @@ declare(strict_types=1);
 
 ::::
 
-For the Composer bundle, load an external registration script **before** the
-runtime script. Register your wrapper inside an `alpine:init` listener using
-`window.Alpine`. The demo's widget entry point does this; it never starts a second
-Alpine instance. Interact itself does not include Tom Select or any other widget
-library.
+The registration entry uses the existing `window.Alpine`; it never imports or
+starts another Alpine instance. Interact itself does not include Tom Select or
+any other widget library.
 
 ## Refresh display-only widgets
 
@@ -249,7 +266,13 @@ The cooperating files are:
 
 For an application using Chart.js, install `chart.js` in your application and
 follow the [application-owned Alpine setup](/installation#application-owned-alpine),
-including disabling Interact's automatic script. This example starts with fixed
+including disabling Interact's automatic script. This variation uses an
+application-owned bundle to import Chart.js and Alpine together. You can also keep
+the Composer runtime and register the wrapper through `window.Alpine` in an
+`alpine:init` listener, as in the enhanced-select example; bundle the chart library
+and wrapper without importing or starting Alpine again.
+
+This example starts with fixed
 sample totals; each refresh increments them. Replace those increments with data
 loaded through your application's Table finders, initializing it in `mount()`
 and replacing `$this->chartData` in the refresh action.

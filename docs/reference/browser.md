@@ -240,7 +240,12 @@ a sensitive action automatically.
 ## Runtime integration
 
 The standalone bundle starts Alpine CSP and Morph. Use it once, with the layout's
-`script` block. For application-owned Alpine, disable `autoScript`, register the
+`script` block. It exposes `window.Alpine`; register custom behavior in an
+`alpine:init` listener loaded before the runtime. Adding application JavaScript
+does not require rebuilding Interact. See the
+[plain JavaScript example](/guide/alpine#access-server-from-a-javascript-file).
+
+For application-owned Alpine, disable `autoScript`, register the
 npm plugin before `Alpine.start()`, and omit the standalone bundle. See
 [installation](/installation#application-owned-alpine).
 

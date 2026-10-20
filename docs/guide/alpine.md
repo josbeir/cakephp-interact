@@ -120,16 +120,20 @@ standard Alpine's full expression syntax, the
 
 ## Access `$server` from a JavaScript file
 
-An Alpine object, sometimes called a wrapper, is registered with `Alpine.data()`.
+The Composer bundle exposes **`window.Alpine`**. Register application behavior in
+an `alpine:init` listener, which runs before Alpine initializes the page. This is
+a plain browser script; adding it does not require rebuilding Interact or
+installing another Alpine package.
+
 Alpine creates an instance for each matching `x-data` element. Inside its methods,
 access the owning bridge through **`this.$server`**:
 
 ::: code-group
 
 ```js [JavaScript]
-// resources/js/counter-tools.js
-export function registerCounterTools(Alpine) {
-  Alpine.data('counterTools', () => ({
+// webroot/js/counter-tools.js
+document.addEventListener('alpine:init', () => {
+  window.Alpine.data('counterTools', () => ({
     get description() {
       return 'Count: ' + this.$server.state.count;
     },
@@ -138,7 +142,7 @@ export function registerCounterTools(Alpine) {
       return this.$server.call('increment');
     },
   }));
-}
+});
 ```
 
 ```php [Element]
@@ -157,29 +161,64 @@ declare(strict_types=1);
 </div>
 ```
 
-```js [Registration]
-// Your application's JavaScript entry point.
-import Alpine from 'alpinejs';
-import interact from '@josbeir/cakephp-interact';
-import { registerCounterTools } from './counter-tools';
+```php [Layout]
+<?php
+declare(strict_types=1);
 
-Alpine.plugin(interact);
-registerCounterTools(Alpine);
-Alpine.start();
+/**
+ * templates/layout/default.php — inside <head>
+ *
+ * @var \Interact\View\TemplateView $this
+ */
+?>
+<?= $this->Html->script('counter-tools', ['defer' => true]) ?>
+<?= $this->fetch('script') ?>
 ```
 
 :::
 
 This uses the same PHP counter as before; `description` and `increment()` are
-JavaScript behavior attached by `x-data="counterTools"`. Follow the
-[application-owned Alpine setup](/installation#application-owned-alpine), including
-disabling the helper's automatic script. Register behavior before `Alpine.start()`;
-do not start Alpine again for each island or render.
+JavaScript behavior attached by `x-data="counterTools"`. Load the registration
+file **before** the script block that outputs Interact's deferred runtime. Both
+scripts use `defer`, so they execute in document order. The listener is installed
+before Interact sets `window.Alpine` and starts Alpine.
 
-For the Composer bundle, load an external registration script before the runtime
-and register your object in an `alpine:init` listener using `window.Alpine`.
-The [widget guide](/guide/javascript-widgets#try-an-enhanced-select) shows that
-alternative without introducing another Alpine instance.
+Keep the helper's automatic script enabled. Interact already installs its plugin
+and calls `Alpine.start()`; the application file only registers behavior. Follow
+the [installation steps](/installation#build-the-browser-runtime) to prepare the
+runtime assets once, then edit `webroot/js/counter-tools.js` as ordinary JavaScript.
+
+### Alternative: application-owned Alpine
+
+If your application already bundles and starts Alpine, register behavior in its
+existing entry point instead. Follow the
+[application-owned Alpine setup](/installation#application-owned-alpine), including
+disabling the helper's automatic script.
+
+::: details Registration in your existing JavaScript entry point
+
+```js
+// Your application's JavaScript entry point.
+import Alpine from 'alpinejs';
+import interact from '@josbeir/cakephp-interact';
+
+Alpine.plugin(interact);
+Alpine.data('counterTools', () => ({
+  get description() {
+    return 'Count: ' + this.$server.state.count;
+  },
+
+  increment() {
+    return this.$server.call('increment');
+  },
+}));
+Alpine.start();
+```
+
+:::
+
+Register behavior before your existing `Alpine.start()`. Use one Alpine instance
+per page; do not start Alpine again for each island or render.
 
 ## React to changing server data
 
