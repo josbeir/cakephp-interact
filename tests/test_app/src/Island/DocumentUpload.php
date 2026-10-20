@@ -67,6 +67,6 @@ class DocumentUpload extends Island
      */
     public function viewData(): array
     {
-        return ['form' => $this->form ?? new DocumentForm()];
+        return ['form' => $this->form ?? new DocumentForm()->setErrors($this->errors())];
     }
 }

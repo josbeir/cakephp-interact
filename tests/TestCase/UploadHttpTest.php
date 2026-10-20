@@ -71,6 +71,23 @@ class UploadHttpTest extends HttpTestCase
         $this->assertResponseContains('"document":{"multiple":false,"files":[]}');
     }
 
+    public function testPhpUploadRejectionsRenderThroughTheNativeFormContext(): void
+    {
+        $mount = $this->mounted(0, '/uploads');
+        $this->replaceRequest([
+            'headers' => ['X-CSRF-Token' => $this->csrf, 'Content-Type' => 'multipart/form-data'],
+            'files' => ['file' => new UploadedFile('php://temp', 0, UPLOAD_ERR_INI_SIZE, 'large.txt', 'text/plain')],
+        ]);
+        $this->post('/uploads/update', ['payload' => json_encode([
+            'version' => 1,
+            'snapshot' => $mount['snapshot'],
+            'upload' => ['kind' => 'stage', 'field' => 'document'],
+        ], JSON_THROW_ON_ERROR)]);
+        $this->assertResponseCode(422);
+        $this->assertResponseContains('The file could not be uploaded.');
+        $this->assertResponseContains('document-error');
+    }
+
     public function testMultipleSelectionsAppendAndCanBeIndividuallyRemoved(): void
     {
         $mount = $this->mounted(0, '/uploads');

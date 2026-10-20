@@ -223,6 +223,9 @@ rejections appear in field errors. Transport failures pause automatic work;
 reselection or `.retry()` is explicit recovery. No transfer is retried
 automatically. Polling skips unfinished or failed selections.
 
+The demo passes staging errors into its request-local Form with `setErrors()`,
+so FormHelper displays them beside the file input too.
+
 Changing a file selection while an action waits also discards that queued action.
 Submit again when the intended selection is ready. An action already executing on
 the server cannot be cancelled by changing the chooser.
