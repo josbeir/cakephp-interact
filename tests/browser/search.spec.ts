@@ -16,10 +16,12 @@ test('searches the full resource library and combines filters while preserving f
   await expect(search).toBeFocused();
   await expect(search).toHaveValue('CakePHP pagination');
   await library
-    .getByLabel('Difficulty', { exact: true })
+    .getByRole('combobox', { name: 'Difficulty', exact: true })
     .selectOption('beginner');
   await expect(results).toHaveText('Showing 1–5 of 5 results');
-  await library.getByLabel('Topic', { exact: true }).selectOption('forms');
+  await library
+    .getByRole('combobox', { name: 'Topic', exact: true })
+    .selectOption('forms');
   await expect(
     library.getByRole('heading', { name: 'No resources found' }),
   ).toBeVisible();

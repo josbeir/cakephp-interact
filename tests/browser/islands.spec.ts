@@ -190,10 +190,12 @@ test('dependent choices preserve notes and reject an empty selection', async ({
     exact: true,
   });
   await choices.getByLabel('Notes').fill('Keep my draft');
-  await choices.getByLabel('Country', { exact: true }).selectOption('NL');
+  await choices
+    .getByRole('combobox', { name: 'Country', exact: true })
+    .selectOption('NL');
   await expect(
     choices
-      .getByLabel('City', { exact: true })
+      .getByRole('combobox', { name: 'City', exact: true })
       .getByRole('option', { name: 'Amsterdam' }),
   ).toHaveCount(1);
   await expect(choices.getByLabel('Notes')).toHaveValue('Keep my draft');
