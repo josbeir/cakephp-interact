@@ -57,13 +57,13 @@ $errorId = 'article-' . (string)$articleId . '-title-errors';
 <?= $this->Form->create(null, [
     'url' => false,
     'idPrefix' => 'article-' . (string)$articleId,
-    'data-interact-submit' => 'save',
+    'x-interact:submit' => '$server.call("save")',
 ]) ?>
     <?= $this->Form->control('title', [
         'type' => 'text',
         'label' => 'Article title',
         'value' => $title,
-        'data-interact-model' => 'title',
+        'x-interact:model' => 'title',
         'aria-invalid' => isset($errors['title']) ? 'true' : null,
         'aria-describedby' => isset($errors['title']) ? $errorId : null,
     ]) ?>
@@ -126,7 +126,7 @@ draft, and success feedback, with the same field-error associations.
 
 Open `/` for country and city choices. The `dependent-selects` island:
 
-1. Sends country changes using `data-interact-update="change"`.
+1. Sends country changes using `x-interact:model.change`.
 2. Clears `cityId` in `updated()` when `country` changes.
 3. Loads city choices through the Table's `inCountry` finder in `viewData()`.
 4. Rechecks city membership in its `confirm()` action.
@@ -156,7 +156,7 @@ server checks.
 ## Keep protection and persistence explicit
 
 FormHelper generates the markup; Interact reads controls carrying
-`data-interact-model` and sends their declared writable values as JSON.
+`x-interact:model` and sends their declared writable values as JSON.
 FormHelper's hidden fields are not transported as island state. CSRF remains
 protected through the update request's token header and CakePHP middleware.
 

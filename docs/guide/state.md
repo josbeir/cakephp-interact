@@ -52,13 +52,12 @@ use function Cake\Core\h;
  * @var string $name
  */
 ?>
-<?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'greeting', '@submit.prevent' => '$server.sync()']) ?>
+<?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'greeting', 'x-interact:submit' => '$server.sync()']) ?>
     <?= $this->Form->control('name', [
         'type' => 'text',
         'label' => 'Your name',
         'value' => $name,
-        'data-interact-model' => 'name',
-        'data-interact-update' => 'input',
+        'x-interact:model.live' => 'name',
     ]) ?>
 <?= $this->Form->end() ?>
 <p aria-live="polite"><?= (string)h($salutation) ?> <?= (string)h($name) ?></p>
@@ -89,21 +88,31 @@ so later updates do not overwrite the user's draft.
 
 ## Choose when to send edits
 
-| Control configuration               | Network behavior                                       |
-| ----------------------------------- | ------------------------------------------------------ |
-| `data-interact-model="name"`        | Keep the edit locally until an action or explicit sync |
-| Add `data-interact-update="input"`  | Send after a typing pause, 250 ms by default           |
-| Add `data-interact-debounce="400"`  | Use a 400 ms pause for input updates                   |
-| Add `data-interact-update="blur"`   | Send when the control loses focus                      |
-| Add `data-interact-update="change"` | Send on its native change event                        |
+A plain `x-interact:model="name"` keeps edits local. Add a modifier to choose when
+they synchronize:
 
-Use `change` for selects and `input` for live search. An action flushes the latest
-control values before it runs, including a field that has not blurred yet.
+| Modifier  | Network behavior                             |
+| --------- | -------------------------------------------- |
+| None      | Send with the next action or explicit sync   |
+| `.live`   | Send after a typing pause, 250 ms by default |
+| `.blur`   | Send when the control loses focus            |
+| `.change` | Send on its native change event              |
+
+For a different typing delay:
+
+```html
+<input x-interact:model.live.debounce.400ms="name" />
+```
+
+Use `.change` for selects and `.live` for search. Choose one synchronization mode;
+debounce overrides only apply to `.live` and accept 0–60,000 whole milliseconds.
+Model values are literal writable paths, not Alpine expressions. An action
+flushes the latest control values, including a field that has not blurred yet.
 Updating a draft never saves it automatically.
 
 ## Bind other native controls
 
-Use the same model attribute on textareas, selects, radio groups, checkboxes,
+Use the same model directive on textareas, selects, radio groups, checkboxes,
 and multiple selects. Match the PHP property to the control: `bool` for a single
 checkbox, an array for a checkbox group or multiple select, and `int`/`float`
 for numeric state. Nullable numeric state can represent an empty selection.
@@ -115,7 +124,7 @@ Dotted paths address nested arrays, for example:
     'type' => 'text',
     'label' => 'City',
     'value' => $form['address']['city'],
-    'data-interact-model' => 'form.address.city',
+    'x-interact:model' => 'form.address.city',
 ]) ?>
 ```
 

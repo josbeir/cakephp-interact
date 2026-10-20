@@ -1,5 +1,3 @@
-import type { RequestResult } from '../types';
-
 /**
  * A native submit control whose disabled state can be temporarily owned by a lock.
  */
@@ -8,7 +6,8 @@ type SubmitControl = HTMLButtonElement | HTMLInputElement;
 type Submission = {
   form: HTMLFormElement;
   key: string | null;
-  action: string;
+  attribute: string;
+  expression: string;
   buttons: Map<SubmitControl, boolean>;
   busy: string | null;
   protected: boolean;
@@ -17,7 +16,7 @@ type Submission = {
 /**
  * Protects declarative native forms while their accepted submissions settle.
  *
- * Locks belong to one island and follow surviving or explicitly keyed forms.
+ * Locks belong to one island and follow surviving forms or stable native IDs.
  * Temporary DOM changes are released around morphs so server-authored disabled
  * states remain authoritative; no particular PHP form helper is involved.
  */
@@ -28,7 +27,10 @@ export class FormSubmissions {
   /**
    * Restrict form and submitter ownership to the current island root.
    */
-  constructor(private readonly root: HTMLElement) {
+  constructor(
+    private readonly root: HTMLElement,
+    private readonly onFailure: (cause: unknown) => void,
+  ) {
     this.observer = new MutationObserver((records) => {
       this.readChanges(records);
       this.refresh();
@@ -38,26 +40,41 @@ export class FormSubmissions {
   /**
    * Accept a form once, capture through the bridge, then protect its submitters.
    */
-  submit(form: HTMLFormElement, invoke: () => Promise<RequestResult>): void {
+  submit(
+    form: HTMLFormElement,
+    attribute: string,
+    expression: string,
+    invoke: () => unknown,
+  ): void {
     if ([...this.submissions].some((entry) => entry.form === form)) return;
     const entry: Submission = {
       form,
-      key: form.getAttribute('data-interact-key') ?? (form.id || null),
-      action: form.dataset.interactSubmit ?? '',
+      key: form.id || null,
+      attribute,
+      expression,
       buttons: new Map(),
       busy: form.getAttribute('aria-busy'),
       protected: false,
     };
     this.submissions.add(entry);
-    const result = invoke();
-    this.refresh();
-    void result.then(() => {
+    const release = () => {
       this.readChanges(this.observer.takeRecords());
       this.observer.disconnect();
       this.restore(entry);
       this.submissions.delete(entry);
       this.refresh();
-    });
+    };
+    try {
+      const result = invoke();
+      this.refresh();
+      void Promise.resolve(result).then(release, (cause: unknown) => {
+        release();
+        this.onFailure(cause);
+      });
+    } catch (cause: unknown) {
+      release();
+      this.onFailure(cause);
+    }
   }
 
   /**
@@ -76,16 +93,15 @@ export class FormSubmissions {
     this.readChanges(this.observer.takeRecords());
     this.observer.disconnect();
     const forms = Array.from(
-      this.root.querySelectorAll<HTMLFormElement>('form[data-interact-submit]'),
+      this.root.querySelectorAll<HTMLFormElement>('form'),
     );
     for (const entry of this.submissions) {
       if (!this.owns(entry.form) && entry.key !== null) {
         const replacement = forms.find(
           (form) =>
             this.owns(form) &&
-            (form.getAttribute('data-interact-key') ?? (form.id || null)) ===
-              entry.key &&
-            form.dataset.interactSubmit === entry.action,
+            form.id === entry.key &&
+            form.getAttribute(entry.attribute) === entry.expression,
         );
         if (replacement) entry.form = replacement;
       }

@@ -46,12 +46,12 @@ records inside your application's action flow too.
 For an island with a writable `title` and an exposed `save()` action:
 
 ```php [Inside the island element]
-<?= $this->Form->create(null, ['url' => false, 'data-interact-submit' => 'save']) ?>
+<?= $this->Form->create(null, ['url' => false, 'x-interact:submit' => '$server.call("save")']) ?>
     <?= $this->Form->control('title', [
         'type' => 'text',
         'label' => 'Title',
         'value' => $title,
-        'data-interact-model' => 'title',
+        'x-interact:model' => 'title',
     ]) ?>
     <?= $this->Form->button('Save') ?>
 <?= $this->Form->end() ?>
@@ -67,8 +67,8 @@ disables its submit buttons. Inputs stay editable. Success, validation feedback,
 or a request failure releases the protection while preserving application-owned
 disabled states. Other forms and nested islands remain independent.
 
-This works with any helper or handwritten HTML producing `data-interact-submit`
-and the normal model attributes. It does not depend on CakePHP FormHelper.
+This works with any helper or handwritten HTML producing `x-interact:submit`
+and the `x-interact:model` bindings. It does not depend on CakePHP FormHelper.
 Direct `form.submit()` bypasses browser submit events; use `requestSubmit()`.
 Custom Alpine submit handlers and `$server.call()` retain their normal queueing
 behavior. Browser protection is not server-side idempotency.

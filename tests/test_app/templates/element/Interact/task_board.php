@@ -27,14 +27,14 @@ use function Cake\Core\h;
     <?php if ($tasks === []): ?>
         <p class="empty-state">A clean slate. Add your first task below.</p>
     <?php endif; ?>
-    <?= $this->Form->create(null, ['url' => false, 'id' => 'task-form', 'idPrefix' => 'task-board', 'data-interact-submit' => 'add']) ?>
+    <?= $this->Form->create(null, ['url' => false, 'id' => 'task-form', 'idPrefix' => 'task-board', 'x-interact:submit' => '$server.call("add")']) ?>
         <?= $this->Form->control('draft', [
             'type' => 'text',
             'label' => 'Add a task',
             'value' => $draft,
             'maxlength' => 80,
             'placeholder' => 'What would you like to try?',
-            'data-interact-model' => 'draft',
+            'x-interact:model' => 'draft',
             'aria-invalid' => isset($errors['draft']) ? 'true' : null,
         ]) ?>
         <?php foreach ($errors['draft'] ?? [] as $error): ?>

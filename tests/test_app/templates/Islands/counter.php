@@ -9,4 +9,4 @@ use function Cake\Core\h;
 ?>
 <h2><?= (string)h($heading) ?></h2>
 <p><?= (string)h((string)$count) ?></p>
-<button type="button" data-interact-click="increment">Increment</button>
+<button type="button" @click="$server.call('increment')">Increment</button>

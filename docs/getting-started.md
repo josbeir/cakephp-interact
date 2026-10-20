@@ -65,14 +65,14 @@ declare(strict_types=1);
 /** @var int $count */
 ?>
 <p aria-live="polite">Count: <?= (string)$count ?></p>
-<button type="button" data-interact-click="increment"
+<button type="button" @click="$server.call('increment')"
     :disabled="$server.busy">
     Add one
 </button>
 <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
-`data-interact-click` calls the PHP action. The Alpine shorthand
+`@click` invokes the PHP action through `$server.call()`. The Alpine shorthand
 `:disabled="$server.busy"` disables the button while a request is running.
 The alert displays a request failure when one occurs.
 

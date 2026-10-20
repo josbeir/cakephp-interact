@@ -55,11 +55,11 @@ describe('Alpine installation and morphing', () => {
     ).toThrow('inside');
     const parent = root(
       'parent',
-      '<button data-interact-click="refresh">Refresh</button><p x-text="$server.state.title"></p><div x-data="{ open: false }"><button @click="open = !open">Toggle</button><span x-show="open">Local state</span></div>',
+      '<button @click="$server.call(\'refresh\')">Refresh</button><p x-text="$server.state.title"></p><div x-data="{ open: false }"><button @click="open = !open">Toggle</button><span x-show="open">Local state</span></div>',
     );
     const child = root(
       'child',
-      '<input data-interact-model="title" value="original">',
+      '<input x-interact:model="title" value="original">',
     );
     parent.append(child);
     document.body.append(parent);
@@ -107,7 +107,7 @@ describe('Alpine installation and morphing', () => {
     install(Alpine);
     const element = root(
       'disposal',
-      '<button data-interact-click="save">Save</button>',
+      '<button @click="$server.call(\'save\')">Save</button>',
     );
     document.body.append(element);
     Alpine.initTree(element);
@@ -162,7 +162,7 @@ describe('Alpine installation and morphing', () => {
     install(Alpine);
     const element = root(
       'feedback',
-      '<input data-interact-model="title" value="original"><textarea readonly :value="$server.exportDraft()"></textarea><button @click="$server.call(\'save\')">Save</button><span x-text="$server.paused ? \'Paused\' : \'Ready\'"></span><p x-text="$server.error ? $server.error.message : \'\'"></p>',
+      '<input x-interact:model="title" value="original"><textarea readonly :value="$server.exportDraft()"></textarea><button @click="$server.call(\'save\')">Save</button><span x-text="$server.paused ? \'Paused\' : \'Ready\'"></span><p x-text="$server.error ? $server.error.message : \'\'"></p>',
     );
     const fetcher = vi
       .fn()

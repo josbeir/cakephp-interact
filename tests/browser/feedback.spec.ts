@@ -46,7 +46,7 @@ test('a queued form accepts one submission and preserves edits made while waitin
     })
     .click();
   await toggleSeen.promise;
-  const form = board.locator('form[data-interact-submit]');
+  const form = board.locator('form');
   await form.evaluate((element) => {
     if (!(element instanceof HTMLFormElement)) throw new Error('Missing form.');
     element.requestSubmit();
@@ -141,7 +141,7 @@ test('handwritten forms retain native validation and unlock after failure for an
   });
   await region.locator('form').evaluate((form) => {
     form.outerHTML =
-      '<form data-interact-submit="save"><label>Plain draft<input required name="message" data-interact-model="message"></label><button>Plain save</button><button disabled>Unavailable</button></form>';
+      '<form x-interact:submit="$server.call(\'save\')"><label>Plain draft<input required name="message" x-interact:model="message"></label><button>Plain save</button><button disabled>Unavailable</button></form>';
   });
   const input = region.getByLabel('Plain draft', { exact: true });
   const form = region.locator('form');

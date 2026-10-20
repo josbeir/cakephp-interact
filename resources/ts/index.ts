@@ -1,6 +1,7 @@
 import morph from '@alpinejs/morph';
 import type { Alpine } from 'alpinejs';
 import { IslandClient } from './client';
+import { registerBindings } from './bindings/alpine';
 import { morphRoot } from './dom/morph';
 export type {
   IslandBridge,
@@ -46,11 +47,11 @@ export default function install(Alpine: Alpine): void {
     clients.set(element, client);
     Alpine.onElRemoved(element, () => client.dispose());
   });
-  Alpine.magic('server', (element) => {
+  registerBindings(Alpine, (element) => {
     const root = element.closest<HTMLElement>('[data-interact-id]');
     const client = root === null ? undefined : clients.get(root);
     if (!client)
       throw new Error('$server is only available inside an Interact island.');
-    return client.bridge;
+    return client;
   });
 }

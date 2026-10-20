@@ -15,7 +15,7 @@ use function Cake\Core\h;
         <button type="button" @click="$server.call('adjust', -1)" aria-label="Decrease by one">−1</button>
         <button type="button" @click="$server.call('adjust', 1)" aria-label="Increase by one">+1</button>
         <button type="button" class="button-primary" @click="$server.call('adjust', 5)">Add five</button>
-        <button type="button" class="button-text" data-interact-click="reset">Reset</button>
+        <button type="button" class="button-text" @click="$server.call('reset')">Reset</button>
     </div>
     <p class="field-hint">A server-owned value, bounded between 0 and 99.</p>
     <p class="request-error" role="alert" x-text="$server.error ? $server.error.message : ''"></p>

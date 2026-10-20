@@ -117,14 +117,16 @@ class HttpTest extends TestCase
             '{"search":"","category":"","level":"","sort":"title","pageSize":20,"page":1}',
             (string)$root->getAttribute('data-interact-state'),
         );
-        $options = $xpath->query('//html:select[@data-interact-model="sort"]/html:option');
+        $options = $xpath->query('//html:select[@*[name()="x-interact:model.change" and .="sort"]]/html:option');
         $labels = [];
         foreach ($options as $option) {
             $labels[] = $option->textContent;
         }
 
         static::assertSame(['Title: A–Z', 'Title: Z–A', 'Shortest read first', 'Longest read first'], $labels);
-        $selected = $xpath->query('//html:select[@data-interact-model="sort"]/html:option[@selected]');
+        $selected = $xpath->query(
+            '//html:select[@*[name()="x-interact:model.change" and .="sort"]]/html:option[@selected]',
+        );
         static::assertSame(1, $selected->length);
         $selectedOption = $selected->item(0);
         static::assertInstanceOf(Element::class, $selectedOption);
