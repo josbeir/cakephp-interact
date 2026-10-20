@@ -2,6 +2,7 @@ import type { Alpine } from 'alpinejs';
 import type { IslandClient } from '../client';
 import { modelBinding } from './model';
 import { pollBinding } from './poll';
+import { customModel } from './custom-model';
 
 /**
  * Register Interact's public directives and bridge on the host Alpine instance.
@@ -17,19 +18,13 @@ export function registerBindings(
   Alpine.directive(
     'interact',
     Alpine.skipDuringClone(
-      (element, { value, modifiers, expression, original }, { cleanup }) => {
+      (
+        element,
+        { value, modifiers, expression, original },
+        { cleanup, effect },
+      ) => {
         const client = resolve(element);
         if (value === 'model') {
-          if (
-            !(
-              element instanceof HTMLInputElement ||
-              element instanceof HTMLSelectElement ||
-              element instanceof HTMLTextAreaElement
-            )
-          )
-            throw new Error(
-              'x-interact:model requires an input, select, or textarea.',
-            );
           if (
             element.hasAttribute(Alpine.prefixed('model')) ||
             [...element.attributes].some((attribute) =>
@@ -39,9 +34,33 @@ export function registerBindings(
             throw new Error(
               'Use one model binding per control; x-model and x-interact:model cannot be combined.',
             );
-          cleanup(
-            client.bindModel(element, modelBinding(expression, modifiers)),
-          );
+          const binding = modelBinding(expression, modifiers);
+          const modelable = element.getAttribute(Alpine.prefixed('modelable'));
+          if (modelable !== null) {
+            cleanup(
+              client.bindCustomModel(
+                element,
+                binding,
+                customModel(Alpine, element, modelable),
+              ),
+            );
+            effect(() => client.customChanged(element));
+          } else if (
+            element instanceof HTMLInputElement ||
+            element instanceof HTMLSelectElement ||
+            element instanceof HTMLTextAreaElement
+          ) {
+            cleanup(client.bindModel(element, binding));
+          } else {
+            throw new Error(
+              'x-interact:model requires an input, select, textarea, or x-modelable wrapper.',
+            );
+          }
+        } else if (value === 'ignore') {
+          if (element === client.root || modifiers.length || expression.trim())
+            throw new Error(
+              'x-interact:ignore requires an island descendant without an expression or modifiers.',
+            );
         } else if (value === 'submit') {
           if (
             !(element instanceof HTMLFormElement) ||
@@ -68,9 +87,9 @@ export function registerBindings(
           );
         } else
           throw new Error(
-            'Unknown x-interact directive. Use model, submit, or poll.',
+            'Unknown x-interact directive. Use model, submit, poll, or ignore.',
           );
       },
     ),
-  );
+  ).before('modelable');
 }

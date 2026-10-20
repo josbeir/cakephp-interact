@@ -12,6 +12,10 @@ $currentPath = $this->getRequest()->getUri()->getPath();
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Interact · CakePHP playground</title>
     <link rel="stylesheet" href="/demo.css">
+    <?php if ($currentPath === '/playground'): ?>
+        <link rel="stylesheet" href="/js/widgets.css">
+        <script src="/js/widgets.js" defer></script>
+    <?php endif; ?>
     <?= $this->fetch('script') ?>
 </head>
 <body>

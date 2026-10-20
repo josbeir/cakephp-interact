@@ -5,9 +5,14 @@ use Cake\Http\Server;
 use TestApp\Application;
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-if ($path === '/demo.css') {
-    header('Content-Type: text/css; charset=utf-8');
-    readfile(__DIR__ . '/demo.css');
+$demoAssets = [
+    '/demo.css' => 'text/css; charset=utf-8',
+    '/js/widgets.js' => 'text/javascript; charset=utf-8',
+    '/js/widgets.css' => 'text/css; charset=utf-8',
+];
+if (is_string($path) && isset($demoAssets[$path])) {
+    header('Content-Type: ' . $demoAssets[$path]);
+    readfile(__DIR__ . $path);
 
     return;
 }

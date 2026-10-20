@@ -8,6 +8,9 @@ description: Pass initial props, bind editable fields, and compute template data
 Build a greeting that changes as you type. This example uses the helper and
 runtime configured in [installation](/installation).
 
+To read these values in browser expressions or JavaScript files, see
+[Alpine and `$server`](/guide/alpine).
+
 ## Bind a text input
 
 The class and element below work together. Mount them with

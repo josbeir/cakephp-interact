@@ -94,10 +94,9 @@ test('demo pages keep their navigation and forms within a narrow viewport', asyn
       page.getByRole('navigation', { name: 'Demo pages' }),
     ).toBeVisible();
     await expect(page.locator('main h1')).toBeVisible();
-    await expect(page.locator('link[rel="stylesheet"]')).toHaveAttribute(
-      'href',
-      '/demo.css',
-    );
+    await expect(
+      page.locator('link[rel="stylesheet"][href="/demo.css"]'),
+    ).toHaveAttribute('href', '/demo.css');
     await expect
       .poll(() =>
         page.evaluate(

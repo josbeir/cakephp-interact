@@ -27,17 +27,19 @@ example. Keep real credentials and private data out of it.
 
 ## Choose an example
 
-| Open          | Try                                                                  | Follow the implementation                                                                                          |
-| ------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `/`           | Search articles, edit two titles, save one, and keep the other draft | [Forms and validation](/guide/forms), [nested islands](/guide/nesting)                                             |
-| `/`           | Change country, choose a city, and confirm the selection             | [Dependent choices](/guide/forms#add-dependent-or-conditional-fields)                                              |
-| `/playground` | Adjust independent counters with typed action arguments              | [Actions and feedback](/guide/actions)                                                                             |
-| `/playground` | Change seats and extras; reveal business fields and validate         | [Conditional fields](/guide/forms#add-dependent-or-conditional-fields)                                             |
-| `/playground` | Add, toggle, and remove tasks while other local state survives       | [Task board source](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/TaskBoard.php) |
-| `/playground` | Refresh the server clock; pause it or watch a simulated job complete | [Polling](/guide/polling)                                                                                          |
-| `/uploads`    | Stage documents, manage attachments, and validate before saving      | [File uploads](/guide/uploads)                                                                                     |
-| `/search`     | Filter 1,200 resources; sort, change page size, and paginate         | [Search and pagination](/guide/search)                                                                             |
-| `/page`       | Update a whole-page listing while its layout stays in place          | [Whole-page islands](/guide/page-islands)                                                                          |
+| Open          | Try                                                                     | Follow the implementation                                                                                          |
+| ------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `/`           | Search articles, edit two titles, save one, and keep the other draft    | [Forms and validation](/guide/forms), [nested islands](/guide/nesting)                                             |
+| `/`           | Change country, choose a city, and confirm the selection                | [Dependent choices](/guide/forms#add-dependent-or-conditional-fields)                                              |
+| `/playground` | Adjust independent counters with typed action arguments                 | [Actions and feedback](/guide/actions)                                                                             |
+| `/playground` | Change seats and extras; reveal business fields and validate            | [Conditional fields](/guide/forms#add-dependent-or-conditional-fields)                                             |
+| `/playground` | Add, toggle, and remove tasks while other local state survives          | [Task board source](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/TaskBoard.php) |
+| `/playground` | Refresh the server clock; pause it or watch a simulated job complete    | [Polling](/guide/polling)                                                                                          |
+| `/playground` | Update two colored panels; recreate the one whose DOM is protected      | [Morph protection](/guide/javascript-widgets#see-what-protection-changes)                                          |
+| `/playground` | Search countries in a JavaScript widget; validate, reset, and remove it | [JavaScript widgets](/guide/javascript-widgets#try-an-enhanced-select)                                             |
+| `/uploads`    | Stage documents, manage attachments, and validate before saving         | [File uploads](/guide/uploads)                                                                                     |
+| `/search`     | Filter 1,200 resources; sort, change page size, and paginate            | [Search and pagination](/guide/search)                                                                             |
+| `/page`       | Update a whole-page listing while its layout stays in place             | [Whole-page islands](/guide/page-islands)                                                                          |
 
 The `/playground` **Failure recovery** card demonstrates the
 [failure and recovery workflow](/guide/failures).

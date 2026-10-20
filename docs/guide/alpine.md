@@ -1,0 +1,261 @@
+---
+title: Alpine and $server
+description: Read PHP props and state in Alpine expressions and JavaScript files, understand island scope, and call PHP actions.
+---
+
+# Read island data with Alpine and JavaScript
+
+Interact supplies `$server` inside each island. It exposes that island's declared
+props and state, plus operations such as calling PHP actions. Ordinary Alpine
+directives can read it directly; a separate JavaScript file is only needed when
+you want reusable JavaScript behavior or a library integration.
+
+## Read a PHP value in the browser
+
+Start with the counter from [your first island](/getting-started). Its PHP class
+declares `#[State] public int $count = 0` and an `increment()` action. You can
+render its count using either PHP or Alpine in the element:
+
+```php [Element]
+<?php
+declare(strict_types=1);
+
+/**
+ * templates/element/Interact/counter.php
+ *
+ * @var int $count
+ */
+?>
+<p>Rendered by PHP: <?= $count ?></p>
+<p x-text="'Read by Alpine: ' + $server.state.count"></p>
+<button type="button" @click="$server.call('increment')">Add one</button>
+```
+
+Both show the same count after an accepted update. The PHP expression runs on
+the server; `x-text` reads reactive data in the browser. Interact initializes
+Alpine on the island root, so these bindings need no additional `x-data`.
+
+## Know which data reaches JavaScript
+
+| PHP declaration                                | PHP element variable | JavaScript access          | Browser may submit edits |
+| ---------------------------------------------- | -------------------- | -------------------------- | ------------------------ |
+| `#[Prop] public string $salutation`            | `$salutation`        | `$server.state.salutation` | No                       |
+| `#[State] public int $count`                   | `$count`             | `$server.state.count`      | No                       |
+| `#[State(writable: true)] public string $name` | `$name`              | `$server.state.name`       | Yes                      |
+| `viewData()` returns `['article' => $article]` | `$article`           | Not automatically exposed  | No                       |
+
+For example, the [greeting island](/guide/state#bind-a-text-input) declares the
+`salutation` prop. Pass it from an existing controller template:
+
+```php [Mount]
+<?= $this->Interact->render('greeting', props: ['salutation' => 'Welcome']) ?>
+```
+
+Its element can read `$salutation` in PHP or `$server.state.salutation` in an
+Alpine expression. Props initialize the island on mount and remain available on
+updates; they cannot be changed through browser model bindings.
+
+Props and state contain JSON-compatible values, including scalars and nested
+arrays. Both are browser-visible. Keep entities, queries, services, and other
+PHP-only data outside snapshots; use `viewData()` for objects needed by the PHP
+view. Controller variables are not implicitly inherited: pass values explicitly
+at the mount call.
+
+## Keep `$server` scoped to its island
+
+`$server` resolves to the **nearest containing island**. Two counters on one page
+have different bridges and independent state. A nested island uses its own bridge.
+Outside an island, `$server` is unavailable.
+
+```php
+<?= $this->Interact->render('counter', key: 'first') ?>
+<?= $this->Interact->render('counter', key: 'second') ?>
+```
+
+A reusable JavaScript definition can live in any application module. Its instance
+gets an island scope when an element **inside the island** uses `x-data` to attach
+it. Registering an Alpine object does not create a global `$server` or share one
+island's state with another. Use [island events](/guide/nesting#refresh-another-island)
+for explicit communication between islands.
+
+## Use inline expressions in your template
+
+For small interactions, put local data directly in `x-data` inside the island:
+
+```html
+<div x-data="{ expanded: false, initialCount: $server.state.count }">
+  <button type="button" @click="expanded = !expanded" :aria-expanded="expanded">
+    Toggle details
+  </button>
+  <div x-show="expanded">
+    <p x-text="'Count at initialization: ' + initialCount"></p>
+    <p x-text="'Current count doubled: ' + ($server.state.count * 2)"></p>
+  </div>
+  <button type="button" @click="$server.call('increment')">Add one</button>
+</div>
+```
+
+This works with the Composer bundle's **CSP build of Alpine**. Object literals,
+property access, arithmetic, ternaries, assignments, and method calls are supported
+in template expressions. Toggling `expanded` is entirely local; calling
+`increment` sends an island request.
+
+`initialCount` copies the count when Alpine initializes this element. It does not
+stay synchronized with PHP. The expression reading `$server.state.count` directly
+is reactive and updates after accepted server responses. Local `expanded` state
+survives ordinary island refreshes while this element is preserved.
+
+The CSP expression parser does not support defining inline functions, such as
+`x-data="{ increment() { ... } }"` or arrow callbacks in `x-init`. Put methods,
+getters, and watcher callbacks in an external `Alpine.data()` registration as shown
+below. That file uses ordinary JavaScript; arrow functions there are fine. See
+[Alpine's CSP documentation](https://alpinejs.dev/advanced/csp) for its expression
+syntax and restrictions.
+
+The bundle uses CSP Alpine so applications can keep a policy such as
+`script-src 'self'` without allowing `unsafe-eval`. If your application needs
+standard Alpine's full expression syntax, the
+[application-owned Alpine setup](/installation#application-owned-alpine) supports
+`alpinejs` too; its evaluator requires a policy that allows `unsafe-eval`.
+
+## Access `$server` from a JavaScript file
+
+The Composer bundle exposes **`window.Alpine`**. Register application behavior in
+an `alpine:init` listener, which runs before Alpine initializes the page. This is
+a plain browser script; adding it does not require rebuilding Interact or
+installing another Alpine package.
+
+Alpine creates an instance for each matching `x-data` element. Inside its methods,
+access the owning bridge through **`this.$server`**:
+
+::: code-group
+
+```js [JavaScript]
+// webroot/js/counter-tools.js
+document.addEventListener('alpine:init', () => {
+  window.Alpine.data('counterTools', () => ({
+    get description() {
+      return 'Count: ' + this.$server.state.count;
+    },
+
+    increment() {
+      return this.$server.call('increment');
+    },
+  }));
+});
+```
+
+```php [Element]
+<?php
+declare(strict_types=1);
+
+/**
+ * templates/element/Interact/counter.php
+ *
+ * @var int $count
+ */
+?>
+<div x-data="counterTools">
+    <p x-text="description"></p>
+    <button type="button" @click="increment()">Add one</button>
+</div>
+```
+
+```php [Layout]
+<?php
+declare(strict_types=1);
+
+/**
+ * templates/layout/default.php — inside <head>
+ *
+ * @var \Interact\View\TemplateView $this
+ */
+?>
+<?= $this->Html->script('counter-tools', ['defer' => true]) ?>
+<?= $this->fetch('script') ?>
+```
+
+:::
+
+This uses the same PHP counter as before; `description` and `increment()` are
+JavaScript behavior attached by `x-data="counterTools"`. Load the registration
+file **before** the script block that outputs Interact's deferred runtime. Both
+scripts use `defer`, so they execute in document order. The listener is installed
+before Interact sets `window.Alpine` and starts Alpine.
+
+Keep the helper's automatic script enabled. Interact already installs its plugin
+and calls `Alpine.start()`; the application file only registers behavior. Follow
+the [installation steps](/installation#build-the-browser-runtime) to prepare the
+runtime assets once, then edit `webroot/js/counter-tools.js` as ordinary JavaScript.
+
+### Alternative: application-owned Alpine
+
+If your application already bundles and starts Alpine, register behavior in its
+existing entry point instead. Follow the
+[application-owned Alpine setup](/installation#application-owned-alpine), including
+disabling the helper's automatic script.
+
+::: details Registration in your existing JavaScript entry point
+
+```js
+// Your application's JavaScript entry point.
+import Alpine from 'alpinejs';
+import interact from '@josbeir/cakephp-interact';
+
+Alpine.plugin(interact);
+Alpine.data('counterTools', () => ({
+  get description() {
+    return 'Count: ' + this.$server.state.count;
+  },
+
+  increment() {
+    return this.$server.call('increment');
+  },
+}));
+Alpine.start();
+```
+
+:::
+
+Register behavior before your existing `Alpine.start()`. Use one Alpine instance
+per page; do not start Alpine again for each island or render.
+
+## React to changing server data
+
+Put imperative initialization and watchers in the Alpine object's `init()` method.
+For example, after creating a chart there, watch the owning island's declared
+`chartData` state:
+
+```js
+this.$watch('$server.state.chartData', (data) => {
+  chart.data = JSON.parse(JSON.stringify(data));
+  chart.update();
+});
+```
+
+The watcher is JavaScript in your registration file, inside `init()`. The PHP
+island owns `$chartData`; Interact sends accepted changes to the browser; the
+watcher updates the existing chart. The complete
+[chart example](/guide/javascript-widgets#refresh-display-only-widgets) shows the
+PHP class, element, JavaScript file, registration, and mount together.
+
+Use `destroy()` to clean up library instances when their owning element disappears.
+Use [DOM protection](/guide/javascript-widgets#see-what-protection-changes) when a
+library manages its own markup.
+
+## Distinguish browser drafts from PHP rendering
+
+For writable state, model bindings update the browser draft immediately. A plain
+`x-interact:model` defers sending that draft until an action or explicit sync:
+`x-text="$server.state.name"` can therefore change before PHP receives the name.
+A PHP-rendered `<?= h($name) ?>` changes on the next accepted server render.
+
+Use [native model bindings](/guide/state#choose-when-to-send-edits) or
+[modelable widgets](/guide/javascript-widgets#connect-a-widget-value-to-php) to
+produce editable values. Use `$server.call()` for declared PHP actions and
+`$server.sync()` to synchronize without an action. Synchronizing drafts does not
+save records automatically.
+
+Keep presentation-only state in ordinary Alpine `x-data`, such as whether a menu
+is open. It does not need a PHP declaration or an update request. See the
+[browser API reference](/reference/browser) for the complete bridge contract.

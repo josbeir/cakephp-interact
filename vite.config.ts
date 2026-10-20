@@ -4,6 +4,37 @@ import { defineConfig } from 'vite-plus';
 export default defineConfig({
   pack: [
     {
+      name: 'demo-widgets',
+      entry: { widgets: 'tests/test_app/resources/ts/widgets.ts' },
+      outDir: 'tests/test_app/webroot/js',
+      format: 'iife',
+      platform: 'browser',
+      target: 'es2022',
+      minify: true,
+      dts: false,
+      outputOptions: { entryFileNames: '[name].js' },
+      deps: {
+        alwaysBundle: [/./],
+        onlyBundle: [
+          'tom-select',
+          '@orchidjs/sifter',
+          '@orchidjs/unicode-variants',
+        ],
+        onlyImport: [],
+      },
+      hooks: {
+        'build:done': async () => {
+          await writeFile(
+            'tests/test_app/webroot/js/widgets.css',
+            await readFile(
+              'node_modules/tom-select/dist/css/tom-select.default.css',
+              'utf8',
+            ),
+          );
+        },
+      },
+    },
+    {
       name: 'npm',
       entry: { index: 'resources/ts/index.ts' },
       outDir: 'build/js',
@@ -64,6 +95,7 @@ export default defineConfig({
       'node_modules/**',
       'build/**',
       'webroot/js/**',
+      'tests/test_app/webroot/js/**',
       'docs/.vitepress/dist/**',
       'docs/.vitepress/cache/**',
       'playwright-report/**',
@@ -308,6 +340,7 @@ export default defineConfig({
       'node_modules',
       'build',
       'webroot/js',
+      'tests/test_app/webroot/js',
       'composer.lock',
       'package-lock.json',
       '.git',
