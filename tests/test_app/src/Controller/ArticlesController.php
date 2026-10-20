@@ -33,6 +33,14 @@ class ArticlesController extends AppController
     }
 
     /**
+     * Render real forms and nested islands for deterministic polling acceptance tests.
+     */
+    #[Get('/demo/polling', name: 'demo:polling-fixtures')]
+    public function polling(): void
+    {
+    }
+
+    /**
      * Reuse an action template as the island's whole-page content without recursively embedding it.
      */
     #[Get('/page', name: 'demo:page')]

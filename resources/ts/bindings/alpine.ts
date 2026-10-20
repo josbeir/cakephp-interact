@@ -1,6 +1,7 @@
 import type { Alpine } from 'alpinejs';
 import type { IslandClient } from '../client';
 import { modelBinding } from './model';
+import { pollBinding } from './poll';
 
 /**
  * Register Interact's public directives and bridge on the host Alpine instance.
@@ -57,8 +58,18 @@ export function registerBindings(
               }),
             ),
           );
+        } else if (value === 'poll') {
+          cleanup(
+            client.bindPoll(element, pollBinding(modifiers), () =>
+              expression.trim()
+                ? Alpine.evaluateRaw<unknown>(element, expression)
+                : client.bridge.sync(),
+            ),
+          );
         } else
-          throw new Error('Unknown x-interact directive. Use model or submit.');
+          throw new Error(
+            'Unknown x-interact directive. Use model, submit, or poll.',
+          );
       },
     ),
   );

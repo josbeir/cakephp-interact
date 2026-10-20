@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { islandId, targetsIsland } from './requests';
 
 test('submission expressions use local Alpine scope and the native event with typed arguments', async ({
   page,
@@ -16,7 +17,10 @@ test('submission expressions use local Alpine scope and the native event with ty
       '<form x-data="{ amount: 5 }" x-interact:submit="$server.call(\'adjust\', $event.type === \'submit\' ? amount : 0)"><button>Submit scoped action</button></form>',
     );
   });
-  const response = page.waitForResponse('**/_interact/update');
+  const id = await islandId(counter);
+  const response = page.waitForResponse((reply) =>
+    targetsIsland(reply.request(), id),
+  );
   await counter.getByRole('button', { name: 'Submit scoped action' }).click();
   const accepted = await response;
   expect(accepted.ok()).toBe(true);
@@ -35,13 +39,14 @@ test('conditional models clean up debounce work, retain drafts, and rebind chang
   let requests = 0;
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  page.on('request', (request) => {
-    if (request.url().endsWith('/_interact/update')) requests++;
-  });
   await page.goto('/playground');
   const region = page.getByRole('region', {
     name: 'Failure recovery',
     exact: true,
+  });
+  const id = await islandId(region);
+  page.on('request', (request) => {
+    if (targetsIsland(request, id)) requests++;
   });
   await region.evaluate((element) => {
     element.querySelector('form')?.remove();
@@ -63,7 +68,9 @@ test('conditional models clean up debounce work, retain drafts, and rebind chang
     element.setAttribute('x-interact:model.blur', 'message');
   });
   await draft.fill('Submit on blur');
-  const response = page.waitForResponse('**/_interact/update');
+  const response = page.waitForResponse((reply) =>
+    targetsIsland(reply.request(), id),
+  );
   await draft.blur();
   const accepted = await response;
   expect(accepted.ok()).toBe(true);

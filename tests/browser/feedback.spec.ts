@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { islandId, targetsIsland } from './requests';
 
 /**
  * Hold an intercepted request until the test explicitly allows it to proceed.
@@ -19,7 +20,12 @@ test('a queued form accepts one submission and preserves edits made while waitin
   const save = gate();
   const saveSeen = gate();
   const actions: unknown[] = [];
+  let ownerId = '';
   await page.route('**/_interact/update', async (route) => {
+    if (!targetsIsland(route.request(), ownerId)) {
+      await route.continue();
+      return;
+    }
     const body: unknown = route.request().postDataJSON();
     if (typeof body !== 'object' || body === null || !('action' in body))
       throw new Error('Missing action.');
@@ -36,6 +42,7 @@ test('a queued form accepts one submission and preserves edits made while waitin
   });
   await page.goto('/playground');
   const board = page.getByRole('region', { name: 'Task board', exact: true });
+  ownerId = await islandId(board);
   const input = board.getByLabel('Add a task', { exact: true });
   const button = board.getByRole('button', { name: 'Add task', exact: true });
   await input.fill('Initial draft');
@@ -77,13 +84,19 @@ test('row-specific loading is delayed and does not disable unrelated actions', a
   await page.clock.install();
   const request = gate();
   const seen = gate();
+  let ownerId = '';
   await page.route('**/_interact/update', async (route) => {
+    if (!targetsIsland(route.request(), ownerId)) {
+      await route.continue();
+      return;
+    }
     seen.release();
     await request.promise;
     await route.continue();
   });
   await page.goto('/playground');
   const board = page.getByRole('region', { name: 'Task board', exact: true });
+  ownerId = await islandId(board);
   const row = board.locator('#demo-task-2');
   await row
     .getByRole('button', { name: 'Remove Try a conditional form', exact: true })
@@ -119,7 +132,12 @@ test('handwritten forms retain native validation and unlock after failure for an
   const request = gate();
   const seen = gate();
   let requests = 0;
+  let ownerId = '';
   await page.route('**/_interact/update', async (route) => {
+    if (!targetsIsland(route.request(), ownerId)) {
+      await route.continue();
+      return;
+    }
     requests++;
     if (requests === 1) {
       seen.release();
@@ -139,6 +157,7 @@ test('handwritten forms retain native validation and unlock after failure for an
     name: 'Failure recovery',
     exact: true,
   });
+  ownerId = await islandId(region);
   await region.locator('form').evaluate((form) => {
     form.outerHTML =
       '<form x-interact:submit="$server.call(\'save\')"><label>Plain draft<input required name="message" x-interact:model="message"></label><button>Plain save</button><button disabled>Unavailable</button></form>';
