@@ -112,6 +112,49 @@ afterEach(() => {
 });
 
 describe('widget DOM ownership', () => {
+  it('supports inline CSP data expressions while preserving local values across server updates', async () => {
+    const root = mount(
+      `<div x-data="{ expanded: false, initialCount: $server.state.count }">
+        <button type="button" @click="expanded = !expanded" :aria-expanded="expanded">Toggle details</button>
+        <div x-show="expanded">
+          <p id="initial" x-text="'Count at initialization: ' + initialCount"></p>
+          <p id="current" x-text="'Current count doubled: ' + ($server.state.count * 2)"></p>
+        </div>
+        <button type="button" @click="$server.call('increment')">Add one</button>
+      </div>`,
+      { count: 2 },
+    );
+    const toggle = root.querySelector('button');
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(root.querySelector('#initial')?.textContent).toBe(
+      'Count at initialization: 2',
+    );
+    expect(root.querySelector('#current')?.textContent).toBe(
+      'Current count doubled: 4',
+    );
+    const fetcher = vi.fn().mockResolvedValue(reply(root, { count: 3 }));
+    vi.stubGlobal('fetch', fetcher);
+    toggle?.click();
+    await vi.waitFor(() =>
+      expect(toggle?.getAttribute('aria-expanded')).toBe('true'),
+    );
+    root.querySelectorAll('button')[1]?.click();
+    await vi.waitFor(() =>
+      expect(root.querySelector('#current')?.textContent).toBe(
+        'Current count doubled: 6',
+      ),
+    );
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(requestBody(fetcher)).toMatchObject({
+      action: 'increment',
+      args: [],
+    });
+    expect(root.querySelector('#initial')?.textContent).toBe(
+      'Count at initialization: 2',
+    );
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+  });
+
   it('protects SVG attributes and children for application-owned charts', async () => {
     const root = mount(
       '<svg id="chart" viewBox="0 0 10 10" x-interact:ignore><circle r="3" /></svg>',

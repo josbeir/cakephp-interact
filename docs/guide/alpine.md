@@ -78,6 +78,46 @@ it. Registering an Alpine object does not create a global `$server` or share one
 island's state with another. Use [island events](/guide/nesting#refresh-another-island)
 for explicit communication between islands.
 
+## Use inline expressions in your template
+
+For small interactions, put local data directly in `x-data` inside the island:
+
+```html
+<div x-data="{ expanded: false, initialCount: $server.state.count }">
+  <button type="button" @click="expanded = !expanded" :aria-expanded="expanded">
+    Toggle details
+  </button>
+  <div x-show="expanded">
+    <p x-text="'Count at initialization: ' + initialCount"></p>
+    <p x-text="'Current count doubled: ' + ($server.state.count * 2)"></p>
+  </div>
+  <button type="button" @click="$server.call('increment')">Add one</button>
+</div>
+```
+
+This works with the Composer bundle's **CSP build of Alpine**. Object literals,
+property access, arithmetic, ternaries, assignments, and method calls are supported
+in template expressions. Toggling `expanded` is entirely local; calling
+`increment` sends an island request.
+
+`initialCount` copies the count when Alpine initializes this element. It does not
+stay synchronized with PHP. The expression reading `$server.state.count` directly
+is reactive and updates after accepted server responses. Local `expanded` state
+survives ordinary island refreshes while this element is preserved.
+
+The CSP expression parser does not support defining inline functions, such as
+`x-data="{ increment() { ... } }"` or arrow callbacks in `x-init`. Put methods,
+getters, and watcher callbacks in an external `Alpine.data()` registration as shown
+below. That file uses ordinary JavaScript; arrow functions there are fine. See
+[Alpine's CSP documentation](https://alpinejs.dev/advanced/csp) for its expression
+syntax and restrictions.
+
+The bundle uses CSP Alpine so applications can keep a policy such as
+`script-src 'self'` without allowing `unsafe-eval`. If your application needs
+standard Alpine's full expression syntax, the
+[application-owned Alpine setup](/installation#application-owned-alpine) supports
+`alpinejs` too; its evaluator requires a policy that allows `unsafe-eval`.
+
 ## Access `$server` from a JavaScript file
 
 An Alpine object, sometimes called a wrapper, is registered with `Alpine.data()`.
