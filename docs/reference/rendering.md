@@ -15,6 +15,11 @@ It supplies exactly the island's props, state, errors, and `viewData()`, restori
 the previous view scope afterwards. Both initial mounts and updates use this
 same variable contract.
 
+Its default FormHelper keeps native HTML validation constraints and disables
+`autoSetCustomValidity`, which would generate inline JavaScript handlers blocked
+by a strict CSP. An application view subclass can explicitly configure the helper
+in `initialize()` after calling the parent.
+
 An embedded island can live inside an ordinary CakePHP `AppView`. The rendering
 factory creates a separate `TemplateView` for its content. Configuration on the
 hosting `AppView`, including additional helpers, is not automatically copied.

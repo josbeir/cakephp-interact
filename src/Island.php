@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact;
 
+use Interact\Validation\ErrorNormalizer;
 use InvalidArgumentException;
 
 /**
@@ -58,13 +59,18 @@ abstract class Island
     }
 
     /**
-     * Attach application validation feedback to the next render.
+     * Replace response feedback with CakePHP entity errors or application message lists.
      *
-     * @param array<string, list<string>> $errors Existing CakePHP/application validation errors.
+     * Nested errors become dotted field paths; empty arrays contribute no messages.
+     * The original entity remains unchanged for FormHelper's validation context.
+     *
+     * @param array<array-key, mixed> $errors Field errors from getErrors() or custom message arrays.
+     *
+     * @throws InvalidArgumentException When fields or messages violate the error contract.
      */
     public function setErrors(array $errors): void
     {
-        $this->errors = $errors;
+        $this->errors = ErrorNormalizer::normalize($errors);
     }
 
     /**

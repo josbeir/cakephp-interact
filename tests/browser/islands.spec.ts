@@ -170,14 +170,42 @@ test('validates an explicit save without reloading the page', async ({
 }) => {
   await page.goto('/');
   const editor = page.getByRole('article', { name: 'Article 1', exact: true });
-  await editor.getByLabel('Article title').fill('');
+  const title = editor.getByLabel('Article title');
+  await expect(title).toHaveAttribute('required', 'required');
+  await title.fill('');
+  await expect
+    .poll(() =>
+      title.evaluate((input: HTMLInputElement) => input.validity.valueMissing),
+    )
+    .toBe(true);
+
+  // Bypass browser validation to exercise the server's independent validation boundary.
+  await editor.locator('form').evaluate((form: HTMLFormElement) => {
+    form.noValidate = true;
+  });
+  const failedRequest = page.waitForResponse((response) =>
+    response.url().endsWith('/_interact/update'),
+  );
   await editor.getByRole('button', { name: 'Save article' }).click();
+  const failedResponse = await failedRequest;
+  expect(failedResponse.status()).toBe(422);
+  expect(await failedResponse.json()).toMatchObject({
+    errors: { title: ['A title is required.'] },
+    events: [],
+  });
   await expect(
     editor.getByRole('alert').filter({ hasText: 'A title is required.' }),
   ).toBeVisible();
-  await editor.getByLabel('Article title').fill('Alpine patterns');
+  await expect(title).toHaveValue('');
+  await expect(title).toHaveAttribute('aria-invalid', 'true');
+  await expect(title).toHaveAccessibleDescription('A title is required.');
+  await title.fill('Alpine patterns');
   await editor.getByRole('button', { name: 'Save article' }).click();
   await expect(editor.getByRole('status')).toHaveText('Saved.');
+  await expect(title).not.toHaveAttribute('aria-invalid', 'true');
+  await expect(
+    editor.getByRole('alert').filter({ hasText: 'A title is required.' }),
+  ).toHaveCount(0);
   await expect(page).toHaveURL('/');
 });
 
