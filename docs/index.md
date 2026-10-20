@@ -30,7 +30,7 @@ These three files work together after [installation](/installation):
 
 ::: code-group
 
-```php [src/Island/Counter.php]
+```php [Island]
 <?php
 declare(strict_types=1);
 
@@ -43,6 +43,8 @@ use Interact\Island;
 
 /**
  * Keeps a count for one region and changes it through a server action.
+ *
+ * Save as src/Island/Counter.php.
  */
 #[AsIsland('counter', element: 'Interact/counter')]
 class Counter extends Island
@@ -61,21 +63,37 @@ class Counter extends Island
 }
 ```
 
-```php [templates/element/Interact/counter.php]
+```php [Element]
 <?php
 declare(strict_types=1);
 
-/** @var int $count */
+/**
+ * templates/element/Interact/counter.php
+ *
+ * @var int $count
+ */
 ?>
 <p aria-live="polite">Count: <?= (string)$count ?></p>
-<button type="button" @click="$server.call('increment')"
-    :disabled="$server.busy">
+<button
+    type="button"
+    @click="$server.call('increment')"
+    :disabled="$server.busy"
+>
     Add one
 </button>
 <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
-```php [templates/Articles/index.php]
+```php [Mount]
+<?php
+declare(strict_types=1);
+
+/**
+ * templates/Articles/index.php
+ *
+ * @var \Cake\View\View $this
+ */
+?>
 <h1>Articles</h1>
 <?= $this->Interact->render('counter') ?>
 ```

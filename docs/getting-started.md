@@ -32,6 +32,8 @@ use Interact\Island;
 
 /**
  * Keeps a count for one region and changes it through a server action.
+ *
+ * Save as src/Island/Counter.php.
  */
 #[AsIsland('counter', element: 'Interact/counter')]
 class Counter extends Island
@@ -62,11 +64,18 @@ The declared element receives `$count` on the initial render and every update:
 <?php
 declare(strict_types=1);
 
-/** @var int $count */
+/**
+ * templates/element/Interact/counter.php
+ *
+ * @var int $count
+ */
 ?>
 <p aria-live="polite">Count: <?= (string)$count ?></p>
-<button type="button" @click="$server.call('increment')"
-    :disabled="$server.busy">
+<button
+    type="button"
+    @click="$server.call('increment')"
+    :disabled="$server.busy"
+>
     Add one
 </button>
 <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
@@ -81,6 +90,15 @@ The alert displays a request failure when one occurs.
 In a template already rendered by your application, add:
 
 ```php [templates/Articles/index.php]
+<?php
+declare(strict_types=1);
+
+/**
+ * templates/Articles/index.php
+ *
+ * @var \Cake\View\View $this
+ */
+?>
 <h1>Articles</h1>
 <?= $this->Interact->render('counter') ?>
 ```

@@ -126,7 +126,7 @@ Required Composer scripts:
 
 - Keep `README.md` a concise introduction and entry point to the documentation. Include the purpose, current compatibility/status, a small set of useful documentation links, and the license. Put installation steps, extended examples, demo commands, API contracts, troubleshooting, and contributor workflows in the docs rather than duplicating them in the README.
 - Lead with a concrete task and a small working example, then explain the result. Teach ordinary usage before advanced variations; keep exhaustive contracts in reference pages.
-- Keep the homepage short and show cooperating PHP classes, elements, and mount calls in labeled code tabs. Identify file paths, imports, prerequisites, and application-supplied data.
+- Keep the homepage short and show cooperating PHP classes, elements, and mount calls in labeled code tabs. Use short role-based tab labels such as Island, Element, Table, and Mount instead of file paths; identify example file paths in PHP docblocks where needed. Identify imports, prerequisites, and application-supplied data.
 - Give new users a complete path from installation to a working interaction. Keep development-package and browser-asset requirements visible rather than hiding them in optional details.
 - Use declared aliases consistently in discovery and rendering examples. Make the ownership of props, writable drafts, computed data, authorization, and persistence explicit where relevant.
 - Prefer VitePress navigation, local search, code groups, callouts, and optional details over custom components. Reserve callouts for actionable caveats; omit line numbers unless useful.
