@@ -443,6 +443,27 @@ form > .success-message {
   gap: 1.5rem;
   align-items: start;
 }
+.playground-grid {
+  margin-bottom: 1.5rem;
+}
+.recovery-simulations {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
+}
+.recovery-feedback {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: var(--wash);
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+}
+.recovery-feedback > .input,
+.recovery-feedback > .request-error {
+  margin: 0;
+}
 .counter {
   background: var(--wash);
   border: 1px solid var(--line);
