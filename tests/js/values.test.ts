@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
+import { refreshControl } from '../../resources/ts/bindings/control-values';
 import {
   clone,
   equal,
@@ -11,6 +12,24 @@ import { response, writable } from '../../resources/ts/transport/protocol';
 import type { State } from '../../resources/ts/types';
 
 describe('transport values', () => {
+  it.each([
+    [null, ''],
+    [undefined, ''],
+    [false, 'false'],
+    [0, '0'],
+    ['', ''],
+    ['draft', 'draft'],
+    [{ title: 'draft' }, '{"title":"draft"}'],
+    [['one', 'two'], '["one","two"]'],
+  ])(
+    'restores text controls without losing JSON values: %j',
+    (value, expected) => {
+      const input = document.createElement('input');
+      input.dataset.interactModel = 'value';
+      refreshControl(input, value === undefined ? {} : { value });
+      expect(input.value).toBe(expected);
+    },
+  );
   it('preserves native JSON distinctions and rejects unsafe values', () => {
     for (const value of [
       null,

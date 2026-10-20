@@ -13,8 +13,7 @@
 
 <p align="center">
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&amp;logoColor=white" alt="TypeScript" /></a>
-  <a href="https://eslint.org/"><img src="https://img.shields.io/badge/checked_with-ESLint-4b32c3?logo=eslint&amp;logoColor=white" alt="Checked with ESLint" /></a>
-  <a href="https://prettier.io/"><img src="https://img.shields.io/badge/formatted_with-Prettier-f7b93e?logo=prettier&amp;logoColor=black" alt="Formatted with Prettier" /></a>
+  <a href="https://www.viteplus.dev/"><img src="https://img.shields.io/badge/checked_with-Vite%2B-646cff" alt="Checked with Vite+" /></a>
   <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/tested_with-Vitest-6e9f18?logo=vitest&amp;logoColor=white" alt="Tested with Vitest" /></a>
 </p>
 

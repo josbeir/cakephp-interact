@@ -29,7 +29,7 @@ await execute('tar', [
   'LICENSE',
   'README.md',
   'AGENTS.md',
-  ...readdirSync('docs', { recursive: true })
+  ...readdirSync('docs', { recursive: true, encoding: 'utf8' })
     .filter(
       (path) =>
         path.endsWith('.md') &&

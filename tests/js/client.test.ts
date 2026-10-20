@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { IslandClient } from '../../resources/ts/client';
 import type {
   Fetcher,
@@ -27,6 +27,17 @@ const initial: State = {
   locked: 'server',
 };
 const clients: IslandClient[] = [];
+
+/**
+ * Read a captured request body only after checking the transport sent JSON text.
+ */
+function requestBody(options: RequestInit | undefined): unknown {
+  const body = options?.body;
+  if (typeof body !== 'string')
+    throw new Error('Expected a JSON request body.');
+  return JSON.parse(body);
+}
+
 function element(content = ''): HTMLDivElement {
   const root = document.createElement('div');
   root.dataset.interactId = 'test-id';
@@ -161,7 +172,7 @@ describe('island lifecycle and transport', () => {
     expect(options?.credentials).toBe('same-origin');
     expect(options?.redirect).toBe('manual');
     expect(options?.headers).toMatchObject({ 'X-CSRF-Token': 'csrf' });
-    expect(JSON.parse(String(options?.body))).toMatchObject({
+    expect(requestBody(options)).toMatchObject({
       version: 1,
       snapshot: 'initial-signature',
       updates: { title: 'new' },
@@ -196,7 +207,7 @@ describe('island lifecycle and transport', () => {
     expect(value.bridge.state.title).toBe('newer');
     expect(control(root, 'input', HTMLInputElement).value).toBe('newer');
     await second;
-    expect(JSON.parse(String(fetcher.mock.calls[1]?.[1].body))).toMatchObject({
+    expect(requestBody(fetcher.mock.calls[1]?.[1])).toMatchObject({
       snapshot: 'new-signature',
       updates: { title: 'newer' },
     });
@@ -340,9 +351,9 @@ describe('declarative controls', () => {
       new Event('submit', { bubbles: true, cancelable: true }),
     );
     await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
-    expect(
-      JSON.parse(String(fetcher.mock.calls[0]?.[1].body)).updates.title,
-    ).toBe('draft');
+    expect(requestBody(fetcher.mock.calls[0]?.[1])).toMatchObject({
+      updates: { title: 'draft' },
+    });
   });
   it('handles explicit clicks, blur, change, and input debounce without duplicate requests', async () => {
     vi.useFakeTimers();

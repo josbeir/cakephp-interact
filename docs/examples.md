@@ -11,7 +11,7 @@ used by integration and browser tests.
 
 ## Run it locally
 
-You need PHP 8.5 with SQLite support, Composer, and Node 24+.
+You need PHP 8.5 with SQLite support, Composer, and Node 24.11+ or Node 26+.
 From the repository checkout:
 
 ```sh

@@ -10,3 +10,4 @@
 /tests/test_app/tmp/
 /tests/test_app/logs/
 /webroot/js/
+.vitest/

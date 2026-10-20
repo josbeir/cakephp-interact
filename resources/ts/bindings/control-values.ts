@@ -5,7 +5,9 @@ import type { Json, State, Writable } from '../types';
  * Native controls supported by declarative island model bindings.
  */
 export type Control =
-  HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+  | HTMLInputElement
+  | HTMLSelectElement
+  | HTMLTextAreaElement;
 
 /**
  * Read a native control into its writable property without sending a request.
@@ -72,5 +74,10 @@ export function refreshControl(control: Control, current: State): void {
     for (const option of control.options)
       option.selected = Array.isArray(value) && value.includes(option.value);
   else if (!(control instanceof HTMLInputElement && control.type === 'file'))
-    control.value = value === null || value === undefined ? '' : String(value);
+    control.value =
+      value === null || value === undefined
+        ? ''
+        : typeof value === 'object'
+          ? JSON.stringify(value)
+          : String(value);
 }

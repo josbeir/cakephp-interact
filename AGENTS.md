@@ -58,7 +58,8 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 
 ## TypeScript
 
-- Use ES modules, strict TypeScript, `noUncheckedIndexedAccess`, and `exactOptionalPropertyTypes`. Support Node 24+ for tooling.
+- Use ES modules, strict TypeScript 7, `noUncheckedIndexedAccess`, and `exactOptionalPropertyTypes`. Support Node 24.11+ or Node 26+ for tooling.
+- Use TypeScript 7 directly for native type checking and declaration builds. Avoid compatibility aliases or a second TypeScript compiler.
 - Treat network data as `unknown`; validate before use. Prefer discriminated unions and explicit state transitions.
 - Avoid `any`, unchecked assertions, non-null assertions, and suppressions. Fix types at their source.
 - Separate transport, scheduling, state reconciliation, DOM operations, and Alpine integration.
@@ -67,7 +68,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Clean up listeners, timers, observers, and in-flight work when islands disappear.
 - Preserve newer drafts, focus, selection, nested ownership, and local Alpine state during updates.
 - Prevent duplicate Alpine initialization. Avoid unnecessary global mutable state.
-- ESLint owns correctness rules; Prettier owns TypeScript/JavaScript formatting. Mago owns PHP formatting and linting.
+- Vite+ owns JavaScript/TypeScript linting, formatting, native type checking, Vitest, and library bundling through `vite.config.ts`. Use its bundled Oxlint, Oxfmt, and Vitest instead of separate ESLint/Prettier installations or configuration. Mago owns PHP formatting, linting, and analysis.
 
 ## PHP quality gates
 
@@ -103,7 +104,7 @@ Required Composer scripts:
 - Prefer role/label locators, auto-waiting assertions, isolated contexts, deterministic fixtures, and network interception over fixed sleeps.
 - Test tampering, CSRF, expiry, unauthorized actions, permission changes, malformed payloads, races, submit-before-blur, validation, escaping, focus, disposal, and nested-state preservation regardless of coverage totals.
 - Provide npm scripts `typecheck`, `lint`, `format-check`, `format`, `test`, `test:watch`, `test:coverage`, `test:browser`, `build`, and `check`.
-- `check` runs type checking, linting, format verification, and unit tests. CI separately runs coverage, browser tests, package builds, and docs builds.
+- `check` runs Vite+ type checking, linting, format verification, and unit tests. CI separately runs coverage, browser tests, package builds, and docs builds.
 
 ## Distribution, documentation, and completion
 

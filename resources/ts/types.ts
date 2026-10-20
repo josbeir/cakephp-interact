@@ -2,7 +2,12 @@
  * Values accepted by the JSON transport, including nested lists and records.
  */
 export type Json =
-  null | boolean | number | string | Json[] | { [key: string]: Json };
+  | null
+  | boolean
+  | number
+  | string
+  | Json[]
+  | { [key: string]: Json };
 
 /**
  * Browser-visible props and state, indexed by their declared PHP property names.

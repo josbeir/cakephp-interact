@@ -9,11 +9,7 @@
   --wash: #f4f7f5;
   --soft: #eaf3ed;
   font-family:
-    Inter,
-    ui-sans-serif,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
+    Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI',
     sans-serif;
   color: var(--ink);
   background: var(--wash);
