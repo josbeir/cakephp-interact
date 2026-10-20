@@ -3,11 +3,9 @@ declare(strict_types=1);
 
 namespace TestApp\Controller;
 
-use Cake\Controller\Controller;
 use Cake\Http\Response;
 use Cake\Routing\Attribute\Get;
 use Cake\Routing\Attribute\Post;
-use Interact\View\Helper\InteractHelper;
 use Interact\View\IslandView;
 use function Cake\I18n\__;
 
@@ -15,7 +13,7 @@ use function Cake\I18n\__;
  * Demonstrates embedded and whole-page mounting while leaving queries and mutations in their proper
  * owners.
  */
-class ArticlesController extends Controller
+class ArticlesController extends AppController
 {
     /**
      * Render the normal index template; its title is not inherited by the embedded islands.
@@ -24,7 +22,6 @@ class ArticlesController extends Controller
     public function index(): void
     {
         $this->set('title', __('Small islands. Real interactions.'));
-        $this->viewBuilder()->addHelper('Interact', ['className' => InteractHelper::class]);
     }
 
     /**
@@ -33,7 +30,6 @@ class ArticlesController extends Controller
     #[Get('/playground', name: 'demo:playground')]
     public function playground(): void
     {
-        $this->viewBuilder()->addHelper('Interact', ['className' => InteractHelper::class]);
     }
 
     /**
