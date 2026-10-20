@@ -115,6 +115,9 @@ it with same-origin update requests. For protected route scopes, read
 
 ## Application-owned Alpine
 
+Use Alpine 3.17.4 or later in the 3.x series. Interact uses Alpine’s native
+expression evaluation API to keep submission promises and failures observable.
+
 Use this integration when your application already starts Alpine. Build the npm
 module in the plugin checkout with `npm run build`, then install that checkout
 from your application's JavaScript project:

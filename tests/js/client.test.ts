@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
-import { IslandClient } from '../../resources/ts/client';
+import { mountClient, destroyBindings, refreshBindings } from './mount';
+import type { IslandClient } from '../../resources/ts/client';
 import type {
   Fetcher,
   IslandResponse,
@@ -78,14 +79,7 @@ function result(
   });
 }
 function client(root: HTMLElement, fetcher: Fetcher): IslandClient {
-  const value = new IslandClient(
-    root,
-    (target, replacement) => {
-      target.innerHTML = replacement.innerHTML;
-    },
-    (value) => value,
-    fetcher,
-  );
+  const value = mountClient(root, fetcher);
   clients.push(value);
   return value;
 }
@@ -99,7 +93,10 @@ function control<T extends HTMLElement>(
   return found;
 }
 afterEach(() => {
-  clients.splice(0).forEach((value) => value.dispose());
+  clients.splice(0).forEach((value) => {
+    destroyBindings(value.root);
+    value.dispose();
+  });
   document.body.innerHTML = '';
   vi.useRealTimers();
 });
@@ -184,7 +181,7 @@ describe('island lifecycle and transport', () => {
     expect(value.bridge.busy).toBe(false);
   });
   it('keeps newer typing and serializes queued actions against the latest snapshot', async () => {
-    const root = element('<input data-interact-model="title" value="old">');
+    const root = element('<input x-interact:model="title" value="old">');
     let finish: (response: Response) => void = () => {};
     const pending = new Promise<Response>((resolve) => {
       finish = resolve;
@@ -327,9 +324,7 @@ describe('island lifecycle and transport', () => {
   });
   it('disposes timers and queued work and ignores late responses', async () => {
     vi.useFakeTimers();
-    const root = element(
-      '<input data-interact-model="title" data-interact-update="input">',
-    );
+    const root = element('<input x-interact:model.live="title">');
     let finish: (response: Response) => void = () => {};
     const fetcher = vi.fn<Fetcher>().mockReturnValue(
       new Promise<Response>((resolve) => {
@@ -362,7 +357,7 @@ describe('island lifecycle and transport', () => {
 describe('declarative controls', () => {
   it('keeps edits local by default and flushes controls before submit', async () => {
     const root = element(
-      '<form data-interact-submit="save"><input data-interact-model="title" value="old"><button><span>Save</span></button></form>',
+      '<form x-interact:submit="$server.call(\'save\')"><input x-interact:model="title" value="old"><button><span>Save</span></button></form>',
     );
     const fetcher = vi
       .fn<Fetcher>()
@@ -383,7 +378,7 @@ describe('declarative controls', () => {
   });
   it('locks a native form while queued, keeps later drafts, and unlocks validation responses', async () => {
     const root = element(
-      '<form id="native-form" data-interact-submit="save"><input data-interact-model="title" value="old"><button>Save</button></form>',
+      '<form id="native-form" x-interact:submit="$server.call(\'save\')"><input x-interact:model="title" value="old"><button>Save</button></form>',
     );
     const html = root.outerHTML;
     let finish: (response: Response) => void = () => {};
@@ -434,7 +429,7 @@ describe('declarative controls', () => {
   it('handles explicit clicks, blur, change, and input debounce without duplicate requests', async () => {
     vi.useFakeTimers();
     const root = element(
-      '<input data-interact-model="title" data-interact-update="input" data-interact-debounce="30"><button type="button" data-interact-click="save"><span>Save</span></button>',
+      '<input x-interact:model.live.debounce.30ms="title"><button type="button" @click="$server.call(\'save\')"><span>Save</span></button>',
     );
     const fetcher = vi
       .fn<Fetcher>()
@@ -450,12 +445,16 @@ describe('declarative controls', () => {
     await vi.advanceTimersByTimeAsync(1);
     expect(fetcher).toHaveBeenCalledOnce();
     input = control(root, 'input', HTMLInputElement);
-    input.dataset.interactUpdate = 'blur';
+    input.removeAttribute('x-interact:model.live.debounce.30ms');
+    input.setAttribute('x-interact:model.blur', 'title');
+    refreshBindings(root);
     input.dispatchEvent(new Event('focusout', { bubbles: true }));
     await vi.runAllTimersAsync();
     expect(fetcher).toHaveBeenCalledTimes(2);
     input = control(root, 'input', HTMLInputElement);
-    input.dataset.interactUpdate = 'change';
+    input.removeAttribute('x-interact:model.blur');
+    input.setAttribute('x-interact:model.change', 'title');
+    refreshBindings(root);
     input.dispatchEvent(new Event('change', { bubbles: true }));
     await vi.runAllTimersAsync();
     expect(fetcher).toHaveBeenCalledTimes(3);
@@ -465,17 +464,13 @@ describe('declarative controls', () => {
   });
   it('supports checkboxes, radio groups, selections, numeric values, and nested state', async () => {
     const root = element(
-      '<input type="checkbox" data-interact-model="enabled"><input type="checkbox" value="one" data-interact-model="tags"><input type="radio" value="b" data-interact-model="choice"><select multiple data-interact-model="tags"><option value="one">One</option><option value="two">Two</option></select><input data-interact-model="count"><input data-interact-model="amount"><textarea data-interact-model="form.name"></textarea>',
+      '<input type="checkbox" name="enabled" x-interact:model="enabled"><input type="checkbox" value="one" x-interact:model="tags"><input type="radio" value="b" x-interact:model="choice"><select multiple x-interact:model="tags"><option value="one">One</option><option value="two">Two</option></select><input name="count" x-interact:model="count"><input name="amount" x-interact:model="amount"><textarea x-interact:model="form.name"></textarea>',
     );
     const value = client(
       root,
       vi.fn<Fetcher>().mockResolvedValue(result(payload(root))),
     );
-    const enabled = control(
-      root,
-      '[data-interact-model="enabled"]',
-      HTMLInputElement,
-    );
+    const enabled = control(root, '[name="enabled"]', HTMLInputElement);
     enabled.checked = true;
     enabled.dispatchEvent(new Event('change', { bubbles: true }));
     expect(value.bridge.state.enabled).toBe(true);
@@ -493,22 +488,16 @@ describe('declarative controls', () => {
     radio.dispatchEvent(new Event('change', { bubbles: true }));
     expect(value.bridge.state.choice).toBe('b');
     const select = control(root, 'select', HTMLSelectElement);
-    select.options[1]?.setAttribute('selected', '');
+    const selected = select.options[1];
+    if (!selected) throw new Error('Missing select option.');
+    selected.selected = true;
     select.dispatchEvent(new Event('change', { bubbles: true }));
     expect(value.bridge.state.tags).toEqual(['two']);
-    const count = control(
-      root,
-      '[data-interact-model="count"]',
-      HTMLInputElement,
-    );
+    const count = control(root, '[name="count"]', HTMLInputElement);
     count.value = '0';
     count.dispatchEvent(new Event('input', { bubbles: true }));
     expect(value.bridge.state.count).toBe(0);
-    const amount = control(
-      root,
-      '[data-interact-model="amount"]',
-      HTMLInputElement,
-    );
+    const amount = control(root, '[name="amount"]', HTMLInputElement);
     amount.value = '';
     amount.dispatchEvent(new Event('input', { bubbles: true }));
     expect(value.bridge.state.amount).toBeNull();
@@ -517,17 +506,13 @@ describe('declarative controls', () => {
     text.dispatchEvent(new Event('input', { bubbles: true }));
     expect(value.bridge.state.form).toEqual({ name: 'nested' });
     await value.bridge.sync();
-    expect(
-      control(root, '[data-interact-model="count"]', HTMLInputElement).value,
-    ).toBe('0');
-    expect(
-      control(root, '[data-interact-model="amount"]', HTMLInputElement).value,
-    ).toBe('');
+    expect(control(root, '[name="count"]', HTMLInputElement).value).toBe('0');
+    expect(control(root, '[name="amount"]', HTMLInputElement).value).toBe('');
   });
   it('ignores child islands, unrelated forms, disabled controls and IME intermediate input', async () => {
     vi.useFakeTimers();
     const root = element(
-      '<div data-interact-id="child"><input data-interact-model="title" value="child"><button data-interact-click="save">Child</button></div><input disabled data-interact-model="title"><form></form><input data-interact-model="title" data-interact-update="input">',
+      '<div x-ignore data-interact-id="child"><input x-interact:model="title" value="child"><button @click="$server.call(\'save\')">Child</button></div><input disabled x-interact:model="title"><form></form><input x-interact:model.live="title">',
     );
     const fetcher = vi.fn<Fetcher>();
     const value = client(root, fetcher);
@@ -540,11 +525,7 @@ describe('declarative controls', () => {
     control(root, 'form', HTMLFormElement).dispatchEvent(
       new Event('submit', { bubbles: true }),
     );
-    const input = control(
-      root,
-      'input[data-interact-update]',
-      HTMLInputElement,
-    );
+    const input = control(root, ':scope > input:last-child', HTMLInputElement);
     input.value = 'draft';
     input.dispatchEvent(
       new InputEvent('input', { bubbles: true, isComposing: true }),

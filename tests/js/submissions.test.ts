@@ -7,13 +7,13 @@ function setup() {
   const root = document.createElement('div');
   root.dataset.interactId = 'parent';
   root.innerHTML =
-    '<form id="save-form" data-interact-submit="save"><input value="draft"><button>Save</button><button disabled>Unavailable</button><button type="button">Other action</button><input type="image" alt="Submit"></form><button form="save-form">External submit</button><div data-interact-id="child"><button form="save-form">Child</button></div>';
+    '<form id="save-form" x-interact:submit="$server.call(\'save\')"><input value="draft"><button>Save</button><button disabled>Unavailable</button><button type="button">Other action</button><input type="image" alt="Submit"></form><button form="save-form">External submit</button><div data-interact-id="child"><button form="save-form">Child</button></div>';
   document.body.append(root);
   const form = root.querySelector('form');
   const button = root.querySelector('button');
   const input = root.querySelector('input');
   if (!form || !button || !input) throw new Error('Missing form fixture.');
-  const guard = new FormSubmissions(root);
+  const guard = new FormSubmissions(root, () => {});
   guards.push(guard);
   let complete: (result: RequestResult) => void = () => {};
   const pending = new Promise<RequestResult>((resolve) => {
@@ -35,8 +35,18 @@ describe('native submission protection', () => {
       expect(button.disabled).toBe(false);
       return pending;
     };
-    guard.submit(form, invoke);
-    guard.submit(form, invoke);
+    guard.submit(
+      form,
+      'x-interact:submit',
+      form.getAttribute('x-interact:submit') ?? '',
+      invoke,
+    );
+    guard.submit(
+      form,
+      'x-interact:submit',
+      form.getAttribute('x-interact:submit') ?? '',
+      invoke,
+    );
     expect(calls).toBe(1);
     expect(button.disabled).toBe(true);
     expect(form.getAttribute('aria-busy')).toBe('true');
@@ -63,10 +73,15 @@ describe('native submission protection', () => {
   });
   it('preserves newly rendered disabled state while following a keyed replacement', async () => {
     const { root, form, guard, pending, complete } = setup();
-    guard.submit(form, () => pending);
+    guard.submit(
+      form,
+      'x-interact:submit',
+      form.getAttribute('x-interact:submit') ?? '',
+      () => pending,
+    );
     guard.beforeMorph();
     root.innerHTML =
-      '<form id="save-form" data-interact-submit="save" aria-busy="false"><button disabled>Still unavailable</button></form>';
+      '<form id="save-form" x-interact:submit="$server.call(\'save\')" aria-busy="false"><button disabled>Still unavailable</button></form>';
     guard.refresh();
     const replacement = root.querySelector('form');
     expect(replacement?.getAttribute('aria-busy')).toBe('true');
@@ -77,7 +92,12 @@ describe('native submission protection', () => {
   });
   it('retains application disabled changes and protects newly inserted submitters', async () => {
     const { root, form, button, guard, pending, complete } = setup();
-    guard.submit(form, () => pending);
+    guard.submit(
+      form,
+      'x-interact:submit',
+      form.getAttribute('x-interact:submit') ?? '',
+      () => pending,
+    );
     button.disabled = false;
     await Promise.resolve();
     expect(button.disabled).toBe(true);
@@ -95,10 +115,15 @@ describe('native submission protection', () => {
   it('does not transfer locks to unkeyed replacements and releases disposal without late mutations', async () => {
     const { root, form, button, guard, pending, complete } = setup();
     form.removeAttribute('id');
-    guard.submit(form, () => pending);
+    guard.submit(
+      form,
+      'x-interact:submit',
+      form.getAttribute('x-interact:submit') ?? '',
+      () => pending,
+    );
     guard.beforeMorph();
     root.innerHTML =
-      '<form data-interact-submit="save"><button>New form</button></form>';
+      '<form x-interact:submit="$server.call(\'save\')"><button>New form</button></form>';
     guard.refresh();
     expect(root.querySelector('button')).toHaveProperty('disabled', false);
     expect(button.disabled).toBe(false);
@@ -110,18 +135,28 @@ describe('native submission protection', () => {
   it('keeps separate forms independent and disposes active locks without late cleanup changing the DOM', async () => {
     const { root, form, button, guard, pending, complete } = setup();
     const other = document.createElement('form');
-    other.dataset.interactSubmit = 'other';
+    other.setAttribute('x-interact:submit', '$server.call("other")');
     other.innerHTML = '<button>Other save</button>';
     root.append(other);
     const otherButton = other.querySelector('button');
     if (!otherButton) throw new Error('Missing second form.');
-    guard.submit(form, () => pending);
+    guard.submit(
+      form,
+      'x-interact:submit',
+      form.getAttribute('x-interact:submit') ?? '',
+      () => pending,
+    );
     expect(otherButton.disabled).toBe(false);
     let done: (result: RequestResult) => void = () => {};
     const otherPending = new Promise<RequestResult>((resolve) => {
       done = resolve;
     });
-    guard.submit(other, () => otherPending);
+    guard.submit(
+      other,
+      'x-interact:submit',
+      other.getAttribute('x-interact:submit') ?? '',
+      () => otherPending,
+    );
     expect(otherButton.disabled).toBe(true);
     done({ ok: true });
     await otherPending;
@@ -140,11 +175,16 @@ describe('native submission protection', () => {
     form.dataset.interactKey = 'editor';
     form.innerHTML = '<input>';
     form.setAttribute('aria-busy', 'false');
-    guard.submit(form, () => pending);
+    guard.submit(
+      form,
+      'x-interact:submit',
+      form.getAttribute('x-interact:submit') ?? '',
+      () => pending,
+    );
     guard.refresh();
     guard.beforeMorph();
     root.innerHTML =
-      '<form data-interact-key="editor" data-interact-submit="save"><input></form>';
+      '<form data-interact-key="editor" x-interact:submit="$server.call(\'save\')"><input></form>';
     guard.refresh();
     complete({
       ok: false,
@@ -160,10 +200,15 @@ describe('native submission protection', () => {
   });
   it('does not transfer a removed form lock to unrelated forms or child islands', async () => {
     const { root, form, guard, pending, complete } = setup();
-    guard.submit(form, () => pending);
+    guard.submit(
+      form,
+      'x-interact:submit',
+      form.getAttribute('x-interact:submit') ?? '',
+      () => pending,
+    );
     guard.beforeMorph();
     root.innerHTML =
-      '<form data-interact-submit="save"><button>Unkeyed</button></form><form id="other" data-interact-submit="save"><button>Other key</button></form><form id="save-form" data-interact-submit="delete"><button>Other action</button></form><div data-interact-id="child"><form data-interact-key="save-form" data-interact-submit="save"><button>Child</button></form></div>';
+      '<form x-interact:submit="$server.call(\'save\')"><button>Unkeyed</button></form><form id="other" x-interact:submit="$server.call(\'save\')"><button>Other key</button></form><form id="save-form" x-interact:submit="$server.call(\'delete\')"><button>Other action</button></form><div data-interact-id="child"><form data-interact-key="save-form" x-interact:submit="$server.call(\'save\')"><button>Child</button></form></div>';
     guard.refresh();
     for (const candidate of root.querySelectorAll('form')) {
       expect(candidate.hasAttribute('aria-busy')).toBe(false);
@@ -178,7 +223,12 @@ describe('native submission protection', () => {
   });
   it('keeps application field availability independent of the submit lock', async () => {
     const { form, button, input, guard, pending, complete } = setup();
-    guard.submit(form, () => pending);
+    guard.submit(
+      form,
+      'x-interact:submit',
+      form.getAttribute('x-interact:submit') ?? '',
+      () => pending,
+    );
     input.disabled = true;
     await Promise.resolve();
     expect(input.disabled).toBe(true);
@@ -194,7 +244,12 @@ describe('native submission protection', () => {
   });
   it('does not restore form or button state after ownership moves to a child island', async () => {
     const { root, form, button, guard, pending, complete } = setup();
-    guard.submit(form, () => pending);
+    guard.submit(
+      form,
+      'x-interact:submit',
+      form.getAttribute('x-interact:submit') ?? '',
+      () => pending,
+    );
     const child = root.querySelector('[data-interact-id="child"]');
     if (!child) throw new Error('Missing child island.');
     child.append(form);

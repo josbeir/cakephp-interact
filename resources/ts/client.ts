@@ -1,4 +1,6 @@
 import { Controls } from './bindings/controls';
+import type { Control } from './bindings/control-values';
+import type { ModelBinding } from './bindings/model';
 import { readRoot } from './dom/markup';
 import { preserveSelection } from './dom/selection';
 import { RequestActivity } from './scheduling/request-activity';
@@ -91,7 +93,31 @@ export class IslandClient {
       (error) => this.failed(error),
       (requests) => this.requests.update(requests),
     );
-    this.controls = new Controls(root, this.bridge, () => this.writable);
+    this.controls = new Controls(
+      root,
+      this.bridge,
+      () => this.writable,
+      (cause) => this.failed(requestError('client_error', null, cause)),
+    );
+  }
+
+  /**
+   * Register a native model for the lifetime managed by its Alpine directive.
+   */
+  bindModel(control: Control, binding: ModelBinding): () => void {
+    return this.controls.bindModel(control, binding);
+  }
+
+  /**
+   * Register a scoped submission expression without exposing scheduling services.
+   */
+  bindSubmit(
+    form: HTMLFormElement,
+    attribute: string,
+    expression: string,
+    evaluate: (event: Event) => unknown,
+  ): () => void {
+    return this.controls.bindSubmit(form, attribute, expression, evaluate);
   }
 
   /**

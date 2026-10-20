@@ -33,9 +33,7 @@ Inside its FormHelper form, the element sends the draft after a short typing pau
     'label' => 'Search resources',
     'value' => $search,
     'maxlength' => 200,
-    'data-interact-model' => 'search',
-    'data-interact-update' => 'input',
-    'data-interact-debounce' => 250,
+    'x-interact:model.live' => 'search',
 ]) ?>
 ```
 

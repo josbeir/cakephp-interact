@@ -18,14 +18,13 @@ use function Cake\Core\h;
 <section class="demo-card" aria-label="Workshop planner">
     <div class="card-heading"><div><p class="eyebrow">02 / Conditional forms</p><h2>Plan a workshop</h2></div><span class="capability">Live quote</span></div>
     <p class="card-description">Change the format, add extras, or request a company invoice. The server calculates your quote as you go.</p>
-    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'workshop', 'data-interact-submit' => 'confirm']) ?>
+    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'workshop', 'x-interact:submit' => '$server.call("confirm")']) ?>
         <div class="field-grid">
             <?= $this->Form->control('format', [
                 'label' => 'Workshop format',
                 'options' => ['remote' => 'Online · €45 / person', 'studio' => 'In the studio · €75 / person'],
                 'value' => $format,
-                'data-interact-model' => 'format',
-                'data-interact-update' => 'change',
+                'x-interact:model.change' => 'format',
             ]) ?>
             <?= $this->Form->control('attendees', [
                 'type' => 'number',
@@ -33,8 +32,7 @@ use function Cake\Core\h;
                 'min' => 1,
                 'max' => 12,
                 'value' => $attendees,
-                'data-interact-model' => 'attendees',
-                'data-interact-update' => 'change',
+                'x-interact:model.change' => 'attendees',
                 'aria-invalid' => isset($errors['attendees']) ? 'true' : null,
             ]) ?>
         </div>
@@ -45,16 +43,14 @@ use function Cake\Core\h;
             ], [
                 'val' => $extras,
                 'label' => ['class' => 'check-option'],
-                'data-interact-model' => 'extras',
-                'data-interact-update' => 'change',
+                'x-interact:model.change' => 'extras',
             ]) ?>
         </fieldset>
         <?= $this->Form->control('business', [
             'type' => 'checkbox',
             'label' => ['text' => 'Book for a company', 'class' => 'check-option'],
             'checked' => $business,
-            'data-interact-model' => 'business',
-            'data-interact-update' => 'change',
+            'x-interact:model.change' => 'business',
         ]) ?>
         <?php if ($business): ?>
             <div class="conditional-field">
@@ -64,7 +60,7 @@ use function Cake\Core\h;
                     'value' => $company,
                     'maxlength' => 100,
                     'placeholder' => 'Your company',
-                    'data-interact-model' => 'company',
+                    'x-interact:model' => 'company',
                     'aria-invalid' => isset($errors['company']) ? 'true' : null,
                 ]) ?>
                 <p class="field-hint">Required for a company quote. Hidden when booking personally.</p>

@@ -1,6 +1,6 @@
 ---
 title: Browser API
-description: Native input and action attributes, the Alpine server bridge, scheduling, and DOM update behavior.
+description: Alpine model and submission directives, the server bridge, scheduling, and DOM update behavior.
 ---
 
 # Browser API
@@ -8,27 +8,49 @@ description: Native input and action attributes, the Alpine server bridge, sched
 The [state guide](/guide/state) and [action guide](/guide/actions) show practical
 usage. All bindings operate inside an island created by `InteractHelper`.
 
-## Native attributes
+<span id="native-attributes"></span>
 
-| Attribute                       | Behavior                                                  |
-| ------------------------------- | --------------------------------------------------------- |
-| `data-interact-model="title"`   | Bind a writable state path; keep edits local by default   |
-| `data-interact-update="input"`  | Synchronize after a typing pause, 250 ms by default       |
-| `data-interact-debounce="400"`  | Set the input debounce delay in milliseconds              |
-| `data-interact-update="blur"`   | Synchronize when focus leaves the control                 |
-| `data-interact-update="change"` | Synchronize on the native change event                    |
-| `data-interact-submit="save"`   | Capture form submission, flush controls, invoke an action |
-| `data-interact-click="next"`    | Capture a click, flush controls, invoke an action         |
+## Alpine directives
 
-Use dotted paths for nested arrays: `form.address.city`. Native text inputs,
-textareas, selects, multiple selects, radio groups, numeric values, boolean
-checkboxes, and array checkbox groups are supported. Empty nullable numbers can
-remain null; false, zero, and empty strings are distinct values. File binding is
-not implemented.
+`x-interact:*` connects native controls and forms to their owning island.
+`$server` exposes island state and operations inside standard Alpine expressions.
+Use Alpine `@event`, `:attribute`, `x-show`, and `:class` for events and presentation.
 
-`data-interact-click` and `data-interact-submit` name actions without arguments.
-Use `$server.call()` when passing arguments. Avoid assigning both action
-mechanisms to the same event on a control.
+| Directive                 | Behavior                                                     |
+| ------------------------- | ------------------------------------------------------------ |
+| `x-interact:model`        | Keep a writable draft local until an action or explicit sync |
+| `x-interact:model.live`   | Synchronize after a typing pause, 250 ms by default          |
+| `x-interact:model.blur`   | Synchronize when focus leaves the control                    |
+| `x-interact:model.change` | Synchronize on the native change event                       |
+| `x-interact:submit`       | Protect native submission while its expression settles       |
+
+For example, bind `title` with a 400 ms typing delay:
+
+```html
+<input x-interact:model.live.debounce.400ms="title" />
+```
+
+Model expressions are literal writable state paths, such as `form.address.city`,
+not JavaScript expressions. Submission expressions use the current Alpine scope,
+including `$server`, local `x-data`, and `$event`. Both forms and click handlers
+invoke actions with `$server.call('action', ...args)`; use `$server.sync()` to
+synchronize without an action. Return the request promise from custom submission
+functions so protection lasts until their work finishes.
+
+Choose one synchronization modifier: `.live`, `.blur`, or `.change`. Debounce is
+only valid with `.live`; `.debounce` uses 250 ms and `.debounce.400ms` overrides it.
+Durations must be whole milliseconds from 0 to 60,000. Unknown, repeated, or
+conflicting modifiers are errors. Submission directives accept no modifiers and
+require a non-empty expression on a form. Do not also attach `@submit` handlers to
+the same form. Use one model binding per control; do not combine `x-model` with
+`x-interact:model` or declare multiple Interact model directives on a control.
+
+Native text inputs, textareas, selects, multiple selects, radio groups, numeric
+values, boolean checkboxes, and array checkbox groups are supported. Empty
+nullable numbers can remain null; false, zero, and empty strings are distinct
+values. File binding is not implemented. A directive must be inside an island.
+Invalid declarations fail during Alpine initialization; runtime expression and
+capture failures use the island's normal failure feedback.
 
 ## Alpine bridge
 
@@ -48,7 +70,7 @@ mechanisms to the same event on a control.
 | `sync()`                    | Request synchronization without an action                  |
 | `call(action, ...args)`     | Queue an exposed PHP action with JSON-compatible arguments |
 
-Use the native model attributes for form controls; reading `state` does not make
+Use `x-interact:model` for form controls; reading `state` does not make
 PHP-only state writable. The bridge's `sync()` and `call()` return
 `Promise<RequestResult>`: `{ ok: true }` after an accepted render, or
 `{ ok: false, error }` after a request failure. Ordinary handlers need no catch
@@ -114,7 +136,7 @@ loading-specific HTML attributes. The existing `busy` property and island-root
 
 ## Form submission protection
 
-Forms marked `data-interact-submit` automatically block repeat submissions from
+Forms using `x-interact:submit` automatically block repeat submissions from
 acceptance until response application completes. Their owned native submit
 buttons are temporarily disabled and the form receives `aria-busy="true"` while
 queued or running. Model inputs stay editable. Associated submit buttons outside

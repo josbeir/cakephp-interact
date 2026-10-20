@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
-import { IslandClient } from '../../resources/ts/client';
+import { mountClient, destroyBindings, refreshBindings } from './mount';
+import type { IslandClient } from '../../resources/ts/client';
 import type { Fetcher, Patcher, RequestResult } from '../../resources/ts/types';
 
 const clients: IslandClient[] = [];
@@ -31,7 +32,7 @@ function root(): HTMLDivElement {
     }),
   });
   element.innerHTML =
-    '<form data-interact-submit="save"><input value="original" data-interact-model="title" data-interact-update="input" data-interact-debounce="30"><button type="submit">Save</button></form>';
+    '<form x-interact:submit="$server.call(\'save\')"><input value="original" x-interact:model.live.debounce.30ms="title"><button type="submit">Save</button></form>';
   document.body.append(element);
   return element;
 }
@@ -70,12 +71,15 @@ function client(
     from.innerHTML = to.innerHTML;
   },
 ): IslandClient {
-  const value = new IslandClient(element, patch, (value) => value, fetcher);
+  const value = mountClient(element, fetcher, patch);
   clients.push(value);
   return value;
 }
 afterEach(() => {
-  clients.splice(0).forEach((value) => value.dispose());
+  clients.splice(0).forEach((value) => {
+    destroyBindings(value.root);
+    value.dispose();
+  });
   document.body.innerHTML = '';
   vi.useRealTimers();
 });
@@ -120,9 +124,13 @@ describe('explicit failure recovery', () => {
       recovery: 'retry',
     });
     edit(element, 'latest');
-    input(element).dataset.interactUpdate = 'blur';
+    input(element).removeAttribute('x-interact:model.live.debounce.30ms');
+    input(element).setAttribute('x-interact:model.blur', 'title');
+    refreshBindings(element);
     input(element).dispatchEvent(new Event('focusout', { bubbles: true }));
-    input(element).dataset.interactUpdate = 'change';
+    input(element).removeAttribute('x-interact:model.blur');
+    input(element).setAttribute('x-interact:model.change', 'title');
+    refreshBindings(element);
     input(element).dispatchEvent(new Event('change', { bubbles: true }));
     await vi.runAllTimersAsync();
     expect(fetcher).toHaveBeenCalledOnce();

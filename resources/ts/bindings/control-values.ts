@@ -19,10 +19,10 @@ export type Control =
  */
 export function captureControl(
   control: Control,
+  name: string,
   current: State,
   fields: Writable,
 ): void {
-  const name = control.dataset.interactModel ?? '';
   const first = path(name)[0];
   const field = first === undefined ? undefined : fields[first];
   if (!field) throw new Error('This state is not writable.');
@@ -59,8 +59,12 @@ export function captureControl(
 /**
  * Restore a surviving control from reconciled state after a server render.
  */
-export function refreshControl(control: Control, current: State): void {
-  const value = read(current, control.dataset.interactModel ?? '');
+export function refreshControl(
+  control: Control,
+  name: string,
+  current: State,
+): void {
+  const value = read(current, name);
   if (
     control instanceof HTMLInputElement &&
     ['checkbox', 'radio'].includes(control.type)

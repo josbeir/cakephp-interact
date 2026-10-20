@@ -23,7 +23,7 @@ use function Cake\Core\h;
 <section class="demo-card resource-library" aria-label="Resource library">
     <div class="card-heading"><div><p class="eyebrow">Live search / <?= number_format($librarySize) ?> sample resources</p><h2>A library worth exploring</h2></div><span class="capability">Search + filter + sort</span></div>
     <p class="card-description">Search titles, descriptions, and topics. Combine filters to narrow the list, or change the reading order to find something quick.</p>
-    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'resource-search', '@submit.prevent' => '$server.sync()']) ?>
+    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'resource-search', 'x-interact:submit' => '$server.sync()']) ?>
         <div class="library-query">
             <?= $this->Form->control('search', [
                 'type' => 'search',
@@ -31,9 +31,7 @@ use function Cake\Core\h;
                 'value' => $search,
                 'maxlength' => 200,
                 'placeholder' => 'Search 1,200 resources…',
-                'data-interact-model' => 'search',
-                'data-interact-update' => 'input',
-                'data-interact-debounce' => 300,
+                'x-interact:model.live.debounce.300ms' => 'search',
                 'aria-describedby' => 'search-hint',
                 'autocomplete' => 'off',
             ]) ?>
@@ -45,36 +43,32 @@ use function Cake\Core\h;
                 'options' => $categories,
                 'empty' => 'All topics',
                 'value' => $category,
-                'data-interact-model' => 'category',
-                'data-interact-update' => 'change',
+                'x-interact:model.change' => 'category',
             ]) ?>
             <?= $this->Form->control('level', [
                 'label' => 'Difficulty',
                 'options' => $levels,
                 'empty' => 'All levels',
                 'value' => $level,
-                'data-interact-model' => 'level',
-                'data-interact-update' => 'change',
+                'x-interact:model.change' => 'level',
             ]) ?>
             <?= $this->Form->control('sort', [
                 'label' => 'Sort by',
                 'options' => ['title' => 'Title: A–Z', 'title-desc' => 'Title: Z–A', 'shortest' => 'Shortest read first', 'longest' => 'Longest read first'],
                 'value' => $sort,
-                'data-interact-model' => 'sort',
-                'data-interact-update' => 'change',
+                'x-interact:model.change' => 'sort',
             ]) ?>
             <?= $this->Form->control('pageSize', [
                 'label' => 'Per page',
                 'options' => [10 => '10 results', 20 => '20 results', 50 => '50 results'],
                 'value' => $pageSize,
-                'data-interact-model' => 'pageSize',
-                'data-interact-update' => 'change',
+                'x-interact:model.change' => 'pageSize',
             ]) ?>
         </div>
     <?= $this->Form->end() ?>
-    <div class="library-summary"><p role="status" aria-live="polite" aria-atomic="true">Showing <?= number_format($first) ?>–<?= number_format($last) ?> of <strong><?= number_format($total) ?></strong> results</p><span class="quiet" x-show="$server.loading(null)" x-cloak>Searching…</span><button class="button-text" type="button" data-interact-click="clear" :disabled="$server.busy">Clear filters</button></div>
+    <div class="library-summary"><p role="status" aria-live="polite" aria-atomic="true">Showing <?= number_format($first) ?>–<?= number_format($last) ?> of <strong><?= number_format($total) ?></strong> results</p><span class="quiet" x-show="$server.loading(null)" x-cloak>Searching…</span><button class="button-text" type="button" @click="$server.call('clear')" :disabled="$server.busy">Clear filters</button></div>
     <?php if ($total === 0): ?>
-        <div class="empty-state library-empty"><h3>No resources found</h3><p>Try fewer words, choose another topic, or clear the filters to explore the full library.</p><button type="button" data-interact-click="clear" :disabled="$server.busy">Show all resources</button></div>
+        <div class="empty-state library-empty"><h3>No resources found</h3><p>Try fewer words, choose another topic, or clear the filters to explore the full library.</p><button type="button" @click="$server.call('clear')" :disabled="$server.busy">Show all resources</button></div>
     <?php else: ?>
         <div class="search-results">
             <table class="resource-table">

@@ -15,13 +15,12 @@ use function Cake\Core\h;
 <section class="demo-card" aria-label="Dependent choices">
     <div class="card-heading"><div><p class="eyebrow">02 / Connected fields</p><h2>Dependent choices</h2></div></div>
     <p class="card-description">Pick a country to load its cities. Your notes stay with you when the options change.</p>
-    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'dependent-choices', 'data-interact-submit' => 'confirm']) ?>
+    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'dependent-choices', 'x-interact:submit' => '$server.call("confirm")']) ?>
         <?= $this->Form->control('country', [
             'label' => 'Country',
             'options' => ['BE' => 'Belgium', 'NL' => 'Netherlands'],
             'value' => $country,
-            'data-interact-model' => 'country',
-            'data-interact-update' => 'change',
+            'x-interact:model.change' => 'country',
         ]) ?>
         <?= $this->Form->control('cityId', [
             'label' => 'City',
@@ -29,7 +28,7 @@ use function Cake\Core\h;
             'options' => $cities->combine('id', 'name')->toArray(),
             'empty' => 'Choose a city',
             'value' => $cityId,
-            'data-interact-model' => 'cityId',
+            'x-interact:model' => 'cityId',
             'aria-invalid' => isset($errors['cityId']) ? 'true' : null,
         ]) ?>
         <?= $this->Form->control('notes', [
@@ -38,7 +37,7 @@ use function Cake\Core\h;
             'value' => $notes,
             'rows' => 3,
             'placeholder' => 'Keep a little draft here…',
-            'data-interact-model' => 'notes',
+            'x-interact:model' => 'notes',
         ]) ?>
         <?php foreach ($errors['cityId'] ?? [] as $error): ?>
             <p role="alert" class="field-error"><?= (string)h($error) ?></p>

@@ -25,8 +25,7 @@ describe('transport values', () => {
     'restores text controls without losing JSON values: %j',
     (value, expected) => {
       const input = document.createElement('input');
-      input.dataset.interactModel = 'value';
-      refreshControl(input, value === undefined ? {} : { value });
+      refreshControl(input, 'value', value === undefined ? {} : { value });
       expect(input.value).toBe(expected);
     },
   );

@@ -66,7 +66,7 @@ class CountersController extends AppController
 ?>
 <h1>Counter</h1>
 <p aria-live="polite">Count: <?= (string)$count ?></p>
-<button type="button" data-interact-click="increment" :disabled="$server.busy">
+<button type="button" @click="$server.call('increment')" :disabled="$server.busy">
     Add one
 </button>
 <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>

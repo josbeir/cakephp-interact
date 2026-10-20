@@ -12,14 +12,13 @@ use function Cake\Core\h;
 <section class="demo-card" aria-label="Failure recovery">
     <div class="card-heading"><div><p class="eyebrow">04 / Explicit recovery</p><h2>Keep the draft. Understand the failure.</h2></div></div>
     <p class="card-description">Simulate a failure, keep typing, then choose what to do. These examples do not save to a database.</p>
-    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'recovery', 'data-interact-submit' => 'save']) ?>
+    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'recovery', 'x-interact:submit' => '$server.call("save")']) ?>
         <?= $this->Form->control('message', [
             'type' => 'textarea',
             'rows' => 4,
             'label' => 'Recovery draft',
             'value' => $message,
-            'data-interact-model' => 'message',
-            'data-interact-update' => 'input',
+            'x-interact:model.live' => 'message',
         ]) ?>
         <div class="form-footer">
             <?= $this->Form->button('Accept draft', ['class' => 'button-primary']) ?>
