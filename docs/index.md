@@ -87,5 +87,7 @@ Use the same approach for [live search](/guide/search),
 CakePHP continues to own queries, validation, authorization, and saving.
 
 Interact is a development preview for **PHP 8.5 and CakePHP 6 development builds**.
+Install `dev-main` from [Packagist](https://packagist.org/packages/josbeir/cakephp-interact);
+there is no stable release yet.
 Start with [installation](/installation), or [run the included demo](/examples)
 to try the interactions before integrating it into an application.

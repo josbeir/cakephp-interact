@@ -1,44 +1,51 @@
 ---
 title: Installation
-description: Install the development plugin in a CakePHP application, load its helper, and serve the browser runtime.
+description: Install the development plugin from Packagist in a CakePHP application, load its helper, and build the browser runtime.
 ---
 
 # Installation
 
 You need **PHP 8.5**, a **CakePHP 6 development application**, Composer, and
-**Node 24.11+ or Node 26+** to build the browser assets from this checkout. The current plugin
-is a development preview; the steps below use a local Composer path repository.
+**Node 24.11+ or Node 26+** to build the browser assets. Interact is available on
+[Packagist](https://packagist.org/packages/josbeir/cakephp-interact) as `dev-main`
+only. There is no stable release yet, and the API is experimental.
 
 To explore without integrating an existing application, [run the demo](/examples).
 
-## Prepare the plugin checkout
-
-Clone the plugin next to your application. This example uses sibling directories
-named `cakephp-interact` and `my-app`:
-
-```sh
-git clone git@github.com:josbeir/cakephp-interact.git
-cd cakephp-interact
-npm ci
-npm run build
-```
-
-The build creates `webroot/js/runtime.js`, the standalone browser runtime. Keep
-this file available when serving your application; a source checkout needs this
-build even when PHP installation succeeds.
-
 ## Install in your application
 
-Run these commands from `my-app/`:
+Run these commands from your CakePHP application's root directory:
 
 ```sh
-composer config repositories.interact path ../cakephp-interact
+composer config minimum-stability dev
+composer config prefer-stable true
 composer require josbeir/cakephp-interact:dev-main --with-all-dependencies
 ```
 
-Your application's Composer configuration must permit CakePHP's development
-version: `"minimum-stability": "dev"` with `"prefer-stable": true`. Interact targets
-CakePHP 6; these steps do not make an existing CakePHP 5 application compatible.
+Packagist is Composer's default repository; no custom repository or separate
+clone is needed. The stability settings permit CakePHP's development dependencies
+while preferring stable versions where possible. Interact targets CakePHP 6;
+these steps do not make an existing CakePHP 5 application compatible.
+
+## Build the browser runtime
+
+The current Packagist development distribution uses a GitHub source archive,
+which does not include generated browser assets. Build them in the installed
+package before serving your application:
+
+```sh
+cd vendor/josbeir/cakephp-interact
+npm ci
+npm run build
+cd ../../..
+```
+
+The build creates `webroot/js/runtime.js`, the standalone browser runtime, and
+`build/js/`, the npm module. Include the generated assets in your deployment and
+repeat the build after Composer installs or updates the package. Node is needed
+at build time only.
+
+## Load the plugin
 
 Add the plugin inside your existing `Application::bootstrap()` method, after
 `parent::bootstrap()`:
@@ -118,12 +125,12 @@ it with same-origin update requests. For protected route scopes, read
 Use Alpine 3.17.4 or later in the 3.x series. Interact uses Alpine’s native
 expression evaluation API to keep submission promises and failures observable.
 
-Use this integration when your application already starts Alpine. Build the npm
-module in the plugin checkout with `npm run build`, then install that checkout
-from your application's JavaScript project:
+Use this integration when your application already starts Alpine. After building
+the browser runtime above, install the built module from your application's root
+directory:
 
 ```sh
-npm install ../cakephp-interact @alpinejs/csp
+npm install ./vendor/josbeir/cakephp-interact @alpinejs/csp
 ```
 
 Set `autoScript` to `false` in the helper configuration:
@@ -148,3 +155,25 @@ Alpine.start();
 Load this entry using your application's bundler. Use one Alpine instance per
 page; omit the standalone Interact script for this integration. If you use
 standard `alpinejs` instead, its expression evaluator has different CSP needs.
+
+## Prepare the plugin checkout
+
+For plugin development, you can use a local checkout instead of the Packagist
+package. Clone the plugin next to your application, then build its assets:
+
+```sh
+git clone https://github.com/josbeir/cakephp-interact.git
+cd cakephp-interact
+npm ci
+npm run build
+```
+
+From your application's root directory, configure the sibling checkout as a path
+repository before running the Composer installation commands above:
+
+```sh
+composer config repositories.interact path ../cakephp-interact
+```
+
+Build assets in that checkout. For application-owned Alpine, use
+`npm install ../cakephp-interact @alpinejs/csp` instead of the vendor path.

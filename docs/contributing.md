@@ -109,8 +109,11 @@ Package builds supply an npm module with declarations and a standalone
 `webroot/js/runtime.js`. `package:composer` creates a reproducible archive under
 `build/releases/` with PHP source, docs, the standalone bundle, and third-party
 licenses. Source checkouts need a browser build. A default GitHub source archive
-does not include generated assets; Composer release distributions must include
-them. The Quality workflow validates packages but does not publish them.
+does not include generated assets. The current Packagist `dev-main` distribution
+uses that source archive, so consumers must [build the browser runtime](/installation#build-the-browser-runtime)
+after installation. There is no stable release yet. Composer release distributions
+must include generated assets. The Quality workflow validates packages but does
+not publish them.
 
 Run affected checks and the full relevant workflow before handoff. For docs-only
 changes, verify documentation and examples without claiming unrelated PHP checks.
