@@ -1,4 +1,12 @@
+---
+title: Security and deployment
+description: Protect island updates with current authorization, CSRF, scoped middleware, and session-bound signed snapshots.
+---
+
 # Security and deployment
+
+Read this before deploying an island that displays private data or performs a
+protected action. For a concrete implementation, see [the article editor](/guide/forms).
 
 ## Application middleware remains authoritative
 
@@ -9,7 +17,9 @@ Apply CakePHP's body parser, CSRF, and appropriate authentication middleware to 
 For separate administrative/public scopes, disable the plugin's default routes and connect the update controller within your existing route scopes:
 
 ```php
-$this->addPlugin(\Interact\InteractPlugin::class, ['routes' => false]);
+use Interact\InteractPlugin;
+
+$this->addPlugin(InteractPlugin::class, ['routes' => false]);
 ```
 
 ```php
@@ -34,7 +44,12 @@ Override `authorize(IslandContext $context)` to check current resource access on
 
 Snapshots are signed, session-bound, scope-bound JSON with a 30-minute default lifetime. The default signing service uses CakePHP's security salt with domain separation. Replace `SnapshotCodec` through the application container to configure a dedicated key or lifetime. Use a strong secret and keep it out of source control.
 
-Snapshots are visible to the browser. They are not encryption, a component store, or a single-use token. Replaying a valid snapshot is possible until expiry. An application requiring idempotent payments or other durable operations must implement that guarantee in its business layer.
+Snapshots are visible to the browser. More transported props and state mean larger
+requests; computed `viewData()` does not add its results to the snapshot. Keep
+large lists and entities on the server. Snapshots provide integrity rather than
+encryption or single-use guarantees. Replaying a valid snapshot is possible until
+expiry. An application requiring idempotent payments or other durable operations
+must implement that guarantee in its business layer.
 
 A failed connection does not establish whether the server performed an action. Interact does not automatically retry actions. Disposing an island or aborting fetch does not cancel server execution.
 

@@ -1,102 +1,131 @@
-# Build an interactive region
+---
+title: Your first island
+description: Build a working counter with a PHP action, a native CakePHP element, and a mount call in an existing page.
+---
 
-Interact is an unreleased plugin targeting PHP 8.5 and CakePHP 6 development builds. Install this repository as a Composer path dependency while developing; the public package is not published yet.
+<span id="build-an-interactive-region"></span>
 
-Load the plugin in your application bootstrap:
+# Your first island
 
-```php
-use Interact\InteractPlugin;
+Build a counter that updates without reloading its surrounding page. You will
+add a PHP class, an element, and one mount call to an existing controller view.
 
-$this->addPlugin(InteractPlugin::class);
-```
-
-Enable CakePHP's body parser and CSRF middleware before controller dispatch. Use your application's authentication and authorization middleware on the update route too. See [security](./security.md).
+Complete [installation](/installation) first: load the plugin and helper, build
+and serve the browser runtime, output the layout's script block, and keep CSRF
+middleware enabled. No database or custom JavaScript is needed for this example.
 
 ## Declare an island
 
-Put discoverable classes under `src/Island/`. Declare the template or element explicitly.
+Create `src/Island/Counter.php`. CakePHP's Attribute Resolver discovers island
+classes in `src/Island/`; `counter` is the alias used to render this class.
 
-::: code-group
-
-```php [src/Island/Greeting.php]
+```php [src/Island/Counter.php]
 <?php
 declare(strict_types=1);
 
 namespace App\Island;
 
+use Interact\Attribute\Action;
 use Interact\Attribute\AsIsland;
 use Interact\Attribute\State;
 use Interact\Island;
 
 /**
- * Owns an editable greeting while keeping its HTML in a native element.
+ * Keeps a count for one region and changes it through a server action.
  */
-#[AsIsland('greeting', element: 'Interact/greeting')]
-class Greeting extends Island
+#[AsIsland('counter', element: 'Interact/counter')]
+class Counter extends Island
 {
-    #[State(writable: true)]
-    public string $name = '';
+    #[State]
+    public int $count = 0;
+
+    /**
+     * Increase this island's count when its button is pressed.
+     */
+    #[Action]
+    public function increment(): void
+    {
+        $this->count++;
+    }
 }
 ```
 
-```php [templates/element/Interact/greeting.php]
+`State` keeps `$count` between requests. Without `writable: true`, the browser
+cannot assign it directly. `Action` exposes `increment()` as an intentional way
+to change that value.
+
+## Write the element
+
+The declared element receives `$count` on the initial render and every update:
+
+```php [templates/element/Interact/counter.php]
 <?php
 declare(strict_types=1);
-use function Cake\Core\h;
 
-/**
- * @var string $name
- */
+/** @var int $count */
 ?>
-<label>
-    Name
-    <input value="<?= (string)h($name) ?>" data-interact-model="name" data-interact-update="input">
-</label>
-<p>Hello <?= (string)h($name) ?></p>
+<p aria-live="polite">Count: <?= (string)$count ?></p>
+<button type="button" data-interact-click="increment"
+    :disabled="$server.busy">
+    Add one
+</button>
+<p role="alert" x-text="$server.error"></p>
 ```
 
-:::
+`data-interact-click` calls the PHP action. The Alpine shorthand
+`:disabled="$server.busy"` disables the button while a request is running.
+The alert displays a request failure when one occurs.
 
-Load and use the helper in your normal controller/view workflow:
+## Mount it in an existing page
+
+In a template already rendered by your application, add:
+
+```php [templates/Articles/index.php]
+<h1>Articles</h1>
+<?= $this->Interact->render('counter') ?>
+```
+
+Use the `counter` alias declared by `AsIsland`. The class name and element path
+do not determine that alias.
+
+Open your existing articles page. You should see **Count: 0**. Press **Add one**:
+the count becomes **1**, and the heading and surrounding layout stay in place.
+Each click sends a POST to the update endpoint. If the count does not change,
+follow [the troubleshooting checks](/troubleshooting).
+
+Your controller needs no AJAX branch. It still renders its normal action template
+on the first request; later requests go directly to Interact's update endpoint.
+
+## Add an independent counter
+
+Render the same alias again with distinct stable keys:
 
 ```php
-use Interact\View\Helper\InteractHelper;
-
-$this->viewBuilder()->addHelper('Interact', ['className' => InteractHelper::class]);
+<?= $this->Interact->render('counter', key: 'first') ?>
+<?= $this->Interact->render('counter', key: 'second') ?>
 ```
 
-```php
-<?= $this->Interact->render('greeting') ?>
-```
+Each starts at zero and updates independently. Reloading the page starts fresh:
+the count is interaction state, and this example does not save it to a database.
 
-Your layout must output `<?= $this->fetch('script') ?>`. The helper loads the standalone Alpine CSP/Morph bundle once. The release build supplies `webroot/js/runtime.js`; development checkouts require `npm ci && npm run build`.
+## Choose your next step
+
+| Task                                                   | Guide                                     |
+| ------------------------------------------------------ | ----------------------------------------- |
+| Bind an input or pass an initial value                 | [State and input binding](/guide/state)   |
+| Call an action with arguments or show loading feedback | [Actions and feedback](/guide/actions)    |
+| Filter a larger model-backed listing                   | [Search and pagination](/guide/search)    |
+| Validate and save an editable record                   | [Forms and validation](/guide/forms)      |
+| Reuse a controller action's template                   | [Whole-page islands](/guide/page-islands) |
 
 ## Application-owned Alpine
 
-Disable the helper's `autoScript` option and register Interact before starting Alpine:
-
-```ts
-import Alpine from '@alpinejs/csp';
-import interact from '@josbeir/cakephp-interact';
-
-Alpine.plugin(interact);
-Alpine.start();
-```
-
-Do not load a second Alpine instance. The standalone bundle intentionally rejects duplicate initialization.
+If your app already starts Alpine, disable the helper's standalone script and
+register Interact with that instance. Follow the
+[application-owned Alpine setup](/installation#application-owned-alpine).
 
 ## Reuse an action template
 
-A whole-page island can declare `template: 'Articles/index'`. Select `Interact\View\IslandView` through the controller's ViewBuilder:
-
-```php
-use Interact\View\IslandView;
-
-$this->viewBuilder()
-    ->setClassName(IslandView::class)
-    ->setOption('interact', ['alias' => 'article-page', 'props' => []]);
-```
-
-The initial request renders the surrounding layout. Updates render the island template alone, without rerunning the controller action. Supply required variables through declared props, state, and `viewData()`.
-
-An embedded island must not render the hosting template containing its own helper call: that would recurse.
+An island can own the content of an action template while its normal layout
+stays in place. Follow [whole-page islands](/guide/page-islands) for the
+cooperating island, controller, and template.

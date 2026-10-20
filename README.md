@@ -1,42 +1,40 @@
 # CakePHP Interact
 
-Reactive PHP islands for CakePHP. Render native templates, keep application behavior in PHP, and update focused regions through AJAX.
+Add live search, inline editing, and conditional fields to CakePHP with
+server-rendered PHP islands. Keep native templates and application logic in PHP;
+update the region that changed through AJAX.
 
-**Experimental, unreleased API. Requires PHP 8.5, CakePHP 6 development builds, and modern browsers.**
+**Development preview: PHP 8.5, CakePHP 6 development builds, modern browsers.**
+The API is experimental. Source checkouts require a browser asset build.
 
-```php
-use Interact\Attribute\AsIsland;
-use Interact\Attribute\State;
-use Interact\Island;
-
-/**
- * Owns the listing's search draft and renders it through a native CakePHP element.
- */
-#[AsIsland('article-list', element: 'Interact/article_list')]
-class ArticleList extends Island
-{
-    #[State(writable: true)]
-    public string $search = '';
-}
-```
+An island declares its state and callable actions. Mount its declared alias in
+an ordinary CakePHP template:
 
 ```php
-<?= $this->Interact->render('article-list') ?>
+<?= $this->Interact->render('article-editor', props: ['articleId' => 7], key: 'article-7') ?>
 ```
+
+Its element binds the draft and submits to the island's explicit `save()` action:
 
 ```html
-<input
-  data-interact-model="search"
-  data-interact-update="input"
-  data-interact-debounce="250"
-/>
+<form data-interact-submit="save">
+  <label>Title <input data-interact-model="title" /></label>
+  <button type="submit" :disabled="$server.busy">Save article</button>
+  <p role="alert" x-text="$server.error"></p>
+</form>
 ```
 
-The initial HTML is server-rendered. Later requests reconstruct the island, authorize the current request, and morph only its region. Alpine handles local interactions. Ordinary CakePHP routing and navigation remain unchanged.
+See the [complete editor example](https://josbeir.github.io/cakephp-interact/guide/forms)
+for the cooperating class, authorization, validation, and persistence.
 
-Read the [documentation](https://josbeir.github.io/cakephp-interact/), or browse [getting started](docs/getting-started.md), [API and lifecycle](docs/api.md), [security](docs/security.md), and [contributing](docs/contributing.md) in this repository.
+[Documentation](https://josbeir.github.io/cakephp-interact/) ·
+[Installation](https://josbeir.github.io/cakephp-interact/installation) ·
+[Your first island](https://josbeir.github.io/cakephp-interact/getting-started) ·
+[API reference](https://josbeir.github.io/cakephp-interact/api)
 
-## Run the demo
+## Try the demo
+
+From a repository checkout with PHP 8.5, SQLite support, Composer, and Node 24+:
 
 ```sh
 composer install
@@ -45,22 +43,15 @@ npm run build
 npm run preview
 ```
 
-Open `http://127.0.0.1:8765`. The test-only application demonstrates search, pagination, authorized nested editors, dependent selects, and an existing action template used as a whole-page island.
+Open `http://127.0.0.1:8765`. Try independent editors, dependent choices,
+conditional forms, and a search library of 1,200 resources. The demo uses seeded
+SQLite fixtures and a test-only identity. See [the example guide](docs/examples.md).
 
-The demo uses seeded SQLite data and a fixture identity. It is not a production authentication example.
+## Contributing
 
-## Quality checks
-
-```sh
-composer validate --strict
-composer check
-composer test-coverage
-npm run check
-npm run test:coverage
-npm run test:browser
-npm run docs:build
-```
-
-PHP and TypeScript line coverage each require at least 95%, including unexecuted source. See [AGENTS.md](AGENTS.md) for contributor contracts.
+Read [AGENTS.md](AGENTS.md) and [the contributor guide](docs/contributing.md).
+PHP and TypeScript each require at least 95% line coverage, including unexecuted
+source. Quality gates include Mago, Rector, Vitest, and Playwright across
+Chromium, Firefox, and WebKit.
 
 MIT license.

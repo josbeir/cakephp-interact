@@ -1,70 +1,142 @@
-# API and lifecycle
+---
+title: PHP API and lifecycle
+description: Look up island attributes, mount options, lifecycle hooks, validation feedback, and browser events.
+---
+
+<span id="api-and-lifecycle"></span>
+
+# PHP API and lifecycle
+
+Start with [your first island](/getting-started) for a working example. This page
+collects the PHP contracts; [browser bindings](/reference/browser) and
+[rendering services](/reference/rendering) have their own references.
 
 ## Declarations
 
-| API                                                   | Contract                                                      |
-| ----------------------------------------------------- | ------------------------------------------------------------- |
-| `AsIsland(name, template: ..., element: ...)`         | Declare an alias and exactly one native template or element   |
-| `Prop`                                                | Public, typed, mount-only parameter                           |
-| `State`                                               | Public, typed, browser-visible state that only PHP may change |
-| `State(writable: true)`                               | Explicitly accept browser edits                               |
-| `Action`                                              | Expose a public application method                            |
-| `InteractHelper::render(alias, props: ..., key: ...)` | Mount initial HTML inside a normal page                       |
+Import attributes from `Interact\Attribute` and extend `Interact\Island`.
 
-Props and state accept strings, integers, finite floats, booleans, nullable variants, and arrays of JSON-compatible values. Arbitrary objects, entities, resources, and unsafe prototype keys are rejected. Never put secrets in transported state.
+| Declaration                                        | Contract                                                       |
+| -------------------------------------------------- | -------------------------------------------------------------- |
+| `#[AsIsland('alias', element: 'Interact/name')]`   | Discover a class by alias and render a native element          |
+| `#[AsIsland('alias', template: 'Articles/index')]` | Render a native template instead                               |
+| `#[Prop]`                                          | Public typed parameter supplied on mount; not browser-writable |
+| `#[State]`                                         | Public typed transported value; only PHP can assign it         |
+| `#[State(writable: true)]`                         | Explicitly accept browser edits to this state                  |
+| `#[Action]`                                        | Expose a public instance method with typed arguments           |
 
-Each island has a single owned root, a `div` by default. `AsIsland(..., tag: 'section')` selects a semantic root. Supported roots are `div`, `section`, `article`, `aside`, `main`, `nav`, `header`, `footer`, and `fieldset`. Nested placeholders retain the declared root tag.
+Declare exactly one `template` or `element`. Aliases start with a lowercase
+letter and then use lowercase letters, digits, `_`, `.`, or `-`.
+The alias is what `render()` receives; it need not match the PHP class name.
+
+Transport supports strings, integers, finite floats, booleans, nullable variants,
+and arrays of JSON-compatible values. Objects, entities, resources, and unsafe
+prototype-related keys are rejected. Declare concrete supported property types;
+an uninitialized required prop must be supplied when mounting.
+
+Every island has one generated owned root, a `div` by default.
+`AsIsland(..., tag: 'section')` changes it. Allowed tags are `div`, `section`,
+`article`, `aside`, `main`, `nav`, `header`, `footer`, and `fieldset`.
+Choose markup that remains valid inside that root, including for nested children.
+
+## Mounting
+
+```php
+$this->Interact->render(
+    'article-editor',
+    props: ['articleId' => 7],
+    key: 'article-7',
+);
+```
+
+`InteractHelper::render(string $alias, array $props = [], ?string $key = null)`
+returns trusted rendered island markup. Props must match declared `Prop`
+properties. An omitted key defaults to the alias; repeated siblings need explicit
+unique stable keys.
+
+Helper options:
+
+| Option       | Default     | Meaning                                                                          |
+| ------------ | ----------- | -------------------------------------------------------------------------------- |
+| `autoScript` | `true`      | Queue the standalone script in the layout's `script` block                       |
+| `scope`      | `'default'` | Server-configured middleware scope bound to snapshots                            |
+| `endpoint`   | `null`      | Named `interact:update` route by default; supply a routed URL for a custom scope |
 
 ## Lifecycle
 
-Initial rendering constructs a fresh island, assigns props, authorizes, runs `mount()`, then obtains view data and renders.
+### Initial render
 
-Updates verify the signed snapshot/session/scope, reconstruct a fresh island, restore state, validate browser edits and action arguments, authorize, run `updated($paths)`, invoke the exposed action if any, and render again. `mount()` does not run again.
+1. Resolve the alias and construct a fresh island through CakePHP's container.
+2. Assign declared mount props.
+3. Call `authorize(IslandContext $context)`.
+4. Call `mount()`.
+5. Obtain `viewData()` and render declared props, state, errors, and computed data.
 
-`viewData()` returns additional template variables. It cannot shadow props, state, or the reserved `errors` variable. These values are not serialized automatically. Controller view variables are not inherited by an island.
+### Update
 
-Public methods without `Action`, including lifecycle methods, cannot be invoked by the browser. Actions accept explicitly typed JSON-compatible arguments.
+1. Verify snapshot integrity, session binding, scope, and expiry.
+2. Construct a fresh island and restore its props and state.
+3. Validate browser edits and action argument types; apply accepted edits.
+4. Call `authorize()` before application hooks, actions, and rendering.
+5. Call `updated(array $paths)` when edits changed state, then the declared action if requested.
+6. Obtain `viewData()`, render, and return new state and response effects.
+
+`mount()` does not run again. Constructor dependencies are fresh request
+collaborators, not snapshot state. Read the current identity from
+`$context->request` rather than trusting transported fields. Authorization may
+observe accepted draft changes; authorize any record IDs carried by an action
+argument in the action's application flow as well.
+
+### Hooks and helpers
+
+| Method                                             | Purpose                                                            |
+| -------------------------------------------------- | ------------------------------------------------------------------ |
+| `authorize(IslandContext $context): void`          | Reject current access before mount/update application behavior     |
+| `mount(): void`                                    | Initialize editable state from props or persisted data once        |
+| `updated(array $paths): void`                      | React to accepted dotted state paths, for example reset pagination |
+| `viewData(): array`                                | Return computed template variables without serializing them        |
+| `setErrors(array $errors): void`                   | Attach `array<string, list<string>>` application feedback          |
+| `errors(): array`                                  | Read current renderable errors                                     |
+| `dispatch(string $name, array $detail = []): void` | Queue a native browser event for a successful update               |
+
+`viewData()` may return entities or result sets for rendering. Its keys cannot
+shadow declared props, state, or reserved `errors`. Controller view variables
+are not inherited. Errors belong to the current render, rather than durable
+application state.
+
+`IslandContext` exposes the current CakePHP `request` and server-configured
+`scope` and `endpoint`. `binding()` obtains the current session binding.
+
+A public method without `Action` cannot be invoked by the browser. Lifecycle
+hooks are not actions. Invalid declarations, unsupported values, and malformed
+updates are rejected; authorization failures should use normal CakePHP exceptions.
 
 ## Binding and actions
 
-| Attribute                       | Behavior                                                     |
-| ------------------------------- | ------------------------------------------------------------ |
-| `data-interact-model="title"`   | Update the local draft; defer network requests               |
-| `data-interact-update="input"`  | Send after a typing pause; default debounce is 250 ms        |
-| `data-interact-debounce="400"`  | Configure an input debounce in milliseconds                  |
-| `data-interact-update="blur"`   | Send on focus leaving the control                            |
-| `data-interact-update="change"` | Send on the native change event                              |
-| `data-interact-submit="save"`   | Flush current controls and call an action on form submission |
-| `data-interact-click="next"`    | Flush controls and call an action on click                   |
+Native `data-interact-*` bindings and Alpine's `$server` bridge share the same
+request engine. An action flushes current controls before invocation. See
+[the browser reference](/reference/browser) for all attributes and bridge members.
+Synchronization is separate from persistence.
 
-Use dotted paths for nested arrays, such as `form.address.city`. Native checkboxes, radio groups, selects, multiple selects, numeric state, and textareas are supported. File binding is deferred.
-
-The Alpine `$server` bridge exposes `state`, `busy`, `dirty`, `errors`, `error`, `sync()`, and `call(action, ...args)`. All paths use the same request engine.
-
-Synchronization is not persistence. Save explicitly through your application's normal CakePHP model/service methods. Use `setErrors()` for application validation feedback; failed validation returns renderable HTTP 422 feedback.
+Validation uses `setErrors()` and returns renderable HTTP 422 feedback. It
+suppresses success events. See [forms and validation](/guide/forms).
 
 ## Nesting and events
 
-Give repeated children stable keys. A parent refresh preserves matching children and their drafts rather than rerunning their mount lifecycle. Changing a child's props or alias requires a new key. Duplicate sibling keys are errors. Removed children dispose listeners, timers, and browser requests.
+Children with matching stable keys keep their state through parent updates.
+Changing child props or alias requires a new key; duplicate sibling keys are
+rejected. Removed children dispose browser work and listeners.
 
-Use `dispatch('article-saved', ['id' => $id])` from PHP to queue a native browser event after a successful response. An explicit Alpine listener may refresh the parent:
-
-```html
-<section @article-saved.stop="$server.sync()">
-  <!-- Nested editors -->
-</section>
-```
-
-Events carry browser-visible, untrusted data and are not a durable business-operation queue.
-
-Each island has one request in flight. Later edits remain local; pending syncs coalesce and actions queue in order. Responses preserve edits made after a request began. Actions are never automatically retried.
-
-Navigation and URL-bound state are phase 2. Ordinary CakePHP links continue to navigate normally.
+`dispatch()` accepts lowercase event names starting with a letter and continuing
+with letters, digits, `:`, or `-`. Events bubble from the island root after a
+successful response. Details are browser-visible and untrusted. See
+[nested islands and events](/guide/nesting).
 
 ## Application integration
 
-The plugin registers `Registry`, `SnapshotCodec`, and `Factory` through CakePHP's container and preserves application-provided definitions. Island constructors can receive application services; these dependencies are never serialized. The demo uses `LocatorAwareTrait::fetchTable()` for Tables and named finders for domain queries.
+`Registry`, `SnapshotCodec`, and `Factory` are container services. Existing
+application definitions take precedence. Keep islands freshly constructed and
+cache declarations only. See [rendering and services](/reference/rendering)
+for the renderer boundary and helper configuration.
 
-Override `Factory::createView()` to supply a `TemplateView` subclass with application helpers. `RendererInterface` is the runtime's markup boundary. Keep adapters on these public contracts and explicit island state/actions rather than introducing form-specific behavior into transport or snapshot verification.
-
-A future FormCompose adapter can use this layer to synchronize conditional fields and model-derived choices. Form declarations, validation, and persistence remain application or adapter responsibilities; that adapter and navigation are outside the first phase.
+Navigation, URL-state features, form adapters, and entity transport are outside
+the current implementation.

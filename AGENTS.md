@@ -106,3 +106,13 @@ Required Composer scripts:
 - Run affected checks during development and the full relevant quality workflow before handoff. Review automatic fixes and rerun affected tests.
 - CI runs `composer validate --strict`, `composer check`, and `composer test-coverage` with a coverage driver enabled, plus the JavaScript/browser/documentation gates.
 - Report actual checks, coverage, failures, and missing tooling. Never present skipped checks as passing.
+
+## Documentation style
+
+- Lead with a concrete task and a small working example, then explain the result. Teach ordinary usage before advanced variations; keep exhaustive contracts in reference pages.
+- Keep the homepage short and show cooperating PHP classes, elements, and mount calls in labeled code tabs. Identify file paths, imports, prerequisites, and application-supplied data.
+- Give new users a complete path from installation to a working interaction. Keep development-package and browser-asset requirements visible rather than hiding them in optional details.
+- Use declared aliases consistently in discovery and rendering examples. Make the ownership of props, writable drafts, computed data, authorization, and persistence explicit where relevant.
+- Prefer VitePress navigation, local search, code groups, callouts, and optional details over custom components. Reserve callouts for actionable caveats; omit line numbers unless useful.
+- Keep recipes focused; link to shared setup and reference contracts instead of repeating them. Import tested demo source when presenting a full demo implementation.
+- Preserve published page routes and linked anchors when reorganizing. Build the site with link checking enabled, check example syntax and behavior, and inspect desktop and mobile reading/navigation before handoff.

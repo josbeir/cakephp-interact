@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync } from 'node:fs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 const execute = promisify(execFile);
@@ -29,11 +29,10 @@ await execute('tar', [
   'LICENSE',
   'README.md',
   'AGENTS.md',
-  'docs/index.md',
-  'docs/getting-started.md',
-  'docs/api.md',
-  'docs/security.md',
-  'docs/contributing.md',
+  ...readdirSync('docs', { recursive: true })
+    .filter((path) => path.endsWith('.md') && !path.startsWith('.vitepress/'))
+    .sort()
+    .map((path) => `docs/${path}`),
   'src',
   'webroot',
 ]);
