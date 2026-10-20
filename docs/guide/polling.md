@@ -41,7 +41,29 @@ create overlapping polls or a backlog of missed ticks.
 
 ## Poll a PHP action until completion
 
-Use the same `$server.call()` expression as an ordinary action button:
+Let PHP decide whether the job is still running. In the island, declare `running`
+with `#[State]` and set it to `false` when the job completes:
+
+```php [Inside the JobProgress island]
+#[State]
+public bool $running = true;
+
+#[State]
+public int $progress = 0;
+
+#[Action]
+public function refreshStatus(): void
+{
+    $this->progress = min(100, $this->progress + 25);
+    $this->running = $this->progress < 100;
+}
+```
+
+`State` and `Action` are imported from `Interact\Attribute`; the complete class
+is below. This demo simulates progress. In an application, read the authorized
+job's current status and set `$this->running` from that result.
+
+In the element, call the action only while PHP's `running` state is true:
 
 ```html [Inside the job-progress element]
 <section
@@ -53,15 +75,23 @@ Use the same `$server.call()` expression as an ordinary action button:
 </section>
 ```
 
-Here `running` is declared PHP state, and `refreshStatus()` is declared with
-`#[Action]`. Each tick evaluates the current state. Once PHP returns
-`running: false`, the expression makes no further requests. An explicit restart
-action can set it to true again; polling then continues on a later tick.
+When `refreshStatus()` sets `$this->running = false`, that response updates
+`$server.state.running` in the browser. The next tick sees `false` and skips
+`$server.call('refreshStatus')`. **No further polling requests are sent.** There
+is no separate PHP stop method to call: the PHP state controls the expression.
 
-Poll actions repeat. In a real job panel, read the authorized job's status in
-the action or `viewData()`; keep persistence an explicit application decision.
-The demo deliberately simulates progress by advancing 25% per request. It does
-not launch a background worker or save anything.
+The timer still checks the condition locally. An explicit restart action can set
+`$this->running = true` again, and requests resume on a later tick. The complete
+example below includes that restart action and its button.
+
+The playground also includes a **Pause polling / Resume polling** button. It
+toggles local Alpine `autoRefresh` state, and its expression checks both
+`autoRefresh` and `$server.state.running` before calling PHP. Resuming the local
+preference cannot restart a completed job; use **Restart simulated job** for that.
+
+Poll actions repeat, so keep persistence an explicit application decision. The
+demo advances 25% per request; it does not launch a background worker or save
+anything.
 
 :::: details Complete simulated job example
 

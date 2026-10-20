@@ -102,6 +102,47 @@ test('conditional PHP actions stop requesting at completion and resume after res
   expect(requests).toBe(6);
 });
 
+test('a local pause button stops job requests and resumes without overriding PHP completion', async ({
+  page,
+}) => {
+  await page.goto('/playground');
+  const job = page.getByRole('region', {
+    name: 'Simulated job progress',
+    exact: true,
+  });
+  const id = await islandId(job);
+  let requests = 0;
+  page.on('request', (request) => {
+    if (targetsIsland(request, id)) requests++;
+  });
+
+  await job.getByRole('button', { name: 'Pause polling', exact: true }).click();
+  const resume = job.getByRole('button', {
+    name: 'Resume polling',
+    exact: true,
+  });
+  await expect(resume).toHaveAttribute('aria-pressed', 'true');
+  await page.clock.runFor(15000);
+  expect(requests).toBe(0);
+
+  await resume.click();
+  await expect(
+    job.getByRole('button', { name: 'Pause polling', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'false');
+  for (const progress of [25, 50, 75, 100]) {
+    await advancePoll(page, job);
+    await expect(job.getByRole('progressbar')).toHaveAttribute(
+      'value',
+      String(progress),
+    );
+  }
+  await expect(
+    job.getByRole('button', { name: 'Pause polling', exact: true }),
+  ).toBeDisabled();
+  await page.clock.runFor(15000);
+  expect(requests).toBe(4);
+});
+
 test('polling preserves deferred drafts and entity errors while parent refreshes retain child ownership', async ({
   page,
 }) => {
