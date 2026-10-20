@@ -23,6 +23,7 @@ Use Alpine `@event`, `:attribute`, `x-show`, and `:class` for events and present
 | `x-interact:model.blur`   | Synchronize when focus leaves the control                    |
 | `x-interact:model.change` | Synchronize on the native change event                       |
 | `x-interact:submit`       | Protect native submission while its expression settles       |
+| `x-interact:poll`         | Refresh periodically, or evaluate a polling expression       |
 
 For example, bind `title` with a 400 ms typing delay:
 
@@ -51,6 +52,33 @@ nullable numbers can remain null; false, zero, and empty strings are distinct
 values. File binding is not implemented. A directive must be inside an island.
 Invalid declarations fail during Alpine initialization; runtime expression and
 capture failures use the island's normal failure feedback.
+
+## Polling
+
+Use `x-interact:poll.5s` to refresh the owning island through `$server.sync()`.
+An omitted duration defaults to 5000 ms; an omitted or blank expression defaults
+to synchronization. An expression such as
+`$server.state.running && $server.call('refreshStatus')` uses current Alpine
+scope on each tick. There are no separate polling methods on `$server`.
+
+Accept one positive whole-number duration ending in `ms` or `s`, from 1 through
+2,147,483,647 milliseconds. Optional `.visible` restricts polling to the
+declaration's element intersecting the viewport. Repeated/unknown modifiers,
+multiple durations, and multiple declarations owned by the same island are
+initialization errors. Nested islands own independent pollers.
+
+The first tick waits one interval. Each subsequent interval starts after the
+previous expression settles. Hidden documents suspend timers; visible documents
+start a fresh interval. `.visible` applies the same policy to viewport changes.
+Polling skips dirty drafts, scheduled model synchronization, pending requests,
+validation messages, and paused request failures. No skipped ticks are queued.
+Conditions that return false make no request; asynchronous custom functions
+should return their promise.
+
+Normal pending/loading feedback and failure recovery apply. Disposal releases
+timers and visibility resources without promising cancellation of PHP execution.
+See the [polling guide](/guide/polling) for complete examples and application
+controls.
 
 ## Alpine bridge
 

@@ -34,6 +34,7 @@ example. Keep real credentials and private data out of it.
 | `/playground` | Adjust independent counters with typed action arguments              | [Actions and feedback](/guide/actions)                                                                             |
 | `/playground` | Change seats and extras; reveal business fields and validate         | [Conditional fields](/guide/forms#add-dependent-or-conditional-fields)                                             |
 | `/playground` | Add, toggle, and remove tasks while other local state survives       | [Task board source](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/TaskBoard.php) |
+| `/playground` | Refresh the server clock; pause it or watch a simulated job complete | [Polling](/guide/polling)                                                                                          |
 | `/search`     | Filter 1,200 resources; sort, change page size, and paginate         | [Search and pagination](/guide/search)                                                                             |
 | `/page`       | Update a whole-page listing while its layout stays in place          | [Whole-page islands](/guide/page-islands)                                                                          |
 

@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { islandId, targetsIsland } from './requests';
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -18,11 +19,12 @@ test('a real server exception pauses typing and a new explicit sync preserves th
   page,
 }) => {
   const region = await recovery(page);
+  const id = await islandId(region);
   const pageErrors: string[] = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
   let requests = 0;
   page.on('request', (request) => {
-    if (request.url().endsWith('/_interact/update')) requests++;
+    if (targetsIsland(request, id)) requests++;
   });
   await region
     .getByLabel('Recovery draft', { exact: true })
@@ -59,7 +61,12 @@ test('expired signed snapshots require a fresh mount without clearing local edit
   page,
 }) => {
   const region = await recovery(page);
+  const id = await islandId(region);
   await page.route('**/_interact/update', async (route) => {
+    if (!targetsIsland(route.request(), id)) {
+      await route.continue();
+      return;
+    }
     const data: unknown = route.request().postDataJSON();
     if (!record(data) || typeof data.snapshot !== 'string')
       throw new Error('Missing fixture snapshot');
@@ -85,7 +92,7 @@ test('expired signed snapshots require a fresh mount without clearing local edit
   });
   let requests = 0;
   page.on('request', (request) => {
-    if (request.url().endsWith('/_interact/update')) requests++;
+    if (targetsIsland(request, id)) requests++;
   });
   await region
     .getByLabel('Recovery draft', { exact: true })
@@ -125,13 +132,20 @@ test('actual middleware CSRF rejection retains the draft and blocks resubmission
   page,
 }) => {
   const region = await recovery(page);
+  const id = await islandId(region);
   await page.route('**/_interact/update', async (route) => {
+    if (!targetsIsland(route.request(), id)) {
+      await route.continue();
+      return;
+    }
     const headers = route.request().headers();
     delete headers['x-csrf-token'];
     await route.continue({ headers });
   });
   await region.getByLabel('Recovery draft', { exact: true }).fill('csrf draft');
-  const response = page.waitForResponse('**/_interact/update');
+  const response = page.waitForResponse((reply) =>
+    targetsIsland(reply.request(), id),
+  );
   await region.getByRole('button', { name: 'Accept draft' }).click();
   const rejected = await response;
   expect(rejected.status()).toBe(403);
@@ -153,13 +167,18 @@ for (const [name, status, body] of [
     page,
   }) => {
     const region = await recovery(page);
+    const id = await islandId(region);
     let requests = 0;
     let loginRequests = 0;
     page.on('request', (request) => {
-      if (request.url().endsWith('/_interact/update')) requests++;
+      if (targetsIsland(request, id)) requests++;
       if (request.url().endsWith('/login')) loginRequests++;
     });
     await page.route('**/_interact/update', async (route) => {
+      if (!targetsIsland(route.request(), id)) {
+        await route.continue();
+        return;
+      }
       if (status === 0) await route.abort('failed');
       else if (status === 302)
         await route.continue({

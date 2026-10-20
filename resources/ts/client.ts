@@ -1,11 +1,13 @@
 import { Controls } from './bindings/controls';
 import type { Control } from './bindings/control-values';
 import type { ModelBinding } from './bindings/model';
+import type { PollBinding } from './bindings/poll';
 import { readRoot } from './dom/markup';
 import { preserveSelection } from './dom/selection';
 import { RequestActivity } from './scheduling/request-activity';
 import { copyArguments } from './scheduling/targets';
 import { RequestQueue } from './scheduling/request-queue';
+import { Poller } from './scheduling/poller';
 import { changedWritable } from './state/drafts';
 import { clone, equal } from './state/values';
 import { readMetadata } from './transport/metadata';
@@ -43,6 +45,7 @@ export class IslandClient {
   private writable: Writable;
   private disposed = false;
   private readonly activity: { paused: boolean };
+  private poller: Poller | undefined;
 
   /**
    * Initialize the bridge and request-scoped collaborators from PHP-rendered metadata.
@@ -121,6 +124,30 @@ export class IslandClient {
   }
 
   /**
+   * Register one managed polling declaration within this island's ownership boundary.
+   */
+  bindPoll(
+    element: HTMLElement,
+    binding: PollBinding,
+    evaluate: () => unknown,
+  ): () => void {
+    if (this.poller)
+      throw new Error('Use one x-interact:poll declaration per island.');
+    const poller = new Poller(
+      element,
+      binding,
+      () => this.canPoll(element),
+      evaluate,
+      (cause) => this.failed(requestError('client_error', null, cause)),
+    );
+    this.poller = poller;
+    return () => {
+      poller.dispose();
+      if (this.poller === poller) this.poller = undefined;
+    };
+  }
+
+  /**
    * Dispose owned bindings and unsent work, and abort the browser's active fetch.
    *
    * Aborting fetch does not establish whether the server executed an action.
@@ -128,9 +155,29 @@ export class IslandClient {
   dispose(): void {
     this.disposed = true;
     this.lifetime.abort();
+    this.poller?.dispose();
     this.controls.dispose();
     this.queue.dispose();
     this.requests.dispose();
+  }
+
+  /**
+   * Preserve explicit edits and feedback before allowing a background expression to run.
+   */
+  private canPoll(element: HTMLElement): boolean {
+    if (
+      this.disposed ||
+      !element.isConnected ||
+      !this.root.contains(element) ||
+      element.closest('[data-interact-id]') !== this.root ||
+      this.bridge.paused ||
+      this.bridge.pending() ||
+      this.controls.hasPending() ||
+      Object.values(this.bridge.errors).some((messages) => messages.length > 0)
+    )
+      return false;
+    this.controls.captureAll();
+    return !this.bridge.dirty;
   }
 
   /**

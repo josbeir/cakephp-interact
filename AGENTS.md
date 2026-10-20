@@ -16,6 +16,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Keep validation and persistence in the application. Synchronization never implies saving.
 - Use native fetch, Alpine, and Alpine Morph. Phase 2 owns navigation and URL-state features; defer form-adapter integration.
 - Use `x-interact:model` with synchronization modifiers and `x-interact:submit` for native form protection. Actions use `$server.call()` in Alpine expressions; ordinary events and presentation use Alpine directives. Keep generated `data-interact-*` metadata runtime-owned, without parallel public binding attributes.
+- Use `x-interact:poll` for managed periodic refreshes. Keep refreshes and actions on the existing `$server` bridge, and use Alpine conditions for application-controlled pauses or completion.
 - Use Alpine shorthand consistently in code and documentation: `@event` for event listeners and `:attribute` for bindings.
 
 ## Usability and cognitive load

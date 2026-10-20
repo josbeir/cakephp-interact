@@ -89,6 +89,7 @@ export default defineConfig({
           { text: 'State and input binding', link: '/guide/state' },
           { text: 'Actions and feedback', link: '/guide/actions' },
           { text: 'Search and pagination', link: '/guide/search' },
+          { text: 'Polling', link: '/guide/polling' },
           { text: 'Forms and validation', link: '/guide/forms' },
           { text: 'Failures and recovery', link: '/guide/failures' },
           { text: 'Nested islands and events', link: '/guide/nesting' },

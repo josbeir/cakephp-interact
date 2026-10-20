@@ -103,6 +103,46 @@ describe('Alpine installation and morphing', () => {
     expect(input.value).toBe('child draft');
     expect(parent.querySelector('span')?.style.display).not.toBe('none');
   });
+  it('keeps nested polling declarations independent through parent morphs and child drafts', async () => {
+    vi.useFakeTimers();
+    install(Alpine);
+    const parent = root('polling-parent');
+    parent.setAttribute('x-interact:poll.100ms', "$server.call('parentTick')");
+    const child = root('polling-child', '<input x-interact:model="title">');
+    child.setAttribute('x-interact:poll.100ms', "$server.call('childTick')");
+    parent.append(child);
+    document.body.append(parent);
+    const replacement = parent.cloneNode(true);
+    if (!(replacement instanceof HTMLElement))
+      throw new Error('Missing parent render.');
+    const placeholder = document.createElement('div');
+    placeholder.dataset.interactPreserve = 'polling-child';
+    replacement
+      .querySelector('[data-interact-id="polling-child"]')
+      ?.replaceWith(placeholder);
+    const fetcher = vi.fn(async (_url: string, options: RequestInit) => {
+      if (typeof options.body !== 'string') throw new Error('Missing request.');
+      return options.body.includes('parentTick')
+        ? reply(parent, replacement.outerHTML)
+        : reply(child, child.outerHTML);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    Alpine.initTree(parent);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    const input = child.querySelector('input');
+    if (!input) throw new Error('Missing child draft.');
+    input.value = 'Unsynchronized child draft';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(100);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(fetcher.mock.calls[2]?.[1].body).toContain('parentTick');
+    expect(parent.querySelector('[data-interact-id="polling-child"]')).toBe(
+      child,
+    );
+    expect(input.value).toBe('Unsynchronized child draft');
+  });
+
   it('disposes requests when Alpine destroys an island', async () => {
     install(Alpine);
     const element = root(

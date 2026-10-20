@@ -22,3 +22,7 @@ declare(strict_types=1);
     <?= $this->Interact->render('task-board') ?>
 </div>
 <?= $this->Interact->render('recovery') ?>
+<div class="playground-grid polling-examples">
+    <?= $this->Interact->render('server-clock') ?>
+    <?= $this->Interact->render('job-progress') ?>
+</div>

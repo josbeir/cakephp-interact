@@ -112,6 +112,13 @@ export class Controls {
   }
 
   /**
+   * Keep background polling from flushing a scheduled model synchronization.
+   */
+  hasPending(): boolean {
+    return this.timers.size > 0;
+  }
+
+  /**
    * Update registered drafts and schedule only their declared synchronization mode.
    */
   private handle(event: Event): void {
