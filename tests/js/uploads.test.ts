@@ -394,6 +394,26 @@ describe('managed file selections', () => {
     expect(value.fetcher).not.toHaveBeenCalled();
   });
 
+  it('discards a completed response when cancellation races with its delivery', async () => {
+    const value = setup();
+    let complete: ((response: Response) => void) | undefined;
+    value.uploader.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          complete = resolve;
+        }),
+    );
+    value.choose();
+    const save = value.client.bridge.call('save');
+    value.field().cancel();
+    complete?.(value.reply());
+    expect((await save).ok).toBe(false);
+    expect(value.field().files).toEqual([]);
+    expect(value.client.bridge.error).toBeNull();
+    expect(value.client.bridge.paused).toBe(false);
+    expect(value.fetcher).not.toHaveBeenCalled();
+  });
+
   it('disposes an in-flight transfer and rejects late UI updates', async () => {
     const value = setup();
     value.uploader.mockImplementation(

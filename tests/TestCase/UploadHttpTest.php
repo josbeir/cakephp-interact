@@ -74,6 +74,21 @@ class UploadHttpTest extends HttpTestCase
         );
     }
 
+    public function testUnexpectedIncomingFilesCannotBypassExplicitUploadOperations(): void
+    {
+        $mount = $this->mounted(0, '/uploads');
+        $this->replaceRequest([
+            'headers' => ['X-CSRF-Token' => $this->csrf, 'Content-Type' => 'multipart/form-data'],
+            'files' => ['file' => new UploadedFile(new Stream('php://temp', 'w+'), 0, UPLOAD_ERR_OK, 'unexpected.txt')],
+        ]);
+        $this->post('/uploads/update', ['payload' => json_encode([
+            'version' => 1,
+            'snapshot' => $mount['snapshot'],
+        ], JSON_THROW_ON_ERROR)]);
+        $this->assertResponseCode(400);
+        $this->assertResponseContains('invalid_request');
+    }
+
     public function testPhpUploadRejectionsRenderThroughTheNativeFormContext(): void
     {
         $mount = $this->mounted(0, '/uploads');

@@ -6,6 +6,7 @@ namespace Interact\Test\TestCase;
 use Interact\Attribute\Upload;
 use Interact\Runtime\SnapshotData;
 use Interact\Test\Fixture\UploadTypesIsland;
+use Interact\Upload\UploadOperation;
 use Interact\Upload\UploadProperty;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -56,6 +57,26 @@ class UploadDeclarationTest extends TestCase
         $island->multiple = ['invalid' => null];
         $this->expectException(InvalidArgumentException::class);
         $property->files($island);
+    }
+
+    /**
+     * Provide malformed operations before they can access staging or invoke actions.
+     *
+     * @return iterable<string, array{mixed}> Invalid operation envelopes.
+     */
+    public static function operations(): iterable
+    {
+        yield 'not a record' => [null];
+        yield 'missing field' => [['kind' => 'stage']];
+        yield 'unknown kind' => [['field' => 'document', 'kind' => 'save']];
+        yield 'non-string id' => [['field' => 'document', 'kind' => 'remove', 'id' => 1]];
+    }
+
+    #[DataProvider('operations')]
+    public function testRejectsMalformedUploadOperations(mixed $operation): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new UploadOperation($operation);
     }
 
     /**
