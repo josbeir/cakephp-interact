@@ -212,6 +212,32 @@ describe('island lifecycle and transport', () => {
       updates: { title: 'newer' },
     });
   });
+  it('keeps queued arguments and their activity targets detached from application mutations', async () => {
+    const root = element();
+    let finish: (response: Response) => void = () => {};
+    const fetcher = vi
+      .fn<Fetcher>()
+      .mockReturnValueOnce(
+        new Promise<Response>((resolve) => {
+          finish = resolve;
+        }),
+      )
+      .mockResolvedValue(result(payload(root)));
+    const value = client(root, fetcher);
+    const first = value.bridge.sync();
+    const argument = { nested: { value: 'original' } };
+    const second = value.bridge.call('save', argument);
+    argument.nested.value = 'changed';
+    expect(
+      value.bridge.pending('save', { nested: { value: 'original' } }),
+    ).toBe(true);
+    expect(value.bridge.pending('save', argument)).toBe(false);
+    finish(result(payload(root)));
+    await Promise.all([first, second]);
+    expect(requestBody(fetcher.mock.calls[1]?.[1])).toMatchObject({
+      args: [{ nested: { value: 'original' } }],
+    });
+  });
   it('coalesces queued synchronization and accepts renderable validation responses', async () => {
     const root = element();
     let finish: (response: Response) => void = () => {};
@@ -354,6 +380,56 @@ describe('declarative controls', () => {
     expect(requestBody(fetcher.mock.calls[0]?.[1])).toMatchObject({
       updates: { title: 'draft' },
     });
+  });
+  it('locks a native form while queued, keeps later drafts, and unlocks validation responses', async () => {
+    const root = element(
+      '<form id="native-form" data-interact-submit="save"><input data-interact-model="title" value="old"><button>Save</button></form>',
+    );
+    const html = root.outerHTML;
+    let finish: (response: Response) => void = () => {};
+    const fetcher = vi
+      .fn<Fetcher>()
+      .mockReturnValueOnce(
+        new Promise<Response>((resolve) => {
+          finish = resolve;
+        }),
+      )
+      .mockResolvedValueOnce(
+        result(
+          {
+            ...payload(
+              root,
+              { ...initial, title: 'later' },
+              { errors: { title: ['Invalid'] } },
+            ),
+            html,
+          },
+          422,
+        ),
+      );
+    const value = client(root, fetcher);
+    const sync = value.bridge.sync();
+    const form = control(root, 'form', HTMLFormElement);
+    const button = control(root, 'button', HTMLButtonElement);
+    const input = control(root, 'input', HTMLInputElement);
+    form.requestSubmit();
+    form.requestSubmit();
+    expect(button.disabled).toBe(true);
+    expect(input.disabled).toBe(false);
+    expect(value.bridge.pending('save')).toBe(true);
+    expect(fetcher).toHaveBeenCalledOnce();
+    input.value = 'later';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    finish(result({ ...payload(root), html }));
+    await sync;
+    await vi.waitFor(() => expect(value.bridge.pending()).toBe(false));
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(requestBody(fetcher.mock.calls[1]?.[1])).toMatchObject({
+      action: 'save',
+      updates: { title: 'later' },
+    });
+    expect(control(root, 'button', HTMLButtonElement).disabled).toBe(false);
+    expect(value.bridge.errors).toEqual({ title: ['Invalid'] });
   });
   it('handles explicit clicks, blur, change, and input debounce without duplicate requests', async () => {
     vi.useFakeTimers();

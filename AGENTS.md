@@ -67,6 +67,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Handle promises and errors explicitly. Never automatically retry actions or confuse aborting fetch with canceling a server operation.
 - Clean up listeners, timers, observers, and in-flight work when islands disappear.
 - Preserve newer drafts, focus, selection, nested ownership, and local Alpine state during updates.
+- Keep request feedback on the `$server` bridge and use Alpine bindings for visibility, disabled states, and classes; avoid introducing parallel loading-attribute conventions.
 - Prevent duplicate Alpine initialization. Avoid unnecessary global mutable state.
 - Vite+ owns JavaScript/TypeScript linting, formatting, native type checking, Vitest, and library bundling through `vite.config.ts`. Use its bundled Oxlint, Oxfmt, and Vitest instead of separate ESLint/Prettier installations or configuration. Mago owns PHP formatting, linting, and analysis.
 

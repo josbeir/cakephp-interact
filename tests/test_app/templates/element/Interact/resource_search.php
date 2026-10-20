@@ -72,7 +72,7 @@ use function Cake\Core\h;
             ]) ?>
         </div>
     <?= $this->Form->end() ?>
-    <div class="library-summary"><p role="status" aria-live="polite" aria-atomic="true">Showing <?= number_format($first) ?>–<?= number_format($last) ?> of <strong><?= number_format($total) ?></strong> results</p><span class="quiet" x-show="$server.busy" x-cloak>Searching…</span><button class="button-text" type="button" data-interact-click="clear" :disabled="$server.busy">Clear filters</button></div>
+    <div class="library-summary"><p role="status" aria-live="polite" aria-atomic="true">Showing <?= number_format($first) ?>–<?= number_format($last) ?> of <strong><?= number_format($total) ?></strong> results</p><span class="quiet" x-show="$server.loading(null)" x-cloak>Searching…</span><button class="button-text" type="button" data-interact-click="clear" :disabled="$server.busy">Clear filters</button></div>
     <?php if ($total === 0): ?>
         <div class="empty-state library-empty"><h3>No resources found</h3><p>Try fewer words, choose another topic, or clear the filters to explore the full library.</p><button type="button" data-interact-click="clear" :disabled="$server.busy">Show all resources</button></div>
     <?php else: ?>

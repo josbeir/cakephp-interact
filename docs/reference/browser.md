@@ -34,17 +34,19 @@ mechanisms to the same event on a control.
 
 `$server` resolves to the nearest owning island, including in nested markup.
 
-| Member                  | Contract                                                   |
-| ----------------------- | ---------------------------------------------------------- |
-| `state`                 | Reactive browser-visible state, including current drafts   |
-| `busy`                  | A request is in flight                                     |
-| `dirty`                 | Local edits are waiting to synchronize                     |
-| `errors`                | Current field feedback as a map of message lists           |
-| `error`                 | Structured request failure, or null                        |
-| `paused`                | Automatic updates are paused after a failure               |
-| `exportDraft()`         | Export all current writable values as formatted JSON       |
-| `sync()`                | Request synchronization without an action                  |
-| `call(action, ...args)` | Queue an exposed PHP action with JSON-compatible arguments |
+| Member                      | Contract                                                   |
+| --------------------------- | ---------------------------------------------------------- |
+| `state`                     | Reactive browser-visible state, including current drafts   |
+| `pending(target?, ...args)` | Matching queued or executing work, immediately             |
+| `loading(target?, ...args)` | Matching work after a 200 ms visual delay                  |
+| `busy`                      | A request is in flight                                     |
+| `dirty`                     | Local edits are waiting to synchronize                     |
+| `errors`                    | Current field feedback as a map of message lists           |
+| `error`                     | Structured request failure, or null                        |
+| `paused`                    | Automatic updates are paused after a failure               |
+| `exportDraft()`             | Export all current writable values as formatted JSON       |
+| `sync()`                    | Request synchronization without an action                  |
+| `call(action, ...args)`     | Queue an exposed PHP action with JSON-compatible arguments |
 
 Use the native model attributes for form controls; reading `state` does not make
 PHP-only state writable. The bridge's `sync()` and `call()` return
@@ -80,6 +82,54 @@ Here `server` is the owning island's bridge. Errors are also exposed through
 validation is renderable feedback; a request/transport failure appears in
 `error`. Render errors accessibly and keep an intentional recovery path for your
 application.
+
+## Request activity
+
+`pending()` and `loading()` use the same targets:
+
+| Query                                       | Matches                                          |
+| ------------------------------------------- | ------------------------------------------------ |
+| `pending()`                                 | All accepted queued/executing work               |
+| `pending('save')`                           | Any invocation of `save`                         |
+| `pending('remove', 42)`                     | `remove` with the complete argument tuple `[42]` |
+| `pending(null)`                             | Synchronization only                             |
+| `pending({ action: 'remove', args: [42] })` | The equivalent object selector                   |
+
+`loading()` accepts all these forms and adds `delay` in its object form:
+`loading({ action: 'save', delay: 500 })`. Delay defaults to 200 ms and must be an
+integer from 0 to 60,000 ms. Omitting `action` matches all requests; setting it to
+`null` matches synchronization. Argument filters require a named action and a
+complete JSON argument tuple. Matching preserves scalar types and ignores object
+key order; `42` and `'42'` are different arguments.
+
+`pending()` is immediate. `loading()` waits through a continuously matching pending
+interval, including time queued behind another request. Overlapping matching work
+keeps the indicator visible. Equivalent delayed queries share their timer; timers
+are released when the interval ends or the island disappears. Neither helper
+includes an unsent debounce timer. Both helpers are reactive in Alpine bindings.
+
+Use Alpine `x-show`, `:disabled`, and `:class` for presentation. There are no
+loading-specific HTML attributes. The existing `busy` property and island-root
+`aria-busy` retain their executing-request meaning.
+
+## Form submission protection
+
+Forms marked `data-interact-submit` automatically block repeat submissions from
+acceptance until response application completes. Their owned native submit
+buttons are temporarily disabled and the form receives `aria-busy="true"` while
+queued or running. Model inputs stay editable. Associated submit buttons outside
+the form element are supported when they belong to the same island.
+
+Application-owned disabled states are preserved, including those supplied by a
+server render. Use stable form IDs or `data-interact-key` values for forms that
+may be dynamically replaced; surviving/keyed forms keep their outstanding lock.
+Independently replaced, unkeyed forms have a new identity.
+
+The protection works with native submit events, including Enter and
+`requestSubmit()`, regardless of which PHP helper generated the HTML. Direct
+`form.submit()` bypasses submit events. Custom Alpine handlers and direct
+`$server.call()` invocations remain repeatable. No automatic retry or server-side
+exactly-once guarantee is introduced.
 
 ## Structured failures
 

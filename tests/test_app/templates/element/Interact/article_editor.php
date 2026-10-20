@@ -13,7 +13,7 @@ $fieldId = 'article-' . (string)$articleId . '-title';
 ?>
 <article class="article-editor" aria-label="Article <?= (string)h((string)$articleId) ?>">
     <div class="row-heading"><span class="row-id">Article / <?= str_pad((string)$articleId, 2, '0', STR_PAD_LEFT) ?></span><span class="draft-indicator" x-show="$server.dirty" x-cloak>Unsaved changes</span></div>
-    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'article-' . (string)$articleId, 'data-interact-submit' => 'save']) ?>
+    <?= $this->Form->create(null, ['url' => false, 'id' => 'article-form-' . (string)$articleId, 'idPrefix' => 'article-' . (string)$articleId, 'data-interact-submit' => 'save']) ?>
         <?= $this->Form->control('title', [
             'type' => 'text',
             'label' => 'Article title',
@@ -29,7 +29,7 @@ $fieldId = 'article-' . (string)$articleId . '-title';
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
-        <div class="form-footer"><?= $this->Form->button('Save article', [':disabled' => '$server.busy']) ?><span class="quiet" x-show="$server.busy" x-cloak>Saving…</span>
+        <div class="form-footer"><?= $this->Form->button('Save article') ?><span class="quiet" x-show="$server.loading('save')" x-cloak>Saving…</span>
         <?php if ($saved): ?>
             <p class="success-message" role="status" x-show="!$server.dirty">Saved.</p>
         <?php endif; ?>

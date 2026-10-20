@@ -7,6 +7,8 @@ export type {
   RequestFailure,
   FailureCode,
   RequestResult,
+  RequestTarget,
+  LoadingTarget,
 } from './types';
 export { IslandClient } from './client';
 const installed = new WeakSet<Alpine>();

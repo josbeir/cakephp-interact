@@ -43,7 +43,7 @@ use function Cake\Core\h;
         <?php foreach ($errors['cityId'] ?? [] as $error): ?>
             <p role="alert" class="field-error"><?= (string)h($error) ?></p>
         <?php endforeach; ?>
-        <?= $this->Form->button('Confirm city', ['class' => 'button-primary', ':disabled' => '$server.busy']) ?>
+        <?= $this->Form->button('Confirm city', ['class' => 'button-primary']) ?>
         <?php if ($confirmed): ?>
             <p class="success-message" role="status" x-show="!$server.dirty">City confirmed. Your notes are still here.</p>
         <?php endif; ?>
