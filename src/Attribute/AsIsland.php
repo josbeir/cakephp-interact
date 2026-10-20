@@ -8,6 +8,9 @@ use InvalidArgumentException;
 
 /**
  * Names an island and its application-owned template or element for discovery.
+ *
+ * Discovery recognizes this exact marker class, so subclasses would not be discovered.
+ * It remains final to make that declaration boundary explicit.
  */
 #[Attribute(Attribute::TARGET_CLASS)]
 final readonly class AsIsland

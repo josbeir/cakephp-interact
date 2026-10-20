@@ -8,7 +8,7 @@ use Interact\Runtime\Values;
 /**
  * Validates signed envelope claims and binds them to the current session, scope, and time.
  */
-final readonly class SnapshotEnvelope
+readonly class SnapshotEnvelope
 {
     /**
      * @var array<string, mixed> Cryptographically verified application state.

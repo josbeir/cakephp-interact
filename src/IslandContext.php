@@ -11,7 +11,7 @@ use Cake\Http\ServerRequest;
  * Authorization reads the current request identity rather than transported state.
  * The session binding and middleware scope keep snapshots within their issuing context.
  */
-final readonly class IslandContext
+readonly class IslandContext
 {
     /**
      * Keep route configuration server-owned; never accept an endpoint from update payloads.

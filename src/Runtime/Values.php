@@ -8,7 +8,7 @@ use InvalidArgumentException;
 /**
  * Validates the deliberately small transport value vocabulary and safe nested paths.
  */
-final class Values
+class Values
 {
     /**
      * Require a string-keyed record before passing unknown data to typed consumers.
@@ -53,7 +53,7 @@ final class Values
                     throw new InvalidArgumentException('Unsafe state key.');
                 }
 
-                self::validate($entry, $depth + 1);
+                static::validate($entry, $depth + 1);
             }
         }
     }

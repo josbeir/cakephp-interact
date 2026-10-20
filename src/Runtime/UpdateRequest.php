@@ -8,7 +8,7 @@ use InvalidArgumentException;
 /**
  * Validates the untrusted update envelope before snapshot or application processing begins.
  */
-final readonly class UpdateRequest
+readonly class UpdateRequest
 {
     public string $snapshot;
 
