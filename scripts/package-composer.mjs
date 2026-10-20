@@ -30,9 +30,15 @@ await execute('tar', [
   'README.md',
   'AGENTS.md',
   ...readdirSync('docs', { recursive: true })
-    .filter((path) => path.endsWith('.md') && !path.startsWith('.vitepress/'))
+    .filter(
+      (path) =>
+        path.endsWith('.md') &&
+        !path.startsWith('.vitepress/') &&
+        !path.startsWith('public/'),
+    )
     .sort()
     .map((path) => `docs/${path}`),
+  'docs/public',
   'src',
   'webroot',
 ]);
@@ -41,6 +47,8 @@ const { stdout: entries } = await execute('tar', ['-tzf', archive], {
 });
 if (
   !entries.includes('webroot/js/runtime.js\n') ||
+  !entries.includes('docs/public/branding/interact-mark.svg\n') ||
+  !entries.includes('docs/public/branding/interact-mark.png\n') ||
   /(?:^|\/)(?:vendor|node_modules|tests|\.git)\//m.test(entries)
 ) {
   throw new Error(

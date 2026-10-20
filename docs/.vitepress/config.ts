@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitepress';
 
 const repository = 'https://github.com/josbeir/cakephp-interact';
+const base = '/cakephp-interact/';
+const hostname = `https://josbeir.github.io${base}`;
+const socialImage = new URL('branding/interact-mark.png', hostname).href;
 
 export default defineConfig({
   title: 'CakePHP Interact',
@@ -8,10 +11,63 @@ export default defineConfig({
   description:
     'Build interactive CakePHP pages with PHP islands and native templates.',
   lang: 'en-US',
-  base: '/cakephp-interact/',
+  base,
+  srcExclude: ['public/**'],
+  head: [
+    [
+      'link',
+      {
+        rel: 'icon',
+        type: 'image/svg+xml',
+        href: `${base}branding/interact-mark.svg`,
+      },
+    ],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:site_name', content: 'CakePHP Interact' }],
+    ['meta', { property: 'og:locale', content: 'en_US' }],
+    ['meta', { property: 'og:image', content: socialImage }],
+    ['meta', { property: 'og:image:type', content: 'image/png' }],
+    ['meta', { property: 'og:image:width', content: '512' }],
+    ['meta', { property: 'og:image:height', content: '512' }],
+    ['meta', { property: 'og:image:alt', content: 'CakePHP Interact logo' }],
+    ['meta', { name: 'twitter:card', content: 'summary' }],
+    ['meta', { name: 'twitter:image', content: socialImage }],
+    ['meta', { name: 'twitter:image:alt', content: 'CakePHP Interact logo' }],
+  ],
+  sitemap: { hostname },
+  transformPageData(pageData) {
+    const path = pageData.relativePath
+      .replace(/(^|\/)index\.md$/, '$1')
+      .replace(/\.md$/, '.html');
+    const url = new URL(path, hostname).href;
+    const title =
+      pageData.titleTemplate === false
+        ? pageData.title
+        : `${pageData.title} | CakePHP Interact`;
+
+    pageData.frontmatter.head ??= [];
+    pageData.frontmatter.head.push(
+      ['link', { rel: 'canonical', href: url }],
+      ['meta', { property: 'og:title', content: title }],
+      ['meta', { property: 'og:description', content: pageData.description }],
+      ['meta', { property: 'og:url', content: url }],
+      ['meta', { name: 'twitter:title', content: title }],
+      ['meta', { name: 'twitter:description', content: pageData.description }],
+    );
+  },
+  transformHead({ pageData }) {
+    if (pageData.isNotFound) {
+      return [['meta', { name: 'robots', content: 'noindex' }]];
+    }
+  },
   lastUpdated: true,
-  sitemap: { hostname: 'https://josbeir.github.io/cakephp-interact/' },
   themeConfig: {
+    logo: {
+      src: '/branding/interact-mark.svg',
+      alt: '',
+      width: 24,
+      height: 24,
+    },
     nav: [
       { text: 'Guide', link: '/getting-started' },
       { text: 'Examples', link: '/examples' },
