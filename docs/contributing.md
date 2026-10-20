@@ -49,6 +49,13 @@ npm run test:browser
 includes unexecuted runtime source and separately requires at least 95%
 unrounded line coverage. Statements, functions, and branches are also reported.
 
+Type checking and declaration builds use TypeScript 7's native `tsc`, installed
+under the `@typescript/native` npm alias. The `typescript` dependency aliases the
+official TypeScript 6 compatibility package because typescript-eslint still needs
+the JavaScript compiler API. This follows Microsoft's
+[side-by-side tooling setup](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-60);
+`npm run typecheck` and `npm run build` both use TypeScript 7.
+
 Playwright exercises the real CakePHP application in Chromium, Firefox, and
 WebKit. Test observable behavior, security failures, races, validation, focus,
 and nested ownership even when coverage totals already pass. PHP integration

@@ -58,7 +58,8 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 
 ## TypeScript
 
-- Use ES modules, strict TypeScript, `noUncheckedIndexedAccess`, and `exactOptionalPropertyTypes`. Support Node 24+ for tooling.
+- Use ES modules, strict TypeScript 7, `noUncheckedIndexedAccess`, and `exactOptionalPropertyTypes`. Support Node 24+ for tooling.
+- Use the TypeScript 7 native compiler for type checking and declaration builds. Keep the official TypeScript 6 compatibility package only for tools that require the JavaScript compiler API, such as typescript-eslint.
 - Treat network data as `unknown`; validate before use. Prefer discriminated unions and explicit state transitions.
 - Avoid `any`, unchecked assertions, non-null assertions, and suppressions. Fix types at their source.
 - Separate transport, scheduling, state reconciliation, DOM operations, and Alpine integration.
