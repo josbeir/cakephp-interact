@@ -111,8 +111,9 @@ it can ignore saves for other records:
 ```html [Inside an island with an articleId prop]
 <section
   @article-saved.window="
-    $event.detail.id === $server.state.articleId
-      && $server.sync()
+    $event.detail.id ===
+      $server.state.articleId &&
+      $server.sync()
   "
 >
   <!-- Existing article details. -->
