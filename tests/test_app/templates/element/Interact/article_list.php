@@ -1,7 +1,5 @@
 <?php
 declare(strict_types=1);
-use function Cake\Core\h;
-
 /**
  * @var \Interact\View\TemplateView $this
  * @var string $search
@@ -13,10 +11,17 @@ use function Cake\Core\h;
 <section class="demo-card article-list" aria-label="Articles" @article-saved.stop="$server.sync()">
     <div class="card-heading"><div><p class="eyebrow">01 / Nested islands</p><h2>An editor in every row</h2></div><span class="capability">Search + save</span></div>
     <p class="card-description">Each article is an independent island. Search updates this list; saving updates just the article, then lets the list know.</p>
-    <label>
-        Search articles
-        <input type="search" value="<?= (string)h($search) ?>" placeholder="Try CakePHP or Alpine…" data-interact-model="search" data-interact-update="input" data-interact-debounce="250">
-    </label>
+    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'article-list', '@submit.prevent' => '$server.sync()']) ?>
+        <?= $this->Form->control('search', [
+            'type' => 'search',
+            'label' => 'Search articles',
+            'value' => $search,
+            'placeholder' => 'Try CakePHP or Alpine…',
+            'data-interact-model' => 'search',
+            'data-interact-update' => 'input',
+            'data-interact-debounce' => 250,
+        ]) ?>
+    <?= $this->Form->end() ?>
     <div class="list-toolbar"><div class="page-count"><p class="quiet">Page <?= (string)$page ?></p><span class="quiet">of <?= (string)$totalPages ?></span></div><span class="quiet" x-show="$server.busy" x-cloak>Updating…</span>
         <div x-data="{ open: false }">
             <button type="button" class="button-text" @click="open = !open" :aria-expanded="open">Toggle help</button>

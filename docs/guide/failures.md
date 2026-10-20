@@ -27,13 +27,15 @@ lets you simulate a server failure or expiry and keep typing afterwards.
 
 Inside the owning island, add application-controlled recovery markup:
 
-```html
+```php [Inside the island element]
 <div x-show="$server.paused" x-cloak>
   <p>Automatic updates are paused. Keep your draft before leaving this page.</p>
-  <label>
-    Draft export
-    <textarea readonly :value="$server.exportDraft()"></textarea>
-  </label>
+  <?= $this->Form->control('draftExport', [
+      'type' => 'textarea',
+      'label' => 'Draft export',
+      'readonly' => true,
+      ':value' => '$server.exportDraft()',
+  ]) ?>
   <button
     type="button"
     x-show="$server.error && $server.error.recovery === 'retry'"
@@ -132,7 +134,7 @@ No exception traces or raw error pages are inserted into island markup. The cate
 
 ## Complete demo implementation
 
-::: details Island and application-owned recovery markup
+:::: details Island and application-owned recovery markup
 
 ::: code-group
 
@@ -142,7 +144,7 @@ No exception traces or raw error pages are inserted into island markup. The cate
 
 :::
 
-:::
+::::
 
 ## Update existing error bindings
 

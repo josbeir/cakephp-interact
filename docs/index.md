@@ -7,6 +7,11 @@ hero:
   name: CakePHP Interact
   text: Interactive pages. Written in PHP.
   tagline: Keep your CakePHP templates and application logic. Update the part of the page that changed.
+  image:
+    src: /branding/interact-mark.svg
+    alt: CakePHP Interact logo
+    width: 320
+    height: 320
   actions:
     - theme: brand
       text: Build your first island

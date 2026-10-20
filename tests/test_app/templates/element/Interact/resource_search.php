@@ -3,6 +3,7 @@ declare(strict_types=1);
 use function Cake\Core\h;
 
 /**
+ * @var \Interact\View\TemplateView $this
  * @var string $search
  * @var string $category
  * @var string $level
@@ -22,44 +23,55 @@ use function Cake\Core\h;
 <section class="demo-card resource-library" aria-label="Resource library">
     <div class="card-heading"><div><p class="eyebrow">Live search / <?= number_format($librarySize) ?> sample resources</p><h2>A library worth exploring</h2></div><span class="capability">Search + filter + sort</span></div>
     <p class="card-description">Search titles, descriptions, and topics. Combine filters to narrow the list, or change the reading order to find something quick.</p>
-    <form @submit.prevent="$server.sync()">
-        <label class="library-query">Search resources
-            <input type="search" value="<?= (string)h($search) ?>" maxlength="200" placeholder="Search 1,200 resources…" data-interact-model="search" data-interact-update="input" data-interact-debounce="300" aria-describedby="search-hint" autocomplete="off">
-        </label>
+    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'resource-search', '@submit.prevent' => '$server.sync()']) ?>
+        <div class="library-query">
+            <?= $this->Form->control('search', [
+                'type' => 'search',
+                'label' => 'Search resources',
+                'value' => $search,
+                'maxlength' => 200,
+                'placeholder' => 'Search 1,200 resources…',
+                'data-interact-model' => 'search',
+                'data-interact-update' => 'input',
+                'data-interact-debounce' => 300,
+                'aria-describedby' => 'search-hint',
+                'autocomplete' => 'off',
+            ]) ?>
+        </div>
         <p class="field-hint" id="search-hint">Results update as you type. Multiple words match across the title and description.</p>
         <div class="library-filters">
-            <label>Topic
-                <select data-interact-model="category" data-interact-update="change">
-                    <option value="">All topics</option>
-                    <?php foreach ($categories as $value => $label): ?>
-                        <option value="<?= (string)h($value) ?>" <?= $category === $value ? 'selected' : '' ?>><?= (string)h($label) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label>Difficulty
-                <select data-interact-model="level" data-interact-update="change">
-                    <option value="">All levels</option>
-                    <?php foreach ($levels as $value => $label): ?>
-                        <option value="<?= (string)h($value) ?>" <?= $level === $value ? 'selected' : '' ?>><?= (string)h($label) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label>Sort by
-                <select data-interact-model="sort" data-interact-update="change">
-                    <?php foreach (['title' => 'Title: A–Z', 'title-desc' => 'Title: Z–A', 'shortest' => 'Shortest read first', 'longest' => 'Longest read first'] as $value => $label): ?>
-                        <option value="<?= (string)h($value) ?>" <?= $sort === $value ? 'selected' : '' ?>><?= (string)h($label) ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
-            <label>Per page
-                <select data-interact-model="pageSize" data-interact-update="change">
-                    <?php foreach ([10, 20, 50] as $size): ?>
-                        <option value="<?= (string)$size ?>" <?= $pageSize === $size ? 'selected' : '' ?>><?= (string)$size ?> results</option>
-                    <?php endforeach; ?>
-                </select>
-            </label>
+            <?= $this->Form->control('category', [
+                'label' => 'Topic',
+                'options' => $categories,
+                'empty' => 'All topics',
+                'value' => $category,
+                'data-interact-model' => 'category',
+                'data-interact-update' => 'change',
+            ]) ?>
+            <?= $this->Form->control('level', [
+                'label' => 'Difficulty',
+                'options' => $levels,
+                'empty' => 'All levels',
+                'value' => $level,
+                'data-interact-model' => 'level',
+                'data-interact-update' => 'change',
+            ]) ?>
+            <?= $this->Form->control('sort', [
+                'label' => 'Sort by',
+                'options' => ['title' => 'Title: A–Z', 'title-desc' => 'Title: Z–A', 'shortest' => 'Shortest read first', 'longest' => 'Longest read first'],
+                'value' => $sort,
+                'data-interact-model' => 'sort',
+                'data-interact-update' => 'change',
+            ]) ?>
+            <?= $this->Form->control('pageSize', [
+                'label' => 'Per page',
+                'options' => [10 => '10 results', 20 => '20 results', 50 => '50 results'],
+                'value' => $pageSize,
+                'data-interact-model' => 'pageSize',
+                'data-interact-update' => 'change',
+            ]) ?>
         </div>
-    </form>
+    <?= $this->Form->end() ?>
     <div class="library-summary"><p role="status" aria-live="polite" aria-atomic="true">Showing <?= number_format($first) ?>–<?= number_format($last) ?> of <strong><?= number_format($total) ?></strong> results</p><span class="quiet" x-show="$server.busy" x-cloak>Searching…</span><button class="button-text" type="button" data-interact-click="clear" :disabled="$server.busy">Clear filters</button></div>
     <?php if ($total === 0): ?>
         <div class="empty-state library-empty"><h3>No resources found</h3><p>Try fewer words, choose another topic, or clear the filters to explore the full library.</p><button type="button" data-interact-click="clear" :disabled="$server.busy">Show all resources</button></div>

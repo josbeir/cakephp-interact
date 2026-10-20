@@ -283,7 +283,14 @@ label {
   font-size: 0.8rem;
   margin: 1rem 0;
 }
-input:not([type='checkbox']):not([type='radio']),
+.input {
+  min-width: 0;
+  margin: 1rem 0;
+}
+.input > label {
+  margin: 0;
+}
+input:not([type='hidden']):not([type='checkbox']):not([type='radio']),
 select,
 textarea {
   display: block;
@@ -471,7 +478,7 @@ form > .success-message {
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 1rem;
 }
-.field-grid label {
+.field-grid .input {
   margin-top: 0;
 }
 .choice-group {
@@ -715,6 +722,9 @@ progress::-moz-progress-bar {
 }
 
 .library-query {
+  margin-bottom: 0;
+}
+.library-query .input {
   margin-bottom: 0;
 }
 .library-query input[type='search'] {

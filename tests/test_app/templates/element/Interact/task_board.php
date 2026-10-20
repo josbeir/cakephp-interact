@@ -3,6 +3,7 @@ declare(strict_types=1);
 use function Cake\Core\h;
 
 /**
+ * @var \Interact\View\TemplateView $this
  * @var string $draft
  * @var list<array{id: int, text: string, done: bool}> $tasks
  * @var int $completed
@@ -25,12 +26,20 @@ use function Cake\Core\h;
     <?php if ($tasks === []): ?>
         <p class="empty-state">A clean slate. Add your first task below.</p>
     <?php endif; ?>
-    <form data-interact-submit="add">
-        <label>Add a task<input value="<?= (string)h($draft) ?>" data-interact-model="draft" maxlength="80" placeholder="What would you like to try?" <?= isset($errors['draft']) ? 'aria-invalid="true"' : '' ?>></label>
+    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'task-board', 'data-interact-submit' => 'add']) ?>
+        <?= $this->Form->control('draft', [
+            'type' => 'text',
+            'label' => 'Add a task',
+            'value' => $draft,
+            'maxlength' => 80,
+            'placeholder' => 'What would you like to try?',
+            'data-interact-model' => 'draft',
+            'aria-invalid' => isset($errors['draft']) ? 'true' : null,
+        ]) ?>
         <?php foreach ($errors['draft'] ?? [] as $error): ?>
             <p role="alert" class="field-error"><?= (string)h($error) ?></p>
         <?php endforeach; ?>
-        <div class="form-footer"><button type="submit" class="button-primary" :disabled="$server.busy">Add task <span aria-hidden="true">+</span></button><span class="quiet">Up to 12 tasks · Resets on reload</span></div>
-    </form>
+        <div class="form-footer"><?= $this->Form->button('Add task <span aria-hidden="true">+</span>', ['class' => 'button-primary', 'escape' => false, ':disabled' => '$server.busy']) ?><span class="quiet">Up to 12 tasks · Resets on reload</span></div>
+    <?= $this->Form->end() ?>
     <p class="request-error" role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 </section>

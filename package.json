@@ -8,7 +8,8 @@
     "node": ">=24"
   },
   "files": [
-    "build/js"
+    "build/js",
+    "docs/public/branding/interact-mark.svg"
   ],
   "exports": {
     ".": {
