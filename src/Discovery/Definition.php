@@ -18,7 +18,7 @@ use ReflectionMethod;
  * Registration rejects conflicting state declarations and unsupported capabilities
  * before the runtime restores values or invokes application behavior.
  */
-final readonly class Definition
+readonly class Definition
 {
     public AsIsland $declaration;
 

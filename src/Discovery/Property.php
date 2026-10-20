@@ -15,7 +15,7 @@ use ReflectionProperty;
  * Validated JSON values are assigned through reflection without PHP scalar coercion.
  * Services, objects, static fields, and internal properties cannot become snapshot state.
  */
-final readonly class Property
+readonly class Property
 {
     public string $name;
 

@@ -9,7 +9,7 @@ use InvalidArgumentException;
  * Validates the signed protocol schema before restored data reaches island construction and
  * rendering.
  */
-final readonly class SnapshotData
+readonly class SnapshotData
 {
     public string $alias;
 

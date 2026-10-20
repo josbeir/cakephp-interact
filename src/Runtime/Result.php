@@ -9,7 +9,7 @@ namespace Interact\Runtime;
  * Markup, signed state, validation feedback, and response effects belong to the same
  * render. JSON conversion preserves empty records instead of turning them into lists.
  */
-final readonly class Result
+readonly class Result
 {
     /**
      * @var array<string, mixed> Declared state and props.
