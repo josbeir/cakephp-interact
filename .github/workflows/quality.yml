@@ -10,6 +10,9 @@ permissions:
 jobs:
   php:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -24,6 +27,14 @@ jobs:
       - run: composer test-coverage
         env:
           XDEBUG_MODE: coverage
+      - name: Upload PHP coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          files: build/clover.xml
+          flags: php
+          disable_search: true
+          use_oidc: true
+          fail_ci_if_error: false
       - uses: actions/upload-artifact@v4
         with:
           name: php-coverage
@@ -31,6 +42,9 @@ jobs:
 
   browser:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -47,6 +61,14 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run test:coverage
+      - name: Upload TypeScript coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          files: build/coverage-js/lcov.info
+          flags: typescript
+          disable_search: true
+          use_oidc: true
+          fail_ci_if_error: false
       - run: npm run build
       - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run test:browser
