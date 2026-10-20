@@ -143,8 +143,8 @@ queued or running. Model inputs stay editable. Associated submit buttons outside
 the form element are supported when they belong to the same island.
 
 Application-owned disabled states are preserved, including those supplied by a
-server render. Use stable form IDs or `data-interact-key` values for forms that
-may be dynamically replaced; surviving/keyed forms keep their outstanding lock.
+server render. Use stable native form IDs for forms that may be dynamically
+replaced; surviving/keyed forms keep their outstanding lock.
 Independently replaced, unkeyed forms have a new identity.
 
 The protection works with native submit events, including Enter and

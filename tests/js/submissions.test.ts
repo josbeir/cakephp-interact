@@ -170,9 +170,9 @@ describe('native submission protection', () => {
     await pending;
     expect(button.disabled).toBe(true);
   });
-  it('tracks form keys and aria-busy even without submit buttons', async () => {
+  it('tracks stable form IDs and aria-busy even without submit buttons', async () => {
     const { form, root, guard, pending, complete } = setup();
-    form.dataset.interactKey = 'editor';
+    form.id = 'editor';
     form.innerHTML = '<input>';
     form.setAttribute('aria-busy', 'false');
     guard.submit(
@@ -184,7 +184,7 @@ describe('native submission protection', () => {
     guard.refresh();
     guard.beforeMorph();
     root.innerHTML =
-      '<form data-interact-key="editor" x-interact:submit="$server.call(\'save\')"><input></form>';
+      '<form id="editor" x-interact:submit="$server.call(\'save\')"><input></form>';
     guard.refresh();
     complete({
       ok: false,
@@ -208,7 +208,7 @@ describe('native submission protection', () => {
     );
     guard.beforeMorph();
     root.innerHTML =
-      '<form x-interact:submit="$server.call(\'save\')"><button>Unkeyed</button></form><form id="other" x-interact:submit="$server.call(\'save\')"><button>Other key</button></form><form id="save-form" x-interact:submit="$server.call(\'delete\')"><button>Other action</button></form><div data-interact-id="child"><form data-interact-key="save-form" x-interact:submit="$server.call(\'save\')"><button>Child</button></form></div>';
+      '<form x-interact:submit="$server.call(\'save\')"><button>Unkeyed</button></form><form id="other" x-interact:submit="$server.call(\'save\')"><button>Other key</button></form><form id="save-form" x-interact:submit="$server.call(\'delete\')"><button>Other action</button></form><div data-interact-id="child"><form id="save-form" x-interact:submit="$server.call(\'save\')"><button>Child</button></form></div>';
     guard.refresh();
     for (const candidate of root.querySelectorAll('form')) {
       expect(candidate.hasAttribute('aria-busy')).toBe(false);

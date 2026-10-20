@@ -14,7 +14,6 @@ export function morphRoot(Alpine: Alpine): Patcher {
         node instanceof Element
           ? (node.getAttribute('data-interact-id') ??
             node.getAttribute('data-interact-preserve') ??
-            node.getAttribute('data-interact-key') ??
             node.id)
           : '',
       updating: (node, to, _childrenOnly, skip) => {

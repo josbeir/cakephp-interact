@@ -70,7 +70,6 @@ class HtmlRenderer
             $attributes = [
                 'x-data' => 'interact',
                 'data-interact-id' => $identity->id,
-                'data-interact-key' => $identity->key,
                 'data-interact-snapshot' => $snapshot,
                 'data-interact-state' => json_encode((object)$state, JSON_THROW_ON_ERROR | JSON_HEX_TAG),
                 'data-interact-writable' => json_encode((object)$writable, JSON_THROW_ON_ERROR),

@@ -16,7 +16,7 @@ type Submission = {
 /**
  * Protects declarative native forms while their accepted submissions settle.
  *
- * Locks belong to one island and follow surviving or explicitly keyed forms.
+ * Locks belong to one island and follow surviving forms or stable native IDs.
  * Temporary DOM changes are released around morphs so server-authored disabled
  * states remain authoritative; no particular PHP form helper is involved.
  */
@@ -49,7 +49,7 @@ export class FormSubmissions {
     if ([...this.submissions].some((entry) => entry.form === form)) return;
     const entry: Submission = {
       form,
-      key: form.getAttribute('data-interact-key') ?? (form.id || null),
+      key: form.id || null,
       attribute,
       expression,
       buttons: new Map(),
@@ -100,8 +100,7 @@ export class FormSubmissions {
         const replacement = forms.find(
           (form) =>
             this.owns(form) &&
-            (form.getAttribute('data-interact-key') ?? (form.id || null)) ===
-              entry.key &&
+            form.id === entry.key &&
             form.getAttribute(entry.attribute) === entry.expression,
         );
         if (replacement) entry.form = replacement;
