@@ -17,6 +17,15 @@ use Interact\Attribute\AsIsland;
 class TemplateView extends View
 {
     /**
+     * Keep native form constraints without FormHelper's inline JavaScript validation handlers.
+     */
+    public function initialize(): void
+    {
+        parent::initialize();
+        $this->addHelper('Form', ['autoSetCustomValidity' => false]);
+    }
+
+    /**
      * Render with island-owned variables, restoring the previous view scope even after a failure.
      *
      * @param array<string, mixed> $data Complete variables for this island render only.

@@ -94,7 +94,7 @@ argument in the action's application flow as well.
 | `mount(): void`                                    | Initialize editable state from props or persisted data once        |
 | `updated(array $paths): void`                      | React to accepted dotted state paths, for example reset pagination |
 | `viewData(): array`                                | Return computed template variables without serializing them        |
-| `setErrors(array $errors): void`                   | Attach `array<string, list<string>>` application feedback          |
+| `setErrors(array $errors): void`                   | Normalize CakePHP entity errors or custom message arrays           |
 | `errors(): array`                                  | Read current renderable errors                                     |
 | `dispatch(string $name, array $detail = []): void` | Queue a native browser event for a successful update               |
 
@@ -112,13 +112,54 @@ updates are rejected; authorization failures should use normal CakePHP exception
 
 ## Binding and actions
 
-Native `data-interact-*` bindings and Alpine's `$server` bridge share the same
-request engine. An action flushes current controls before invocation. See
+`x-interact:model`, `x-interact:submit`, and Alpine's `$server` bridge share the
+same request engine. An action flushes current controls before invocation. See
 [the browser reference](/reference/browser) for all attributes and bridge members.
 Synchronization is separate from persistence.
 
 Validation uses `setErrors()` and returns renderable HTTP 422 feedback. It
 suppresses success events. See [forms and validation](/guide/forms).
+
+## Validation errors
+
+`setErrors($entity->getErrors())` accepts CakePHP's native errors, while custom
+field message lists remain valid:
+
+```php
+$this->setErrors([
+    'title' => ['unique' => 'This title is reserved.'],
+    'comments' => [
+        0 => ['body' => ['_empty' => 'A comment is required.']],
+    ],
+    '_form' => ['Please review these fields.'],
+]);
+
+// errors() and $server.errors:
+// [
+//     'title' => ['This title is reserved.'],
+//     'comments.0.body' => ['A comment is required.'],
+//     '_form' => ['Please review these fields.'],
+// ]
+```
+
+- The root maps non-empty string field names to arrays. `_form` is a conventional
+  application key, not a special error type.
+- Within a field, string values are messages for that field. Their keys, including
+  CakePHP rule names, are discarded. Messages retain their order and contents.
+- Nested arrays represent child fields or association indices. Their non-empty
+  keys extend the dotted path. Already dotted root keys are also accepted;
+  overlapping paths append messages in traversal order.
+- Empty arrays contribute no errors. Messages must be strings; bare root strings,
+  nulls, booleans, numbers, objects, and nesting beyond 32 child levels are rejected
+  with `InvalidArgumentException`. Invalid input leaves existing feedback intact.
+- Each call replaces the current feedback. `setErrors([])` clears it. Errors are
+  response-local, not transported state.
+
+The result remains `array<string, list<string>>` for `errors()`, the reserved
+`$errors` template variable, and `$server.errors`. Normalization neither modifies
+an entity nor attaches custom errors to it. To have FormHelper render custom
+field errors as well, attach them to the entity before passing its `getErrors()`
+to `setErrors()`. See [forms and validation](/guide/forms) for a complete example.
 
 ## Nesting and events
 

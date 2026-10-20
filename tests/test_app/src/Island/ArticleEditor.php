@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace TestApp\Island;
 
+use Cake\Datasource\EntityInterface;
 use Cake\Datasource\Exception\RecordNotFoundException;
 use Cake\Http\Exception\ForbiddenException;
 use Cake\ORM\Locator\LocatorAwareTrait;
@@ -31,6 +32,11 @@ class ArticleEditor extends Island
 
     #[State]
     public bool $saved = false;
+
+    /**
+     * @var \Cake\Datasource\EntityInterface|null The request's entity, retaining errors for FormHelper.
+     */
+    protected ?EntityInterface $article = null;
 
     /**
      * Reject ownership or permission changes before reading editable content or invoking actions.
@@ -75,29 +81,31 @@ class ArticleEditor extends Island
     #[Action]
     public function save(): void
     {
-        $article = $this->articles()->patchEntity(
-            $this->articles()->get($this->articleId),
+        $articles = $this->articles();
+        $article = $articles->patchEntity(
+            $articles->get($this->articleId),
             ['title' => $this->title],
             ['fields' => ['title']],
         );
-        if (!$this->articles()->save($article)) {
-            $messages = [];
-            /** @var mixed $message */
-            foreach ($article->getError('title') as $message) {
-                if (!is_string($message)) {
-                    continue;
-                }
-
-                $messages[] = $message;
-            }
-
-            $this->setErrors(['title' => $messages === [] ? ['Unable to save the article.'] : $messages]);
+        $this->article = $article;
+        if (!$articles->save($article)) {
+            $this->setErrors($article->getErrors() ?: ['_form' => ['Unable to save the article.']]);
 
             return;
         }
 
         $this->saved = true;
         $this->dispatch('article-saved', ['id' => $this->articleId]);
+    }
+
+    /**
+     * Give FormHelper the same entity that failed validation, without adding it to the snapshot.
+     *
+     * @return array{article: \Cake\Datasource\EntityInterface} Server-only entity context for this render.
+     */
+    public function viewData(): array
+    {
+        return ['article' => $this->article ?? $this->articles()->get($this->articleId)];
     }
 
     /**
