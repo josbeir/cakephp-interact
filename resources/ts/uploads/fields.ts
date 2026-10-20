@@ -159,7 +159,9 @@ export class UploadFields {
     for (const [input, binding] of this.bindings) {
       if (!this.owns(input)) continue;
       const field = this.fields[binding.field];
-      input.required = binding.required && !field?.files.length;
+      input.required =
+        binding.required &&
+        !field?.files.some((file) => file.status !== 'failed');
     }
   }
 
@@ -376,6 +378,7 @@ export class UploadFields {
         selection.controller = new AbortController();
         file.status = 'queued';
         file.progress = 0;
+        this.refresh();
         return this.transfer(file.id);
       }),
     );

@@ -231,10 +231,19 @@ test('a failed transfer requires an explicit retry and does not automatically sa
     exact: true,
   });
   await expect(transfers).toContainText('failed');
+  const chooser = page.getByLabel('Main document', { exact: true });
+  await expect(chooser).toHaveJSProperty('required', true);
+  expect(
+    await chooser.evaluate((input: HTMLInputElement) => input.checkValidity()),
+  ).toBe(false);
   await transfers.getByRole('button', { name: 'Retry', exact: true }).click();
   await expect(
     page.getByRole('list', { name: 'Main document files', exact: true }),
   ).toContainText('notes.txt');
+  await expect(chooser).toHaveJSProperty('required', false);
+  expect(
+    await chooser.evaluate((input: HTMLInputElement) => input.checkValidity()),
+  ).toBe(true);
   expect(saves).toBe(0);
   await page
     .getByRole('button', { name: 'Save documents', exact: true })

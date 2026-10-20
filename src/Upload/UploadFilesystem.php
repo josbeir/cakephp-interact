@@ -71,10 +71,40 @@ class UploadFilesystem
      */
     public function write(string $path, array $record): void
     {
-        if (file_put_contents($path, json_encode($record, JSON_THROW_ON_ERROR)) === false) {
-            throw new RuntimeException('Cannot write temporary upload metadata.');
+        $json = json_encode($record, JSON_THROW_ON_ERROR);
+        $temporary = $path . '.' . bin2hex(random_bytes(16)) . '.tmp';
+        try {
+            $this->writeMetadata($temporary, $json);
+            if (!rename($temporary, $path)) {
+                throw new RuntimeException('Cannot publish temporary upload metadata.');
+            }
+        } finally {
+            if (is_file($temporary)) {
+                unlink($temporary);
+            }
+        }
+    }
+
+    /**
+     * Complete a private staging record before exposing it to metadata readers.
+     */
+    protected function writeMetadata(string $path, string $json): void
+    {
+        $stream = fopen($path, 'xb');
+        if ($stream === false) {
+            throw new RuntimeException('Cannot open temporary upload metadata.');
         }
 
-        chmod($path, 0o600);
+        try {
+            if (!chmod($path, 0o600)) {
+                throw new RuntimeException('Cannot protect temporary upload metadata.');
+            }
+
+            if (fwrite($stream, $json) !== strlen($json) || !fflush($stream)) {
+                throw new RuntimeException('Cannot write temporary upload metadata.');
+            }
+        } finally {
+            fclose($stream);
+        }
     }
 }

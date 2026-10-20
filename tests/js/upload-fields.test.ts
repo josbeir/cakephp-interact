@@ -240,12 +240,56 @@ it('retries only the requested failed selection and preserves the failure result
       'failed',
     ]),
   );
+  expect(value.input.required).toBe(true);
   const id = value.field.files[1]?.id;
   if (!id) throw new Error('Missing failed selection');
   const retry = value.field.retry(id);
+  expect(value.input.required).toBe(false);
   expect(value.transfers).toHaveLength(3);
   expect(value.transfers[2]?.job).toMatchObject({ kind: 'stage', localId: id });
   expect(value.field.files[0]?.status).toBe('failed');
   value.transfers[2]?.resolve(failure);
   await expect(retry).resolves.toEqual(failure);
+  expect(value.input.required).toBe(true);
+});
+
+it.each([true, false])(
+  'preserves authored required=%s through a failed transfer',
+  async (required) => {
+    const value = fixture();
+    value.input.required = required;
+    value.fields.bind(value.input, value.binding);
+    value.choose();
+    expect(value.input.required).toBe(false);
+    const transfer = value.first();
+    expect(value.fields.start(transfer.job)).toBe(true);
+    value.fields.refresh();
+    expect(value.input.required).toBe(false);
+    transfer.resolve(failure);
+    await vi.waitFor(() => expect(value.field.files[0]?.status).toBe('failed'));
+    expect(value.input.required).toBe(required);
+    expect(value.field.files).toHaveLength(1);
+    value.field.cancel();
+    expect(value.input.required).toBe(required);
+  },
+);
+
+it('keeps a required multiple chooser satisfied when an accepted file remains beside a failed selection', async () => {
+  const value = fixture({
+    document: {
+      multiple: true,
+      maxSize: 100,
+      files: [{ id: 'c'.repeat(32), name: 'accepted.txt', size: 10 }],
+    },
+  });
+  value.fields.bind(value.input, value.binding);
+  value.choose();
+  value.first().resolve(failure);
+  await vi.waitFor(() => expect(value.field.files[1]?.status).toBe('failed'));
+  expect(value.input.required).toBe(false);
+  value.fields.accept({
+    document: { multiple: true, maxSize: 100, files: [] },
+  });
+  expect(value.field.files[0]?.status).toBe('failed');
+  expect(value.input.required).toBe(true);
 });

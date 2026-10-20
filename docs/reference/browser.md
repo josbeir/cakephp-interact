@@ -49,7 +49,8 @@ the same form. Use one model binding per control; do not combine `x-model` with
 Native text inputs, textareas, selects, multiple selects, radio groups, numeric
 values, boolean checkboxes, and array checkbox groups are supported. Empty
 nullable numbers can remain null; false, zero, and empty strings are distinct
-values. File binding is not implemented. A directive must be inside an island.
+values. File inputs bind to explicitly declared uploads; see [File transfers](#file-transfers).
+A directive must be inside an island.
 Invalid declarations fail during Alpine initialization; runtime expression and
 capture failures use the island's normal failure feedback.
 
