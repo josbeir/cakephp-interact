@@ -27,8 +27,13 @@ class LocalUploadStorage implements UploadStorageInterface
     /**
      * Serialize staging and capacity checks for one session before publishing a complete record.
      */
-    public function put(UploadedFileInterface $file, UploadOwner $owner, ?string $replacingId = null): TemporaryUpload
-    {
+    public function put(
+        UploadedFileInterface $file,
+        UploadOwner $owner,
+        ?string $replacingId = null,
+        ?int $maxFileSize = null,
+        ?int $maxFiles = null,
+    ): TemporaryUpload {
         if (in_array($file->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
             throw new UploadRejected(__d('interact', 'The file exceeds the server upload size limit.'));
         }
@@ -43,12 +48,14 @@ class LocalUploadStorage implements UploadStorageInterface
             $file,
             $owner,
             $replacingId,
+            $maxFileSize,
+            $maxFiles,
         ): TemporaryUpload {
             $id = bin2hex(random_bytes(16));
             $path = Path::join($directory, $id . '.bin');
             try {
-                $size = new UploadWriter($this->config)->copy($file, $path);
-                new UploadQuota($this->config)->check($directory, $owner, $size, $replacingId);
+                $size = new UploadWriter($this->config)->copy($file, $path, $maxFileSize);
+                new UploadQuota($this->config)->check($directory, $owner, $size, $replacingId, $maxFiles);
                 $record = [
                     'owner' => $owner->key(),
                     'island' => $owner->islandKey(),

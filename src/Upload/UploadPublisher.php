@@ -28,7 +28,7 @@ class UploadPublisher
     /**
      * Publish references and display metadata while releasing files explicitly removed by PHP.
      *
-     * @return array{references: array<string, list<string>>, metadata: array<string, array{multiple: bool, maxSize: int, files: list<array{id: string, name: string, size: int}>}>, values: array<string, mixed>} Render and snapshot data.
+     * @return array{references: array<string, list<string>>, metadata: array<string, array{multiple: bool, maxSize: int, maxFiles: int, files: list<array{id: string, name: string, size: int}>}>, values: array<string, mixed>} Render and snapshot data.
      */
     public function export(
         Island $island,
@@ -59,7 +59,8 @@ class UploadPublisher
             $references[$name] = $ids;
             $metadata[$name] = [
                 'multiple' => $property->multiple,
-                'maxSize' => UploadLimits::fileSize($this->config->maxFileSize),
+                'maxSize' => UploadLimits::fileSize($property->fileSize($this->config)),
+                'maxFiles' => $property->fileCount($this->config),
                 'files' => array_map(static fn(TemporaryUpload $file): array => $file->metadata(), $files),
             ];
             $values[$name] = $property->reflection->getValue($island);

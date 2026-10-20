@@ -17,10 +17,18 @@ interface UploadStorageInterface
      * Retain an incoming file under its verified ownership boundary.
      *
      * @param string|null $replacingId Existing selected file excluded from the field slot count; bytes still count until removal.
+     * @param int|null $maxFileSize Field byte ceiling; cannot raise the backend's global limit.
+     * @param int|null $maxFiles Field count ceiling; enforce atomically with global quotas.
      *
      * @throws UploadRejected For upload errors or exceeded capacity.
      */
-    public function put(UploadedFileInterface $file, UploadOwner $owner, ?string $replacingId = null): TemporaryUpload;
+    public function put(
+        UploadedFileInterface $file,
+        UploadOwner $owner,
+        ?string $replacingId = null,
+        ?int $maxFileSize = null,
+        ?int $maxFiles = null,
+    ): TemporaryUpload;
 
     /**
      * Restore an available file only for its original owner.

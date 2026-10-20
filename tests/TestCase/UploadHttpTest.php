@@ -34,14 +34,18 @@ class UploadHttpTest extends HttpTestCase
     /**
      * Stage real bytes with the same multipart envelope sent by the browser.
      */
-    protected function stage(string $snapshot, string $field = 'document', string $name = 'notes.txt'): void
-    {
+    protected function stage(
+        string $snapshot,
+        string $field = 'document',
+        string $name = 'notes.txt',
+        string $content = 'a plain text document',
+    ): void {
         $stream = new Stream('php://temp', 'w+');
-        $stream->write('a plain text document');
+        $stream->write($content);
         $stream->rewind();
         $this->replaceRequest([
             'headers' => ['X-CSRF-Token' => $this->csrf, 'Content-Type' => 'multipart/form-data'],
-            'files' => ['file' => new UploadedFile($stream, 21, UPLOAD_ERR_OK, $name, 'text/plain')],
+            'files' => ['file' => new UploadedFile($stream, strlen($content), UPLOAD_ERR_OK, $name, 'text/plain')],
         ]);
         $this->post('/uploads/update', ['payload' => json_encode([
             'version' => 1,
@@ -69,7 +73,7 @@ class UploadHttpTest extends HttpTestCase
         $this->assertResponseOk();
         $this->assertResponseContains('Saved 1 file(s)');
         static::assertMatchesRegularExpression(
-            '/"document":\{"multiple":false,"maxSize":\d+,"files":\[\]\}/',
+            '/"document":\{"multiple":false,"maxSize":\d+,"maxFiles":1,"files":\[\]\}/',
             (string)$this->response?->getBody(),
         );
     }
@@ -87,6 +91,40 @@ class UploadHttpTest extends HttpTestCase
         ], JSON_THROW_ON_ERROR)]);
         $this->assertResponseCode(400);
         $this->assertResponseContains('invalid_request');
+    }
+
+    public function testFieldSizeIsEnforcedWithoutBrowserChecksAndPublishedAsMetadata(): void
+    {
+        $mount = $this->mounted(0, '/uploads');
+        $this->stage($mount['snapshot'], content: str_repeat('x', 1_048_577));
+        $this->assertResponseCode(422);
+        $this->assertResponseContains('This file exceeds the upload size limit.');
+        $this->assertResponseContains('document-error');
+        $this->stage($this->nextSnapshot(), content: str_repeat('x', 1_048_576));
+        $this->assertResponseOk();
+        $this->assertResponseContains('"document":{"multiple":false,"maxSize":1048576,"maxFiles":1,');
+        $this->assertResponseContains('"attachments":{"multiple":true,"maxSize":1048576,"maxFiles":3,');
+    }
+
+    public function testFieldCountRejectsBothCurrentAndStaleSelectionsWithoutBrowserChecks(): void
+    {
+        $mount = $this->mounted(0, '/uploads');
+        $snapshot = $mount['snapshot'];
+        foreach (['one.txt', 'two.txt', 'three.txt'] as $name) {
+            $this->stage($snapshot, 'attachments', $name);
+            $this->assertResponseOk();
+            $snapshot = $this->nextSnapshot();
+        }
+
+        $this->stage($snapshot, 'attachments', 'four.txt');
+        $this->assertResponseCode(422);
+        $this->assertResponseContains('Remove an attachment before adding another file.');
+        $this->assertResponseContains('three.txt');
+        $this->assertResponseNotContains('four.txt');
+        $this->stage($mount['snapshot'], 'attachments', 'stale.txt');
+        $this->assertResponseCode(422);
+        $this->assertResponseContains('temporary upload capacity has been reached');
+        $this->assertResponseNotContains('stale.txt');
     }
 
     public function testPhpUploadRejectionsRenderThroughTheNativeFormContext(): void

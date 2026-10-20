@@ -23,7 +23,7 @@ afterEach(() => {
 
 function fixture(
   initial: UploadMetadata = {
-    document: { multiple: false, maxSize: 100, files: [] },
+    document: { multiple: false, maxSize: 100, maxFiles: 1, files: [] },
   },
 ) {
   const root = document.createElement('section');
@@ -92,6 +92,7 @@ it('restores accepted files, clears native required, and restores it when the bi
     document: {
       multiple: false,
       maxSize: 100,
+      maxFiles: 1,
       files: [{ id: 'a'.repeat(32), name: 'accepted.txt', size: 0 }],
     },
   });
@@ -104,6 +105,8 @@ it('restores accepted files, clears native required, and restores it when the bi
   expect(value.input.required).toBe(false);
   expect(value.fields.maximum('document')).toBe(100);
   expect(value.fields.maximum('missing')).toBeUndefined();
+  expect(value.fields.full('missing')).toBe(false);
+  expect(value.fields.full('document')).toBe(false);
   unbind();
   expect(value.input.required).toBe(true);
   value.choose();
@@ -194,6 +197,7 @@ it('accepts PHP-owned selection changes and targets server ids for removal', asy
     document: {
       multiple: false,
       maxSize: 50,
+      maxFiles: 1,
       files: [{ id: 'b'.repeat(32), name: 'server.txt', size: 10 }],
     },
   });
@@ -209,7 +213,7 @@ it('accepts PHP-owned selection changes and targets server ids for removal', asy
   value.transfers.at(-1)?.resolve({ ok: true });
   await removal;
   value.fields.accept({
-    document: { multiple: false, maxSize: 50, files: [] },
+    document: { multiple: false, maxSize: 50, maxFiles: 1, files: [] },
   });
   expect(value.field.files).toEqual([]);
   expect(value.input.required).toBe(true);
@@ -221,14 +225,16 @@ it('accepts PHP-owned selection changes and targets server ids for removal', asy
 it('rejects undeclared fields before changing accepted feedback', () => {
   const value = fixture();
   expect(() =>
-    value.fields.accept({ other: { multiple: false, maxSize: 50, files: [] } }),
+    value.fields.accept({
+      other: { multiple: false, maxSize: 50, maxFiles: 1, files: [] },
+    }),
   ).toThrow('undeclared upload field');
   expect(value.field.files).toEqual([]);
 });
 
 it('retries only the requested failed selection and preserves the failure result', async () => {
   const value = fixture({
-    document: { multiple: true, maxSize: 100, files: [] },
+    document: { multiple: true, maxSize: 100, maxFiles: 10, files: [] },
   });
   value.fields.bind(value.input, value.binding);
   value.choose(new File(['one'], 'one.txt'));
@@ -279,6 +285,7 @@ it('keeps a required multiple chooser satisfied when an accepted file remains be
     document: {
       multiple: true,
       maxSize: 100,
+      maxFiles: 10,
       files: [{ id: 'c'.repeat(32), name: 'accepted.txt', size: 10 }],
     },
   });
@@ -288,7 +295,7 @@ it('keeps a required multiple chooser satisfied when an accepted file remains be
   await vi.waitFor(() => expect(value.field.files[1]?.status).toBe('failed'));
   expect(value.input.required).toBe(false);
   value.fields.accept({
-    document: { multiple: true, maxSize: 100, files: [] },
+    document: { multiple: true, maxSize: 100, maxFiles: 10, files: [] },
   });
   expect(value.field.files[0]?.status).toBe('failed');
   expect(value.input.required).toBe(true);

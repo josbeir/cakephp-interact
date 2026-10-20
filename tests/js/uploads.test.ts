@@ -23,10 +23,10 @@ function markup(): string {
     <button>Save</button></form>`;
 }
 
-function setup() {
-  let metadata: UploadMetadata = {
-    document: { multiple: false, maxSize: 10485760, files: [] },
-    attachments: { multiple: true, maxSize: 10485760, files: [] },
+function setup(initial?: UploadMetadata) {
+  let metadata: UploadMetadata = initial ?? {
+    document: { multiple: false, maxSize: 10485760, maxFiles: 1, files: [] },
+    attachments: { multiple: true, maxSize: 10485760, maxFiles: 10, files: [] },
   };
   const root = document.createElement('section');
   root.dataset.interactId = 'files';
@@ -141,6 +141,61 @@ function setup() {
 }
 
 describe('managed file selections', () => {
+  it('checks field-specific sizes without applying one field ceiling to another', async () => {
+    const value = setup({
+      document: { multiple: false, maxSize: 2, maxFiles: 1, files: [] },
+      attachments: { multiple: true, maxSize: 8, maxFiles: 2, files: [] },
+    });
+    value.choose('document', 'too-large.txt', 3);
+    await vi.waitFor(() =>
+      expect(value.field().files[0]?.status).toBe('failed'),
+    );
+    expect(value.uploader).not.toHaveBeenCalled();
+    expect(value.client.bridge.errors.document).toEqual([
+      'Choose a file no larger than 2 bytes.',
+    ]);
+    value.field().cancel();
+    value.choose('attachments', 'fits-other-field.txt', 3);
+    await vi.waitFor(() =>
+      expect(value.field('attachments').files[0]?.status).toBe('ready'),
+    );
+    expect(value.uploader).toHaveBeenCalledOnce();
+  });
+
+  it('checks accepted slots for each queued file and permits explicit retry after removal', async () => {
+    const value = setup({
+      document: { multiple: false, maxSize: 100, maxFiles: 1, files: [] },
+      attachments: { multiple: true, maxSize: 100, maxFiles: 2, files: [] },
+    });
+    value.choose('attachments', 'one.txt');
+    value.choose('attachments', 'two.txt');
+    value.choose('attachments', 'three.txt');
+    await vi.waitFor(() =>
+      expect(
+        value.field('attachments').files.map((file) => file.status),
+      ).toEqual(['ready', 'ready', 'failed']),
+    );
+    expect(value.uploader).toHaveBeenCalledTimes(2);
+    expect(value.client.bridge.errors.attachments).toEqual([
+      'Remove an attachment before adding another file.',
+    ]);
+    const first = value.field('attachments').files[0];
+    const failed = value.field('attachments').files[2];
+    if (!first || !failed) throw new Error('Missing selections');
+    await value.field('attachments').remove(first.id);
+    await expect(value.field('attachments').retry(failed.id)).resolves.toEqual({
+      ok: true,
+    });
+    expect(value.uploader).toHaveBeenCalledTimes(3);
+    expect(value.field('attachments').files.map((file) => file.name)).toEqual([
+      'two.txt',
+      'three.txt',
+    ]);
+    expect(
+      value.field('attachments').files.every((file) => file.status === 'ready'),
+    ).toBe(true);
+    expect(value.client.bridge.errors.attachments).toBeUndefined();
+  });
   it('stages without a save, validates metadata, and exposes progress through the existing bridge', async () => {
     const value = setup();
     value.choose();
@@ -162,6 +217,7 @@ describe('managed file selections', () => {
         document: {
           multiple: false,
           maxSize: 10485760,
+          maxFiles: 1,
           files: [{ id: 'a'.repeat(32), name: 'a', size: 1 }],
         },
       }),
@@ -439,6 +495,7 @@ describe('managed file selections', () => {
       document: {
         multiple: false,
         maxSize: 10485760,
+        maxFiles: 1,
         files: [{ id: '../path', name: 'x', size: 1 }],
       },
     },
@@ -446,6 +503,7 @@ describe('managed file selections', () => {
       document: {
         multiple: false,
         maxSize: 10485760,
+        maxFiles: 1,
         files: [{ id: 'a'.repeat(32), name: 'x', size: -1 }],
       },
     },
@@ -453,6 +511,7 @@ describe('managed file selections', () => {
       document: {
         multiple: false,
         maxSize: 10485760,
+        maxFiles: 1,
         files: [
           { id: 'a'.repeat(32), name: 'x', size: 1 },
           { id: 'a'.repeat(32), name: 'x', size: 1 },

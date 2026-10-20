@@ -84,7 +84,7 @@ class UploadStorageTest extends UploadStorageTestCase
             $owner = new UploadOwner($setting, 'default', 'island', 'document');
             $first = $storage->put($this->incoming('first'), $owner);
             try {
-                $storage->put($this->incoming('second'), $owner);
+                $storage->put($this->incoming('second'), $owner, maxFileSize: 1_000_000, maxFiles: 1000);
                 static::fail('The configured capacity must reject a second file.');
             } catch (UploadRejected) {
                 static::assertNotNull($storage->find($first->id, $owner));

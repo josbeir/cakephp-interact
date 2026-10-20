@@ -11,7 +11,7 @@ when and where to keep them permanently.
 
 Follow the [installation](/installation) and [first island](/getting-started)
 setup. To try the complete example, [run the demo](/examples) and open `/uploads`.
-It accepts PDF and text documents up to 1 MiB each, including optional attachments.
+It accepts PDF and text documents up to 1 MiB each, including up to three optional attachments.
 
 ## Declare a file and bind its input
 
@@ -178,6 +178,42 @@ Further chooser selections append to the accepted list. Single-file inputs
 replace their previous accepted file only after the replacement succeeds.
 Use item IDs for individual removal, or call `.remove()` without an ID to clear
 a field. Applications can also clear or retain entries directly in PHP.
+
+## Set limits for each upload field
+
+Give a single document a 1 MiB ceiling and allow up to three smaller attachments:
+
+```php [Inside the island class]
+#[Upload(maxFileSize: '1MB')]
+public ?UploadedFileInterface $document = null;
+
+/**
+ * @var list<UploadedFileInterface>
+ */
+#[Upload(multiple: true, maxFileSize: '512KB', maxFiles: 3)]
+public array $attachments = [];
+```
+
+Keep the same FormHelper inputs; no size or count attributes are needed in HTML.
+`maxFileSize` accepts integer bytes or CakePHP size strings. `maxFiles` is a
+positive integer for `multiple: true` fields and counts accepted files across
+chooser selections. Both options are optional and inherit the global settings.
+Single-file fields always allow one selected file and can replace it.
+
+Field limits can lower, but cannot raise, `Interact.uploads.maxFileSize` and
+`maxFiles`. The effective browser size limit also respects PHP's upload limits.
+Global island/session quotas still apply across fields.
+
+Before each queued transfer, the browser checks the file size and available
+accepted slots. PHP counts actual stream bytes and enforces the field count
+under the session lock too, so changing browser metadata or submitting from an
+older page cannot bypass the limits. With a batch larger than the available
+slots, earlier accepted files remain selected; excess items fail with feedback
+and are not transferred. Remove unwanted items or free a slot and explicitly retry.
+
+These are temporary-storage limits. Keep MIME types, image dimensions, required
+files, and other application validation in CakePHP. The demo uses a 1 MiB ceiling
+for both fields and a three-file attachment limit.
 
 ## Show transfer feedback with Alpine
 

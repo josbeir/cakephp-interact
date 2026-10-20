@@ -17,7 +17,7 @@ readonly class Result
     public array $state;
 
     /**
-     * @var array<string, array{multiple: bool, maxSize: int, files: list<array{id: string, name: string, size: int}>}> Declared upload selections.
+     * @var array<string, array{multiple: bool, maxSize: int, maxFiles: int, files: list<array{id: string, name: string, size: int}>}> Declared upload selections.
      */
     public array $uploads;
 
@@ -40,7 +40,7 @@ readonly class Result
      * Collect markup, a signed snapshot, validation feedback, and browser effects.
      *
      * @param array{
-     *     uploads?: array<string, array{multiple: bool, maxSize: int, files: list<array{id: string, name: string, size: int}>}>,
+     *     uploads?: array<string, array{multiple: bool, maxSize: int, maxFiles: int, files: list<array{id: string, name: string, size: int}>}>,
      *     state?: array<string, mixed>,
      *     writable?: array<string, array{type: string, nullable: bool}>,
      *     errors?: array<string, list<string>>,

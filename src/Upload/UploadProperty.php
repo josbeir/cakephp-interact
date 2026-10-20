@@ -20,6 +20,10 @@ readonly class UploadProperty
 
     public bool $multiple;
 
+    public ?int $maxFileSize;
+
+    public ?int $maxFiles;
+
     /**
      * Reject ambiguous, inaccessible, or incompatible PHP declarations at discovery time.
      */
@@ -28,6 +32,24 @@ readonly class UploadProperty
         $this->name = $reflection->getName();
         $this->multiple = $attribute->multiple;
         UploadType::validate($reflection, $attribute);
+        $this->maxFileSize = $attribute->maxFileSize;
+        $this->maxFiles = $attribute->maxFiles;
+    }
+
+    /**
+     * Resolve the field's byte ceiling without raising application-wide capacity.
+     */
+    public function fileSize(UploadConfig $config): int
+    {
+        return min($config->maxFileSize, $this->maxFileSize ?? $config->maxFileSize);
+    }
+
+    /**
+     * Keep singular fields replaceable and bound collections by both declared ceilings.
+     */
+    public function fileCount(UploadConfig $config): int
+    {
+        return $this->multiple ? min($config->maxFiles, $this->maxFiles ?? $config->maxFiles) : 1;
     }
 
     /**

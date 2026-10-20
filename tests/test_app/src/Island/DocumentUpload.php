@@ -23,13 +23,13 @@ class DocumentUpload extends Island
     #[State(writable: true)]
     public string $title = '';
 
-    #[Upload]
+    #[Upload(maxFileSize: '1MB')]
     public ?UploadedFileInterface $document = null;
 
     /**
      * @var list<UploadedFileInterface> Attachments added over one or more chooser selections.
      */
-    #[Upload(multiple: true)]
+    #[Upload(multiple: true, maxFileSize: '1MB', maxFiles: 3)]
     public array $attachments = [];
 
     /**

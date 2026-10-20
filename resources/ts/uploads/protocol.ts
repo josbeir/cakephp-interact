@@ -15,6 +15,10 @@ export function uploadMetadata(value: unknown): value is UploadMetadata {
         typeof entry.maxSize === 'number' &&
         Number.isSafeInteger(entry.maxSize) &&
         entry.maxSize > 0 &&
+        typeof entry.maxFiles === 'number' &&
+        Number.isSafeInteger(entry.maxFiles) &&
+        entry.maxFiles > 0 &&
+        (entry.multiple || entry.maxFiles === 1) &&
         Array.isArray(entry.files) &&
         entry.files.every(
           (file: unknown) =>

@@ -21,8 +21,10 @@ class UploadWriter
 
     /**
      * Bound bytes from the actual stream, including files with missing or inaccurate size metadata.
+     *
+     * @param int|null $maxFileSize Optional field ceiling, capped by global settings.
      */
-    public function copy(UploadedFileInterface $file, string $path): int
+    public function copy(UploadedFileInterface $file, string $path, ?int $maxFileSize = null): int
     {
         $target = fopen($path, 'xb');
         if ($target === false) {
@@ -30,6 +32,7 @@ class UploadWriter
         }
 
         chmod($path, 0o600);
+        $limit = min($this->config->maxFileSize, $maxFileSize ?? $this->config->maxFileSize);
         try {
             $stream = $file->getStream();
             if ($stream->isSeekable()) {
@@ -40,7 +43,7 @@ class UploadWriter
             while (!$stream->eof()) {
                 $chunk = $stream->read(8192);
                 $size += strlen($chunk);
-                if ($size > $this->config->maxFileSize) {
+                if ($size > $limit) {
                     throw new UploadRejected(__d('interact', 'This file exceeds the upload size limit.'));
                 }
 

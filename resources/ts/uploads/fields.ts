@@ -137,6 +137,16 @@ export class UploadFields {
   }
 
   /**
+   * Check accepted slots when queued work starts; later selections do not reserve capacity.
+   */
+  full(field: string): boolean {
+    const declaration = this.accepted[field];
+    return Boolean(
+      declaration?.multiple && declaration.files.length >= declaration.maxFiles,
+    );
+  }
+
+  /**
    * Match ordinary pending feedback and block polling while selections need attention.
    */
   pending(): boolean {

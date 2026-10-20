@@ -252,7 +252,7 @@ test('a failed transfer requires an explicit retry and does not automatically sa
   expect(saves).toBe(1);
 });
 
-test('oversized files explain the effective size ceiling without starting a transfer', async ({
+test('the field size ceiling rejects files below the PHP ceiling without starting a transfer', async ({
   page,
 }) => {
   let transfers = 0;
@@ -263,10 +263,10 @@ test('oversized files explain the effective size ceiling without starting a tran
   await page.getByLabel('Main document', { exact: true }).setInputFiles({
     name: 'large.txt',
     mimeType: 'text/plain',
-    buffer: Buffer.alloc(12 * 1024 * 1024),
+    buffer: Buffer.alloc(1024 * 1024 + 1),
   });
   await expect(page.getByRole('alert')).toContainText(
-    'Choose a file no larger than 2 MiB.',
+    'Choose a file no larger than 1 MiB.',
   );
   await expect(
     page.getByRole('list', { name: 'Main document transfers', exact: true }),
@@ -274,6 +274,49 @@ test('oversized files explain the effective size ceiling without starting a tran
   expect(transfers).toBe(0);
   await choose(page, 'smaller.txt');
   await expect(page.getByRole('alert', { includeHidden: true })).toBeEmpty();
+});
+
+test('a batch respects the field count and failed excess files can be retried after removal', async ({
+  page,
+}) => {
+  let transfers = 0;
+  page.on('request', (request) => {
+    if (transfer(request)) transfers++;
+  });
+  await page.goto('/uploads');
+  await page
+    .getByLabel('Attachments', { exact: true })
+    .setInputFiles([
+      file('one.txt'),
+      file('two.txt'),
+      file('three.txt'),
+      file('four.txt'),
+    ]);
+  const accepted = page.getByRole('list', {
+    name: 'Attachments files',
+    exact: true,
+  });
+  const unfinished = page.getByRole('list', {
+    name: 'Attachments transfers',
+    exact: true,
+  });
+  await expect(accepted.getByRole('listitem')).toHaveCount(3);
+  await expect(unfinished).toContainText('failed');
+  await expect(page.getByRole('alert')).toContainText(
+    'Remove an attachment before adding another file.',
+  );
+  expect(transfers).toBe(3);
+  await accepted
+    .getByRole('listitem')
+    .filter({ hasText: 'one.txt' })
+    .getByRole('button', { name: 'Remove', exact: true })
+    .click();
+  await expect(accepted.getByRole('listitem')).toHaveCount(2);
+  await unfinished.getByRole('button', { name: 'Retry', exact: true }).click();
+  await expect(accepted).toContainText('four.txt');
+  await expect(accepted.getByRole('listitem')).toHaveCount(3);
+  await expect(page.getByRole('alert', { includeHidden: true })).toBeEmpty();
+  expect(transfers).toBe(4);
 });
 
 test('PHP body-size rejection remains specific when the multipart envelope is discarded', async ({

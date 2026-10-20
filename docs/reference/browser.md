@@ -226,6 +226,14 @@ no timing modifiers. A `multiple` input must match a multiple-file declaration.
 Selection starts staging immediately; PHP objects and file bytes never become
 `$server.state` values.
 
+Optional PHP `#[Upload(maxFileSize: '1MB')]` and
+`#[Upload(multiple: true, maxFiles: 3)]` declarations lower the global staging
+ceilings. The browser checks size and accepted slots before each queued transfer;
+PHP enforces actual bytes and count capacity independently. Extra files in a batch
+fail without replacing accepted files or sending their bytes. See
+[field limits](/guide/uploads#set-limits-for-each-upload-field) for inheritance,
+global ceilings, and application validation.
+
 `$server.uploads.<field>` exposes `pending`, `progress`, and `files`, plus
 `cancel(id?)`, `remove(id?)`, and `retry(id?)`. Files expose opaque `id`, `name`,
 `size`, `status`, and `progress`; status is `queued`, `uploading`, `ready`, or

@@ -67,7 +67,7 @@ class UploadManager
     /**
      * Collect references, browser metadata, and server-only template values.
      *
-     * @return array{references: array<string, list<string>>, metadata: array<string, array{multiple: bool, maxSize: int, files: list<array{id: string, name: string, size: int}>}>, values: array<string, mixed>} Accepted selections.
+     * @return array{references: array<string, list<string>>, metadata: array<string, array{multiple: bool, maxSize: int, maxFiles: int, files: list<array{id: string, name: string, size: int}>}>, values: array<string, mixed>} Accepted selections.
      */
     public function export(
         Island $island,

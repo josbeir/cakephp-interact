@@ -50,7 +50,7 @@ class UploadMutator
                 throw new InvalidArgumentException('An upload requires exactly one incoming file.');
             }
 
-            if ($property->multiple && count($files) >= $this->config->maxFiles) {
+            if ($property->multiple && count($files) >= $property->fileCount($this->config)) {
                 throw new UploadRejected(__d('interact', 'Remove an attachment before adding another file.'));
             }
 
@@ -59,6 +59,8 @@ class UploadMutator
                 $incoming,
                 UploadOwner::fromContext($context, $snapshot, $name),
                 $property->multiple ? null : $previous?->id,
+                $property->fileSize($this->config),
+                $property->fileCount($this->config),
             );
             $files = $property->multiple ? [...$files, $file] : [$file];
         } else {

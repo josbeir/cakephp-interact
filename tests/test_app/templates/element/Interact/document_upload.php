@@ -21,7 +21,7 @@ use function Cake\Core\h;
         <span class="capability">File uploads</span>
     </div>
     <p class="card-description">
-        Choose PDF or text files up to 1 MiB each. Add attachments in several selections.
+        Choose PDF or text files up to 1 MiB each. Add up to three attachments in several selections.
         Transfers do not save documents; use Save documents when the draft is ready.
     </p>
 

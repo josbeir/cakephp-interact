@@ -278,14 +278,19 @@ export class IslandClient {
       throw requestError('cancelled', null);
     if (upload?.kind === 'stage') {
       const maximum = this.uploads.maximum(upload.field);
-      if (maximum !== undefined && upload.file.size > maximum) {
-        const message = `Choose a file no larger than ${displaySize(maximum)}.`;
+      const full = this.uploads.full(upload.field);
+      let message: string | undefined;
+      if (full) message = 'Remove an attachment before adding another file.';
+      else if (maximum !== undefined && upload.file.size > maximum)
+        message = `Choose a file no larger than ${displaySize(maximum)}.`;
+      if (message !== undefined) {
         this.bridge.errors = {
           ...this.bridge.errors,
           [upload.field]: [message],
         };
         throw new IslandRequestError({
-          ...requestError('upload_too_large', null).failure,
+          ...requestError(full ? 'invalid_request' : 'upload_too_large', null)
+            .failure,
           message,
         });
       }

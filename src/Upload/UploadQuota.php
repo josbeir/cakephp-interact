@@ -20,9 +20,16 @@ class UploadQuota
 
     /**
      * Count all session records, including unacknowledged transfers, before committing another file.
+     *
+     * @param int|null $maxFiles Optional field count, capped by global settings.
      */
-    public function check(string $directory, UploadOwner $owner, int $size, ?string $replacingId = null): void
-    {
+    public function check(
+        string $directory,
+        UploadOwner $owner,
+        int $size,
+        ?string $replacingId = null,
+        ?int $maxFiles = null,
+    ): void {
         $sessionSize = $size;
         $islandSize = $size;
         $fieldCount = 0;
@@ -51,7 +58,7 @@ class UploadQuota
         if (
             $sessionSize > $this->config->maxSessionSize
             || $islandSize > $this->config->maxIslandSize
-            || $fieldCount >= $this->config->maxFiles
+            || $fieldCount >= min($this->config->maxFiles, $maxFiles ?? $this->config->maxFiles)
             || $sessionCount > $this->config->maxSessionFiles
         ) {
             throw new UploadRejected(__d(
