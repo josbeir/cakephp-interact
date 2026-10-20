@@ -70,6 +70,11 @@ capture failures use the island's normal failure feedback.
 | `sync()`                    | Request synchronization without an action                  |
 | `call(action, ...args)`     | Queue an exposed PHP action with JSON-compatible arguments |
 
+To refresh after another island saves, listen with
+`@article-saved.window="$server.sync()"` inside the receiving island. See the
+[event examples](/guide/nesting#refresh-another-island) for parent and sibling
+listeners, propagation, and what synchronization refreshes.
+
 Use `x-interact:model` for form controls; reading `state` does not make
 PHP-only state writable. The bridge's `sync()` and `call()` return
 `Promise<RequestResult>`: `{ ok: true }` after an accepted render, or

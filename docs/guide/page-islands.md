@@ -74,31 +74,7 @@ class CountersController extends AppController
 
 :::
 
-Connect the controller attributes through a named collection. If your app does
-not already configure controller discovery, add this to `config/bootstrap.php`:
-
-```php [config/bootstrap.php]
-use Cake\AttributeResolver\AttributeResolver;
-
-AttributeResolver::setConfig('appRoutes', [
-    'paths' => ['src/Controller/*.php'],
-    'basePath' => ROOT . '/',
-    'cache' => false,
-]);
-```
-
-Then connect that collection in your existing `config/routes.php` routing
-closure, where `$routes` is CakePHP's `RouteBuilder`:
-
-```php [config/routes.php — inside the routing closure]
-$routes->connectAttributes('appRoutes');
-```
-
-Open `/counter`. If your app already has controller attribute discovery, use
-its collection instead of registering a second one. Enable a configured
-CakePHP attribute cache for production and refresh it during deployment.
-
-The layout still needs to output its `script` block as described in
+Open `/counter`. The layout needs to output its `script` block as described in
 [installation](/installation).
 
 ::: warning Avoid a recursive mount
