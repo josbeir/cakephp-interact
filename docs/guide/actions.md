@@ -57,14 +57,19 @@ records inside your application's action flow too.
 
 For an island with a writable `title` and an exposed `save()` action:
 
-```html
-<form data-interact-submit="save">
-  <label>Title <input data-interact-model="title" /></label>
-  <button type="submit" :disabled="$server.busy">Save</button>
-</form>
+```php [Inside the island element]
+<?= $this->Form->create(null, ['url' => false, 'data-interact-submit' => 'save']) ?>
+    <?= $this->Form->control('title', [
+        'type' => 'text',
+        'label' => 'Title',
+        'value' => $title,
+        'data-interact-model' => 'title',
+    ]) ?>
+    <?= $this->Form->button('Save', [':disabled' => '$server.busy']) ?>
+<?= $this->Form->end() ?>
 ```
 
-This captures the form's submit event, sends current bound controls, and calls
+FormHelper generates the form and input markup. Interact captures the submit event, sends current bound controls, and calls
 `save()`. Pressing Enter uses the same path. The action decides whether and how
 to save; see the complete [article editing example](/guide/forms).
 

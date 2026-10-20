@@ -33,7 +33,9 @@ than replacing it with the current database value.
 Entities stay on the server. A signed article ID establishes snapshot integrity;
 your current authorization checks establish access.
 
-## Render a normal form
+<span id="render-a-normal-form"></span>
+
+## Render with FormHelper
 
 Here is a compact version of the editor element. It receives `articleId`, `title`,
 and the reserved `errors` variable from the island:
@@ -45,20 +47,26 @@ declare(strict_types=1);
 use function Cake\Core\h;
 
 /**
+ * @var \Interact\View\TemplateView $this
  * @var int $articleId
  * @var string $title
  * @var array<string, list<string>> $errors
  */
 $errorId = 'article-' . (string)$articleId . '-title-errors';
 ?>
-<form data-interact-submit="save">
-    <label>
-        Article title
-        <input value="<?= (string)h($title) ?>" data-interact-model="title"
-            <?php if (isset($errors['title'])): ?>
-                aria-invalid="true" aria-describedby="<?= (string)h($errorId) ?>"
-            <?php endif; ?>>
-    </label>
+<?= $this->Form->create(null, [
+    'url' => false,
+    'idPrefix' => 'article-' . (string)$articleId,
+    'data-interact-submit' => 'save',
+]) ?>
+    <?= $this->Form->control('title', [
+        'type' => 'text',
+        'label' => 'Article title',
+        'value' => $title,
+        'data-interact-model' => 'title',
+        'aria-invalid' => isset($errors['title']) ? 'true' : null,
+        'aria-describedby' => isset($errors['title']) ? $errorId : null,
+    ]) ?>
     <?php if (isset($errors['title'])): ?>
         <div id="<?= (string)h($errorId) ?>" role="alert">
             <?php foreach ($errors['title'] as $message): ?>
@@ -66,10 +74,16 @@ $errorId = 'article-' . (string)$articleId . '-title-errors';
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
-    <button type="submit" :disabled="$server.busy">Save article</button>
+    <?= $this->Form->button('Save article', [':disabled' => '$server.busy']) ?>
     <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
-</form>
+<?= $this->Form->end() ?>
 ```
+
+`create(null)` starts a context-less form: the island owns the draft, and
+`value` supplies it on every render. FormHelper escapes values and generates
+labels, names, and IDs. `idPrefix` keeps the fields distinct between editors;
+`url => false` omits the form action because Interact handles submission.
+FormHelper is available through CakePHP's normal helper loading.
 
 The title uses deferred binding: typing alone sends no request. Submitting flushes
 the current control value before calling `save()`. Use a unique error ID for
@@ -93,11 +107,10 @@ flag and dispatch `article-saved`; failure suppresses success events.
 `setErrors()` renders application feedback; it does not run validation itself.
 For a database failure without a field error, the demo supplies a generic message.
 
-::: details Full editor and Table implementation
+:::: details Full editor and Table implementation
 
 These are the tested files used by the demo. Its element has additional loading,
-draft, and success feedback; the compact element above adds explicit error
-associations.
+draft, and success feedback, with the same field-error associations.
 
 ::: code-group
 
@@ -107,7 +120,7 @@ associations.
 
 :::
 
-:::
+::::
 
 ## Add dependent or conditional fields
 
@@ -121,7 +134,7 @@ Open `/` for country and city choices. The `dependent-selects` island:
 Rendered options are a convenience, not authorization. A forged city ID still
 needs rejection on the server.
 
-::: details Full dependent-select implementation
+:::: details Full dependent-select implementation
 
 ::: code-group
 
@@ -133,7 +146,7 @@ needs rejection on the server.
 
 :::
 
-:::
+::::
 
 For conditional fields, open the workshop planner at `/playground`. Toggling a
 business booking reveals company inputs, and the PHP action validates the
@@ -142,13 +155,19 @@ server checks.
 
 ## Keep protection and persistence explicit
 
-These examples use native HTML controls with Interact's CSRF-protected JSON
-update route. They do not submit a normal CakePHP FormHelper payload or claim
-automatic FormProtection field hashing. Keep your ordinary form handling
-protected separately; do not disable middleware to make island requests work.
+FormHelper generates the markup; Interact reads controls carrying
+`data-interact-model` and sends their declared writable values as JSON.
+FormHelper's hidden fields are not transported as island state. CSRF remains
+protected through the update request's token header and CakePHP middleware.
 
-The current layer does not provide file uploads, entity transport, or a form
-adapter. Use explicit state and actions. Navigation and automatic saving are not
+Validation still runs in the application's Table and action. The example renders
+`$errors` explicitly because a context-less form has no entity validation context.
+Using FormHelper does not add automatic FormProtection field-hash validation to
+the JSON update protocol. Keep protection on ordinary form endpoints and scope
+update-route middleware appropriately; do not disable application protections.
+
+The current layer does not provide file uploads, entity transport, or form-plugin
+integration. Use explicit state and actions. Navigation and automatic saving are not
 part of the form's synchronization behavior.
 
 **Next:** [Refresh a parent listing after a save](/guide/nesting).

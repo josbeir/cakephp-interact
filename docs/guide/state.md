@@ -47,15 +47,20 @@ declare(strict_types=1);
 use function Cake\Core\h;
 
 /**
+ * @var \Interact\View\TemplateView $this
  * @var string $salutation
  * @var string $name
  */
 ?>
-<label>
-    Your name
-    <input value="<?= (string)h($name) ?>"
-        data-interact-model="name" data-interact-update="input">
-</label>
+<?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'greeting', '@submit.prevent' => '$server.sync()']) ?>
+    <?= $this->Form->control('name', [
+        'type' => 'text',
+        'label' => 'Your name',
+        'value' => $name,
+        'data-interact-model' => 'name',
+        'data-interact-update' => 'input',
+    ]) ?>
+<?= $this->Form->end() ?>
 <p aria-live="polite"><?= (string)h($salutation) ?> <?= (string)h($name) ?></p>
 <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
@@ -63,8 +68,8 @@ use function Cake\Core\h;
 :::
 
 Type a name: after a short pause, the server receives the new value and renders
-the greeting. Escape strings when putting them back into HTML, including input
-values.
+the greeting. FormHelper escapes control values; escape other application text
+when putting it back into HTML.
 
 ## Pass a controller value explicitly
 
@@ -105,8 +110,13 @@ for numeric state. Nullable numeric state can represent an empty selection.
 
 Dotted paths address nested arrays, for example:
 
-```html
-<input data-interact-model="form.address.city" />
+```php [Inside a FormHelper form]
+<?= $this->Form->control('form.address.city', [
+    'type' => 'text',
+    'label' => 'City',
+    'value' => $form['address']['city'],
+    'data-interact-model' => 'form.address.city',
+]) ?>
 ```
 
 Declare the owning `form` property as writable array state and initialize its

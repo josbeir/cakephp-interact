@@ -25,18 +25,21 @@ public string $search = '';
 public int $page = 1;
 ```
 
-The element sends the draft after a short typing pause:
+Inside its FormHelper form, the element sends the draft after a short typing pause:
 
 ```php [Inside the resource search element]
-<label>
-    Search resources
-    <input type="search" value="<?= (string)h($search) ?>"
-        data-interact-model="search" data-interact-update="input"
-        data-interact-debounce="250" maxlength="200">
-</label>
+<?= $this->Form->control('search', [
+    'type' => 'search',
+    'label' => 'Search resources',
+    'value' => $search,
+    'maxlength' => 200,
+    'data-interact-model' => 'search',
+    'data-interact-update' => 'input',
+    'data-interact-debounce' => 250,
+]) ?>
 ```
 
-Import `Cake\Core\h` in the element and `State` in the class, as in
+Import `State` in the class and start the FormHelper form as in
 [the state guide](/guide/state). Every search word must match a title,
 description, or topic. Clearing the input returns the full library.
 
@@ -94,7 +97,7 @@ The tabs below import the tested demo files directly. They work together in
 the included application, mounted with
 `$this->Interact->render('resource-search')`.
 
-::: details Full search example: island, Table, and element
+:::: details Full search example: island, Table, and element
 
 ::: code-group
 
@@ -106,7 +109,7 @@ the included application, mounted with
 
 :::
 
-:::
+::::
 
 The demo finder uses SQLite substring expressions with bound values, so `%` and
 `_` remain literal search characters. Adapt the matching implementation to your
