@@ -15,7 +15,7 @@ declaration inside an [existing island](/getting-started):
 ```
 
 After five seconds, Interact calls the owning island's `$server.sync()`. It uses
-the normal authorized update request and renders fresh `viewData()`. It does not
+the normal island update request and renders fresh `viewData()`. It does not
 rerun the controller or `mount()`. The declaration refreshes the whole owning
 island, including content outside the declaration's element.
 

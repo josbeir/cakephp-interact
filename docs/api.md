@@ -98,6 +98,10 @@ argument in the action's application flow as well.
 | `errors(): array`                                  | Read current renderable errors                                     |
 | `dispatch(string $name, array $detail = []): void` | Queue a native browser event for a successful update               |
 
+`authorize()` is optional and allows access by default. Public islands such as a
+counter or simulated job can omit it. Override it when the island displays
+protected data or performs actions that require a permission check.
+
 `viewData()` may return entities or result sets for rendering. Its keys cannot
 shadow declared props, state, or reserved `errors`. Controller view variables
 are not inherited. Errors belong to the current render, rather than durable

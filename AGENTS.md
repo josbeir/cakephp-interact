@@ -130,5 +130,6 @@ Required Composer scripts:
 - Use declared aliases consistently in discovery and rendering examples. Make the ownership of props, writable drafts, computed data, authorization, and persistence explicit where relevant.
 - Prefer VitePress navigation, local search, code groups, callouts, and optional details over custom components. Reserve callouts for actionable caveats; omit line numbers unless useful.
 - Keep recipes focused; link to shared setup and reference contracts instead of repeating them. Import tested demo source when presenting a full demo implementation.
+- Keep public introductory examples free of authorization boilerplate. Demonstrate `authorize()` where examples use protected resources or teach access control.
 - Keep template source readable when imported into documentation: split nested HTML and long attribute lists across lines rather than compressing whole panels into single lines.
 - Preserve published page routes and linked anchors when reorganizing. Build the site with link checking enabled, check example syntax and behavior, and inspect desktop and mobile reading/navigation before handoff.

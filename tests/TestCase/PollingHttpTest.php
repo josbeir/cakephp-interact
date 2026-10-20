@@ -33,6 +33,7 @@ class PollingHttpTest extends HttpTestCase
 
     public function testDeclaredJobActionCompletesAndCanBeExplicitlyRestarted(): void
     {
+        $this->session(['demo' => ['role' => 'viewer']]);
         $mount = $this->mounted(6, '/playground');
         $snapshot = $mount['snapshot'];
         foreach ([25, 50, 75, 100] as $progress) {
@@ -49,13 +50,18 @@ class PollingHttpTest extends HttpTestCase
         $this->assertResponseContains('"progress":0,"running":true');
     }
 
-    public function testPollingActionsRecheckPermissionAndRejectStateTampering(): void
+    public function testPollingRejectsEditsToServerOwnedJobState(): void
     {
         $mount = $this->mounted(6, '/playground');
         $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['progress' => 100]]);
         $this->assertResponseCode(400);
+    }
+
+    public function testProtectedPollingRefreshRechecksPermission(): void
+    {
+        $mount = $this->mounted(0, '/demo/polling');
         $this->session(['demo' => ['role' => 'viewer']]);
-        $this->update(['snapshot' => $mount['snapshot'], 'action' => 'refreshStatus']);
+        $this->update(['snapshot' => $mount['snapshot']]);
         $this->assertResponseCode(403);
     }
 
