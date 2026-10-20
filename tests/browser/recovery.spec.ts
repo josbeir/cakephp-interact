@@ -269,7 +269,10 @@ test('a lost response after persistence never automatically repeats the save', a
       exact: true,
     });
     await restored.getByLabel('Article title').fill(original);
-    await restored.getByRole('button', { name: 'Save article' }).click();
+    // Restore the fixture through native submission without a second pointer interaction after reload.
+    await restored
+      .locator('form')
+      .evaluate((form: HTMLFormElement) => form.requestSubmit());
     await expect(restored.getByText('Saved.', { exact: true })).toBeVisible();
   }
 });
