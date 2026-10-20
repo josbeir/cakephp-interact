@@ -36,6 +36,10 @@ const definitions: Record<
     message:
       'The update was rejected. Check your input before submitting again.',
   },
+  upload_too_large: {
+    recovery: 'retry',
+    message: 'The upload exceeds the server size limit. Choose a smaller file.',
+  },
   server_error: {
     recovery: 'retry',
     message:
@@ -79,6 +83,7 @@ const serverStatuses = {
   csrf_failed: 403,
   forbidden: 403,
   invalid_request: 400,
+  upload_too_large: 413,
   server_error: 500,
   http_error: 0,
 };
@@ -122,6 +127,7 @@ export function requestError(
 export function httpCode(status: number): ServerCode {
   if (status >= 500) return 'server_error';
   if (status === 400) return 'invalid_request';
+  if (status === 413) return 'upload_too_large';
   if (status === 401) return 'unauthenticated';
   if (status === 403) return 'forbidden';
   return 'http_error';
@@ -164,7 +170,7 @@ export async function readFailure(
     (error.code === 'http_error' &&
       (result.status < 400 ||
         result.status >= 500 ||
-        [400, 401, 403].includes(result.status))) ||
+        [400, 401, 403, 413].includes(result.status))) ||
     (expected !== 0 &&
       error.code !== 'server_error' &&
       expected !== result.status)

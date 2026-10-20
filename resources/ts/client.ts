@@ -1,3 +1,4 @@
+import { displaySize } from './uploads/size';
 import { UploadFields } from './uploads/fields';
 import { postUpload } from './uploads/transport';
 import type { UploadJob, Uploader } from './uploads/types';
@@ -275,6 +276,20 @@ export class IslandClient {
           invocation.uploadRevision !== this.uploads.revision
     )
       throw requestError('cancelled', null);
+    if (upload?.kind === 'stage') {
+      const maximum = this.uploads.maximum(upload.field);
+      if (maximum !== undefined && upload.file.size > maximum) {
+        const message = `Choose a file no larger than ${displaySize(maximum)}.`;
+        this.bridge.errors = {
+          ...this.bridge.errors,
+          [upload.field]: [message],
+        };
+        throw new IslandRequestError({
+          ...requestError('upload_too_large', null).failure,
+          message,
+        });
+      }
+    }
     this.bridge.busy = true;
     this.root.setAttribute('aria-busy', 'true');
     try {

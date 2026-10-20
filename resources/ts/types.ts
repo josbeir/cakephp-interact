@@ -76,6 +76,7 @@ export type FailureCode =
   | 'csrf_failed'
   | 'forbidden'
   | 'invalid_request'
+  | 'upload_too_large'
   | 'server_error'
   | 'http_error'
   | 'network_error'

@@ -68,7 +68,10 @@ class UploadHttpTest extends HttpTestCase
         ]);
         $this->assertResponseOk();
         $this->assertResponseContains('Saved 1 file(s)');
-        $this->assertResponseContains('"document":{"multiple":false,"files":[]}');
+        static::assertMatchesRegularExpression(
+            '/"document":\{"multiple":false,"maxSize":\d+,"files":\[\]\}/',
+            (string)$this->response?->getBody(),
+        );
     }
 
     public function testPhpUploadRejectionsRenderThroughTheNativeFormContext(): void
@@ -84,7 +87,7 @@ class UploadHttpTest extends HttpTestCase
             'upload' => ['kind' => 'stage', 'field' => 'document'],
         ], JSON_THROW_ON_ERROR)]);
         $this->assertResponseCode(422);
-        $this->assertResponseContains('The file could not be uploaded.');
+        $this->assertResponseContains('The file exceeds the server upload size limit.');
         $this->assertResponseContains('document-error');
     }
 

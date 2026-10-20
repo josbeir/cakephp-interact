@@ -12,6 +12,9 @@ export function uploadMetadata(value: unknown): value is UploadMetadata {
         !forbidden.has(field) &&
         record(entry) &&
         typeof entry.multiple === 'boolean' &&
+        typeof entry.maxSize === 'number' &&
+        Number.isSafeInteger(entry.maxSize) &&
+        entry.maxSize > 0 &&
         Array.isArray(entry.files) &&
         entry.files.every(
           (file: unknown) =>

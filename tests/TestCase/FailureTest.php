@@ -51,6 +51,7 @@ class FailureTest extends TestCase
         yield 'csrf' => [new InvalidCsrfTokenException('private'), 403, 'csrf_failed'];
         yield 'unauthenticated' => [new HttpException('private', 401), 401, 'unauthenticated'];
         yield 'forbidden' => [new HttpException('private', 403), 403, 'forbidden'];
+        yield 'upload too large' => [new HttpException('private', 413), 413, 'upload_too_large'];
         yield 'bad request' => [new HttpException('private', 400), 400, 'invalid_request'];
         yield 'missing resource' => [new HttpException('private', 404), 404, 'http_error'];
         yield 'unavailable' => [new HttpException('private', 503), 503, 'server_error'];

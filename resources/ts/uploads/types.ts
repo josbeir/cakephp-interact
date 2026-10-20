@@ -16,6 +16,7 @@ export type UploadMetadata = Record<
   string,
   {
     multiple: boolean;
+    maxSize: number;
     files: UploadedFileInfo[];
   }
 >;

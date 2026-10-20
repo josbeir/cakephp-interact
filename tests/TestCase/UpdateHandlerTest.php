@@ -5,6 +5,7 @@ namespace Interact\Test\TestCase;
 
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
+use Cake\Utility\Text;
 use Interact\Discovery\Registry;
 use Interact\Http\FailureResponder;
 use Interact\Http\UpdateHandler;
@@ -53,6 +54,28 @@ class UpdateHandlerTest extends TestCase
         static::assertSame(400, $failure->getStatusCode());
         static::assertSame('kept', $failure->getHeaderLine('X-Application'));
         static::assertStringContainsString('invalid_request', (string)$failure->getBody());
+    }
+
+    public function testDiscardedOversizedMultipartBodiesReceiveSpecificFeedback(): void
+    {
+        $handler = new UpdateHandler(
+            new Factory(new Registry(collection: 'explicit'), new SnapshotCodec(str_repeat('k', 32))),
+            new FailureResponder(),
+        );
+        $limit = Text::parseFileSize((string)ini_get('post_max_size'));
+        $request = new ServerRequest(['environment' => ['REQUEST_METHOD' => 'POST']]);
+        $response = $handler->handle(
+            $request->withHeader('Content-Type', 'multipart/form-data')
+                ->withHeader('Content-Length', (string)($limit + 1))
+                ->withParsedBody([]),
+            new Response(),
+        );
+        static::assertSame($limit > 0 ? 413 : 400, $response->getStatusCode());
+        static::assertStringContainsString(
+            $limit > 0 ? 'upload_too_large' : 'invalid_request',
+            (string)$response->getBody(),
+        );
+        static::assertSame('application/json', $response->getHeaderLine('Content-Type'));
     }
 
     public function testMalformedMultipartAndOversizedJsonFailWithoutRenderingHtml(): void

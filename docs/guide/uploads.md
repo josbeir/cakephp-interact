@@ -230,6 +230,14 @@ Changing a file selection while an action waits also discards that queued action
 Submit again when the intended selection is ready. An action already executing on
 the server cannot be cancelled by changing the chooser.
 
+The browser checks the advertised staging ceiling before sending file bytes and
+shows a readable limit, such as “Choose a file no larger than 2 MiB.” That
+ceiling also respects PHP's `upload_max_filesize` and `post_max_size`; application
+validation may impose a smaller limit. A 413 response from PHP or the web server
+uses `upload_too_large` feedback, including when PHP discarded the multipart body
+before island validation could run. Envelope overhead can also exceed a request
+body limit, so server checks remain authoritative.
+
 ## Configure private staging and cleanup
 
 Ordinary installations need no storage registration. Configure optional limits

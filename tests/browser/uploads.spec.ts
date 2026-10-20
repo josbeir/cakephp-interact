@@ -242,3 +242,69 @@ test('a failed transfer requires an explicit retry and does not automatically sa
   await expect(page.getByRole('status')).toContainText('Saved 1 file(s)');
   expect(saves).toBe(1);
 });
+
+test('oversized files explain the effective size ceiling without starting a transfer', async ({
+  page,
+}) => {
+  let transfers = 0;
+  page.on('request', (request) => {
+    if (transfer(request)) transfers++;
+  });
+  await page.goto('/uploads');
+  await page.getByLabel('Main document', { exact: true }).setInputFiles({
+    name: 'large.txt',
+    mimeType: 'text/plain',
+    buffer: Buffer.alloc(12 * 1024 * 1024),
+  });
+  await expect(page.getByRole('alert')).toContainText(
+    'Choose a file no larger than 2 MiB.',
+  );
+  await expect(
+    page.getByRole('list', { name: 'Main document transfers', exact: true }),
+  ).toContainText('failed');
+  expect(transfers).toBe(0);
+  await choose(page, 'smaller.txt');
+  await expect(page.getByRole('alert', { includeHidden: true })).toBeEmpty();
+});
+
+test('PHP body-size rejection remains specific when the multipart envelope is discarded', async ({
+  page,
+}) => {
+  await page.goto('/uploads');
+  const result = await page
+    .locator('[data-interact-id]')
+    .evaluate(async (root: HTMLElement) => {
+      const endpoint = root.dataset.interactEndpoint;
+      const csrf = root.dataset.interactCsrf;
+      if (!endpoint || !csrf) throw new Error('Missing upload metadata');
+      const body = new FormData();
+      body.set(
+        'payload',
+        JSON.stringify({
+          version: 1,
+          snapshot: root.dataset.interactSnapshot,
+          upload: { field: 'document', kind: 'stage' },
+        }),
+      );
+      body.set(
+        'file',
+        new File([new Uint8Array(12 * 1024 * 1024)], 'large.txt', {
+          type: 'text/plain',
+        }),
+      );
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': csrf, Accept: 'application/json' },
+        body,
+      });
+      return { status: response.status, body: await response.json() };
+    });
+  expect(result.status).toBe(413);
+  expect(result.body).toMatchObject({
+    version: 1,
+    error: {
+      code: 'upload_too_large',
+      message: expect.stringContaining('size limit'),
+    },
+  });
+});

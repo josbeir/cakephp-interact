@@ -25,8 +25,8 @@ function markup(): string {
 
 function setup() {
   let metadata: UploadMetadata = {
-    document: { multiple: false, files: [] },
-    attachments: { multiple: true, files: [] },
+    document: { multiple: false, maxSize: 10485760, files: [] },
+    attachments: { multiple: true, maxSize: 10485760, files: [] },
   };
   const root = document.createElement('section');
   root.dataset.interactId = 'files';
@@ -123,11 +123,11 @@ function setup() {
     if (!control) throw new Error('Missing input');
     return control;
   };
-  const choose = (field = 'document', name = 'notes.txt') => {
+  const choose = (field = 'document', name = 'notes.txt', size = 4) => {
     const control = input(field);
     Object.defineProperty(control, 'files', {
       configurable: true,
-      value: [new File(['text'], name, { type: 'text/plain' })],
+      value: [new File([new Uint8Array(size)], name, { type: 'text/plain' })],
     });
     control.dispatchEvent(new Event('change', { bubbles: true }));
     Object.defineProperty(control, 'files', { configurable: true, value: [] });
@@ -161,11 +161,72 @@ describe('managed file selections', () => {
       uploadMetadata({
         document: {
           multiple: false,
+          maxSize: 10485760,
           files: [{ id: 'a'.repeat(32), name: 'a', size: 1 }],
         },
       }),
     ).toBe(true);
   });
+
+  it('rejects oversized selections before transfer and permits explicit correction', async () => {
+    const value = setup();
+    value.choose('document', 'large.txt', 12 * 1024 * 1024);
+    await vi.waitFor(() =>
+      expect(value.field().files[0]?.status).toBe('failed'),
+    );
+    expect(value.uploader).not.toHaveBeenCalled();
+    expect(value.client.bridge.error).toMatchObject({
+      code: 'upload_too_large',
+      status: null,
+    });
+    expect(value.client.bridge.errors.document?.[0]).toContain('10 MiB');
+    expect((await value.client.bridge.call('save')).ok).toBe(false);
+    expect(value.fetcher).not.toHaveBeenCalled();
+    value.choose('document', 'smaller.txt');
+    await vi.waitFor(() =>
+      expect(value.field().files[0]?.status).toBe('ready'),
+    );
+    expect(value.uploader).toHaveBeenCalledOnce();
+    expect(value.client.bridge.error).toBe(null);
+  });
+
+  it.each([false, true])(
+    'explains server body-limit rejection with JSON=%s',
+    async (json) => {
+      const value = setup();
+      value.uploader.mockResolvedValue(
+        new Response(
+          json
+            ? JSON.stringify({
+                version: 1,
+                error: {
+                  code: 'upload_too_large',
+                  message:
+                    'The upload exceeds the server size limit. Choose a smaller file.',
+                },
+              })
+            : 'Request entity too large',
+          {
+            status: 413,
+            headers: {
+              'Content-Type': json ? 'application/json' : 'text/html',
+            },
+          },
+        ),
+      );
+      value.choose();
+      await vi.waitFor(() =>
+        expect(value.field().files[0]?.status).toBe('failed'),
+      );
+      expect(value.client.bridge.error).toMatchObject({
+        code: 'upload_too_large',
+        status: 413,
+        recovery: 'retry',
+      });
+      expect(value.client.bridge.error?.message).toContain('size limit');
+      expect(value.fetcher).not.toHaveBeenCalled();
+    },
+  );
 
   it('appends multiple selections, preserves stable item ids, and removes one or all accepted files', async () => {
     const value = setup();
@@ -357,18 +418,21 @@ describe('managed file selections', () => {
     {
       document: {
         multiple: false,
+        maxSize: 10485760,
         files: [{ id: '../path', name: 'x', size: 1 }],
       },
     },
     {
       document: {
         multiple: false,
+        maxSize: 10485760,
         files: [{ id: 'a'.repeat(32), name: 'x', size: -1 }],
       },
     },
     {
       document: {
         multiple: false,
+        maxSize: 10485760,
         files: [
           { id: 'a'.repeat(32), name: 'x', size: 1 },
           { id: 'a'.repeat(32), name: 'x', size: 1 },

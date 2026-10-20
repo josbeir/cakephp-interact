@@ -10,6 +10,7 @@ use Interact\IslandContext;
 use Interact\Runtime\Factory;
 use Interact\Runtime\Values;
 use Interact\Security\InvalidSnapshotException;
+use Interact\Upload\UploadLimits;
 use Interact\View\TemplateView;
 use InvalidArgumentException;
 
@@ -38,6 +39,7 @@ class UpdateHandler
             /** @var mixed $body */
             $body = $request->getData();
             if (str_starts_with($request->getHeaderLine('Content-Type'), 'multipart/form-data')) {
+                UploadLimits::assertRequest($request);
                 /** @var mixed $payload */
                 $payload = $request->getData('payload');
                 if (!is_string($payload) || strlen($payload) > 1_048_576) {

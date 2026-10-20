@@ -130,6 +130,13 @@ export class UploadFields {
   }
 
   /**
+   * Use the latest server-advertised ceiling when a queued selection starts transferring.
+   */
+  maximum(field: string): number | undefined {
+    return this.accepted[field]?.maxSize;
+  }
+
+  /**
    * Match ordinary pending feedback and block polling while selections need attention.
    */
   pending(): boolean {

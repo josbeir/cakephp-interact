@@ -29,6 +29,10 @@ class LocalUploadStorage implements UploadStorageInterface
      */
     public function put(UploadedFileInterface $file, UploadOwner $owner, ?string $replacingId = null): TemporaryUpload
     {
+        if (in_array($file->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+            throw new UploadRejected(__d('interact', 'The file exceeds the server upload size limit.'));
+        }
+
         if ($file->getError() !== UPLOAD_ERR_OK) {
             throw new UploadRejected(__d('interact', 'The file could not be uploaded. Check its size and try again.'));
         }
