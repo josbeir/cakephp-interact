@@ -6,7 +6,7 @@ description: Set up the repository, run its PHP and browser quality gates, maint
 # Contributing
 
 Read the root [contributor guidelines](https://github.com/josbeir/cakephp-interact/blob/main/AGENTS.md)
-before changing code. Use PHP 8.5, CakePHP 6 development builds, and Node 24+.
+before changing code. Use PHP 8.5, CakePHP 6 development builds, and Node 24.11+ or Node 26+.
 For installation and fixture setup, start with [the demo](/examples).
 
 ## PHP checks
@@ -45,16 +45,21 @@ npx playwright install --with-deps chromium firefox webkit
 npm run test:browser
 ```
 
-`check` runs strict type checking, ESLint, Prettier, and Vitest. V8 coverage
+`check` runs Vite+ format verification, Oxlint (including type-aware rules),
+native type checking, and Vitest. V8 coverage
 includes unexecuted runtime source and separately requires at least 95%
 unrounded line coverage. Statements, functions, and branches are also reported.
 
-Type checking and declaration builds use TypeScript 7's native `tsc`, installed
-under the `@typescript/native` npm alias. The `typescript` dependency aliases the
-official TypeScript 6 compatibility package because typescript-eslint still needs
-the JavaScript compiler API. This follows Microsoft's
-[side-by-side tooling setup](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-60);
-`npm run typecheck` and `npm run build` both use TypeScript 7.
+JavaScript tooling is configured together in `vite.config.ts`: `lint` owns
+Oxlint rules, `fmt` owns Oxfmt formatting, `test` owns Vitest and coverage, and `pack` builds both browser distributions.
+Use `npm run lint`, `npm run format`, or `npm run typecheck` for a focused check.
+Vite+ supplies these tools and Vitest, so no separate ESLint, Prettier, or Vitest
+installation is needed. Tests import their APIs from `vite-plus/test`.
+
+TypeScript is a normal version 7 dependency. Vite+ uses its native type checker;
+`npm run build` uses `vp pack` to bundle the npm module and standalone CSP
+runtime, and emits declarations with the native TypeScript 7 generator. There are no
+TypeScript compatibility aliases or second compiler installations.
 
 Playwright exercises the real CakePHP application in Chromium, Firefox, and
 WebKit. Test observable behavior, security failures, races, validation, focus,

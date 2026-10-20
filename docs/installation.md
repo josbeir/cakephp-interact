@@ -6,7 +6,7 @@ description: Install the development plugin in a CakePHP application, load its h
 # Installation
 
 You need **PHP 8.5**, a **CakePHP 6 development application**, Composer, and
-**Node 24+** to build the browser assets from this checkout. The current plugin
+**Node 24.11+ or Node 26+** to build the browser assets from this checkout. The current plugin
 is a development preview; the steps below use a local Composer path repository.
 
 To explore without integrating an existing application, [run the demo](/examples).

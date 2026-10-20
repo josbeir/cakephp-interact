@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import Alpine from '@alpinejs/csp';
 import install from '../../resources/ts/index';
 

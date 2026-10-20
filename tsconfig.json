@@ -11,7 +11,7 @@
     "noUnusedParameters": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
-    "types": ["node", "vitest/globals"]
+    "types": ["node", "vite-plus/test/globals"]
   },
   "include": ["resources/ts", "tests/js", "tests/browser", "*.ts"]
 }

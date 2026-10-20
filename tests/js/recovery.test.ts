@@ -1,8 +1,19 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { IslandClient } from '../../resources/ts/client';
 import type { Fetcher, Patcher, RequestResult } from '../../resources/ts/types';
 
 const clients: IslandClient[] = [];
+
+/**
+ * Read a captured request body only after checking the transport sent JSON text.
+ */
+function requestBody(options: RequestInit | undefined): unknown {
+  const body = options?.body;
+  if (typeof body !== 'string')
+    throw new Error('Expected a JSON request body.');
+  return JSON.parse(body);
+}
+
 function root(): HTMLDivElement {
   const element = document.createElement('div');
   Object.assign(element.dataset, {
@@ -129,7 +140,7 @@ describe('explicit failure recovery', () => {
     );
     await vi.runAllTimersAsync();
     expect(fetcher).toHaveBeenCalledTimes(2);
-    expect(JSON.parse(String(fetcher.mock.calls[1]?.[1].body))).toMatchObject({
+    expect(requestBody(fetcher.mock.calls[1]?.[1])).toMatchObject({
       snapshot: 'original',
       updates: { title: 'latest' },
       action: 'save',
@@ -212,7 +223,7 @@ describe('explicit failure recovery', () => {
     await Promise.all(rejected);
     await resumed;
     expect(fetcher).toHaveBeenCalledTimes(2);
-    expect(JSON.parse(String(fetcher.mock.calls[1]?.[1].body))).toMatchObject({
+    expect(requestBody(fetcher.mock.calls[1]?.[1])).toMatchObject({
       action: null,
       updates: { title: 'fresh' },
     });
