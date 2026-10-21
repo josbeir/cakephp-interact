@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Runtime;
 
+use Interact\Action\RouteContext;
 use Interact\Upload\UploadReferences;
 use Interact\Url\Names;
 use InvalidArgumentException;
@@ -20,6 +21,8 @@ readonly class SnapshotData
     public string $key;
 
     public ?string $urlPrefix;
+
+    public RouteContext $routing;
 
     /**
      * @var array<string, mixed> Declared state and mount props.
@@ -47,7 +50,8 @@ readonly class SnapshotData
             throw new InvalidArgumentException('Invalid signed island identity.');
         }
 
-        $data += ['state' => null, 'children' => null, 'uploads' => []];
+        $data += ['state' => null, 'children' => null, 'uploads' => [], 'routing' => []];
+        $this->routing = new RouteContext($data['routing']);
         $this->alias = $data['alias'];
         $this->id = $data['id'];
         $this->key = $data['key'];

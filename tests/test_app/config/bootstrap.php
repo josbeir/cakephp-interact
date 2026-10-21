@@ -61,6 +61,7 @@ assert($connection instanceof Connection, 'The configured collaborator must sati
 $connection->execute(
     'CREATE TABLE IF NOT EXISTS articles (id INTEGER PRIMARY KEY, title TEXT NOT NULL, owner_id INTEGER NOT NULL)',
 );
+$connection->execute('CREATE TABLE IF NOT EXISTS outcome_articles (id INTEGER PRIMARY KEY, title TEXT NOT NULL)');
 $connection->execute(
     'CREATE TABLE IF NOT EXISTS cities (id INTEGER PRIMARY KEY, country TEXT NOT NULL, name TEXT NOT NULL)',
 );

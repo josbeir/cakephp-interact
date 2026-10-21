@@ -16,6 +16,8 @@ readonly class Result
      */
     public array $state;
 
+    public ?string $download;
+
     /**
      * @var array<string, array{name: string, type: string, default: mixed, history: bool}> URL declarations.
      */
@@ -45,6 +47,7 @@ readonly class Result
      * Collect markup, a signed snapshot, validation feedback, and browser effects.
      *
      * @param array{
+     *     download?: string,
      *     url?: array<string, array{name: string, type: string, default: mixed, history: bool}>,
      *     uploads?: array<string, array{multiple: bool, maxSize: int, maxFiles: int, files: list<array{id: string, name: string, size: int}>}>,
      *     state?: array<string, mixed>,
@@ -55,6 +58,7 @@ readonly class Result
      */
     public function __construct(public string $id, public string $html, public string $snapshot, array $data = [])
     {
+        $this->download = $data['download'] ?? null;
         $this->url = $data['url'] ?? [];
         $this->uploads = $data['uploads'] ?? [];
         $this->state = $data['state'] ?? [];
@@ -72,6 +76,7 @@ readonly class Result
     {
         return [
             'version' => 1,
+            ...($this->download === null ? [] : ['download' => $this->download]),
             ...($this->url === [] ? [] : ['url' => (object)$this->url]),
             ...($this->uploads === [] ? [] : ['uploads' => (object)$this->uploads]),
             'id' => $this->id,

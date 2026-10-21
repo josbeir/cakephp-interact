@@ -1,4 +1,4 @@
-import type { Fetcher, Invocation, IslandResponse, State } from '../types';
+import type { Fetcher, Invocation, UpdateResponse, State } from '../types';
 import type { MountMetadata } from './metadata';
 import { response } from './protocol';
 import { readFailure, requestError } from './failure';
@@ -55,7 +55,7 @@ export async function postUpdate(
 export async function readResponse(
   result: Response,
   id: string,
-): Promise<IslandResponse> {
+): Promise<UpdateResponse> {
   if (
     result.type === 'opaqueredirect' ||
     (result.status >= 300 && result.status < 400)
@@ -70,7 +70,11 @@ export async function readResponse(
   } catch (cause: unknown) {
     throw requestError('invalid_response', result.status, cause);
   }
-  if (!response(payload) || payload.id !== id)
+  if (
+    !response(payload) ||
+    payload.id !== id ||
+    ('redirect' in payload && result.status !== 200)
+  )
     throw requestError('invalid_response', result.status);
   return payload;
 }

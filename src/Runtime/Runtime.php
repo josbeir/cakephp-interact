@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Runtime;
 
+use Interact\Action\RouteContext;
 use Interact\Discovery\Definition;
 use Interact\Discovery\Registry;
 use Interact\Island;
@@ -25,6 +26,8 @@ class Runtime
     protected RenderStack $stack;
 
     protected ?string $pageQuery = null;
+
+    protected ?RouteContext $pageRouting = null;
 
     protected HtmlRenderer $html;
 
@@ -92,6 +95,7 @@ class Runtime
             'state' => [],
             'children' => [],
             'urlPrefix' => $urlPrefix,
+            'routing' => ($this->pageRouting ?? RouteContext::fromRequest($context->request))->defaults,
         ]);
         $result = $this->html->render($island, $definition, $identity, $context);
         $childKey = 'key:' . $key;
@@ -121,12 +125,15 @@ class Runtime
         $island = $this->registry->create($definition);
         $this->hydrator->restore($island, $definition, $data->state);
 
+        $previousRouting = $this->pageRouting;
+        $this->pageRouting = $data->routing;
         $previous = $this->pageQuery;
         $this->pageQuery = $input->pageQuery;
         try {
             return $this->updateIsland($island, $definition, $data, $input, $context);
         } finally {
             $this->pageQuery = $previous;
+            $this->pageRouting = $previousRouting;
         }
     }
 
@@ -152,9 +159,15 @@ class Runtime
             $island->updated($paths);
         }
 
-        $this->actions->invoke($definition, $island, $input);
+        $outcome = $this->actions->invoke($definition, $island, $input);
 
-        return $this->html->render($island, $definition, $data, $context);
+        return $this->actions->respond(
+            $island,
+            $outcome,
+            $data,
+            $context,
+            fn(): Result => $this->html->render($island, $definition, $data, $context),
+        );
     }
 
     /**

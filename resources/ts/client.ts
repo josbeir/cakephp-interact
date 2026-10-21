@@ -1,3 +1,4 @@
+import { BrowserEffects } from './effects/browser';
 import { sameFields } from './url/codec';
 import { pageUrl } from './url/coordinator';
 import type { UrlRegistration } from './url/coordinator';
@@ -53,6 +54,7 @@ export class IslandClient {
   private baseline: State;
   private writable: Writable;
   private disposed = false;
+  private leaving = false;
   private readonly activity: { paused: boolean };
   private poller: Poller | undefined;
   private readonly uploads: UploadFields;
@@ -73,6 +75,7 @@ export class IslandClient {
     reactive: <T extends object>(value: T) => T,
     private readonly fetcher: Fetcher = (url, init) => fetch(url, init),
     private readonly uploader: Uploader = postUpload,
+    private readonly effects: BrowserEffects = new BrowserEffects(),
   ) {
     this.requests = new RequestActivity(reactive);
     this.activity = reactive({ paused: false });
@@ -251,6 +254,8 @@ export class IslandClient {
     upload?: UploadJob,
   ): Promise<RequestResult> {
     try {
+      if (this.leaving)
+        return { ok: false, error: requestError('cancelled', null).failure };
       if (this.bridge.paused && this.bridge.error?.recovery !== 'retry') {
         throw new IslandRequestError(
           this.bridge.error ?? requestError('client_error', null).failure,
@@ -267,6 +272,8 @@ export class IslandClient {
       await this.enqueue(action, args, upload);
       if (!this.disposed) return { ok: true };
     } catch (cause: unknown) {
+      if (this.leaving)
+        return { ok: false, error: requestError('cancelled', null).failure };
       if (!this.disposed) {
         const error =
           cause instanceof IslandRequestError
@@ -397,6 +404,27 @@ export class IslandClient {
       if (this.disposed) return;
       const accepted = await readResponse(result, this.metadata.id);
       if (this.disposed) return;
+      if ('redirect' in accepted) {
+        if (
+          invocation.action === null ||
+          invocation.upload ||
+          invocation.urlRestore
+        )
+          throw requestError('invalid_response', result.status);
+        this.effects.navigate(accepted.redirect);
+        this.leaving = true;
+        this.controls.clearPending();
+        this.poller?.dispose();
+        this.queue.dispose();
+        return;
+      }
+      if (
+        accepted.download &&
+        (invocation.action === null ||
+          invocation.upload ||
+          invocation.urlRestore)
+      )
+        throw requestError('invalid_response', result.status);
       if (!sameFields(accepted.url ?? {}, this.metadata.url))
         throw requestError('invalid_response', result.status);
       let replacement: HTMLElement;
@@ -471,6 +499,7 @@ export class IslandClient {
       invocation?.urlEpoch ?? 0,
       invocation?.urlRestore !== undefined,
     );
+    if (payload.download) this.effects.download(payload.download);
     for (const effect of payload.events)
       this.root.dispatchEvent(
         new CustomEvent(effect.name, { detail: effect.detail, bubbles: true }),
@@ -481,7 +510,7 @@ export class IslandClient {
    * Restore one complete URL selection without capturing or discarding unrelated drafts.
    */
   private restoreUrl(target: UrlRestoration): void {
-    if (this.disposed) return;
+    if (this.disposed || this.leaving) return;
     this.controls.captureAll();
     const unchanged = Object.entries(target.values).every(
       ([key, value]) =>

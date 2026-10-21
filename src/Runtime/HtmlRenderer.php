@@ -59,6 +59,7 @@ class HtmlRenderer
                     'id' => $identity->id,
                     'key' => $identity->key,
                     'state' => $state,
+                    'routing' => $identity->routing->defaults,
                     ...($identity->urlPrefix === null ? [] : ['urlPrefix' => $identity->urlPrefix]),
                     'children' => $frame->children,
                     ...($uploads['references'] === [] ? [] : ['uploads' => $uploads['references']]),

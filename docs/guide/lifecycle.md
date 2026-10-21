@@ -24,7 +24,7 @@ to the current instance.
 3. Validate and apply browser edits and validate action argument types.
 4. Call `authorize()`.
 5. Call `updated()` for changed fields, then the requested action.
-6. Call `viewData()`, render, and return state, errors, and events.
+6. Return a requested redirect, or call `viewData()`, render, and return state, errors, events, and any download request.
 
 The original controller action, layout, and `mount()` do not run again.
 Authorization can observe accepted edits and runs before application update hooks,
@@ -94,3 +94,5 @@ Return PHP-only template variables for the current render. The
 The browser applies returned HTML while preserving newer drafts, focus, local
 Alpine state, and matching nested islands. Removing an island releases its
 browser resources. See [Requests and DOM updates](/reference/browser).
+
+A successful action redirect skips view data and rendering. Downloads accompany an accepted render. Both helpers are restricted to declared actions; see [redirects](/guide/redirects#action-lifecycle) and [downloads](/guide/downloads#action-lifecycle).

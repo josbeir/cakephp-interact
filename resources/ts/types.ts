@@ -1,3 +1,4 @@
+import type { Redirect } from './effects/browser';
 import type { UrlFields, UrlRestoration } from './url/types';
 import type { UploadField, UploadJob, UploadMetadata } from './uploads/types';
 /**
@@ -50,13 +51,21 @@ export interface LoadingTarget extends RequestTarget {
   delay?: number;
 }
 
+/** Terminal navigation accepted for an explicitly invoked island action. */
+export interface RedirectResponse {
+  version: 1;
+  id: string;
+  redirect: Redirect;
+}
+
+export type UpdateResponse = IslandResponse | RedirectResponse;
+
 /**
- * Verified server render accepted from the versioned update endpoint.
- *
- * Validation feedback uses the same envelope as a successful render. Events are
- * browser effects rather than trusted authorization or durable business messages.
+ * Verified server render, including validation feedback and optional download effects.
+ * Browser effects never establish authorization or durable business messages.
  */
 export interface IslandResponse {
+  download?: string;
   uploads?: UploadMetadata;
   url?: UrlFields;
   version: 1;
@@ -102,7 +111,7 @@ export interface RequestFailure {
 /**
  * A settled request outcome; expected failures are also published through state and events.
  *
- * A renderable 422 response is accepted successfully and supplies field errors separately.
+ * A redirect result confirms navigation was requested. A renderable 422 response is accepted successfully and supplies field errors separately.
  */
 export type RequestResult =
   | { readonly ok: true }

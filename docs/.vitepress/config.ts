@@ -79,6 +79,8 @@ export default defineConfig({
           items: [
             { text: 'Overview and demo', link: '/examples' },
             { text: 'Article form', link: '/examples/article-form' },
+            { text: 'Save and redirect', link: '/examples/redirect' },
+            { text: 'Invoice download', link: '/examples/download' },
             { text: 'Search and pagination', link: '/examples/search' },
             { text: 'Dependent fields', link: '/examples/dependent-fields' },
             { text: 'Single document upload', link: '/examples/upload' },
@@ -113,6 +115,8 @@ export default defineConfig({
           text: 'Features',
           items: [
             { text: 'URL state', link: '/guide/url-state' },
+            { text: 'Redirects', link: '/guide/redirects' },
+            { text: 'Downloads', link: '/guide/downloads' },
             { text: 'Validation', link: '/guide/forms' },
             { text: 'File uploads', link: '/guide/uploads' },
             { text: 'Error handling', link: '/guide/failures' },
