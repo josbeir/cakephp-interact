@@ -317,6 +317,63 @@ describe('form model discovery and values', () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['checkbox', 'remove'],
+    ['checkbox', 'rename'],
+    ['checkbox', 'reassign'],
+    ['radio', 'remove'],
+    ['radio', 'rename'],
+    ['radio', 'reassign'],
+  ])(
+    'keeps another %s member live when a peer is %s',
+    async (type, mutation) => {
+      vi.useFakeTimers();
+      const name = type === 'checkbox' ? 'choice[]' : 'choice';
+      const { root, fetcher } = setup(
+        `<input type="${type}" name="${name}" value="a"><input type="${type}" name="${name}" value="b">`,
+        { choice: type === 'checkbox' ? [] : '' },
+        '.live.debounce.50ms',
+      );
+      const [peer, source] = root.querySelectorAll('input');
+      if (!peer || !source) throw new Error('Missing group members.');
+      source.checked = true;
+      source.dispatchEvent(new Event('input', { bubbles: true }));
+      if (mutation === 'remove') peer.remove();
+      if (mutation === 'rename') peer.name = 'renamed';
+      if (mutation === 'reassign') peer.setAttribute('form', 'unbound');
+      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(60);
+      expect(fetcher).toHaveBeenCalledOnce();
+      const request: unknown = fetcher.mock.calls[0]?.[1];
+      if (
+        typeof request !== 'object' ||
+        request === null ||
+        !('body' in request) ||
+        typeof request.body !== 'string'
+      )
+        throw new Error('Missing request.');
+      expect(JSON.parse(request.body)).toMatchObject({
+        updates: { data: { choice: type === 'checkbox' ? ['b'] : 'b' } },
+      });
+    },
+  );
+
+  it('cancels a removed group member’s own pending live edit', async () => {
+    vi.useFakeTimers();
+    const { root, fetcher } = setup(
+      '<input type="checkbox" name="tags[]" value="a"><input type="checkbox" name="tags[]" value="b">',
+      { tags: [] },
+      '.live.debounce.50ms',
+    );
+    const source = input(root, 'tags[]');
+    source.checked = true;
+    source.dispatchEvent(new Event('input', { bubbles: true }));
+    source.remove();
+    await Promise.resolve();
+    await vi.advanceTimersByTimeAsync(60);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it.each(['.blur', '.change', '.live.debounce.20ms'])(
     'inherits %s timing while explicit controls retain their own timing',
     async (modifier) => {

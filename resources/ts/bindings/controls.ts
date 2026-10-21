@@ -29,7 +29,10 @@ export class Controls {
   private readonly lifetime = new AbortController();
   private readonly models = new Map<HTMLElement, RegisteredModel>();
   private readonly submissions: FormSubmissions;
-  private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly timers = new Map<
+    string,
+    { source: HTMLElement; timer: ReturnType<typeof setTimeout> }
+  >();
   private readonly forms = new Map<HTMLFormElement, FormModels>();
 
   /**
@@ -171,8 +174,11 @@ export class Controls {
     return () => {
       if (this.models.get(control) !== model) return;
       this.models.delete(control);
-      clearTimeout(this.timers.get(model.binding.path));
-      this.timers.delete(model.binding.path);
+      const pending = this.timers.get(model.binding.path);
+      if (pending?.source === control) {
+        clearTimeout(pending.timer);
+        this.timers.delete(model.binding.path);
+      }
     };
   }
 
@@ -245,7 +251,7 @@ export class Controls {
    * Cancel unsent debounce timers when an explicit request supersedes them.
    */
   clearPending(): void {
-    this.timers.forEach((timer) => clearTimeout(timer));
+    this.timers.forEach(({ timer }) => clearTimeout(timer));
     this.timers.clear();
   }
 
@@ -333,15 +339,15 @@ export class Controls {
     )
       void this.bridge.sync();
     if (binding.timing === 'live' && event === 'input' && !composing) {
-      clearTimeout(this.timers.get(binding.path));
-      this.timers.set(
-        binding.path,
-        setTimeout(() => {
+      clearTimeout(this.timers.get(binding.path)?.timer);
+      this.timers.set(binding.path, {
+        source: element,
+        timer: setTimeout(() => {
           this.timers.delete(binding.path);
           if (!this.owns(element) || this.disabled(element)) return;
           void this.bridge.sync();
         }, binding.delay),
-      );
+      });
     }
   }
 

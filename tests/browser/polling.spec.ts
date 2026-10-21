@@ -157,6 +157,22 @@ test('polling preserves deferred drafts and entity errors while parent refreshes
   });
   const editorId = await islandId(editor);
   const parentId = await islandId(parent);
+  const ids = await page
+    .locator('[id]')
+    .evaluateAll((elements) => elements.map((element) => element.id));
+  expect(new Set(ids).size).toBe(ids.length);
+  expect(
+    await editor
+      .locator('form')
+      .evaluate((form: HTMLFormElement) =>
+        [...form.querySelectorAll('input,button')].every(
+          (control) =>
+            (control instanceof HTMLInputElement ||
+              control instanceof HTMLButtonElement) &&
+            control.form === form,
+        ),
+      ),
+  ).toBe(true);
   let editorRequests = 0;
   let parentRequests = 0;
   page.on('request', (request) => {
@@ -186,8 +202,10 @@ test('polling preserves deferred drafts and entity errors while parent refreshes
   await editor.getByRole('button', { name: 'Save article' }).click();
   expect((await validation).status()).toBe(422);
   await expect(title).toHaveAccessibleDescription('A title is required.');
-  await page.clock.runFor(3000);
+  // Wait for the parent's morph before clicking within the adjacent editor.
+  await advancePoll(page, parent, 3000);
   expect(editorRequests).toBe(1);
+  expect(parentRequests).toBe(3);
   await expect(
     editor.getByRole('alert').filter({ hasText: 'A title is required.' }),
   ).toBeVisible();
