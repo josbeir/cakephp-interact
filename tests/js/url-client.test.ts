@@ -293,3 +293,52 @@ it('reports initial History API failures through normal island feedback', async 
   expect(client.bridge.error?.code).toBe('client_error');
   broken.mockRestore();
 });
+
+it.each([
+  { draft: 'bad', calls: 10 },
+  { ...initial, page: 'two', calls: 10 },
+  { ...initial, search: null, calls: 10 },
+])(
+  'rejects malformed URL state before committing any response: %j',
+  async (accepted) => {
+    const element = root();
+    const patch = vi.fn();
+    const saved = vi.fn();
+    const requests: Record<string, unknown>[] = [];
+    element.addEventListener('saved', saved);
+    const fetcher: Fetcher = async (_url, options) => {
+      requests.push(body(options));
+      return reply(element, accepted, {
+        html: '<div data-interact-id="url-client"><p>Malformed replacement</p></div>',
+        events: [{ name: 'saved', detail: {} }],
+      });
+    };
+    const client = mountClient(element, fetcher, patch);
+    clients.push(client);
+    await Promise.resolve();
+    const original = element.innerHTML;
+    await expect(client.bridge.sync()).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'invalid_response', status: 200 },
+    });
+    expect(patch).not.toHaveBeenCalled();
+    expect(saved).not.toHaveBeenCalled();
+    expect(element.innerHTML).toBe(original);
+    expect(client.bridge.state).toEqual(initial);
+    expect(client.bridge.dirty).toBe(false);
+    expect(location.search).toBe('');
+    expect(requests[0]?.snapshot).toBe('signed');
+  },
+);
+
+it.each([{ draft: '' }, { ...initial, page: 'two' }])(
+  'rejects malformed initial URL values: %j',
+  (value) => {
+    const element = root();
+    element.dataset.interactState = JSON.stringify(value);
+    expect(() => mountClient(element, async () => new Response())).toThrow(
+      'Invalid initial island state',
+    );
+    element.remove();
+  },
+);

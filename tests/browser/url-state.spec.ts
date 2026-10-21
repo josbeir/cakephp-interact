@@ -124,3 +124,59 @@ test('an older response cannot rewrite the URL selected by Back', async ({
   await expect.poll(() => selected(page.url(), 'q')).toBe('keyboard');
   expect(selected(page.url(), 'page')).toBeNull();
 });
+
+test('invalid UTF-8 in direct links and history uses defaults without breaking the page', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  const response = await page.goto('/search?q=%FF&page=2');
+  expect(response?.status()).toBe(200);
+  const library = page.getByRole('region', { name: 'Resource library' });
+  await expect(library.getByLabel('Search resources')).toHaveValue('');
+  await expect(library.getByRole('status')).toHaveText(
+    'Showing 21–40 of 1,200 results',
+  );
+  await expect(page).toHaveURL('/search?page=2');
+  await page.evaluate(() => {
+    history.replaceState(history.state, '', '/search?q=%FF&page=3');
+    dispatchEvent(new PopStateEvent('popstate'));
+  });
+  await expect(library.getByRole('status')).toHaveText(
+    'Showing 41–60 of 1,200 results',
+  );
+  await expect(library.getByLabel('Search resources')).toHaveValue('');
+  await expect(page).toHaveURL('/search?page=3');
+  expect(errors).toEqual([]);
+});
+
+test('malformed URL response state leaves the accepted render and draft intact', async ({
+  page,
+}) => {
+  await page.goto('/search');
+  const library = page.getByRole('region', { name: 'Resource library' });
+  await page.route('**/_interact/update', async (route) => {
+    const response = await route.fetch();
+    const payload: unknown = await response.json();
+    if (
+      typeof payload !== 'object' ||
+      payload === null ||
+      Array.isArray(payload)
+    ) {
+      throw new Error('Expected an island response.');
+    }
+    await route.fulfill({
+      response,
+      json: { ...payload, state: { search: 'wrong', page: 'invalid' } },
+    });
+  });
+  await library.getByLabel('Search resources').fill('keyboard');
+  await expect(library.getByRole('alert')).toContainText(
+    'The server returned an invalid update',
+  );
+  await expect(library.getByLabel('Search resources')).toHaveValue('keyboard');
+  await expect(library.getByRole('status')).toHaveText(
+    'Showing 1–20 of 1,200 results',
+  );
+  await expect(page).toHaveURL('/search');
+});

@@ -73,6 +73,20 @@ describe('query codec', () => {
     },
   );
 
+  it.each([
+    ['?q=%FF&page=3', { ...baseline, page: 3 }],
+    ['?q=%C3&tags[]=valid&tags[]=%FF', baseline],
+    ['?q=cake&other=%FF', { ...baseline, search: 'cake' }],
+    ['?q=50%25+off+%zz+%2', { ...baseline, search: '50% off %zz %2' }],
+    ['?q=%EF%BF%BD', { ...baseline, search: '\uFFFD' }],
+    ['??q=%FF&q=cake', { ...baseline, search: 'cake' }],
+  ])(
+    'preserves valid fields and defaults malformed UTF-8 from %s',
+    (search, expected) => {
+      expect(readQuery(search, fields)).toEqual(expected);
+    },
+  );
+
   it('compares declaration contracts independently of object key order', () => {
     expect(
       sameFields(fields, Object.fromEntries(Object.entries(fields).reverse())),

@@ -32,6 +32,15 @@ readonly class QueryValue
             $parts = explode('=', $pair, 2);
             $key = urldecode($parts[0]);
             $value = urldecode($parts[1] ?? '');
+            if ($key !== $name && !str_starts_with($key, $name . '[')) {
+                continue;
+            }
+
+            if (!mb_check_encoding($key, 'UTF-8') || !mb_check_encoding($value, 'UTF-8')) {
+                $invalid = true;
+                continue;
+            }
+
             if ($key === $name) {
                 $scalar = $value;
             } elseif (str_starts_with($key, $name . '[')) {

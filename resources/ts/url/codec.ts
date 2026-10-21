@@ -49,6 +49,13 @@ export function urlFields(value: unknown): value is UrlFields {
   });
 }
 
+/** Require every declared query property to be present with its supported value type. */
+export function urlState(values: State, fields: UrlFields): boolean {
+  return Object.entries(fields).every(([property, field]) =>
+    urlValue(values[property], field.type),
+  );
+}
+
 /** Compare declarations without depending on JSON object key order. */
 export function sameFields(left: UrlFields, right: UrlFields): boolean {
   return (
@@ -112,12 +119,34 @@ export function readField(params: URLSearchParams, field: UrlField): Json {
   return urlValue(value, field.type) ? value : structuredClone(field.default);
 }
 
+/** Identify malformed UTF-8 before URLSearchParams replaces invalid octets with U+FFFD. */
+function malformedKeys(search: string): Set<string> {
+  const invalid = new Set<string>();
+  const query = search.startsWith('?') ? search.slice(1) : search;
+  for (const pair of query.split('&')) {
+    try {
+      // Literal percent signs remain valid text, matching PHP's urldecode().
+      decodeURIComponent(pair.replace(/%(?![a-f0-9]{2})/gi, '%25'));
+    } catch {
+      // A leading separator prevents a literal question mark becoming a query prefix.
+      for (const key of new URLSearchParams(`&${pair}`).keys())
+        invalid.add(key);
+    }
+  }
+  return invalid;
+}
+
 export function readQuery(search: string, fields: UrlFields): State {
   const params = new URLSearchParams(search);
+  const invalid = malformedKeys(search);
   return Object.fromEntries(
     Object.entries(fields).map(([property, field]) => [
       property,
-      readField(params, field),
+      [...invalid].some(
+        (key) => key === field.name || key.startsWith(`${field.name}[`),
+      )
+        ? structuredClone(field.default)
+        : readField(params, field),
     ]),
   );
 }

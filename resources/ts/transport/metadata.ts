@@ -1,4 +1,4 @@
-import { urlFields } from '../url/codec';
+import { urlFields, urlState } from '../url/codec';
 import type { UrlFields } from '../url/types';
 import { uploadMetadata } from '../uploads/protocol';
 import type { UploadMetadata } from '../uploads/types';
@@ -33,7 +33,7 @@ export function readMetadata(root: HTMLElement): MountMetadata {
     throw new Error('Invalid initial upload metadata.');
   const initial: unknown = JSON.parse(root.dataset.interactState ?? '{}');
   const fields: unknown = JSON.parse(root.dataset.interactWritable ?? '{}');
-  if (!state(initial) || !writable(fields))
+  if (!state(initial) || !writable(fields) || !urlState(initial, url))
     throw new Error('Invalid initial island state.');
   const id = root.dataset.interactId ?? '';
   const snapshot = root.dataset.interactSnapshot ?? '';

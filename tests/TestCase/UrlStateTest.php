@@ -79,6 +79,21 @@ class UrlStateTest extends TestCase
         static::assertArrayHasKey('url', $updated->payload());
     }
 
+    public function testMalformedQueryEncodingFallsBackBeforeSigningAndRendering(): void
+    {
+        $result = $this->runtime()->mount(
+            'url-island',
+            [],
+            'first',
+            $this->context('q=%FF&tags[]=valid&tags[]=%C3&page=3'),
+        );
+        static::assertSame('start', $result->state['search']);
+        static::assertSame(['default'], $result->state['tags']);
+        static::assertSame(3, $result->state['page']);
+        static::assertSame(['start', '3'], $result->state['observed']);
+        static::assertNotEmpty($result->snapshot);
+    }
+
     public function testHistoryRestorationReportsTheCompleteSetAndPreservesUnrelatedState(): void
     {
         $runtime = $this->runtime();
@@ -131,6 +146,11 @@ class UrlStateTest extends TestCase
             'empty text' => ['search', 'q=', ''],
             'missing text' => ['search', 'other=one', 'start'],
             'unicode' => ['search', 'q=caf%C3%A9+%26+cake', 'café & cake'],
+            'invalid utf8 text' => ['search', 'q=%FF', 'start'],
+            'incomplete utf8 text' => ['search', 'q=%C3', 'start'],
+            'invalid utf8 list' => ['tags', 'tags[]=valid&tags[]=%FF', ['default']],
+            'invalid utf8 key' => ['tags', 'tags[%FF]=bad', ['default']],
+            'unrelated invalid utf8' => ['search', 'other=%FF&q=cake', 'cake'],
             'duplicate scalar' => ['search', 'q=one&q=two', 'two'],
             'nested scalar' => ['search', 'q[x]=one', 'start'],
             'true' => ['enabled', 'enabled=1', true],
