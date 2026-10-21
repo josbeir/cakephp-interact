@@ -81,7 +81,8 @@ test('a queued form accepts one submission and preserves edits made while waitin
 test('row-specific loading is delayed and does not disable unrelated actions', async ({
   page,
 }) => {
-  await page.clock.install();
+  await page.clock.install({ time: new Date('2026-10-20T12:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-10-20T12:00:01Z'));
   const request = gate();
   const seen = gate();
   let ownerId = '';

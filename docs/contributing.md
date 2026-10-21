@@ -136,6 +136,9 @@ after installation. There is no stable release yet. Composer release distributio
 must include generated assets. The Quality workflow validates packages but does
 not publish them.
 
+Quality checks run on pull requests and pushes to `main`. Feature-branch pushes
+are checked through their pull request, avoiding duplicate PHP and browser jobs.
+
 Run affected checks and the full relevant workflow before handoff. For docs-only
 changes, verify documentation and examples without claiming unrelated PHP checks.
 Report actual results and unavailable tooling. Keep dependencies, caches, reports,
