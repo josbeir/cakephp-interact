@@ -28,6 +28,7 @@ import {
   enhancedRedirect,
 } from '../../resources/ts/navigation/registry';
 import type { Fetcher } from '../../resources/ts/types';
+import type { UrlFields } from '../../resources/ts/url/types';
 
 const identity = {
   version: '1',
@@ -116,6 +117,10 @@ describe('navigation documents and persistence', () => {
     next
       .querySelector('[data-interact-mount]')
       ?.setAttribute('data-interact-mount', 'different');
+    expect(retainedRegions(document, next, 'x-interact:persist')).toEqual([]);
+    next.body.innerHTML = '<section x-interact:persist="layout"></section>';
+    expect(retainedRegions(document, next, 'x-interact:persist')).toEqual([]);
+    next.body.innerHTML = '<aside x-interact:persist="another-layout"></aside>';
     expect(retainedRegions(document, next, 'x-interact:persist')).toEqual([]);
     for (const invalid of [
       '<div x-interact:persist=""></div>',
@@ -231,12 +236,23 @@ describe('navigation feedback and links', () => {
     link.setAttribute('aria-current', 'step');
     updateCurrent(link);
     expect(link.getAttribute('aria-current')).toBe('step');
+    link.href = '/first?q=changed';
+    expect(linkDestination(link)?.search).toBe('?q=changed');
+    link.href = '/first';
+    link.target = '_SELF';
+    expect(linkDestination(link)?.pathname).toBe('/first');
+    window.history.replaceState(null, '', '/first#current');
+    expect(linkDestination(link)).toBeUndefined();
+    window.history.replaceState(null, '', '/');
+    link.href = '/?q=filter#anchor';
+    updateCurrent(link);
+    expect(link.getAttribute('aria-current')).toBe('page');
   });
 
   it('binds links outside islands, handles prefetch focus and disposes every listener', async () => {
     vi.useFakeTimers();
     const { controller } = setup();
-    const visit = vi.spyOn(controller, 'visit').mockResolvedValue(false);
+    const visit = vi.spyOn(controller, 'visit').mockResolvedValue('cancelled');
     const prefetch = vi.spyOn(controller, 'prefetch');
     const link = document.createElement('a');
     link.href = '/second';
@@ -256,6 +272,10 @@ describe('navigation feedback and links', () => {
     await vi.advanceTimersByTimeAsync(60);
     expect(prefetch).toHaveBeenCalledOnce();
     link.dispatchEvent(
+      new MouseEvent('click', { cancelable: true, ctrlKey: true }),
+    );
+    expect(visit).not.toHaveBeenCalled();
+    link.dispatchEvent(
       new MouseEvent('click', { cancelable: true, button: 0 }),
     );
     expect(visit).toHaveBeenCalledWith(
@@ -268,6 +288,10 @@ describe('navigation feedback and links', () => {
     window.history.replaceState(null, '', '/second');
     document.dispatchEvent(new Event('interact:url'));
     expect(link.hasAttribute('aria-current')).toBe(false);
+    link.href = 'https://external.example/page';
+    link.dispatchEvent(new Event('focus'));
+    await vi.advanceTimersByTimeAsync(60);
+    expect(prefetch).toHaveBeenCalledOnce();
     dispose();
     link.click();
     link.dispatchEvent(new Event('focus'));
@@ -314,7 +338,7 @@ describe('document visit controller', () => {
       document.addEventListener(name, onEvent);
     await Promise.resolve();
     events.length = 0;
-    expect(await controller.visit('/second')).toBe(true);
+    expect(await controller.visit('/second')).toBe('enhanced');
     expect(document.title).toBe('Second');
     expect(document.body.className).toBe('destination');
     expect(document.documentElement.lang).toBe('fr');
@@ -371,24 +395,24 @@ describe('document visit controller', () => {
     const { controller, native } = setup(fetcher);
     const cancel = (event: Event) => event.preventDefault();
     document.addEventListener('interact:navigate', cancel, { once: true });
-    expect(await controller.visit('/canceled')).toBe(false);
+    expect(await controller.visit('/canceled')).toBe('cancelled');
     expect(fetcher).not.toHaveBeenCalled();
     const error = vi.fn();
     document.addEventListener('interact:navigation-error', error, {
       once: true,
     });
     fetcher.mockRejectedValueOnce(new Error('offline'));
-    expect(await controller.visit('/failed', { replace: true })).toBe(true);
+    expect(await controller.visit('/failed', { replace: true })).toBe('native');
     expect(native).toHaveBeenCalledWith(
       new URL('/failed', window.location.href).href,
       true,
     );
     expect(error).toHaveBeenCalledOnce();
     expect(document.querySelector('#old')).not.toBeNull();
-    expect(await controller.visit('https://external.example/')).toBe(true);
+    expect(await controller.visit('https://external.example/')).toBe('native');
     expect(native).toHaveBeenLastCalledWith('https://external.example/', false);
     controller.dispose();
-    expect(await controller.visit('/disposed')).toBe(false);
+    expect(await controller.visit('/disposed')).toBe('cancelled');
   });
 
   it('lets the latest visit win even when fetch ignores abort', async () => {
@@ -405,9 +429,9 @@ describe('document visit controller', () => {
     const { controller, native } = setup(fetcher);
     const old = controller.visit('/old');
     const latest = controller.visit('/latest');
-    expect(await latest).toBe(true);
+    expect(await latest).toBe('enhanced');
     first(pageResponse('<main>Stale</main>'));
-    expect(await old).toBe(false);
+    expect(await old).toBe('cancelled');
     expect(window.location.pathname).toBe('/latest');
     expect(document.querySelector('main')?.textContent).toBe('Second page');
     expect(native).not.toHaveBeenCalled();
@@ -430,12 +454,12 @@ describe('document visit controller', () => {
     const native = vi.fn();
     expect(
       await enhancedRedirect({ url: '/fourth', replace: false }, native),
-    ).toBe(true);
+    ).toBe('enhanced');
     expect(native).not.toHaveBeenCalled();
     controller.dispose();
     expect(
       await enhancedRedirect({ url: '/native', replace: false }, native),
-    ).toBe(true);
+    ).toBe('native');
     expect(native).toHaveBeenCalledOnce();
   });
 
@@ -445,14 +469,18 @@ describe('document visit controller', () => {
     controller.prefetch('/never');
     controller.query(new URL('/query', window.location.href), true);
     expect(window.location.pathname).toBe('/query');
-    expect(await controller.visit('/native')).toBe(true);
+    const length = window.history.length;
+    controller.query(new URL('/replaced-query', window.location.href), false);
+    expect(window.location.pathname).toBe('/replaced-query');
+    expect(window.history.length).toBe(length);
+    expect(await controller.visit('/native')).toBe('native');
     expect(native).toHaveBeenCalledWith('/native', false);
     window.dispatchEvent(
       new PageTransitionEvent('pagehide', { persisted: true }),
     );
-    expect(await controller.visit('/still-native')).toBe(true);
+    expect(await controller.visit('/still-native')).toBe('native');
     window.dispatchEvent(new PageTransitionEvent('pagehide'));
-    expect(await controller.visit('/disposed')).toBe(false);
+    expect(await controller.visit('/disposed')).toBe('cancelled');
   });
 });
 
@@ -473,4 +501,231 @@ it('continues restoring same-page URL state when application history events omit
   expect(restored).toHaveBeenCalledOnce();
   expect(native).not.toHaveBeenCalled();
   expect(window.history.state).toEqual({ application: true });
+});
+
+it('fetches fresh documents for history visits, restores entry scroll, and reverses canceled Back without a replacement entry', async () => {
+  const { pageEntry } = await import('../../resources/ts/navigation/history');
+  const fetcher = vi.fn<Fetcher>(async () => pageResponse());
+  const { controller, native } = setup(fetcher);
+  const first = pageEntry(window.history.state);
+  if (!first) throw new Error('Missing initial history entry.');
+  await controller.visit('/second');
+  const second = pageEntry(window.history.state);
+  if (!second) throw new Error('Missing destination history entry.');
+  window.history.replaceState(
+    { interactNavigation: { ...first, x: 12, y: 345 } },
+    '',
+    '/first',
+  );
+  window.dispatchEvent(
+    new PopStateEvent('popstate', { state: window.history.state }),
+  );
+  await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+  await vi.waitFor(() =>
+    expect(window.scrollTo).toHaveBeenLastCalledWith(12, 345),
+  );
+  expect(pageEntry(window.history.state)?.page).toBe(first.page);
+  expect(native).not.toHaveBeenCalled();
+  const go = vi.spyOn(window.history, 'go').mockImplementation(() => {});
+  const replace = vi.spyOn(window.history, 'replaceState');
+  window.history.replaceState({ interactNavigation: second }, '', '/second');
+  replace.mockClear();
+  document.addEventListener(
+    'interact:navigate',
+    (event) => event.preventDefault(),
+    { once: true },
+  );
+  window.dispatchEvent(
+    new PopStateEvent('popstate', { state: window.history.state }),
+  );
+  await vi.waitFor(() => expect(go).toHaveBeenCalledWith(-1));
+  expect(replace).not.toHaveBeenCalled();
+  expect(fetcher).toHaveBeenCalledTimes(2);
+});
+
+it('restores same-page entries without fetching and chooses native navigation for foreign history entries', async () => {
+  const { pageEntry } = await import('../../resources/ts/navigation/history');
+  const { pageUrl } = await import('../../resources/ts/url/coordinator');
+  const fetcher = vi.fn<Fetcher>(async () => pageResponse());
+  const { controller, native } = setup(fetcher);
+  const restore = vi.spyOn(pageUrl(window), 'restore');
+  const initial = pageEntry(window.history.state);
+  if (!initial) throw new Error('Missing initial entry.');
+  controller.query(new URL('/first?q=new', window.location.href), true);
+  expect(pageEntry(window.history.state)).toMatchObject({
+    page: initial.page,
+    index: 1,
+  });
+  window.history.replaceState(
+    { interactNavigation: { ...initial, x: 10, y: 20 } },
+    '',
+    '/first',
+  );
+  window.dispatchEvent(
+    new PopStateEvent('popstate', { state: window.history.state }),
+  );
+  expect(restore).toHaveBeenCalledOnce();
+  expect(window.scrollTo).toHaveBeenLastCalledWith(10, 20);
+  expect(fetcher).not.toHaveBeenCalled();
+  window.history.replaceState(null, '', '/another-application-page');
+  window.dispatchEvent(new PopStateEvent('popstate'));
+  expect(native).toHaveBeenCalledWith(window.location.href, true);
+});
+
+it('invalidates unused prefetches and stops pending visits and startup events on disposal', async () => {
+  const fetcher = vi.fn<Fetcher>(async () => pageResponse());
+  const { controller } = setup(fetcher);
+  controller.prefetch(new URL('/prefetched', window.location.href).href);
+  expect(fetcher).toHaveBeenCalledOnce();
+  const prefetchSignal = fetcher.mock.calls[0]?.[1].signal;
+  controller.invalidate();
+  expect(prefetchSignal?.aborted).toBe(true);
+  const started = vi.fn();
+  document.addEventListener('interact:navigated', started);
+  controller.dispose();
+  await Promise.resolve();
+  expect(started).not.toHaveBeenCalled();
+  document.removeEventListener('interact:navigated', started);
+  controller.prefetch(new URL('/never', window.location.href).href);
+  expect(fetcher).toHaveBeenCalledOnce();
+
+  let resolve: (response: Response) => void = () => {};
+  const pendingFetcher = vi.fn<Fetcher>(
+    () =>
+      new Promise((done) => {
+        resolve = done;
+      }),
+  );
+  const { controller: pending, native } = setup(pendingFetcher);
+  const visit = pending.visit('/pending');
+  pending.dispose();
+  expect(pendingFetcher.mock.calls[0]?.[1].signal?.aborted).toBe(true);
+  resolve(pageResponse());
+  await expect(visit).resolves.toBe('cancelled');
+  expect(native).not.toHaveBeenCalled();
+  expect(document.querySelector('#old')).not.toBeNull();
+  expect(document.documentElement.hasAttribute('aria-busy')).toBe(false);
+});
+
+it('cleans up temporary main focus, honors existing autofocus, and tolerates malformed fragment encoding', async () => {
+  const fetcher = vi
+    .fn<Fetcher>()
+    .mockResolvedValueOnce(pageResponse('<main>Focus destination</main>'))
+    .mockResolvedValueOnce(
+      pageResponse('<main><input autofocus tabindex="2"></main>'),
+    )
+    .mockResolvedValueOnce(
+      pageResponse('<section>No main or autofocus</section>'),
+    );
+  const { controller } = setup(fetcher);
+  await controller.visit('/second');
+  const main = document.querySelector('main');
+  expect(document.activeElement).toBe(main);
+  expect(main?.getAttribute('tabindex')).toBe('-1');
+  main?.blur();
+  expect(main?.hasAttribute('tabindex')).toBe(false);
+  await controller.visit('/third#%FF');
+  expect(document.activeElement).toBe(document.querySelector('input'));
+  expect(document.querySelector('input')?.getAttribute('tabindex')).toBe('2');
+  expect(window.scrollTo).toHaveBeenLastCalledWith(0, 0);
+  await controller.visit('/fourth');
+  expect(document.querySelector('section')?.textContent).toBe(
+    'No main or autofocus',
+  );
+});
+
+it('uses native assign or replace and reloads terminal same-page fragment destinations', async () => {
+  const { nativeVisit } =
+    await import('../../resources/ts/navigation/controller');
+  const assign = vi.fn();
+  const replace = vi.fn();
+  const reload = vi.fn();
+  vi.stubGlobal('window', {
+    location: {
+      href: 'https://example.test/current?q=one',
+      assign,
+      replace,
+      reload,
+    },
+  });
+  try {
+    nativeVisit('/next', false);
+    expect(assign).toHaveBeenCalledWith('https://example.test/next');
+    expect(reload).not.toHaveBeenCalled();
+    nativeVisit('/next?q=two', true);
+    expect(replace).toHaveBeenCalledWith('https://example.test/next?q=two');
+    nativeVisit('/current?q=one#section', false);
+    expect(reload).toHaveBeenCalledOnce();
+    nativeVisit('https://other.test/current?q=one#section', false);
+    nativeVisit('/current?q=two#section', false);
+    expect(reload).toHaveBeenCalledOnce();
+  } finally {
+    vi.unstubAllGlobals();
+  }
+});
+
+it('merges URL-bound state through page history and keeps restoration generations across owner replacement', async () => {
+  const { pageEntry } = await import('../../resources/ts/navigation/history');
+  const { pageUrl } = await import('../../resources/ts/url/coordinator');
+  const { controller } = setup();
+  const coordinator = pageUrl(window);
+  const initial = pageEntry(window.history.state);
+  const restored = vi.fn();
+  const fields: UrlFields = {
+    filter: { name: 'q', type: 'string', default: '', history: true },
+  };
+  const registration = coordinator.register(
+    fields,
+    { filter: 'initial' },
+    restored,
+  );
+  await Promise.resolve();
+  expect(window.location.search).toBe('?q=initial');
+  expect(pageEntry(window.history.state)).toMatchObject({
+    page: initial?.page,
+    index: 0,
+  });
+  registration.accept({ filter: 'edited' }, registration.epoch(), false);
+  expect(window.location.search).toBe('?q=edited');
+  expect(pageEntry(window.history.state)).toMatchObject({
+    page: initial?.page,
+    index: 1,
+  });
+  window.history.replaceState(
+    { interactNavigation: initial },
+    '',
+    '/first?q=earlier',
+  );
+  window.dispatchEvent(
+    new PopStateEvent('popstate', { state: window.history.state }),
+  );
+  expect(restored).toHaveBeenCalledOnce();
+  expect(restored).toHaveBeenLastCalledWith({
+    values: { filter: 'earlier' },
+    epoch: registration.epoch(),
+  });
+  const epoch = registration.epoch();
+  coordinator.suspend();
+  registration.accept({ filter: 'late' }, epoch, false);
+  expect(window.location.search).toBe('?q=earlier');
+  coordinator.resume(true);
+  expect(restored).toHaveBeenCalledWith({
+    values: { filter: 'earlier' },
+    epoch: epoch + 2,
+  });
+  registration.dispose();
+  expect(pageUrl(window)).toBe(coordinator);
+  const replacement = coordinator.register(
+    fields,
+    { filter: 'replacement' },
+    restored,
+  );
+  expect(replacement.epoch()).toBe(epoch + 2);
+  await Promise.resolve();
+  expect(window.location.search).toBe('?q=replacement');
+  replacement.dispose();
+  controller.dispose();
+  const finalOwner = coordinator.register(fields, undefined, restored);
+  finalOwner.dispose();
+  expect(pageUrl(window)).not.toBe(coordinator);
 });

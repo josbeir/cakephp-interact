@@ -601,3 +601,28 @@ test('native fragment entries remain distinct when a multi-entry Back is cancele
     page.getByRole('heading', { name: 'Overview', exact: true }),
   ).toBeVisible();
 });
+
+test('replaces inline head styles when returning to a previously visited page', async ({
+  page,
+}) => {
+  await page.route(/\/navigation(?:\/details)?$/, async (route) => {
+    const response = await route.fetch();
+    const color = new URL(route.request().url()).pathname.endsWith('/details')
+      ? 'blue'
+      : 'red';
+    const body = (await response.text()).replace(
+      '</head>',
+      `<style id="navigation-page-style">.navigation-page { outline-color: ${color}; }</style></head>`,
+    );
+    await route.fulfill({ response, body });
+  });
+  await page.goto('/navigation');
+  const content = page.locator('.navigation-page');
+  const tabs = page.getByRole('navigation', { name: 'Navigation example' });
+  await expect(content).toHaveCSS('outline-color', 'rgb(255, 0, 0)');
+  await tabs.getByRole('link', { name: 'Details', exact: true }).click();
+  await expect(content).toHaveCSS('outline-color', 'rgb(0, 0, 255)');
+  await tabs.getByRole('link', { name: 'Overview', exact: true }).click();
+  await expect(content).toHaveCSS('outline-color', 'rgb(255, 0, 0)');
+  await expect(page.locator('head #navigation-page-style')).toHaveCount(1);
+});

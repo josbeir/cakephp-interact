@@ -481,10 +481,11 @@ export class IslandClient {
           throw requestError('invalid_response', result.status);
         if (page && pageEpoch !== page.epoch()) return;
         if (accepted.redirect.navigate) {
-          const departed = await enhancedRedirect(accepted.redirect, () =>
+          const visit = await enhancedRedirect(accepted.redirect, () =>
             this.effects.navigate(accepted.redirect),
           );
-          if (!departed || !this.disposed) return;
+          if (visit === 'cancelled' || (visit === 'enhanced' && !this.disposed))
+            return;
         } else this.effects.navigate(accepted.redirect);
         this.leaving = true;
         this.controls.clearPending();

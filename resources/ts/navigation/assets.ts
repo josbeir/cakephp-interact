@@ -109,18 +109,11 @@ export class PageAssets {
   /** Synchronize metadata and inline styles; loaded external assets retain document lifetime. */
   head(next: Document): void {
     const keep = (node: Element) =>
-      node.matches('script[src], link[rel="stylesheet"], style');
+      node.matches('script[src], link[rel="stylesheet"]');
     for (const node of [...this.document.head.children])
       if (!keep(node)) node.remove();
     for (const node of next.head.children) {
       if (node.matches('script[src], link[rel="stylesheet"]')) continue;
-      if (
-        node.matches('style') &&
-        [...this.document.head.querySelectorAll('style')].some(
-          (style) => style.textContent === node.textContent,
-        )
-      )
-        continue;
       this.document.head.append(node.cloneNode(true));
     }
   }

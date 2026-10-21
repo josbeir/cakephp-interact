@@ -10,7 +10,7 @@ import type { PageEntry } from './history';
 import { PageFetcher } from './prefetch';
 import { preserveRegions, retainedRegions } from './persist';
 import { registerNavigation } from './registry';
-import type { NavigationService, VisitOptions } from './registry';
+import type { NavigationService, VisitOptions, VisitResult } from './registry';
 
 export interface NavigationDetail {
   url: URL;
@@ -107,15 +107,15 @@ export class NavigationController implements NavigationService {
     document.dispatchEvent(new Event('interact:url'));
   }
 
-  async visit(url: string, options: VisitOptions = {}): Promise<boolean> {
-    if (this.disposed) return false;
+  async visit(url: string, options: VisitOptions = {}): Promise<VisitResult> {
+    if (this.disposed) return 'cancelled';
     if (!destination(url, true) || !this.history) {
       this.native(url, options.replace ?? false);
-      return true;
+      return 'native';
     }
     const next = new URL(url, window.location.href);
     const detail = { url: next, history: options.history ?? false };
-    if (!this.emit('interact:navigate', detail, true)) return false;
+    if (!this.emit('interact:navigate', detail, true)) return 'cancelled';
     const entry = options.history ? this.targetEntry : undefined;
     if (!options.history) this.history.save();
     this.pending?.abort();
@@ -190,18 +190,18 @@ export class NavigationController implements NavigationService {
       this.pages.clear();
       document.dispatchEvent(new Event('interact:url'));
       this.emit('interact:navigated', { ...detail, url: final });
-      return true;
+      return 'enhanced';
     } catch (cause: unknown) {
       if (
         request.signal.aborted ||
         generation !== this.generation ||
         this.disposed
       )
-        return false;
+        return 'cancelled';
       request.abort();
       this.emit('interact:navigation-error', { ...detail, cause });
       this.native(next.href, options.replace ?? false);
-      return true;
+      return 'native';
     } finally {
       if (this.pending === request) {
         this.pending = undefined;
@@ -248,12 +248,10 @@ export class NavigationController implements NavigationService {
       return;
     }
     this.targetEntry = entry;
-    void this.visit(window.location.href, { history: true }).then(
-      (committed) => {
-        if (!committed && this.targetEntry === entry && !this.pending)
-          this.history?.cancel(entry);
-      },
-    );
+    void this.visit(window.location.href, { history: true }).then((result) => {
+      if (result === 'cancelled' && this.targetEntry === entry && !this.pending)
+        this.history?.cancel(entry);
+    });
   }
 
   protected position(

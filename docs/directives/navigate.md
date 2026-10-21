@@ -115,7 +115,7 @@ The functions above are application-supplied. Global listeners survive page visi
 
 ## Head elements and scripts
 
-Navigation updates the title, document attributes, canonical links, and metadata. Existing external assets are retained for the document's lifetime. New stylesheets load before displaying the destination; new external scripts execute once before incoming Alpine initialization. Register late-loaded Alpine components immediately when Alpine already exists, rather than waiting for `alpine:init`.
+Navigation updates the title, document attributes, canonical links, and metadata. Inline `<style>` elements are replaced with the destination's styles on each visit. Existing external assets are retained for the document's lifetime. New stylesheets load before displaying the destination; new external scripts execute once before incoming Alpine initialization. Register late-loaded Alpine components immediately when Alpine already exists, rather than waiting for `alpine:init`.
 
 Scope page-specific CSS. Executable inline scripts, `<base>`, and `http-equiv` metadata require a native visit in this version. Data scripts such as `application/json` remain inert. Alpine and Interact bootstrap scripts are not rerun.
 

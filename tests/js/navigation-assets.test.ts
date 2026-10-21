@@ -364,3 +364,88 @@ it('claims native fragment entries with cleared state once and preserves the req
   );
   expect(new URL(result.url).hash).toBe('#target');
 });
+
+it('records live scroll, retains replacement indices, and leaves unrelated history entries untouched', () => {
+  const restore = vi.fn();
+  const y = vi.spyOn(window, 'scrollY', 'get').mockReturnValue(240);
+  const history = new NavigationHistory(window, restore);
+  y.mockReturnValue(360);
+  window.dispatchEvent(new Event('scroll'));
+  expect(pageEntry(window.history.state)?.y).toBe(360);
+  const current = { ...history.current };
+  history.query(new URL('/start?q=one', window.location.href), false);
+  expect(history.current.index).toBe(current.index);
+  window.history.replaceState(
+    { interactNavigation: { ...current, page: 'another-page', index: 99 } },
+    '',
+    '/foreign#target',
+  );
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
+  window.dispatchEvent(new Event('scroll'));
+  expect(restore).not.toHaveBeenCalled();
+  expect(history.current.index).toBe(current.index);
+  expect(pageEntry(window.history.state)?.index).toBe(99);
+  window.history.replaceState(
+    { interactNavigation: history.current },
+    '',
+    '/start?q=one',
+  );
+  window.history.pushState(window.history.state, '', '/start?q=one#copied');
+  window.dispatchEvent(
+    new PopStateEvent('popstate', { state: window.history.state }),
+  );
+  window.dispatchEvent(new HashChangeEvent('hashchange'));
+  expect(history.current.index).toBe(current.index + 1);
+  expect(restore).toHaveBeenCalledOnce();
+  const saved = { ...history.current };
+  history.dispose();
+  const replacement = new NavigationHistory(window, restore);
+  expect(replacement.current).toEqual(saved);
+  replacement.dispose();
+});
+
+it('retains stylesheet media and integrity contracts, ignores inert and legacy-only scripts, and does not refetch existing assets', async () => {
+  document.head.innerHTML =
+    '<link rel="stylesheet" href="/existing.css" media="print" integrity="sha256-test">';
+  const assets = new PageAssets(document);
+  const next = parsed(
+    '<link rel="stylesheet" href="/existing.css" media="print" integrity="sha256-test"><script></script><script src="/legacy.js" nomodule></script>',
+  );
+  const legacy = next.querySelector('script[src]');
+  if (!legacy) throw new Error('Missing legacy script fixture.');
+  Object.defineProperty(legacy, 'noModule', { value: true });
+  const appended = vi.spyOn(document.head, 'append');
+  const activate = await assets.prepare(
+    next,
+    window.location.href,
+    new AbortController().signal,
+  );
+  activate();
+  expect(appended).not.toHaveBeenCalled();
+  expect(document.querySelector('link')?.media).toBe('print');
+  expect(document.querySelector('link')?.getAttribute('integrity')).toBe(
+    'sha256-test',
+  );
+});
+
+it('replaces inline page styles when visiting another page, returning, and leaving styled pages', () => {
+  document.body.innerHTML = '<main id="style-target">Persistent content</main>';
+  const target = document.getElementById('style-target');
+  if (!target) throw new Error('Missing styled content.');
+  const assets = new PageAssets(document);
+  const red = parsed('<style>#style-target { color: red }</style>');
+  const blue = parsed('<style>#style-target { color: blue }</style>');
+  for (const [page, color] of [
+    [red, 'rgb(255, 0, 0)'],
+    [blue, 'rgb(0, 0, 255)'],
+    [red, 'rgb(255, 0, 0)'],
+  ] as const) {
+    assets.head(page);
+    expect(document.querySelectorAll('style')).toHaveLength(1);
+    expect(window.getComputedStyle(target).color).toBe(color);
+  }
+  assets.head(parsed('<title>Unstyled page</title>'));
+  expect(document.querySelector('style')).toBeNull();
+  expect(document.body.contains(target)).toBe(true);
+  document.body.replaceChildren();
+});

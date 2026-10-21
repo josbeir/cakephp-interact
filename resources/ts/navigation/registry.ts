@@ -3,10 +3,13 @@ import type { Redirect } from '../effects/browser';
 /** Page-owned navigation boundary shared with island outcomes and URL bindings. */
 export interface NavigationService {
   epoch(): number;
-  visit(url: string, options?: VisitOptions): Promise<boolean>;
+  visit(url: string, options?: VisitOptions): Promise<VisitResult>;
   invalidate(): void;
   query(url: URL, push: boolean): void;
 }
+
+/** Native fallback must close the originating action queue before the browser leaves. */
+export type VisitResult = 'cancelled' | 'enhanced' | 'native';
 
 export interface VisitOptions {
   replace?: boolean;
@@ -35,9 +38,9 @@ export function navigation(host: Window): NavigationService | undefined {
 export async function enhancedRedirect(
   target: Redirect,
   native: () => void,
-): Promise<boolean> {
+): Promise<VisitResult> {
   const service = navigation(window);
   if (service) return service.visit(target.url, { replace: target.replace });
   native();
-  return true;
+  return 'native';
 }
