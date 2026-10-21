@@ -52,6 +52,12 @@ The expression runs in Alpine scope and must include the call. `save()` needs
 [`#[Action]`](/guide/actions). The application owns validation and persistence;
 see the complete [article form](/examples/article-form).
 
+Bind an entire native form with `x-interact:model="data"` when writable array
+`data` holds its draft. Names such as `title` and `comments[0][body]` then map to
+`data.title` and `data.comments.0.body`. See [whole-form binding](/directives/model#whole-forms).
+`x-interact:submit` invokes and protects the submission; by itself it does not
+collect unbound controls.
+
 <span id="prevent-repeated-submission"></span>
 
 ## Submission protection

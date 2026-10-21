@@ -8,8 +8,8 @@ description: Validate an entity, save it, and navigate to its normal CakePHP pag
 This example creates an article with CakePHP model validation and redirects to
 its detail page. Failed validation keeps the entity and its errors in the form.
 
-Use the [installation setup](/installation) and the `ArticlesTable` and schema
-from the [article form example](/examples/article-form). Supply a normal CakePHP
+Use the [installation setup](/installation), then create the `articles` table
+and `ArticlesTable` with the files below. Supply a normal CakePHP
 route named `articles:view` accepting an `id` parameter, with its controller and
 detail template. For protected records, authorize creation and viewing in the application.
 
@@ -18,6 +18,10 @@ detail template. For protected records, authorize creation and viewing in the ap
 <<< @/../tests/docs/app/src/Island/ArticleRedirect.php [Island]
 
 <<< @/../tests/docs/app/templates/element/Interact/article_redirect.php [Element]
+
+<<< @/../tests/docs/app/src/Model/Table/ArticlesTable.php [Table]
+
+<<< @/../tests/docs/app/schema/articles.sql [Schema]
 
 ```php [Mount]
 <?= $this->Interact->render('article-redirect') ?>

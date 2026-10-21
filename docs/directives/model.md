@@ -7,7 +7,8 @@ description: Bind HTML inputs to PHP properties and configure when edits reach t
 
 # x-interact:model
 
-`x-interact:model` binds a form input to a PHP island property.
+`x-interact:model` binds a control to writable state, or a native form to a writable
+array draft using its controls' names.
 
 Declare the property as writable state. Import `State` from `Interact\Attribute`:
 
@@ -36,6 +37,98 @@ public string $title = '';
 The attribute contains a literal property path, such as `title` or
 `form.address.city`. Props and state without `writable: true` cannot receive
 model edits. See [Properties](/guide/state) for declarations.
+
+## Whole forms
+
+Declare writable array state and initialize its draft in application code:
+
+```php
+#[State(writable: true)]
+public array $data = [
+    'title' => '',
+    'body' => '',
+    'comments' => [['body' => '']],
+];
+```
+
+::: code-group
+
+```html [HTML]
+<form x-interact:model="data" x-interact:submit="$server.call('save')">
+  <label for="draft-title">Title</label>
+  <input id="draft-title" name="title" type="text" />
+  <label for="draft-body">Body</label>
+  <textarea id="draft-body" name="body"></textarea>
+  <label for="draft-comment">First comment</label>
+  <input id="draft-comment" name="comments[0][body]" type="text" />
+  <button type="submit">Save</button>
+</form>
+```
+
+```php [FormHelper]
+<?= $this->Form->create(null, [
+    'url' => false,
+    'x-interact:model' => 'data',
+    'x-interact:submit' => '$server.call("save")',
+]) ?>
+    <?= $this->Form->control('title', ['id' => 'draft-title', 'label' => 'Title']) ?>
+    <?= $this->Form->control('body', ['id' => 'draft-body', 'type' => 'textarea', 'label' => 'Body']) ?>
+    <?= $this->Form->control('comments.0.body', ['id' => 'draft-comment', 'label' => 'First comment']) ?>
+    <?= $this->Form->button('Save') ?>
+<?= $this->Form->end() ?>
+```
+
+:::
+
+The form expression is a literal array path, including nested paths such as
+`editor.data`. Control names resolve relative to it:
+
+| Native name                              | State path with `x-interact:model="data"`                 |
+| ---------------------------------------- | --------------------------------------------------------- |
+| `title`                                  | `data.title`                                              |
+| `comments[0][body]` or `comments.0.body` | `data.comments.0.body`                                    |
+| `topics[]`                               | `data.topics` (list-valued checkboxes or multiple select) |
+
+Use explicit indices for repeated rows. Ambiguous names such as
+`comments[][body]`, malformed brackets, and unsafe paths are rejected. Terminal
+`[]` and existing array-valued leaves identify checkbox groups. A nested boolean
+checkbox stays boolean even though its parent state is an array. Number inputs
+inside the array retain strings; CakePHP marshalling handles domain types.
+
+Timing modifiers on the form provide defaults for inferred bindings, for example
+`x-interact:model.live.debounce.400ms="data"`. With no modifiers, edits are
+deferred. An explicit control-level binding takes precedence and uses its own
+**absolute** path and modifiers:
+
+```html
+<form x-interact:model.blur="data">
+  <input name="title" />
+  <input name="search" x-interact:model.live="search" />
+</form>
+```
+
+This assumes writable array `data` and writable string `search` state.
+
+Controls start from declared browser state. Missing leaves use the normal empty
+control values; server-rendered entity values are not imported into the draft.
+Initialize `$data` yourself and supply the failed entity to FormHelper for
+validation errors. The [article and comments example](/examples/article-form)
+shows `patchEntity($entity, $this->data, $options)` and an explicit save.
+
+Form binding follows `form.elements`, including external controls associated by
+`form="id"` in the same island. Added, removed, renamed, and reassigned controls
+are tracked. Unnamed controls, buttons, files, Alpine `x-model` controls,
+`x-modelable` widget interiors, ignored regions, and child islands are excluded.
+Disabled controls, including disabled fieldsets, are excluded from capture.
+
+Ordinary hidden fields bind too. Hidden fallbacks sharing a checkbox, radio, or
+multiple-select path cannot overwrite its value. CakePHP's `_csrfToken`, `_Token`
+subtree, and `_method` remain native bookkeeping and are excluded.
+
+[`x-interact:submit`](/directives/submit) separately invokes the action and
+protects native submissions. It does not collect unbound controls on its own.
+Form binding uses the existing JSON update protocol and writable-state checks;
+it does not authorize association IDs, marshal entities, or save records.
 
 <span id="choose-when-to-send-edits"></span>
 

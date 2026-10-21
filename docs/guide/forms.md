@@ -132,7 +132,9 @@ through a Table finder.
 ## Native form protection
 
 Native `required`, `min`, and `max` constraints still apply. Keep server validation
-as well. FormHelper hidden fields are not transported as island state, and its
-FormProtection field hash is not automatically validated by the JSON protocol.
+as well. Whole-form models exclude CakePHP's `_csrfToken`, `_Token` subtree, and
+`_method` bookkeeping. Other hidden inputs can bind; hidden fallbacks cannot
+overwrite their checkbox, radio, or multiple-select value. FormProtection's field
+hash is not automatically validated by the JSON protocol.
 CSRF uses CakePHP's middleware and the request token header. See
 [security and deployment](/security) for scoped middleware.

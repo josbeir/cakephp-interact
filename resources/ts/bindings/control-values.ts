@@ -22,6 +22,7 @@ export function captureControl(
   name: string,
   current: State,
   fields: Writable,
+  list = false,
 ): void {
   const first = path(name)[0];
   const field = first === undefined ? undefined : fields[first];
@@ -32,7 +33,11 @@ export function captureControl(
       throw new Error('File binding is not supported.');
     if (control.type === 'radio' && !control.checked) return;
     if (control.type === 'checkbox') {
-      if (field.type === 'array' || Array.isArray(read(current, name))) {
+      if (
+        list ||
+        (field.type === 'array' && path(name).length === 1) ||
+        Array.isArray(read(current, name))
+      ) {
         const selected = read(current, name);
         const values = Array.isArray(selected)
           ? selected.filter((entry) => entry !== control.value)

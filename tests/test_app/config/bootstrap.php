@@ -62,6 +62,15 @@ $connection->execute(
     'CREATE TABLE IF NOT EXISTS articles (id INTEGER PRIMARY KEY, title TEXT NOT NULL, owner_id INTEGER NOT NULL)',
 );
 $connection->execute('CREATE TABLE IF NOT EXISTS outcome_articles (id INTEGER PRIMARY KEY, title TEXT NOT NULL)');
+$formSchema = (string)file_get_contents(__DIR__ . '/schema/form_articles.sql');
+foreach (explode(';', $formSchema) as $statement) {
+    if (trim($statement) === '') {
+        continue;
+    }
+
+    $connection->execute(str_replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ', $statement));
+}
+
 $connection->execute(
     'CREATE TABLE IF NOT EXISTS cities (id INTEGER PRIMARY KEY, country TEXT NOT NULL, name TEXT NOT NULL)',
 );

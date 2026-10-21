@@ -48,6 +48,9 @@ test('the article example preserves entity errors and saves corrected input', as
   page,
 }) => {
   const errors = await example(page, 'article-form');
+  await page
+    .getByLabel('Comment 1 text', { exact: true })
+    .fill('First comment');
   // Bypass the native length guard to verify server validation and entity errors.
   await page
     .getByLabel('Title', { exact: true })

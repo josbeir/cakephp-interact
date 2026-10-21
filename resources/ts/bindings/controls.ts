@@ -1,4 +1,5 @@
 import { FormSubmissions } from './form-submissions';
+import { FormModels } from './form-models';
 import { captureControl, captureValue, refreshControl } from './control-values';
 import type { Control } from './control-values';
 import type { CustomModel } from './custom-model';
@@ -29,6 +30,7 @@ export class Controls {
   private readonly models = new Map<HTMLElement, RegisteredModel>();
   private readonly submissions: FormSubmissions;
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly forms = new Map<HTMLFormElement, FormModels>();
 
   /**
    * Attach owned draft events and route expression failures into island feedback.
@@ -49,7 +51,12 @@ export class Controls {
   /**
    * Register a native model for its Alpine directive's lifetime.
    */
-  bindModel(control: Control, binding: ModelBinding): () => void {
+  bindModel(
+    control: Control,
+    binding: ModelBinding,
+    list?: boolean,
+  ): () => void {
+    if (list === undefined) this.refreshForms();
     return this.register(control, {
       binding,
       custom: false,
@@ -59,9 +66,49 @@ export class Controls {
           binding.path,
           this.bridge.state,
           this.writable(),
+          list ?? false,
         ),
       refresh: () => refreshControl(control, binding.path, this.bridge.state),
     });
+  }
+
+  /**
+   * Infer native control paths relative to explicitly writable array state.
+   */
+  bindForm(
+    form: HTMLFormElement,
+    binding: ModelBinding,
+    prefix: string,
+  ): () => void {
+    const first = binding.path.split('.')[0] ?? '';
+    const value = read(this.bridge.state, binding.path);
+    if (
+      this.writable()[first]?.type !== 'array' ||
+      (value !== undefined && (value === null || typeof value !== 'object'))
+    )
+      throw new Error('Form models require writable array state.');
+    if (this.forms.has(form))
+      throw new Error('Use one x-interact:model binding per form.');
+    this.refreshForms();
+    const models = new FormModels(
+      this.root,
+      form,
+      binding,
+      prefix,
+      (control, inferred, list) => this.bindModel(control, inferred, list),
+      () => {
+        try {
+          this.refreshForms();
+        } catch (cause: unknown) {
+          this.onFailure(cause);
+        }
+      },
+    );
+    this.forms.set(form, models);
+    return () => {
+      models.dispose();
+      this.forms.delete(form);
+    };
   }
 
   /**
@@ -154,6 +201,8 @@ export class Controls {
    */
   dispose(): void {
     this.lifetime.abort();
+    for (const form of this.forms.values()) form.dispose();
+    this.forms.clear();
     this.clearPending();
     this.models.clear();
     this.submissions.dispose();
@@ -163,6 +212,7 @@ export class Controls {
    * Apply reconciled state to surviving registered controls after a server render.
    */
   refresh(): void {
+    this.refreshForms();
     this.submissions.refresh();
     for (const [, model] of this.controls()) model.refresh();
   }
@@ -178,6 +228,7 @@ export class Controls {
    * Capture native and custom values even before their edit effects have run.
    */
   captureAll(): void {
+    this.refreshForms();
     for (const [, model] of this.controls()) model.capture();
   }
 
@@ -209,6 +260,12 @@ export class Controls {
    * Update registered drafts and schedule only their declared synchronization mode.
    */
   private handle(event: Event): void {
+    try {
+      this.refreshForms();
+    } catch (cause: unknown) {
+      this.onFailure(cause);
+      return;
+    }
     const control = event.target;
     if (
       event.type === 'focusout' &&
@@ -241,7 +298,7 @@ export class Controls {
         control instanceof HTMLTextAreaElement
       ) ||
       !this.owns(control) ||
-      control.disabled
+      this.disabled(control)
     )
       return;
     const model = this.models.get(control);
@@ -311,6 +368,15 @@ export class Controls {
    * Honor native disabled controls and explicitly disabled custom model wrappers.
    */
   private disabled(element: HTMLElement): boolean {
-    return element.hasAttribute('disabled');
+    return element.hasAttribute('disabled') || element.matches(':disabled');
+  }
+
+  /**
+   * Flush discovery synchronously so immediate actions see newly associated controls.
+   */
+  private refreshForms(): void {
+    // Release every previous owner before a control can join another bound form.
+    for (const form of this.forms.values()) form.refresh(true);
+    for (const form of this.forms.values()) form.refresh();
   }
 }

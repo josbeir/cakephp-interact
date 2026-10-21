@@ -171,6 +171,18 @@ export class IslandClient {
   }
 
   /**
+   * Bind native names to an array draft without changing submission behavior.
+   */
+  bindForm(
+    form: HTMLFormElement,
+    binding: ModelBinding,
+    prefix: string,
+  ): () => void {
+    if (!this.mounted) throw new Error('Models require a loaded island.');
+    return this.controls.bindForm(form, binding, prefix);
+  }
+
+  /**
    * Connect an application-owned Alpine value to the existing model coordinator.
    */
   bindCustomModel(

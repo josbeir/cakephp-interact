@@ -33,6 +33,23 @@ class ArticlesController extends AppController
     }
 
     /**
+     * Render the documented nested FormHelper example inside the demo layout.
+     */
+    #[Get('/forms', name: 'demo:forms')]
+    public function forms(): void
+    {
+    }
+
+    /**
+     * Keep native HTML and FormHelper acceptance fixtures outside the demo navigation.
+     */
+    #[Get('/demo/form-fixtures', name: 'demo:form-fixtures')]
+    public function formFixtures(): void
+    {
+        $this->render('form_fixtures');
+    }
+
+    /**
      * Render real forms and nested islands for deterministic polling acceptance tests.
      */
     #[Get('/demo/polling', name: 'demo:polling-fixtures')]
