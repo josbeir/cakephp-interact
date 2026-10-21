@@ -17,4 +17,12 @@ class ResourcesController extends AppController
     public function index(): void
     {
     }
+
+    /**
+     * Render independent URL-bound listings with explicit per-instance prefixes.
+     */
+    #[Get('/search/independent', name: 'demo:search:independent')]
+    public function independent(): void
+    {
+    }
 }

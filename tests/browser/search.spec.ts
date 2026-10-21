@@ -108,5 +108,5 @@ test('keeps the latest search during an in-flight response and handles literal w
     'Showing 1–20 of 30 results',
   );
   await expect(library.getByRole('alert', { includeHidden: true })).toBeEmpty();
-  await expect(page).toHaveURL('/search');
+  await expect(page).toHaveURL('/search?q=keyboard');
 });

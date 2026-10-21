@@ -1,3 +1,4 @@
+import type { UrlFields, UrlRestoration } from './url/types';
 import type { UploadField, UploadJob, UploadMetadata } from './uploads/types';
 /**
  * Values accepted by the JSON transport, including nested lists and records.
@@ -28,6 +29,8 @@ export interface Invocation {
   args: Json[];
   upload?: UploadJob;
   uploadRevision?: number;
+  urlEpoch?: number;
+  urlRestore?: UrlRestoration;
 }
 
 /**
@@ -55,6 +58,7 @@ export interface LoadingTarget extends RequestTarget {
  */
 export interface IslandResponse {
   uploads?: UploadMetadata;
+  url?: UrlFields;
   version: 1;
   id: string;
   html: string;

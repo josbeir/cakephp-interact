@@ -24,6 +24,8 @@ class Runtime
 {
     protected RenderStack $stack;
 
+    protected ?string $pageQuery = null;
+
     protected HtmlRenderer $html;
 
     protected ActionInvoker $actions;
@@ -41,7 +43,13 @@ class Runtime
         protected readonly UploadManager $uploads = new UploadManager(),
     ) {
         $this->stack = new RenderStack();
-        $this->html = new HtmlRenderer($renderer, $snapshots, $this->stack, $this->state, $this->uploads);
+        $this->html = new HtmlRenderer(
+            $renderer,
+            $snapshots,
+            $this->stack,
+            $this->state,
+            $this->uploads,
+        );
         $this->actions = new ActionInvoker();
         $this->hydrator = new Hydrator($this->state);
     }
@@ -51,26 +59,49 @@ class Runtime
      *
      * @param array<string, mixed> $props Server-owned mount parameters; changing them requires a new child key.
      */
-    public function mount(string $alias, array $props, string $key, IslandContext $context): Result
-    {
+    public function mount(
+        string $alias,
+        array $props,
+        string $key,
+        IslandContext $context,
+        ?string $urlPrefix = null,
+    ): Result {
         $parent = $this->stack->parent();
         $definition = $this->registry->definition($alias);
-        $preserved = $this->stack->preserve($definition->declaration, $props, $key);
+        $preserved = $this->stack->preserve($definition->declaration, $props, $key, $urlPrefix);
         if ($preserved instanceof Result) {
             return $preserved;
         }
 
         $island = $this->registry->create($definition);
         $this->hydrator->mount($island, $definition, $props);
+        $this->state->initializeUrl(
+            $island,
+            $definition,
+            $this->pageQuery ?? ($context->request->is('get') ? '?' . $context->request->getUri()->getQuery() : ''),
+            $urlPrefix,
+        );
         $island->authorize($context);
         $island->mount();
 
         $id = bin2hex(random_bytes(16));
-        $identity = new SnapshotData(['alias' => $alias, 'id' => $id, 'key' => $key, 'state' => [], 'children' => []]);
+        $identity = new SnapshotData([
+            'alias' => $alias,
+            'id' => $id,
+            'key' => $key,
+            'state' => [],
+            'children' => [],
+            'urlPrefix' => $urlPrefix,
+        ]);
         $result = $this->html->render($island, $definition, $identity, $context);
         $childKey = 'key:' . $key;
         if ($parent instanceof RenderFrame) {
-            $parent->children[$childKey] = ['id' => $id, 'alias' => $alias, 'props' => $props];
+            $parent->children[$childKey] = [
+                'id' => $id,
+                'alias' => $alias,
+                'props' => $props,
+                ...($urlPrefix === null ? [] : ['urlPrefix' => $urlPrefix]),
+            ];
         }
 
         return $result;
@@ -90,7 +121,13 @@ class Runtime
         $island = $this->registry->create($definition);
         $this->hydrator->restore($island, $definition, $data->state);
 
-        return $this->updateIsland($island, $definition, $data, $input, $context);
+        $previous = $this->pageQuery;
+        $this->pageQuery = $input->pageQuery;
+        try {
+            return $this->updateIsland($island, $definition, $data, $input, $context);
+        } finally {
+            $this->pageQuery = $previous;
+        }
     }
 
     /**
@@ -103,13 +140,14 @@ class Runtime
         UpdateRequest $input,
         IslandContext $context,
     ): Result {
+        $restored = $input->urlRestore ? $this->state->restorationPaths($definition, $input->updates) : null;
         $paths = $this->state->apply($island, $definition, $input->updates);
         $uploadPaths = $this->authorizeUploads($island, $definition, $data, $input, $context);
         if ($uploadPaths === null) {
             return $this->html->render($island, $definition, $data, $context);
         }
 
-        $paths = [...$paths, ...$uploadPaths];
+        $paths = [...($restored ?? $paths), ...$uploadPaths];
         if ($paths !== []) {
             $island->updated($paths);
         }

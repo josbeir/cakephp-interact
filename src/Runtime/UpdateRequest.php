@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Runtime;
 
 use Interact\Upload\UploadOperation;
+use Interact\Url\RequestContext;
 use InvalidArgumentException;
 
 /**
@@ -12,6 +13,10 @@ use InvalidArgumentException;
 readonly class UpdateRequest
 {
     public string $snapshot;
+
+    public string $pageQuery;
+
+    public bool $urlRestore;
 
     /**
      * @var array<string, mixed> Browser edits, still subject to property-level authorization.
@@ -58,7 +63,11 @@ readonly class UpdateRequest
             throw new InvalidArgumentException('Invalid island update envelope.');
         }
 
+        $url = new RequestContext($request);
+        $this->pageQuery = $url->query;
+        $this->urlRestore = $url->restoring;
         $this->upload = isset($request['upload']) ? new UploadOperation($request['upload']) : null;
+        $url->assertActionFree($action, $arguments, $this->upload);
         $this->upload?->assertTransferOnly($action, $arguments);
         $this->snapshot = $snapshot;
         $this->updates = Values::map($updates);

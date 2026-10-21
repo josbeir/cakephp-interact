@@ -7,6 +7,7 @@ use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\ORM\Query\SelectQuery;
 use Interact\Attribute\Action;
 use Interact\Attribute\AsIsland;
+use Interact\Attribute\Prop;
 use Interact\Attribute\State;
 use Interact\Island;
 use InvalidArgumentException;
@@ -15,31 +16,45 @@ use TestApp\Model\Table\ResourcesTable;
 /**
  * Coordinates a paginated resource search using model finders and explicit writable filters.
  *
- * Only search choices and the current page travel in the snapshot. Result rows and counts
- * are queried for each render, keeping the larger dataset outside browser state.
+ * Search choices, pagination, and reading notes travel in the snapshot. Result rows
+ * and counts are queried for each render, keeping the larger dataset outside browser state.
  */
 #[AsIsland('resource-search', element: 'Interact/resource_search')]
 class ResourceSearch extends Island
 {
     use LocatorAwareTrait;
 
+    #[Prop]
+    public string $controlPrefix = 'resource-search';
+
     #[State(writable: true)]
+    public string $notes = '';
+
+    #[State(writable: true, url: 'q')]
     public string $search = '';
 
-    #[State(writable: true)]
+    #[State(writable: true, url: true)]
     public string $category = '';
 
-    #[State(writable: true)]
+    #[State(writable: true, url: true)]
     public string $level = '';
 
-    #[State(writable: true)]
+    #[State(writable: true, url: true)]
     public string $sort = 'title';
 
-    #[State(writable: true)]
+    #[State(writable: true, url: true)]
     public int $pageSize = 20;
 
-    #[State]
+    #[State(writable: true, url: true, history: true)]
     public int $page = 1;
+
+    /**
+     * Bound an initial page supplied by the URL before rendering results.
+     */
+    public function mount(): void
+    {
+        $this->normalizePage();
+    }
 
     /**
      * Restart pagination when a search, filter, sort order, or page size changes.
@@ -48,9 +63,14 @@ class ResourceSearch extends Island
      */
     public function updated(array $paths): void
     {
-        if ($paths !== []) {
+        if (
+            array_intersect($paths, ['search', 'category', 'level', 'sort', 'pageSize']) !== []
+            && !in_array('page', $paths, true)
+        ) {
             $this->page = 1;
         }
+
+        $this->normalizePage();
     }
 
     /**
@@ -59,7 +79,8 @@ class ResourceSearch extends Island
     #[Action]
     public function goTo(int $page): void
     {
-        $this->page = max(1, min($page, $this->totalPages($this->listing()->count())));
+        $this->page = $page;
+        $this->normalizePage();
     }
 
     /**
@@ -135,5 +156,13 @@ class ResourceSearch extends Island
         assert($table instanceof ResourcesTable, 'The resource finder requires the demo Resources table.');
 
         return $table;
+    }
+
+    /**
+     * Normalize page input from direct links, writable edits, and history restoration.
+     */
+    protected function normalizePage(): void
+    {
+        $this->page = max(1, min($this->page, $this->totalPages($this->listing()->count())));
     }
 }

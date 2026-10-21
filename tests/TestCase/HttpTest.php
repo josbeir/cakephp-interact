@@ -28,7 +28,7 @@ class HttpTest extends HttpTestCase
         $root = $xpath->query('//*[@data-interact-state]')->item(0);
         static::assertInstanceOf(Element::class, $root);
         static::assertJsonStringEqualsJsonString(
-            '{"search":"","category":"","level":"","sort":"title","pageSize":20,"page":1}',
+            '{"controlPrefix":"resource-search","notes":"","search":"","category":"","level":"","sort":"title","pageSize":20,"page":1}',
             (string)$root->getAttribute('data-interact-state'),
         );
         $options = $xpath->query('//html:select[@*[name()="x-interact:model.change" and .="sort"]]/html:option');
@@ -96,7 +96,7 @@ class HttpTest extends HttpTestCase
         $this->assertResponseNotContains('No resources found');
     }
 
-    public function testResourceSearchRejectsUnsupportedFiltersAndPageAssignments(): void
+    public function testResourceSearchRejectsUnsupportedFiltersAndNormalizesWritablePages(): void
     {
         $mount = $this->mounted(url: '/search');
         foreach ([
@@ -104,12 +104,18 @@ class HttpTest extends HttpTestCase
             ['level' => 'unknown'],
             ['sort' => 'Resources.id'],
             ['pageSize' => 0],
-            ['page' => 99],
             ['search' => str_repeat('x', 201)],
         ] as $updates) {
             $this->update(['snapshot' => $mount['snapshot'], 'updates' => $updates]);
             $this->assertResponseCode(400);
         }
+
+        $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['page' => 999]]);
+        $this->assertResponseOk();
+        $this->assertResponseContains('"page":60');
+        $this->update(['snapshot' => $this->nextSnapshot(), 'updates' => ['page' => -1]]);
+        $this->assertResponseOk();
+        $this->assertResponseContains('"page":1');
     }
 
     public function testPlaygroundMountsDistinctExamplesWithinTheSharedLayout(): void

@@ -19,11 +19,19 @@ class ResourceSearch extends Island
 {
     use LocatorAwareTrait;
 
-    #[State(writable: true)]
+    #[State(writable: true, url: 'q')]
     public string $search = '';
 
-    #[State]
+    #[State(writable: true, url: true, history: true)]
     public int $page = 1;
+
+    /**
+     * Bound an initial page supplied by the URL before rendering results.
+     */
+    public function mount(): void
+    {
+        $this->normalizePage();
+    }
 
     /**
      * Restart pagination when the search changes.
@@ -32,9 +40,11 @@ class ResourceSearch extends Island
      */
     public function updated(array $paths): void
     {
-        if (in_array('search', $paths, true)) {
+        if (in_array('search', $paths, true) && !in_array('page', $paths, true)) {
             $this->page = 1;
         }
+
+        $this->normalizePage();
     }
 
     /**
@@ -43,8 +53,8 @@ class ResourceSearch extends Island
     #[Action]
     public function goTo(int $page): void
     {
-        $total = $this->fetchTable('Resources')->find('matching', search: $this->search)->count();
-        $this->page = max(1, min($page, max(1, (int)ceil($total / 10))));
+        $this->page = $page;
+        $this->normalizePage();
     }
 
     /**
@@ -62,5 +72,14 @@ class ResourceSearch extends Island
             'total' => $total,
             'pages' => max(1, (int)ceil($total / 10)),
         ];
+    }
+
+    /**
+     * Normalize page input from direct links, writable edits, and history restoration.
+     */
+    protected function normalizePage(): void
+    {
+        $total = $this->fetchTable('Resources')->find('matching', search: $this->search)->count();
+        $this->page = max(1, min($this->page, max(1, (int)ceil($total / 10))));
     }
 }

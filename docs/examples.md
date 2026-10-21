@@ -59,7 +59,8 @@ The `/playground` **Failure recovery** card demonstrates the
 [failure and recovery workflow](/guide/failures).
 
 Playground state resets on reload. Article saves persist in the local fixture
-database. Search filters are interaction state; they do not update the URL.
+database. Search filters are reflected in the URL. The page number uses browser history;
+Back and Forward preserve unrelated reading notes.
 
 <span id="find-the-cooperating-files"></span>
 <span id="reset-or-troubleshoot"></span>

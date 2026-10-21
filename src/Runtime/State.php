@@ -5,6 +5,7 @@ namespace Interact\Runtime;
 
 use Interact\Discovery\Definition;
 use Interact\Island;
+use Interact\Url\UrlState;
 use InvalidArgumentException;
 
 /**
@@ -15,6 +16,43 @@ use InvalidArgumentException;
  */
 class State
 {
+    /**
+     * Receive the URL transport used alongside signed snapshot state.
+     */
+    public function __construct(protected readonly UrlState $urlState = new UrlState())
+    {
+    }
+
+    /**
+     * Apply declared query values before initial authorization and mounting.
+     */
+    public function initializeUrl(Island $island, Definition $definition, string $query, ?string $prefix): void
+    {
+        $this->urlState->initialize($island, $definition, $query, $prefix);
+    }
+
+    /**
+     * Publish the query bindings owned by one island instance.
+     *
+     * @return array<string, array{name: string, type: string, default: mixed, history: bool}>
+     */
+    public function urlMetadata(Definition $definition, ?string $prefix): array
+    {
+        return $this->urlState->metadata($definition, $prefix);
+    }
+
+    /**
+     * Validate and identify the complete state set restored by browser history.
+     *
+     * @param array<string, mixed> $updates Typed browser edits.
+     *
+     * @return list<string> Explicitly restored properties, including unchanged values.
+     */
+    public function restorationPaths(Definition $definition, array $updates): array
+    {
+        return $this->urlState->restorationPaths($definition, $updates);
+    }
+
     /**
      * Read declared props and state, rejecting uninitialized or unsupported values.
      *
@@ -31,6 +69,7 @@ class State
             /** @var mixed $value */
             $value = $property->reflection->getValue($island);
             Values::validate($value);
+            $property->url?->validate($value);
             $values[$name] = $value;
         }
 
@@ -59,6 +98,7 @@ class State
             }
 
             Values::validate($value);
+            $property->url?->validate($value);
 
             /** @var mixed $previous */
             $previous = $values[$name];

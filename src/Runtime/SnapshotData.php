@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Runtime;
 
 use Interact\Upload\UploadReferences;
+use Interact\Url\Names;
 use InvalidArgumentException;
 
 /**
@@ -18,13 +19,15 @@ readonly class SnapshotData
 
     public string $key;
 
+    public ?string $urlPrefix;
+
     /**
      * @var array<string, mixed> Declared state and mount props.
      */
     public array $state;
 
     /**
-     * @var array<string, array{id: string, alias: string, props: array<string, mixed>}> Verified direct children.
+     * @var array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string}> Verified direct children.
      */
     public array $children;
 
@@ -48,6 +51,7 @@ readonly class SnapshotData
         $this->alias = $data['alias'];
         $this->id = $data['id'];
         $this->key = $data['key'];
+        $this->urlPrefix = Names::optional($data['urlPrefix'] ?? null);
         $this->state = Values::map($data['state']);
         $children = [];
 
@@ -61,6 +65,7 @@ readonly class SnapshotData
                 'id' => $child['id'],
                 'alias' => $child['alias'],
                 'props' => Values::map($child['props'] ?? null),
+                ...(isset($child['urlPrefix']) ? ['urlPrefix' => Names::require($child['urlPrefix'])] : []),
             ];
         }
 

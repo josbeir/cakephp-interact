@@ -46,7 +46,7 @@ Render an island from a normal CakePHP template:
 <?= $this->Interact->render('article-form') ?>
 ```
 
-`InteractHelper::render(string $alias, array $props = [], ?string $key = null)`
+`InteractHelper::render(string $alias, array $props = [], ?string $key = null, ?string $urlPrefix = null)`
 returns the island's HTML. [Installation](/installation) configures the helper
 and browser runtime. [Quickstart](/getting-started) contains a complete counter.
 
@@ -81,6 +81,8 @@ Give repeated instances unique stable keys:
 <?= $this->Interact->render('counter', key: 'first') ?>
 <?= $this->Interact->render('counter', key: 'second') ?>
 ```
+
+Use `urlPrefix` when repeated instances declare [URL state](/guide/url-state#independent-islands).
 
 Keys default to the alias. Each instance has independent state. See
 [nested islands](/guide/nesting) for child identity and preservation.

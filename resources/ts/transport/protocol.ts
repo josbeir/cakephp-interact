@@ -1,3 +1,4 @@
+import { urlFields, urlState } from '../url/codec';
 import { uploadMetadata } from '../uploads/protocol';
 import type { IslandResponse, Writable } from '../types';
 import { forbidden, record, state } from '../state/values';
@@ -26,12 +27,14 @@ export function response(value: unknown): value is IslandResponse {
   return (
     record(value) &&
     value.version === 1 &&
+    (value.url === undefined || urlFields(value.url)) &&
     (value.uploads === undefined || uploadMetadata(value.uploads)) &&
     typeof value.id === 'string' &&
     typeof value.html === 'string' &&
     typeof value.snapshot === 'string' &&
     value.snapshot.length > 0 &&
     state(value.state) &&
+    (value.url === undefined || urlState(value.state, value.url)) &&
     writable(value.writable) &&
     record(value.errors) &&
     Object.values(value.errors).every(

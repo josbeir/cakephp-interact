@@ -32,7 +32,7 @@ class RenderStack
      *
      * @param array<string, mixed> $props Explicit server-owned mount parameters.
      */
-    public function preserve(AsIsland $declaration, array $props, string $key): ?Result
+    public function preserve(AsIsland $declaration, array $props, string $key, ?string $urlPrefix = null): ?Result
     {
         if ($key === '') {
             throw new InvalidArgumentException('Island keys cannot be empty.');
@@ -50,8 +50,12 @@ class RenderStack
             return null;
         }
 
-        if ($previous['alias'] !== $declaration->name || $previous['props'] !== $props) {
-            throw new InvalidArgumentException('Changing a child alias or props requires a new key.');
+        if (
+            $previous['alias'] !== $declaration->name
+            || $previous['props'] !== $props
+            || ($previous['urlPrefix'] ?? null) !== $urlPrefix
+        ) {
+            throw new InvalidArgumentException('Changing a child alias, props, or URL prefix requires a new key.');
         }
 
         $parent->children[$childKey] = $previous;
@@ -72,7 +76,7 @@ class RenderStack
     /**
      * Enter a native render scope, rejecting excessive recursive nesting.
      *
-     * @param array<string, array{id: string, alias: string, props: array<string, mixed>}> $previous Verified direct children.
+     * @param array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string}> $previous Verified direct children.
      */
     public function push(array $previous): RenderFrame
     {

@@ -112,6 +112,7 @@ export default defineConfig({
         {
           text: 'Features',
           items: [
+            { text: 'URL state', link: '/guide/url-state' },
             { text: 'Validation', link: '/guide/forms' },
             { text: 'File uploads', link: '/guide/uploads' },
             { text: 'Error handling', link: '/guide/failures' },

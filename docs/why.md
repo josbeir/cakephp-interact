@@ -18,7 +18,7 @@ Alpine handles browser interactions. Interact is independent of Livewire and htm
 
 ## Features
 
-- Input binding, live search, and conditional fields.
+- Input binding, live search, conditional fields, and URL-bound state.
 - PHP actions, entity validation, and explicit saving.
 - Independent nested islands and browser events.
 - Polling and temporary file uploads.
@@ -42,5 +42,5 @@ properties; entities, queries, and services remain on the server.
 Interact targets **PHP 8.5 and CakePHP 6 development builds**. It is available as
 `dev-main`; there is no stable release. The API is experimental.
 
-Navigation, URL-bound state, entity transport, and form-plugin adapters are not
+Enhanced navigation, entity transport, and form-plugin adapters are not
 implemented. Normal links continue to use CakePHP navigation.

@@ -38,21 +38,28 @@ export default function install(Alpine: Alpine): void {
   Alpine.plugin(morph);
   Alpine.data('interact', () => ({}));
   const clients = new WeakMap<HTMLElement, IslandClient>();
-  Alpine.interceptInit((element) => {
-    if (
-      !(element instanceof HTMLElement) ||
-      !element.hasAttribute('data-interact-id') ||
-      clients.has(element)
-    )
-      return;
-    const client = new IslandClient(
-      element,
-      morphRoot(Alpine),
-      Alpine.reactive,
-    );
-    clients.set(element, client);
-    Alpine.onElRemoved(element, () => client.dispose());
+  // Morph clones evaluate presentation bindings using the existing owner, without registering a second client.
+  Alpine.interceptClone((from, to) => {
+    const client = from instanceof HTMLElement ? clients.get(from) : undefined;
+    if (client && to instanceof HTMLElement) clients.set(to, client);
   });
+  Alpine.interceptInit(
+    Alpine.skipDuringClone((element) => {
+      if (
+        !(element instanceof HTMLElement) ||
+        !element.hasAttribute('data-interact-id') ||
+        clients.has(element)
+      )
+        return;
+      const client = new IslandClient(
+        element,
+        morphRoot(Alpine),
+        Alpine.reactive,
+      );
+      clients.set(element, client);
+      Alpine.onElRemoved(element, () => client.dispose());
+    }),
+  );
   registerBindings(Alpine, (element) => {
     const root = element.closest<HTMLElement>('[data-interact-id]');
     const client = root === null ? undefined : clients.get(root);

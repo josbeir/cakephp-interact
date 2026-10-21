@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace Interact\Discovery;
 
+use Interact\Attribute\State;
 use Interact\Island;
 use Interact\Runtime\Values;
+use Interact\Url\Binding;
 use InvalidArgumentException;
 use ReflectionNamedType;
 use ReflectionProperty;
@@ -23,11 +25,17 @@ readonly class Property
 
     public bool $nullable;
 
+    public ?Binding $url;
+
     /**
      * Reject declarations that cannot be safely reconstructed from JSON.
      */
-    public function __construct(public ReflectionProperty $reflection, public bool $prop, public bool $writable)
-    {
+    public function __construct(
+        public ReflectionProperty $reflection,
+        public bool $prop,
+        public bool $writable,
+        ?State $state = null,
+    ) {
         $type = $reflection->getType();
         if (
             !$reflection->isPublic()
@@ -45,6 +53,7 @@ readonly class Property
         $this->name = $reflection->getName();
         $this->type = $type->getName();
         $this->nullable = $type->allowsNull();
+        $this->url = $state instanceof State && $state->url !== false ? new Binding($reflection, $state) : null;
     }
 
     /**
@@ -53,6 +62,7 @@ readonly class Property
     public function assign(Island $island, mixed $value): void
     {
         Values::validate($value);
+        $this->url?->validate($value);
         $matches = match ($this->type) {
             'string' => is_string($value),
             'int' => is_int($value),
