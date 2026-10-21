@@ -79,6 +79,7 @@ export default defineConfig({
           items: [
             { text: 'Overview and demo', link: '/examples' },
             { text: 'Article form', link: '/examples/article-form' },
+            { text: 'Navigation', link: '/examples/navigation' },
             { text: 'Save and redirect', link: '/examples/redirect' },
             { text: 'Invoice download', link: '/examples/download' },
             { text: 'Search and pagination', link: '/examples/search' },
@@ -115,6 +116,7 @@ export default defineConfig({
         {
           text: 'Features',
           items: [
+            { text: 'Navigation', link: '/directives/navigate' },
             { text: 'URL state', link: '/guide/url-state' },
             { text: 'Lazy loading', link: '/guide/lazy-loading' },
             {
@@ -134,6 +136,8 @@ export default defineConfig({
             { text: 'x-interact:submit', link: '/directives/submit' },
             { text: 'x-interact:poll', link: '/directives/poll' },
             { text: 'x-interact:ignore', link: '/directives/ignore' },
+            { text: 'x-interact:navigate', link: '/directives/navigate' },
+            { text: 'x-interact:persist', link: '/directives/persist' },
           ],
         },
         {

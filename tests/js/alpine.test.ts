@@ -287,3 +287,28 @@ describe('Alpine installation and morphing', () => {
     delete window.Alpine;
   });
 });
+
+it('replaces loading placeholder directives instead of inheriting their x-show and status attributes', async () => {
+  install(Alpine);
+  const pending = root(
+    'manual-navigation',
+    '<p role="status" x-show="!$server.error">Load content</p>',
+  );
+  pending.dataset.interactLoading = 'manual';
+  pending.dataset.interactState = '{}';
+  pending.dataset.interactWritable = '{}';
+  const rendered = root(
+    'manual-navigation',
+    '<p class="eyebrow">Persistent layout</p><p role="status">Ready</p>',
+  );
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(reply(pending, rendered.outerHTML)),
+  );
+  document.body.append(pending);
+  Alpine.initTree(pending);
+  await Alpine.evaluateRaw<Promise<unknown>>(pending, '$server.sync()');
+  expect(pending.querySelector('.eyebrow')?.hasAttribute('role')).toBe(false);
+  expect(pending.querySelector('.eyebrow')?.hasAttribute('x-show')).toBe(false);
+  expect(pending.querySelectorAll('[role="status"]')).toHaveLength(1);
+});

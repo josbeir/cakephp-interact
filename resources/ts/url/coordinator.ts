@@ -1,3 +1,4 @@
+import { navigation } from '../navigation/registry';
 import { clone, equal } from '../state/values';
 import type { State } from '../types';
 import type { UrlFields, UrlRestoration } from './types';
@@ -29,7 +30,13 @@ export class UrlCoordinator {
   protected readonly claims = new Set<string>();
   protected generation = 0;
   protected initializing = false;
+  protected suspended = false;
   protected readonly navigate = () => {
+    if (!navigation(this.host)) this.restore();
+  };
+
+  /** Restore URL owners only after the page history controller has selected this document. */
+  restore(): void {
     this.generation++;
     for (const owner of [...this.owners])
       this.safely(owner, () =>
@@ -38,7 +45,19 @@ export class UrlCoordinator {
           epoch: this.generation,
         }),
       );
-  };
+  }
+
+  /** Invalidate old replies while a document visit is being prepared. */
+  suspend(): void {
+    this.suspended = true;
+    this.generation++;
+  }
+
+  /** Reconcile retained owners against the committed destination before new islands initialize. */
+  resume(restore: boolean): void {
+    this.suspended = false;
+    if (restore) this.restore();
+  }
 
   constructor(
     protected readonly host: Window,
@@ -78,7 +97,7 @@ export class UrlCoordinator {
       const epoch = this.generation;
       queueMicrotask(() => {
         this.initializing = false;
-        if (epoch === this.generation && this.owners.size) {
+        if (epoch === this.generation && this.owners.size && !this.suspended) {
           try {
             this.initialize();
           } catch (cause: unknown) {
@@ -115,7 +134,8 @@ export class UrlCoordinator {
   ): void {
     const previous = owner.accepted;
     owner.accepted = clone(state);
-    if (epoch !== this.generation || !this.owners.has(owner)) return;
+    if (this.suspended || epoch !== this.generation || !this.owners.has(owner))
+      return;
     const url = new URL(this.host.location.href);
     writeQuery(url, owner.fields, state);
     const push =
@@ -147,6 +167,11 @@ export class UrlCoordinator {
 
   protected write(url: URL, push: boolean): void {
     if (url.href === this.host.location.href) return;
+    const service = navigation(this.host);
+    if (service) {
+      service.query(url, push);
+      return;
+    }
     this.host.history[push ? 'pushState' : 'replaceState'](
       this.host.history.state,
       '',
@@ -161,7 +186,9 @@ const coordinators = new WeakMap<Window, UrlCoordinator>();
 export function pageUrl(host: Window): UrlCoordinator {
   let coordinator = coordinators.get(host);
   if (!coordinator) {
-    coordinator = new UrlCoordinator(host, () => coordinators.delete(host));
+    coordinator = new UrlCoordinator(host, () => {
+      if (!navigation(host)) coordinators.delete(host);
+    });
     coordinators.set(host, coordinator);
   }
   return coordinator;

@@ -22,3 +22,6 @@ inside an island created by `InteractHelper`.
 Use ordinary Alpine `@click`, `:disabled`, `x-show`, and `:class` for events and
 presentation. [`$server`](/reference/server) provides access to island state,
 actions, and request feedback. See [Quickstart](/getting-started) for setup.
+
+- [`x-interact:navigate`](/directives/navigate) visits ordinary CakePHP pages.
+- [`x-interact:persist`](/directives/persist) retains explicit layout regions between visits.

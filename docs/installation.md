@@ -177,3 +177,9 @@ composer config repositories.interact path ../cakephp-interact
 
 Build assets in that checkout. For application-owned Alpine, use
 `npm install ../cakephp-interact @alpinejs/csp` instead of the vendor path.
+
+## Enhanced navigation setup
+
+The existing Interact installer also installs its internal navigation integration. No additional JavaScript dependency or stylesheet is needed. Keep rendering the layout's `script` block even with `autoScript: false`: the helper supplies document compatibility metadata for the npm integration too.
+
+Use [x-interact:navigate](/directives/navigate) to opt individual links in. The default plugin middleware marks complete HTML responses after application middleware. Missing metadata, unsupported pages, and incompatible document policies use native navigation.

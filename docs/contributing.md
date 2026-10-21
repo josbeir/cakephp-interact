@@ -143,3 +143,9 @@ Run affected checks and the full relevant workflow before handoff. For docs-only
 changes, verify documentation and examples without claiming unrelated PHP checks.
 Report actual results and unavailable tooling. Keep dependencies, caches, reports,
 and credentials out of commits.
+
+## Navigation integration
+
+Navigation lives in focused `resources/ts/navigation` modules installed by Interact's existing Alpine installer. Keep page visits separate from island request queues, and coordinate page history with URL-bound state. Persist only explicitly marked, compatible layout regions; incoming mounts and later updates must still authorize.
+
+The page-level `interactNavigation` Alpine store reuses request feedback timing. Applications own indicators and styles, and choose delays in Alpine expressions. Keep document policy/version checks, external asset loading, cancellation, stale responses, scroll, and focus covered by real browser tests. Use the `/navigation` demo for both page-owned and retained island behavior.

@@ -20,6 +20,7 @@ readonly class Outcome
         public string $kind,
         public array|string|UriInterface $destination,
         public bool $replace = false,
+        public bool $navigate = false,
     ) {
     }
 }

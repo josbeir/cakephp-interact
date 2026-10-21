@@ -167,3 +167,13 @@ Validation errors suppress either outcome and produce a normal validation render
 Redirects use an explicit JSON navigation result. Unexpected HTTP redirects from
 authentication or other middleware retain normal [failure handling](/guide/failures).
 Failed island requests never automatically repeat actions or file transfers.
+
+## Enhanced redirects
+
+Pass `navigate: true` explicitly from an action to use [enhanced navigation](/directives/navigate):
+
+```php
+$this->redirect(['action' => 'index'], navigate: true);
+```
+
+Existing redirects remain native by default. `replace: true` replaces the history entry. Canceling the page visit leaves a retained island usable; the action itself has already run and is never replayed. External destinations and incompatible pages use native navigation.

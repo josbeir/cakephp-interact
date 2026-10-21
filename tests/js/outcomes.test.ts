@@ -292,3 +292,107 @@ it('stops an existing polling timer when an action redirects', async () => {
   expect(evaluate).toHaveBeenCalledOnce();
   unbind();
 });
+
+it('keeps canceled enhanced redirects usable and ignores redirects from before a newer page visit', async () => {
+  const { registerNavigation } =
+    await import('../../resources/ts/navigation/registry');
+  let epoch = 0;
+  const visit = vi.fn().mockResolvedValue(false);
+  const service = {
+    epoch: () => epoch,
+    visit,
+    invalidate: vi.fn(),
+    query: vi.fn(),
+  };
+  const unregister = registerNavigation(window, service);
+  const native = vi
+    .spyOn(BrowserEffects.prototype, 'navigate')
+    .mockImplementation(() => {});
+  let release: (response: Response) => void = () => {};
+  const fetcher = vi
+    .fn<Fetcher>()
+    .mockResolvedValueOnce(
+      result({
+        version: 1,
+        id: 'outcome',
+        redirect: { url: '/next', replace: false, navigate: true },
+      }),
+    )
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+  const { client, root } = setup(fetcher);
+  try {
+    await expect(client.bridge.call('leave')).resolves.toEqual({ ok: true });
+    expect(visit).toHaveBeenCalledWith('/next', { replace: false });
+    const fresh = document.createElement('div');
+    fresh.dataset.interactCsrf = 'fresh-context';
+    client.refreshContext(fresh);
+    expect(root.dataset.interactCsrf).toBe('fresh-context');
+    const pending = client.bridge.call('old-action');
+    epoch++;
+    release(
+      result({
+        version: 1,
+        id: 'outcome',
+        redirect: { url: '/old', replace: false, navigate: true },
+      }),
+    );
+    await expect(pending).resolves.toEqual({ ok: true });
+    expect(visit).toHaveBeenCalledOnce();
+    expect(native).not.toHaveBeenCalled();
+    expect(fetcher.mock.calls[1]?.[1].headers).toHaveProperty(
+      'X-CSRF-Token',
+      'fresh-context',
+    );
+  } finally {
+    unregister();
+  }
+});
+
+it('does not let an action queued on an older page redirect a newer visit', async () => {
+  const { registerNavigation } =
+    await import('../../resources/ts/navigation/registry');
+  let epoch = 0;
+  const visit = vi.fn().mockResolvedValue(true);
+  const unregister = registerNavigation(window, {
+    epoch: () => epoch,
+    visit,
+    invalidate: vi.fn(),
+    query: vi.fn(),
+  });
+  let release: (response: Response) => void = () => {};
+  const fetcher = vi
+    .fn<Fetcher>()
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    )
+    .mockResolvedValueOnce(
+      result({
+        version: 1,
+        id: 'outcome',
+        redirect: { url: '/old-page', replace: false, navigate: true },
+      }),
+    );
+  const { client } = setup(fetcher);
+  try {
+    const first = client.bridge.call('refresh');
+    const queued = client.bridge.call('leave');
+    epoch++;
+    release(result(render()));
+    await expect(first).resolves.toEqual({ ok: true });
+    await expect(queued).resolves.toEqual({ ok: true });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(visit).not.toHaveBeenCalled();
+    const options = fetcher.mock.calls[1]?.[1];
+    expect(options?.body).not.toContain('navigationEpoch');
+  } finally {
+    unregister();
+  }
+});

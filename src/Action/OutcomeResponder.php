@@ -41,7 +41,7 @@ class OutcomeResponder
 
         $destination = $this->destinations->resolve($outcome, $identity->routing, $context->request->getUri());
         if ($outcome->kind === 'redirect') {
-            return new RedirectResult($identity->id, $destination, $outcome->replace);
+            return new RedirectResult($identity->id, $destination, $outcome->replace, $outcome->navigate);
         }
 
         $result = $render();

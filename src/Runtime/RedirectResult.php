@@ -12,8 +12,12 @@ readonly class RedirectResult extends Result
     /**
      * Associate the navigation with the verified island identity.
      */
-    public function __construct(string $id, public string $destination, public bool $replace = false)
-    {
+    public function __construct(
+        string $id,
+        public string $destination,
+        public bool $replace = false,
+        public bool $navigate = false,
+    ) {
         parent::__construct($id, '', '');
     }
 
@@ -27,7 +31,11 @@ readonly class RedirectResult extends Result
         return [
             'version' => 1,
             'id' => $this->id,
-            'redirect' => ['url' => $this->destination, 'replace' => $this->replace],
+            'redirect' => [
+                'url' => $this->destination,
+                'replace' => $this->replace,
+                ...($this->navigate ? ['navigate' => true] : []),
+            ],
         ];
     }
 }

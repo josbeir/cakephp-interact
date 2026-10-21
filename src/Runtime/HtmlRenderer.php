@@ -8,6 +8,7 @@ use Interact\Island;
 use Interact\IslandContext;
 use Interact\Loading\Options;
 use Interact\Loading\PlaceholderRenderer;
+use Interact\Navigation\Identity;
 use Interact\Rendering\PlaceholderRendererInterface;
 use Interact\Rendering\RendererInterface;
 use Interact\Security\SnapshotCodec;
@@ -89,7 +90,9 @@ class HtmlRenderer
             ];
             Values::validate($values['events']);
 
-            return $this->wrap($definition, new Result($identity->id, $content, $snapshot, $values), $context);
+            return $this->wrap($definition, new Result($identity->id, $content, $snapshot, $values), $context, [
+                'data-interact-mount' => new Identity()->fingerprint($island, $definition, $identity, $context),
+            ]);
         } finally {
             $this->stack->pop();
         }
