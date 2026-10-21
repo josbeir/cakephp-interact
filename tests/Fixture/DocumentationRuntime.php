@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Interact\Test\Fixture;
 
-use App\Island\ArticleForm;
 use App\Island\ArticleRedirect;
 use App\Island\CountryPicker;
 use App\Island\DependentSelects;
@@ -34,11 +33,15 @@ use Interact\Upload\LocalUploadStorage;
 use Interact\Upload\UploadConfig;
 use Interact\Upload\UploadManager;
 use Interact\View\TemplateView;
+use TestApp\Island\ArticleForm;
+use TestApp\Model\Table\CommentsTable;
+use TestApp\Model\Table\FormArticlesTable;
 
 /**
  * Runs the exact application examples with native views and an isolated SQLite database.
  *
- * Documentation fixtures remain independent of the larger playground and its identity setup.
+ * The article form consumes the demo-owned island, models, schema, and template.
+ * Other examples use focused documentation fixtures; all share an isolated database.
  */
 class DocumentationRuntime
 {
@@ -54,7 +57,11 @@ class DocumentationRuntime
     public function __construct()
     {
         $this->connection = new Connection(['driver' => Sqlite::class, 'database' => ':memory:']);
-        foreach (glob(dirname(__DIR__) . '/docs/app/schema/*.sql') ?: [] as $source) {
+        $sources = [
+            ...(glob(dirname(__DIR__) . '/docs/app/schema/*.sql') ?: []),
+            dirname(__DIR__) . '/test_app/config/schema/form_articles.sql',
+        ];
+        foreach ($sources as $source) {
             $sql = (string)file_get_contents($source);
             foreach (explode(';', $sql) as $statement) {
                 if (trim($statement) === '') {
@@ -66,12 +73,20 @@ class DocumentationRuntime
         }
 
         $locator = new TableLocator();
+        $locator->set('FormArticles', new FormArticlesTable([
+            'alias' => 'FormArticles',
+            'connection' => $this->connection,
+        ]));
+        $locator->set('Comments', new CommentsTable(['alias' => 'Comments', 'connection' => $this->connection]));
         $locator->set('Articles', new ArticlesTable(['alias' => 'Articles', 'connection' => $this->connection]));
         $locator->set('Cities', new CitiesTable(['alias' => 'Cities', 'connection' => $this->connection]));
         $locator->set('Documents', new DocumentsTable(['alias' => 'Documents', 'connection' => $this->connection]));
         $locator->set('Resources', new ResourcesTable(['alias' => 'Resources', 'connection' => $this->connection]));
         TableRegistry::setTableLocator($locator);
-        Configure::write('App.paths.templates', [dirname(__DIR__) . '/docs/app/templates/']);
+        Configure::write('App.paths.templates', [
+            dirname(__DIR__) . '/docs/app/templates/',
+            dirname(__DIR__) . '/test_app/templates/',
+        ]);
         $registry = new Registry(collection: 'documentation-fixtures');
         foreach ([
             ArticleForm::class,

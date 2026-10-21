@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { islandId, targetsIsland } from './requests';
 
 test('PHP updates both panels in the response while the ignored DOM remains unchanged until recreated', async ({

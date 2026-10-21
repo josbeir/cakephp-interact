@@ -1,4 +1,5 @@
-import { expect, test, type Page, type Locator } from '@playwright/test';
+import type { Page, Locator } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { targetsIsland } from './requests';
 
 function child(page: Page, name: string): Locator {

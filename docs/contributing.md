@@ -62,9 +62,27 @@ runtime, and emits declarations with the native TypeScript 7 generator. There ar
 TypeScript compatibility aliases or second compiler installations.
 
 Playwright exercises the real CakePHP application in Chromium, Firefox, and
-WebKit. Test observable behavior, security failures, races, validation, focus,
+WebKit with three parallel workers. Import `test` and `expect` from
+`tests/browser/fixtures.ts`; its worker-scoped fixture boots PHP on an OS-assigned
+port with separate SQLite, session, cache, and upload storage. Documentation
+rendering subprocesses use that same worker storage. Workers stop their server
+and remove temporary storage on teardown; PHP diagnostics remain in
+`test-results/worker-*.log`. Browser tests do not use a running demo preview.
+
+Use Playwright's native filters and worker override for focused runs:
+
+```sh
+npm run test:browser -- tests/browser/form-models.spec.ts --project=chromium
+npm run test:browser -- --workers=1
+```
+
+Test observable behavior, security failures, races, validation, focus,
 and nested ownership even when coverage totals already pass. PHP integration
 tests exercise the middleware stack in process.
+
+`/forms` is the FormHelper article demo. Playwright opens `/demo/form-fixtures`
+directly for plain HTML, external-control, and nested-island acceptance cases.
+That fixture page has no demo navigation entry, like `/demo/polling`.
 
 Runtime modules live under `resources/ts`: bindings own controls, scheduling
 serializes requests, state modules validate and reconcile drafts, transport
@@ -85,8 +103,10 @@ add coverage-ignore annotations to reach a target.
 For feature documentation, start with a direct definition and minimal syntax.
 Keep one page per topic. Small control examples use HTML-first tabs with a
 FormHelper alternative. Put focused complete applications in Examples and import
-their tested source from `tests/docs/app/`. Check snippets, behavior, links, and
-desktop/mobile navigation.
+their tested source from the demo or `tests/docs/app/`. The article form's island,
+models, schema, and template live in `tests/test_app/`; documentation imports
+those files. Keep demo code independent of documentation fixtures. Check snippets,
+behavior, links, and desktop/mobile navigation.
 
 ## Documentation and releases
 
@@ -115,6 +135,9 @@ uses that source archive, so consumers must [build the browser runtime](/install
 after installation. There is no stable release yet. Composer release distributions
 must include generated assets. The Quality workflow validates packages but does
 not publish them.
+
+Quality checks run on pull requests and pushes to `main`. Feature-branch pushes
+are checked through their pull request, avoiding duplicate PHP and browser jobs.
 
 Run affected checks and the full relevant workflow before handoff. For docs-only
 changes, verify documentation and examples without claiming unrelated PHP checks.

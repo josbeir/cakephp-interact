@@ -45,6 +45,8 @@ export function registerBindings(
               ),
             );
             effect(() => client.customChanged(element));
+          } else if (element instanceof HTMLFormElement) {
+            cleanup(client.bindForm(element, binding, Alpine.prefixed('')));
           } else if (
             element instanceof HTMLInputElement ||
             element instanceof HTMLSelectElement ||
@@ -53,7 +55,7 @@ export function registerBindings(
             cleanup(client.bindModel(element, binding));
           } else {
             throw new Error(
-              'x-interact:model requires an input, select, textarea, or x-modelable wrapper.',
+              'x-interact:model requires an input, select, textarea, form, or x-modelable wrapper.',
             );
           }
         } else if (value === 'ignore') {

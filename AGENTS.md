@@ -16,6 +16,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Keep validation and persistence in the application. Synchronization never implies saving.
 - Use native fetch, Alpine, and Alpine Morph. Native XMLHttpRequest is reserved for upload progress and cancellation. URL bindings belong to explicit writable State declarations. Defer enhanced navigation and form-adapter integration.
 - Use `x-interact:model` with synchronization modifiers and `x-interact:submit` for native form protection. Actions use `$server.call()` in Alpine expressions; ordinary events and presentation use Alpine directives. Keep generated `data-interact-*` metadata runtime-owned, without parallel public binding attributes.
+- Use form-level `x-interact:model="data"` for native controls backed by writable array drafts. Infer names relative to that path, preserve explicit absolute control bindings, and keep entity initialization, marshalling, validation, association authorization, and saving in application code. Keep `x-interact:submit` separate; it does not collect unbound controls.
 - Declare files with `#[Upload]`; keep PSR file objects request-local and transport only owned opaque references. Render accepted files in PHP and use `$server.uploads` for transfer feedback and controls. Image processing and preview URLs belong to the application.
 - Use `x-interact:poll` for managed periodic refreshes. Keep refreshes and actions on the existing `$server` bridge, and use Alpine conditions for application-controlled pauses or completion.
 - Use `x-interact:ignore` for widget-owned DOM and `x-modelable` with `x-interact:model` for custom values. Keep library instances outside reactive state, manage their lifecycle through application Alpine wrappers, and leave server-rendered errors outside protected regions.
@@ -53,6 +54,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 
 ## Demo application and model finders
 
+- Keep the demo application self-contained. Documentation may import demo source; the demo must not require templates, classes, or schema from documentation fixtures.
 - Put domain queries in named custom Table finders or reusable Behaviors: search, visibility, association loading, dependent choices, and domain ordering.
 - Use typed finder parameters and `SelectQuery` return types with meaningful generic annotations.
 - Finders return composable queries; callers choose execution/pagination.
@@ -112,6 +114,7 @@ Required Composer scripts:
 - Explicitly include unexecuted runtime source. Report statements, functions, and branches too.
 - Use fake timers for scheduling and controlled doubles at HTTP boundaries.
 - Use Playwright against a real CakePHP application in Chromium, Firefox, and WebKit.
+- Browser specs import the shared `tests/browser/fixtures.ts` test API. Keep each parallel worker's PHP server, database, sessions, and upload storage isolated; release processes and temporary storage on teardown.
 - Prefer role/label locators, auto-waiting assertions, isolated contexts, deterministic fixtures, and network interception over fixed sleeps.
 - Test tampering, CSRF, expiry, unauthorized actions, permission changes, malformed payloads, races, submit-before-blur, validation, escaping, focus, disposal, and nested-state preservation regardless of coverage totals.
 - Provide npm scripts `typecheck`, `lint`, `format-check`, `format`, `test`, `test:watch`, `test:coverage`, `test:browser`, `build`, and `check`.

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { islandId, targetsIsland } from './requests';
 
 test('submission expressions use local Alpine scope and the native event with typed arguments', async ({

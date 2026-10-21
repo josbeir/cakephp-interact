@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('playground counters keep independent state and accept typed action arguments', async ({
   page,

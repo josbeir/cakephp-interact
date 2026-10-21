@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 function selected(url: string, name: string): string | null {
   return new URL(url).searchParams.get(name);

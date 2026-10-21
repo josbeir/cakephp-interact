@@ -43,6 +43,7 @@ session identity; applications supply their own authentication.
 
 | Open          | Try                                                                     | Follow the implementation                                                                                          |
 | ------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `/forms`      | Article and comment drafts with FormHelper                              | [Article form](/examples/article-form), [form binding](/directives/model#whole-forms)                              |
 | `/`           | Search articles, edit two titles, save one, and keep the other draft    | [Article form](/examples/article-form), [nested islands](/guide/nesting)                                           |
 | `/`           | Change country, choose a city, and confirm the selection                | [Dependent fields](/examples/dependent-fields)                                                                     |
 | `/playground` | Adjust independent counters with typed action arguments                 | [Actions and feedback](/guide/actions)                                                                             |
@@ -67,8 +68,9 @@ Back and Forward preserve unrelated reading notes.
 
 ## Source and reset
 
-Focused documentation examples live in `tests/docs/app/`. The broader demo lives
-in `tests/test_app/` and shares its source with integration and browser tests.
+The article form documentation imports its source from the demo in
+`tests/test_app/`. Other focused examples live in `tests/docs/app/`. Integration
+and browser tests exercise these same sources.
 
 To reset demo data, stop the server and tests, then delete `build/tmp/demo.sqlite`.
 It is recreated on the next request. `npm run preview` disables OPcache so edits

@@ -19,7 +19,7 @@ if (!defined('ROOT')) {
     define('CAKE', $core . 'src/');
     define('APP', dirname(__DIR__) . '/');
     define('CONFIG', APP . 'config/');
-    define('TMP', dirname(__DIR__, 3) . '/build/tmp/');
+    define('TMP', rtrim(getenv('INTERACT_DEMO_TMP') ?: dirname(__DIR__, 3) . '/build/tmp', '/') . '/');
     define('CACHE', TMP . 'cache/');
     define('LOGS', TMP . 'logs/');
 }
@@ -62,6 +62,15 @@ $connection->execute(
     'CREATE TABLE IF NOT EXISTS articles (id INTEGER PRIMARY KEY, title TEXT NOT NULL, owner_id INTEGER NOT NULL)',
 );
 $connection->execute('CREATE TABLE IF NOT EXISTS outcome_articles (id INTEGER PRIMARY KEY, title TEXT NOT NULL)');
+$formSchema = (string)file_get_contents(__DIR__ . '/schema/form_articles.sql');
+foreach (explode(';', $formSchema) as $statement) {
+    if (trim($statement) === '') {
+        continue;
+    }
+
+    $connection->execute(str_replace('CREATE TABLE ', 'CREATE TABLE IF NOT EXISTS ', $statement));
+}
+
 $connection->execute(
     'CREATE TABLE IF NOT EXISTS cities (id INTEGER PRIMARY KEY, country TEXT NOT NULL, name TEXT NOT NULL)',
 );

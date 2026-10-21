@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 function render(alias: string, input = '', loading = 'eager'): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -48,6 +49,9 @@ test('the article example preserves entity errors and saves corrected input', as
   page,
 }) => {
   const errors = await example(page, 'article-form');
+  await page
+    .getByLabel('Comment 1 text', { exact: true })
+    .fill('First comment');
   // Bypass the native length guard to verify server validation and entity errors.
   await page
     .getByLabel('Title', { exact: true })
