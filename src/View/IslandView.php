@@ -30,7 +30,13 @@ class IslandView extends TemplateView
 
         $helper = $this->loadHelper('Interact', ['className' => InteractHelper::class]);
         assert($helper instanceof InteractHelper, 'The configured collaborator must satisfy its declared contract.');
-        $content = $helper->render($alias, Values::map($props));
+        /** @var mixed $prefix */
+        $prefix = $this->getConfig('interact.urlPrefix');
+        if ($prefix !== null && !is_string($prefix)) {
+            throw new InvalidArgumentException('The page island URL prefix must be a string.');
+        }
+
+        $content = $helper->render($alias, Values::map($props), urlPrefix: $prefix);
 
         return $layout === false || !$this->autoLayout ? $content : $this->renderLayout($content, $layout);
     }

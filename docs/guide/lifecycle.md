@@ -12,7 +12,7 @@ to the current instance.
 ## Initial render
 
 1. Resolve the alias and construct the island through CakePHP's container.
-2. Assign mount props.
+2. Assign mount props and decode declared URL-bound state.
 3. Call `authorize(IslandContext $context)`.
 4. Call `mount()`.
 5. Call `viewData()` and render the declared element or template.
@@ -57,8 +57,10 @@ the first render only, so it does not replace a draft on later updates.
 public function updated(array $paths): void
 ```
 
-Receives changed writable paths after authorization and before the action.
-Use it to clear dependent fields or reset pagination. Successful file staging
+Receives accepted writable paths after authorization and before the action.
+Ordinary updates report changed paths.
+Use it to clear dependent fields or reset pagination. History restoration supplies
+the complete URL-property set, including unchanged values; see [URL state](/guide/url-state). Successful file staging
 also invokes it for the affected top-level field.
 
 ```php

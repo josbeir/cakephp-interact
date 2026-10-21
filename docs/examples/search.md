@@ -5,7 +5,8 @@ description: Search database rows through a Table finder and paginate without tr
 
 # Search and pagination
 
-This listing searches resource titles and renders ten rows per page.
+This listing searches resource titles and renders ten rows per page. Its query
+and page are reloadable through URLs such as `?q=resource&page=2`.
 
 Complete [installation](/installation) first. Copy the files below to the indicated
 application locations.
@@ -36,9 +37,10 @@ database or an existing application finder.
 
 Typing sends the search after 300 ms and resets the page to one. `goTo()` bounds
 the requested page against the filtered count. Empty results remain on page one.
-Rows and counts come from `viewData()`; only the search and page are transported.
+Back and Forward restore the search and page together. `updated()` respects an
+explicitly supplied page, and the shared normalization method bounds initial
+links and updates. Rows and counts come from `viewData()`; only the search and page are transported.
 
 The Table returns a composable query; the island chooses counting and pagination.
 The larger [demo listing](/examples#demo-catalog) adds filters, allowlisted sorting,
-and page-size controls. These examples keep filters local to the island; URL
-synchronization is not implemented.
+and page-size controls. See [URL state](/guide/url-state) for defaults, aliases, and history behavior.

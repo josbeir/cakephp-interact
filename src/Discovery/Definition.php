@@ -10,6 +10,7 @@ use Interact\Attribute\State;
 use Interact\Attribute\Upload;
 use Interact\Island;
 use Interact\Upload\UploadProperty;
+use Interact\Url\UrlState;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionMethod;
@@ -72,6 +73,7 @@ readonly class Definition
                     $property,
                     $prop !== [],
                     $state !== [] && $state[0]->newInstance()->writable,
+                    $state === [] ? null : $state[0]->newInstance(),
                 );
             }
         }
@@ -98,5 +100,6 @@ readonly class Definition
         $this->properties = $properties;
         $this->uploads = $uploads;
         $this->actions = $actions;
+        new UrlState()->metadata($this, null);
     }
 }

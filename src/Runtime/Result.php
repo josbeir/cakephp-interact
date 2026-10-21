@@ -17,6 +17,11 @@ readonly class Result
     public array $state;
 
     /**
+     * @var array<string, array{name: string, type: string, default: mixed, history: bool}> URL declarations.
+     */
+    public array $url;
+
+    /**
      * @var array<string, array{multiple: bool, maxSize: int, maxFiles: int, files: list<array{id: string, name: string, size: int}>}> Declared upload selections.
      */
     public array $uploads;
@@ -40,6 +45,7 @@ readonly class Result
      * Collect markup, a signed snapshot, validation feedback, and browser effects.
      *
      * @param array{
+     *     url?: array<string, array{name: string, type: string, default: mixed, history: bool}>,
      *     uploads?: array<string, array{multiple: bool, maxSize: int, maxFiles: int, files: list<array{id: string, name: string, size: int}>}>,
      *     state?: array<string, mixed>,
      *     writable?: array<string, array{type: string, nullable: bool}>,
@@ -49,6 +55,7 @@ readonly class Result
      */
     public function __construct(public string $id, public string $html, public string $snapshot, array $data = [])
     {
+        $this->url = $data['url'] ?? [];
         $this->uploads = $data['uploads'] ?? [];
         $this->state = $data['state'] ?? [];
         $this->writable = $data['writable'] ?? [];
@@ -65,6 +72,7 @@ readonly class Result
     {
         return [
             'version' => 1,
+            ...($this->url === [] ? [] : ['url' => (object)$this->url]),
             ...($this->uploads === [] ? [] : ['uploads' => (object)$this->uploads]),
             'id' => $this->id,
             'html' => $this->html,

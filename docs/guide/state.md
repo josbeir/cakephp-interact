@@ -36,6 +36,9 @@ public string $title = '';
 [`x-interact:model`](/directives/model) to bind a control to the property.
 Synchronization updates the island; your application decides when to save.
 
+Use `url: true` or a query-name alias to make writable state reloadable through
+the query string. See [URL state](/guide/url-state) for types, defaults, and history.
+
 <span id="pass-a-controller-value-explicitly"></span>
 
 ## #[Prop] {#prop}

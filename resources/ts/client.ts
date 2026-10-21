@@ -1,3 +1,7 @@
+import { sameFields } from './url/codec';
+import { pageUrl } from './url/coordinator';
+import type { UrlRegistration } from './url/coordinator';
+import type { UrlRestoration } from './url/types';
 import { displaySize } from './uploads/size';
 import { UploadFields } from './uploads/fields';
 import { postUpload } from './uploads/transport';
@@ -52,6 +56,8 @@ export class IslandClient {
   private readonly activity: { paused: boolean };
   private poller: Poller | undefined;
   private readonly uploads: UploadFields;
+  private readonly url: UrlRegistration | undefined;
+  private urlTarget: UrlRestoration | undefined;
 
   /**
    * Initialize the bridge and request-scoped collaborators from PHP-rendered metadata.
@@ -124,6 +130,15 @@ export class IslandClient {
       () => this.writable,
       (cause) => this.failed(requestError('client_error', null, cause)),
     );
+    this.url = Object.keys(this.metadata.url).length
+      ? pageUrl(window).register(
+          this.metadata.url,
+          this.baseline,
+          (target) => this.restoreUrl(target),
+          (cause) => this.failed(requestError('client_error', null, cause)),
+          root,
+        )
+      : undefined;
   }
 
   /**
@@ -202,6 +217,7 @@ export class IslandClient {
     this.controls.dispose();
     this.queue.dispose();
     this.requests.dispose();
+    this.url?.dispose();
   }
 
   /**
@@ -235,6 +251,19 @@ export class IslandClient {
     upload?: UploadJob,
   ): Promise<RequestResult> {
     try {
+      if (this.bridge.paused && this.bridge.error?.recovery !== 'retry') {
+        throw new IslandRequestError(
+          this.bridge.error ?? requestError('client_error', null).failure,
+        );
+      }
+      if (this.urlTarget && !upload) {
+        await this.queue.enqueue({
+          action: null,
+          args: [],
+          urlRestore: this.urlTarget,
+          urlEpoch: this.urlTarget.epoch,
+        });
+      }
       await this.enqueue(action, args, upload);
       if (!this.disposed) return { ok: true };
     } catch (cause: unknown) {
@@ -277,6 +306,7 @@ export class IslandClient {
     this.bridge.error = null;
     this.activity.paused = false;
     return this.queue.enqueue({
+      ...(this.url ? { urlEpoch: this.url.epoch() } : {}),
       action,
       args,
       ...(upload ? { upload } : { uploadRevision: this.uploads.revision }),
@@ -291,8 +321,9 @@ export class IslandClient {
     if (
       upload
         ? !this.uploads.start(upload)
-        : this.uploads.blocked() ||
-          invocation.uploadRevision !== this.uploads.revision
+        : !invocation.urlRestore &&
+          (this.uploads.blocked() ||
+            invocation.uploadRevision !== this.uploads.revision)
     )
       throw requestError('cancelled', null);
     if (upload?.kind === 'stage') {
@@ -317,11 +348,20 @@ export class IslandClient {
     this.bridge.busy = true;
     this.root.setAttribute('aria-busy', 'true');
     try {
-      const sent = clone(this.bridge.state);
+      const restoration = invocation.urlRestore;
+      const sent = restoration
+        ? { ...clone(this.baseline), ...clone(restoration.values) }
+        : clone(this.bridge.state);
       const payload = {
         version: 1 as const,
         snapshot: this.snapshot,
-        updates: changedWritable(sent, this.baseline, this.writable),
+        updates: restoration
+          ? restoration.values
+          : changedWritable(sent, this.baseline, this.writable),
+        ...(window.location.search
+          ? { pageQuery: window.location.search }
+          : {}),
+        ...(restoration ? { urlRestore: true } : {}),
         action: invocation.action,
         args: invocation.args,
         ...(upload
@@ -357,6 +397,8 @@ export class IslandClient {
       if (this.disposed) return;
       const accepted = await readResponse(result, this.metadata.id);
       if (this.disposed) return;
+      if (!sameFields(accepted.url ?? {}, this.metadata.url))
+        throw requestError('invalid_response', result.status);
       let replacement: HTMLElement;
       try {
         replacement = readRoot(accepted.html, this.metadata.id);
@@ -364,7 +406,7 @@ export class IslandClient {
         throw requestError('invalid_response', result.status, cause);
       }
       try {
-        this.apply(accepted, sent, replacement, upload);
+        this.apply(accepted, sent, replacement, upload, invocation);
       } catch (cause: unknown) {
         throw requestError('client_error', result.status, cause);
       }
@@ -385,9 +427,12 @@ export class IslandClient {
     sent: State,
     replacement: HTMLElement,
     upload?: UploadJob,
+    invocation?: Invocation,
   ): void {
     this.controls.captureCustom();
     const newer = changedWritable(this.bridge.state, sent, this.writable);
+    if (this.urlTarget && invocation?.urlRestore?.epoch !== this.url?.epoch())
+      Object.assign(newer, this.urlTarget.values);
     const restoreSelection = preserveSelection(this.root);
     const previous = {
       state: this.bridge.state,
@@ -416,10 +461,51 @@ export class IslandClient {
       this.controls.refresh();
       throw cause;
     }
+    if (
+      invocation?.urlRestore &&
+      invocation.urlRestore.epoch === this.url?.epoch()
+    )
+      this.urlTarget = undefined;
+    this.url?.accept(
+      payload.state,
+      invocation?.urlEpoch ?? 0,
+      invocation?.urlRestore !== undefined,
+    );
     for (const effect of payload.events)
       this.root.dispatchEvent(
         new CustomEvent(effect.name, { detail: effect.detail, bubbles: true }),
       );
+  }
+
+  /**
+   * Restore one complete URL selection without capturing or discarding unrelated drafts.
+   */
+  private restoreUrl(target: UrlRestoration): void {
+    if (this.disposed) return;
+    this.controls.captureAll();
+    const unchanged = Object.entries(target.values).every(
+      ([key, value]) =>
+        equal(value, this.bridge.state[key]) &&
+        equal(value, this.baseline[key]),
+    );
+    if (unchanged && !this.bridge.pending()) return;
+    this.controls.clearPending();
+    this.urlTarget = target;
+    this.bridge.state = { ...this.bridge.state, ...clone(target.values) };
+    this.controls.refresh();
+    if (this.bridge.paused && this.bridge.error?.recovery !== 'retry') return;
+    this.bridge.error = null;
+    this.activity.paused = false;
+    void this.queue
+      .enqueue({
+        action: null,
+        args: [],
+        urlRestore: target,
+        urlEpoch: target.epoch,
+      })
+      .catch(() => {
+        // The queue owns failure feedback. Keep the selected target available for explicit recovery.
+      });
   }
 
   /**

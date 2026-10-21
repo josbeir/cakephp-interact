@@ -4,6 +4,8 @@ use function Cake\Core\h;
 
 /**
  * @var \Interact\View\TemplateView $this
+ * @var string $controlPrefix
+ * @var string $notes
  * @var string $search
  * @var string $category
  * @var string $level
@@ -23,7 +25,7 @@ use function Cake\Core\h;
 <section class="demo-card resource-library" aria-label="Resource library">
     <div class="card-heading"><div><p class="eyebrow">Live search / <?= number_format($librarySize) ?> sample resources</p><h2>A library worth exploring</h2></div><span class="capability">Search + filter + sort</span></div>
     <p class="card-description">Search titles, descriptions, and topics. Combine filters to narrow the list, or change the reading order to find something quick.</p>
-    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'resource-search', 'x-interact:submit' => '$server.sync()']) ?>
+    <?= $this->Form->create(null, ['url' => false, 'idPrefix' => $controlPrefix, 'x-interact:submit' => '$server.sync()']) ?>
         <div class="library-query">
             <?= $this->Form->control('search', [
                 'type' => 'search',
@@ -32,11 +34,11 @@ use function Cake\Core\h;
                 'maxlength' => 200,
                 'placeholder' => 'Search 1,200 resources…',
                 'x-interact:model.live.debounce.300ms' => 'search',
-                'aria-describedby' => 'search-hint',
+                'aria-describedby' => $controlPrefix . '-hint',
                 'autocomplete' => 'off',
             ]) ?>
         </div>
-        <p class="field-hint" id="search-hint">Results update as you type. Multiple words match across the title and description.</p>
+        <p class="field-hint" id="<?= (string)h($controlPrefix) ?>-hint">Results update as you type. Multiple words match across the title and description.</p>
         <div class="library-filters">
             <?= $this->Form->control('category', [
                 'label' => 'Topic',
@@ -65,6 +67,15 @@ use function Cake\Core\h;
                 'x-interact:model.change' => 'pageSize',
             ]) ?>
         </div>
+        <details>
+            <summary>Reading notes</summary>
+            <?= $this->Form->control('notes', [
+                'type' => 'textarea',
+                'label' => 'Reading notes',
+                'value' => $notes,
+                'x-interact:model' => 'notes',
+            ]) ?>
+        </details>
     <?= $this->Form->end() ?>
     <div class="library-summary"><p role="status" aria-live="polite" aria-atomic="true">Showing <?= number_format($first) ?>–<?= number_format($last) ?> of <strong><?= number_format($total) ?></strong> results</p><span class="quiet" x-show="$server.loading(null)" x-cloak>Searching…</span><button class="button-text" type="button" @click="$server.call('clear')" :disabled="$server.busy">Clear filters</button></div>
     <?php if ($total === 0): ?>
@@ -76,7 +87,7 @@ use function Cake\Core\h;
                 <thead><tr><th scope="col">Resource</th><th scope="col">Topic</th><th scope="col">Difficulty</th><th scope="col" class="reading-time">Read time</th></tr></thead>
                 <tbody>
                 <?php foreach ($resources as $resource): ?>
-                    <tr id="resource-<?= (string)h((string)$resource->get('id')) ?>">
+                    <tr id="<?= (string)h($controlPrefix) ?>-resource-<?= (string)h((string)$resource->get('id')) ?>">
                         <td><h3><?= (string)h((string)$resource->get('title')) ?></h3><p class="resource-description"><?= (string)h((string)$resource->get('summary')) ?></p></td>
                         <td data-column="Topic"><span class="topic-tag"><?= (string)h($categories[(string)$resource->get('category')] ?? '') ?></span></td>
                         <td data-column="Difficulty"><span class="resource-level"><?= (string)h($levels[(string)$resource->get('level')] ?? '') ?></span></td>

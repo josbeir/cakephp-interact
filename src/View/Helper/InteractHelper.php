@@ -58,9 +58,9 @@ class InteractHelper extends Helper
      *
      * @param array<string, mixed> $props Server-owned parameters declared with Prop.
      */
-    public function render(string $alias, array $props = [], ?string $key = null): string
+    public function render(string $alias, array $props = [], ?string $key = null, ?string $urlPrefix = null): string
     {
-        return $this->runtime()->mount($alias, $props, $key ?? $alias, $this->context())->html;
+        return $this->runtime()->mount($alias, $props, $key ?? $alias, $this->context(), $urlPrefix)->html;
     }
 
     /**

@@ -37,15 +37,22 @@ export class RequestQueue {
     if (this.disposed) return Promise.reject(new Error('Island was removed.'));
     return new Promise((resolve, reject) => {
       const existing =
-        invocation.action === null && invocation.upload === undefined
-          ? this.pending.find(
-              (task) =>
-                task.action === null &&
-                task.upload === undefined &&
-                task.uploadRevision === invocation.uploadRevision,
-            )
-          : undefined;
+        invocation.urlRestore !== undefined
+          ? this.pending.find((task) => task.urlRestore !== undefined)
+          : invocation.action === null && invocation.upload === undefined
+            ? this.pending.find(
+                (task) =>
+                  task.action === null &&
+                  task.urlRestore === undefined &&
+                  task.upload === undefined &&
+                  task.uploadRevision === invocation.uploadRevision,
+              )
+            : undefined;
       if (existing) {
+        if (invocation.urlRestore) {
+          existing.urlRestore = invocation.urlRestore;
+          existing.urlEpoch = invocation.urlRestore.epoch;
+        }
         existing.resolve.push(resolve);
         existing.reject.push(reject);
       } else {
@@ -82,6 +89,8 @@ export class RequestQueue {
       await this.execute({
         action: task.action,
         args: task.args,
+        ...(task.urlEpoch === undefined ? {} : { urlEpoch: task.urlEpoch }),
+        ...(task.urlRestore ? { urlRestore: task.urlRestore } : {}),
         ...(task.upload ? { upload: task.upload } : {}),
         ...(task.uploadRevision === undefined
           ? {}

@@ -66,6 +66,7 @@ See [Actions](/guide/actions) for the corresponding `adjust()` implementation.
 `sync(): Promise<RequestResult>` sends current writable edits and renders the
 island without invoking an action. Fresh `viewData()` can query new data. It does
 not rerun the controller or `mount()`, or automatically save a record.
+Declared [URL bindings](/guide/url-state) publish accepted values automatically.
 
 Actions queue in order; pending synchronization coalesces. Each island processes
 one request at a time. [Events](/guide/events) can trigger another island's

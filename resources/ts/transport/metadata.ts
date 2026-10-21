@@ -1,3 +1,5 @@
+import { urlFields } from '../url/codec';
+import type { UrlFields } from '../url/types';
 import { uploadMetadata } from '../uploads/protocol';
 import type { UploadMetadata } from '../uploads/types';
 import type { State, Writable } from '../types';
@@ -15,6 +17,7 @@ export interface MountMetadata {
   endpoint: string;
   csrf: string;
   uploads: UploadMetadata;
+  url: UrlFields;
 }
 
 /**
@@ -23,6 +26,8 @@ export interface MountMetadata {
  * @throws Error When the markup cannot safely initialize an island client.
  */
 export function readMetadata(root: HTMLElement): MountMetadata {
+  const url: unknown = JSON.parse(root.dataset.interactUrl ?? '{}');
+  if (!urlFields(url)) throw new Error('Invalid initial URL metadata.');
   const uploads: unknown = JSON.parse(root.dataset.interactUploads ?? '{}');
   if (!uploadMetadata(uploads))
     throw new Error('Invalid initial upload metadata.');
@@ -41,6 +46,7 @@ export function readMetadata(root: HTMLElement): MountMetadata {
     throw new Error('Island endpoints must be same-origin.');
   return {
     uploads,
+    url,
     id,
     snapshot,
     state: initial,
