@@ -20,6 +20,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Use `x-interact:poll` for managed periodic refreshes. Keep refreshes and actions on the existing `$server` bridge, and use Alpine conditions for application-controlled pauses or completion.
 - Use `x-interact:ignore` for widget-owned DOM and `x-modelable` with `x-interact:model` for custom values. Keep library instances outside reactive state, manage their lifecycle through application Alpine wrappers, and leave server-rendered errors outside protected regions.
 - Use State URL options for query bindings and the existing `$server` bridge for updates. Keep URL parameter ownership explicit, preserve unrelated drafts and history state, and never replay actions on Back/Forward.
+- Use `redirect()` and `downloadUrl()` only in declared actions. Preserve CakePHP page routing defaults in signed identity; keep downloads as independently authorized native requests and enhanced navigation separate.
 - Use Alpine shorthand consistently in code and documentation: `@event` for event listeners and `:attribute` for bindings.
 
 ## Usability and cognitive load

@@ -1,6 +1,7 @@
+import { destination, redirect } from '../effects/browser';
 import { urlFields, urlState } from '../url/codec';
 import { uploadMetadata } from '../uploads/protocol';
-import type { IslandResponse, Writable } from '../types';
+import type { UpdateResponse, Writable } from '../types';
 import { forbidden, record, state } from '../state/values';
 
 /**
@@ -23,7 +24,14 @@ export function writable(value: unknown): value is Writable {
 /**
  * Check the complete update envelope before any server state or effects are applied.
  */
-export function response(value: unknown): value is IslandResponse {
+export function response(value: unknown): value is UpdateResponse {
+  if (record(value) && 'redirect' in value)
+    return (
+      Object.keys(value).length === 3 &&
+      value.version === 1 &&
+      typeof value.id === 'string' &&
+      redirect(value.redirect)
+    );
   return (
     record(value) &&
     value.version === 1 &&
@@ -36,6 +44,10 @@ export function response(value: unknown): value is IslandResponse {
     state(value.state) &&
     (value.url === undefined || urlState(value.state, value.url)) &&
     writable(value.writable) &&
+    (value.download === undefined ||
+      (destination(value.download, true) &&
+        record(value.errors) &&
+        Object.keys(value.errors).length === 0)) &&
     record(value.errors) &&
     Object.values(value.errors).every(
       (entry) =>

@@ -74,3 +74,9 @@ To reset demo data, stop the server and tests, then delete `build/tmp/demo.sqlit
 It is recreated on the next request. `npm run preview` disables OPcache so edits
 appear immediately. See [Troubleshooting](/troubleshooting) for asset or update
 failures and [Contributing](/contributing) for quality checks.
+
+## Action outcomes
+
+[Save and redirect](/examples/redirect) follows model validation with native navigation.
+[Invoice download](/examples/download) serves a file from a separate CakePHP endpoint.
+The larger demo combines both at `/outcomes`.

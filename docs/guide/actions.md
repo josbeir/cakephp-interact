@@ -98,3 +98,5 @@ Actions queue in order within an island and are never automatically retried.
 A failed connection can occur after an operation completed. See
 [error handling](/guide/failures) before implementing recovery for persistent
 operations.
+
+Actions can also [redirect](/guide/redirects-and-downloads) or request a [download](/guide/redirects-and-downloads#downloads) through PHP helpers. The template still uses `$server.call()`.

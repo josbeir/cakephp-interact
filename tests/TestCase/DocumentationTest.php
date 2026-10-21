@@ -3,10 +3,13 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase;
 
+use App\Controller\InvoicesController;
 use Cake\Core\Configure;
+use Cake\Http\ServerRequest;
 use Cake\ORM\Locator\LocatorInterface;
 use Cake\ORM\TableRegistry;
 use Interact\IslandContext;
+use Interact\Runtime\RedirectResult;
 use Interact\Test\Fixture\DocumentationRuntime;
 use Laminas\Diactoros\Stream;
 use Laminas\Diactoros\UploadedFile;
@@ -61,6 +64,30 @@ class DocumentationTest extends TestCase
         static::assertTrue($valid->state['saved']);
         static::assertSame('article-saved', $valid->events[0]['name']);
         static::assertSame(1, TableRegistry::getTableLocator()->get('Articles')->find()->count());
+    }
+
+    public function testRedirectAndDownloadExamplesUseNativeRoutesAndResponses(): void
+    {
+        $runtime = $this->examples->runtime;
+        $context = $this->examples->context;
+        $mount = $runtime->mount('article-redirect', [], 'form', $context);
+        $invalid = $runtime->update(['snapshot' => $mount->snapshot, 'action' => 'save'], $context);
+        static::assertNotEmpty($invalid->errors);
+        static::assertStringContainsString('Enter a title.', $invalid->html);
+        $saved = $runtime->update([
+            'snapshot' => $invalid->snapshot,
+            'action' => 'save',
+            'updates' => ['title' => 'Redirect example'],
+        ], $context);
+        static::assertInstanceOf(RedirectResult::class, $saved);
+        static::assertSame('/articles/1', $saved->destination);
+        $invoice = $runtime->mount('invoice-download', [], 'invoice', $context);
+        $exported = $runtime->update(['snapshot' => $invoice->snapshot, 'action' => 'download'], $context);
+        static::assertSame('/invoices/sample', $exported->download);
+        static::assertStringContainsString('Requested 1 downloads.', $exported->html);
+        $file = new InvoicesController(new ServerRequest())->download();
+        static::assertStringContainsString('invoice.csv', $file->getHeaderLine('Content-Disposition'));
+        static::assertSame("Item,Amount\nWorkshop,125.00\n", (string)$file->getBody());
     }
 
     public function testSearchFinderPaginationEmptyResultsAndLiteralWildcards(): void

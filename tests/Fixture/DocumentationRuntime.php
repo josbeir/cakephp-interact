@@ -4,9 +4,11 @@ declare(strict_types=1);
 namespace Interact\Test\Fixture;
 
 use App\Island\ArticleForm;
+use App\Island\ArticleRedirect;
 use App\Island\CountryPicker;
 use App\Island\DependentSelects;
 use App\Island\DocumentUpload;
+use App\Island\InvoiceDownload;
 use App\Island\JobProgress;
 use App\Island\ResourceSearch;
 use App\Island\SalesChart;
@@ -21,6 +23,7 @@ use Cake\Http\ServerRequest;
 use Cake\Http\Session;
 use Cake\ORM\Locator\TableLocator;
 use Cake\ORM\TableRegistry;
+use Cake\Routing\Router;
 use Interact\Discovery\Registry;
 use Interact\IslandContext;
 use Interact\Runtime\Factory;
@@ -71,6 +74,8 @@ class DocumentationRuntime
         $registry = new Registry(collection: 'documentation-fixtures');
         foreach ([
             ArticleForm::class,
+            ArticleRedirect::class,
+            InvoiceDownload::class,
             CountryPicker::class,
             DependentSelects::class,
             DocumentUpload::class,
@@ -79,6 +84,19 @@ class DocumentationRuntime
             SalesChart::class,
         ] as $class) {
             $registry->register($class);
+        }
+
+        if (!isset(Router::getRouteCollection()->named()['articles:view'])) {
+            Router::createRouteBuilder('/')->connect(
+                '/articles/{id}',
+                ['controller' => 'Articles', 'action' => 'view'],
+                ['_name' => 'articles:view', 'pass' => ['id']],
+            );
+            Router::createRouteBuilder('/')->connect(
+                '/invoices/sample',
+                ['controller' => 'Invoices', 'action' => 'download'],
+                ['_name' => 'invoices:download'],
+            );
         }
 
         $session = new Session(['defaults' => 'php', 'ini' => ['session.use_cookies' => 0]]);

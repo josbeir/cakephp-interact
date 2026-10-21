@@ -3,8 +3,11 @@ declare(strict_types=1);
 
 namespace Interact;
 
+use Interact\Action\ActionEffects;
+use Interact\Action\Outcome;
 use Interact\Validation\ErrorNormalizer;
 use InvalidArgumentException;
+use Psr\Http\Message\UriInterface;
 
 /**
  * Owns the application behavior and response feedback for one interactive region.
@@ -24,6 +27,42 @@ abstract class Island
      * @var list<array{name: string, detail: array<string, mixed>}> Effects for this response only.
      */
     protected array $events = [];
+
+    protected ?ActionEffects $actionEffects = null;
+
+    /**
+     * Provide the runtime's request-local outcome capability, excluded from transported state.
+     *
+     * @internal
+     */
+    public function actionEffects(): ActionEffects
+    {
+        return $this->actionEffects ??= new ActionEffects();
+    }
+
+    /**
+     * Request full-page navigation after a successful action without terminating PHP execution.
+     *
+     * @param array<array-key, mixed>|string|UriInterface $url CakePHP route or HTTP(S) URL.
+     *
+     * @throws \LogicException When called outside an action or after another outcome.
+     */
+    public function redirect(array|string|UriInterface $url, bool $replace = false): void
+    {
+        $this->actionEffects()->record(new Outcome('redirect', $url, $replace));
+    }
+
+    /**
+     * Request a native download from an independently authorized, same-origin endpoint.
+     *
+     * @param array<array-key, mixed>|string|UriInterface $url CakePHP route or download URL.
+     *
+     * @throws \LogicException When called outside an action or after another outcome.
+     */
+    public function downloadUrl(array|string|UriInterface $url): void
+    {
+        $this->actionEffects()->record(new Outcome('download', $url));
+    }
 
     /**
      * Authorize initial mounts and updates before application hooks and rendering.

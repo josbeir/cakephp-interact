@@ -3,8 +3,12 @@ declare(strict_types=1);
 
 namespace Interact\Runtime;
 
+use Closure;
+use Interact\Action\Outcome;
+use Interact\Action\OutcomeResponder;
 use Interact\Discovery\Definition;
 use Interact\Island;
+use Interact\IslandContext;
 use InvalidArgumentException;
 use ReflectionNamedType;
 
@@ -13,6 +17,28 @@ use ReflectionNamedType;
  */
 class ActionInvoker
 {
+    /**
+     * Keep browser outcome handling separate from action signature validation.
+     */
+    public function __construct(protected readonly OutcomeResponder $outcomes = new OutcomeResponder())
+    {
+    }
+
+    /**
+     * Select an action response without making the runtime own browser effect details.
+     *
+     * @param Closure(): Result $render Normal authorized island rendering.
+     */
+    public function respond(
+        Island $island,
+        ?Outcome $outcome,
+        SnapshotData $identity,
+        IslandContext $context,
+        Closure $render,
+    ): Result {
+        return $this->outcomes->respond($island, $outcome, $identity, $context, $render);
+    }
+
     /**
      * Reject unknown actions, unsupported arguments, and invalid argument counts before application
      * execution.
@@ -58,11 +84,14 @@ class ActionInvoker
     /**
      * Invoke only after state validation and application authorization have succeeded.
      */
-    public function invoke(Definition $definition, Island $island, UpdateRequest $request): void
+    public function invoke(Definition $definition, Island $island, UpdateRequest $request): ?Outcome
     {
         if ($request->action !== null) {
             $callback = $definition->actions[$request->action]->getClosure($island);
-            $callback(...$request->arguments);
+
+            return $island->actionEffects()->capture(static fn() => $callback(...$request->arguments));
         }
+
+        return null;
     }
 }

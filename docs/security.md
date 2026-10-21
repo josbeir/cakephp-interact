@@ -119,3 +119,5 @@ Binding, nesting, and transport payload sizes/depths are bounded. Prototype-rela
 
 For safe error responses and middleware integration, see
 [failures and recovery](/guide/failures#server-integration).
+
+Redirect destinations must be validated by the application when they originate from user input. HTTP(S) external redirects are supported. Download URLs are same-origin and their endpoints must independently authorize file access; an island response is not an access token. See [redirects and downloads](/guide/redirects-and-downloads).

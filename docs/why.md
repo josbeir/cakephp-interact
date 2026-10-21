@@ -19,7 +19,7 @@ Alpine handles browser interactions. Interact is independent of Livewire and htm
 ## Features
 
 - Input binding, live search, conditional fields, and URL-bound state.
-- PHP actions, entity validation, and explicit saving.
+- PHP actions, entity validation, explicit saving, redirects, and native downloads.
 - Independent nested islands and browser events.
 - Polling and temporary file uploads.
 - Alpine integration and third-party JavaScript widgets.

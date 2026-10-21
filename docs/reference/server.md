@@ -55,6 +55,8 @@ See [Actions](/guide/actions) for the corresponding `adjust()` implementation.
 
 <span id="synchronize-or-refresh"></span>
 
+PHP actions can request [redirects](/guide/redirects-and-downloads) and [downloads](/guide/redirects-and-downloads#downloads). No additional bridge methods are needed. A successful download action result means the download was requested, not that its transfer completed.
+
 ## sync()
 
 ```html
@@ -238,7 +240,7 @@ See [File uploads](/guide/uploads) for staging behavior and limits.
 
 ## Request results
 
-`call()` and `sync()` return `{ ok: true }` after an accepted render, or
+`call()` and `sync()` return `{ ok: true }` after an accepted response (render or navigation), or
 `{ ok: false, error }` after a request failure. An accepted HTTP 422 can contain
 validation errors, so `ok` does not prove a save succeeded.
 
