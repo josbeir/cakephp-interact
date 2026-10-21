@@ -5,8 +5,9 @@ description: Protect island updates with current authorization, CSRF, scoped mid
 
 # Security and deployment
 
-Read this before deploying an island that displays private data or performs a
-protected action. For a concrete implementation, see [the article editor](/guide/forms).
+Island updates use your application's authorization, middleware, and CSRF
+protection. Signed snapshots protect state integrity; they do not grant access
+or hide data.
 
 ## Application middleware remains authoritative
 

@@ -1,0 +1,262 @@
+{
+  "api.md": [
+    "api-and-lifecycle",
+    "php-api-and-lifecycle",
+    "declarations",
+    "mounting",
+    "lifecycle",
+    "initial-render",
+    "update",
+    "upload-properties",
+    "hooks-and-helpers",
+    "binding-and-actions",
+    "validation-errors",
+    "nesting-and-events",
+    "application-integration"
+  ],
+  "contributing.md": [
+    "contributing",
+    "php-checks",
+    "browser-runtime",
+    "javascript-and-browser-checks",
+    "keep-examples-trustworthy",
+    "documentation-and-releases"
+  ],
+  "directives/ignore.md": [
+    "x-interact-ignore",
+    "protect-a-widget-s-markup",
+    "keep-alpine-behavior-active",
+    "connect-a-custom-input",
+    "update-a-chart-without-replacing-it",
+    "recreate-or-remove-the-widget",
+    "supported-declaration"
+  ],
+  "directives/index.md": [
+    "template-api",
+    "combine-bindings-in-a-form",
+    "use-ordinary-alpine-for-presentation"
+  ],
+  "directives/model.md": [
+    "x-interact-model",
+    "preview-a-name",
+    "choose-when-to-send-edits",
+    "text-fields-and-textareas",
+    "select-one-option",
+    "radio-buttons",
+    "a-boolean-checkbox",
+    "multiple-checkboxes",
+    "multiple-selects",
+    "numbers-and-empty-values",
+    "nested-values",
+    "custom-alpine-inputs",
+    "file-inputs",
+    "drafts-disabled-controls-and-validation"
+  ],
+  "directives/poll.md": [
+    "x-interact-poll",
+    "change-the-interval",
+    "call-a-php-action",
+    "stop-requests-when-php-reports-completion",
+    "let-the-user-pause-and-resume",
+    "poll-only-while-visible",
+    "preserve-edits-and-feedback",
+    "supported-declaration-and-lifetime"
+  ],
+  "directives/submit.md": [
+    "x-interact-submit",
+    "submit-an-editable-record",
+    "prevent-repeated-submission",
+    "preview-without-saving",
+    "pass-action-arguments",
+    "keep-native-validation-and-keyboard-submission",
+    "show-feedback",
+    "custom-javascript-submission-functions",
+    "supported-declaration"
+  ],
+  "examples.md": [
+    "explore-the-demo",
+    "run-it-locally",
+    "choose-an-example",
+    "find-the-cooperating-files",
+    "reset-or-troubleshoot"
+  ],
+  "getting-started.md": [
+    "build-an-interactive-region",
+    "your-first-island",
+    "declare-an-island",
+    "write-the-element",
+    "mount-it-in-an-existing-page",
+    "add-an-independent-counter",
+    "choose-your-next-step",
+    "application-owned-alpine",
+    "reuse-an-action-template"
+  ],
+  "guide/actions.md": [
+    "actions-and-feedback",
+    "pass-an-argument",
+    "submit-a-draft",
+    "show-progress-and-failures",
+    "show-feedback-for-one-action",
+    "synchronize-without-an-action"
+  ],
+  "guide/alpine.md": [
+    "read-island-data-with-alpine-and-javascript",
+    "read-a-php-value-in-the-browser",
+    "know-which-data-reaches-javascript",
+    "keep-server-scoped-to-its-island",
+    "use-inline-expressions-in-your-template",
+    "access-server-from-a-javascript-file",
+    "alternative-application-owned-alpine",
+    "react-to-changing-server-data",
+    "distinguish-browser-drafts-from-php-rendering"
+  ],
+  "guide/failures.md": [
+    "failures-and-recovery",
+    "keep-the-draft-and-offer-a-choice",
+    "understand-the-failure",
+    "inspect-an-outcome-in-javascript",
+    "server-integration",
+    "complete-demo-implementation",
+    "update-existing-error-bindings"
+  ],
+  "guide/forms.md": [
+    "forms-and-validation",
+    "separate-the-record-from-the-draft",
+    "render-a-normal-form",
+    "render-with-formhelper",
+    "validate-and-save-in-the-action",
+    "use-custom-or-nested-errors",
+    "add-dependent-or-conditional-fields",
+    "keep-protection-and-persistence-explicit"
+  ],
+  "guide/javascript-widgets.md": [
+    "keep-javascript-widgets-working-through-updates",
+    "see-what-protection-changes",
+    "connect-a-widget-value-to-php",
+    "try-an-enhanced-select",
+    "refresh-display-only-widgets",
+    "keep-ownership-explicit"
+  ],
+  "guide/nesting.md": [
+    "nested-islands-and-events",
+    "give-each-editor-an-identity",
+    "announce-a-successful-save",
+    "refresh-another-island",
+    "refresh-only-the-matching-article",
+    "what-a-refresh-updates",
+    "keep-browser-only-state-local"
+  ],
+  "guide/page-islands.md": [
+    "whole-page-islands",
+    "select-a-native-template",
+    "understand-which-requests-run-the-controller",
+    "choose-embedded-or-whole-page-rendering",
+    "routing-and-navigation"
+  ],
+  "guide/polling.md": [
+    "polling",
+    "choose-an-interval",
+    "poll-a-php-action-until-completion",
+    "let-the-user-pause",
+    "refresh-only-while-visible",
+    "keep-edits-and-feedback-intact",
+    "ownership-and-lifetime"
+  ],
+  "guide/search.md": [
+    "search-and-pagination",
+    "send-the-search-draft-after-typing",
+    "query-only-the-current-page",
+    "reset-and-bound-pagination",
+    "read-the-complete-working-files"
+  ],
+  "guide/state.md": [
+    "state-and-input-binding",
+    "bind-a-text-input",
+    "pass-a-controller-value-explicitly",
+    "choose-when-to-send-edits",
+    "bind-other-native-controls",
+    "compute-data-for-a-render"
+  ],
+  "guide/uploads.md": [
+    "file-uploads",
+    "declare-a-file-and-bind-its-input",
+    "use-accepted-files-in-php",
+    "generate-thumbnails-through-your-application",
+    "validate-and-save-explicitly",
+    "add-multiple-attachments",
+    "set-limits-for-each-upload-field",
+    "show-transfer-feedback-with-alpine",
+    "configure-private-staging-and-cleanup"
+  ],
+  "index.md": ["a-php-class-an-element-one-mount-call"],
+  "installation.md": [
+    "installation",
+    "install-in-your-application",
+    "build-the-browser-runtime",
+    "load-the-plugin",
+    "load-the-helper",
+    "keep-the-update-route-protected",
+    "application-owned-alpine",
+    "prepare-the-plugin-checkout"
+  ],
+  "reference/browser.md": [
+    "browser-api",
+    "native-attributes",
+    "alpine-directives",
+    "widget-owned-dom-and-custom-models",
+    "polling",
+    "alpine-bridge",
+    "request-activity",
+    "form-submission-protection",
+    "structured-failures",
+    "scheduling-and-dom-behavior",
+    "runtime-integration",
+    "file-transfers"
+  ],
+  "reference/rendering.md": [
+    "rendering-and-services",
+    "templateview",
+    "islandview",
+    "add-application-helpers",
+    "dependency-boundaries"
+  ],
+  "reference/server.md": [
+    "server",
+    "read-data-and-call-an-action",
+    "state-and-scope",
+    "call-php-actions-with-arguments",
+    "synchronize-or-refresh",
+    "show-queued-and-executing-work",
+    "show-unsynchronized-drafts",
+    "validation-feedback-and-request-failures",
+    "inspect-an-outcome-in-javascript",
+    "export-the-current-writable-draft",
+    "file-transfer-feedback-and-controls",
+    "member-reference"
+  ],
+  "security.md": [
+    "security-and-deployment",
+    "application-middleware-remains-authoritative",
+    "custom-endpoints",
+    "snapshots",
+    "markup-and-csp"
+  ],
+  "troubleshooting.md": [
+    "troubleshooting",
+    "the-page-renders-but-buttons-do-nothing",
+    "an-update-fails-csrf-validation",
+    "a-request-fails-even-though-its-status-is-200",
+    "a-template-variable-is-undefined",
+    "an-island-alias-cannot-be-found",
+    "a-helper-works-on-the-page-but-not-inside-an-island",
+    "an-old-page-stops-accepting-updates",
+    "a-child-resets-or-reports-duplicate-keys",
+    "updates-repeat-or-the-template-recurses"
+  ],
+  "why.md": [
+    "why-interact",
+    "choose-the-right-boundary",
+    "keep-application-responsibilities-familiar",
+    "what-is-available-today"
+  ]
+}

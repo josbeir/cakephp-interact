@@ -21,7 +21,8 @@
   "autoload-dev": {
     "psr-4": {
       "Interact\\Test\\": "tests/",
-      "TestApp\\": "tests/test_app/src/"
+      "TestApp\\": "tests/test_app/src/",
+      "App\\": "tests/docs/app/src/"
     }
   },
   "scripts": {

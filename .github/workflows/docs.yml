@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
+      - 'tests/docs/**'
+      - 'scripts/check-docs.mjs'
       - 'README.md'
       - 'package.json'
       - 'package-lock.json'
@@ -12,6 +14,8 @@ on:
   pull_request:
     paths:
       - 'docs/**'
+      - 'tests/docs/**'
+      - 'scripts/check-docs.mjs'
       - 'README.md'
       - 'package.json'
       - 'package-lock.json'

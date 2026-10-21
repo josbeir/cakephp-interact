@@ -69,57 +69,89 @@ export default defineConfig({
       height: 24,
     },
     nav: [
-      { text: 'Guide', link: '/getting-started' },
+      { text: 'Documentation', link: '/why' },
       { text: 'Examples', link: '/examples' },
-      { text: 'Reference', link: '/api' },
     ],
-    sidebar: [
-      {
-        text: 'Start here',
-        items: [
-          { text: 'Why Interact?', link: '/why' },
-          { text: 'Installation', link: '/installation' },
-          { text: 'Your first island', link: '/getting-started' },
-          { text: 'Explore the demo', link: '/examples' },
-        ],
-      },
-      {
-        text: 'Build interactive pages',
-        items: [
-          { text: 'State and input binding', link: '/guide/state' },
-          { text: 'Alpine and $server', link: '/guide/alpine' },
-          { text: 'Actions and feedback', link: '/guide/actions' },
-          { text: 'Search and pagination', link: '/guide/search' },
-          { text: 'Polling', link: '/guide/polling' },
-          { text: 'File uploads', link: '/guide/uploads' },
-          { text: 'JavaScript widgets', link: '/guide/javascript-widgets' },
-          { text: 'Forms and validation', link: '/guide/forms' },
-          { text: 'Failures and recovery', link: '/guide/failures' },
-          { text: 'Nested islands and events', link: '/guide/nesting' },
-          { text: 'Whole-page islands', link: '/guide/page-islands' },
-        ],
-      },
-      {
-        text: 'Reference',
-        items: [
-          { text: 'PHP API and lifecycle', link: '/api' },
-          { text: 'Browser API', link: '/reference/browser' },
-          { text: 'Rendering and services', link: '/reference/rendering' },
-        ],
-      },
-      {
-        text: 'Help and project',
-        items: [
-          { text: 'Security and deployment', link: '/security' },
-          { text: 'Troubleshooting', link: '/troubleshooting' },
-          { text: 'Contributing', link: '/contributing' },
-        ],
-      },
-    ],
+    sidebar: {
+      '/examples': [
+        {
+          text: 'Examples',
+          items: [
+            { text: 'Overview and demo', link: '/examples' },
+            { text: 'Article form', link: '/examples/article-form' },
+            { text: 'Search and pagination', link: '/examples/search' },
+            { text: 'Dependent fields', link: '/examples/dependent-fields' },
+            { text: 'Single document upload', link: '/examples/upload' },
+            { text: 'Job polling', link: '/examples/polling' },
+            { text: 'Enhanced select', link: '/examples/enhanced-select' },
+            { text: 'Chart updates', link: '/examples/chart' },
+          ],
+        },
+      ],
+      '/': [
+        {
+          text: 'Getting started',
+          items: [
+            { text: 'Overview', link: '/why' },
+            { text: 'Installation', link: '/installation' },
+            { text: 'Quickstart', link: '/getting-started' },
+          ],
+        },
+        {
+          text: 'Essentials',
+          items: [
+            { text: 'Islands', link: '/guide/islands' },
+            { text: 'Properties', link: '/guide/state' },
+            { text: 'Actions', link: '/guide/actions' },
+            { text: 'Lifecycle', link: '/guide/lifecycle' },
+            { text: 'Nested islands', link: '/guide/nesting' },
+            { text: 'Events', link: '/guide/events' },
+            { text: 'Page islands', link: '/guide/page-islands' },
+          ],
+        },
+        {
+          text: 'Features',
+          items: [
+            { text: 'Validation', link: '/guide/forms' },
+            { text: 'File uploads', link: '/guide/uploads' },
+            { text: 'Error handling', link: '/guide/failures' },
+          ],
+        },
+        {
+          text: 'HTML directives',
+          link: '/directives/',
+          items: [
+            { text: 'x-interact:model', link: '/directives/model' },
+            { text: 'x-interact:submit', link: '/directives/submit' },
+            { text: 'x-interact:poll', link: '/directives/poll' },
+            { text: 'x-interact:ignore', link: '/directives/ignore' },
+          ],
+        },
+        {
+          text: 'JavaScript',
+          items: [
+            { text: 'Alpine', link: '/guide/alpine' },
+            { text: '$server', link: '/reference/server' },
+          ],
+        },
+        {
+          text: 'Advanced',
+          collapsed: true,
+          items: [
+            { text: 'Rendering and helpers', link: '/reference/rendering' },
+            { text: 'Requests and DOM updates', link: '/reference/browser' },
+            { text: 'Security and deployment', link: '/security' },
+            { text: 'Troubleshooting', link: '/troubleshooting' },
+          ],
+        },
+      ],
+    },
     search: { provider: 'local' },
     outline: { level: [2, 3] },
     editLink: { pattern: `${repository}/edit/main/docs/:path` },
     socialLinks: [{ icon: 'github', link: repository }],
-    footer: { message: 'Released under the MIT License.' },
+    footer: {
+      message: `Released under the MIT License. <a href="${base}contributing.html">Contributing</a>`,
+    },
   },
 });

@@ -1,54 +1,46 @@
 ---
-title: Why Interact?
-description: See where PHP islands fit in a CakePHP application and which interactions Interact supports today.
+title: 'Overview'
+description: CakePHP Interact provides server-rendered reactive PHP islands.
 ---
 
-# Why Interact?
+<span id="why-interact"></span>
+<span id="choose-the-right-boundary"></span>
+<span id="keep-application-responsibilities-familiar"></span>
+<span id="what-is-available-today"></span>
 
-A search box should update its results while you type. An article editor should
-save without replacing the whole page. Interact lets you build those interactions
-with a PHP class and an ordinary CakePHP element.
+# Overview
 
-The first request renders HTML on the server. Later interactions send the
-island's declared state and action to CakePHP, which authorizes the request and
-renders new HTML for that region. Alpine preserves local browser interactions.
+CakePHP Interact adds interactive PHP regions to CakePHP pages. An island renders
+HTML and handles subsequent actions without reloading the surrounding page.
 
-## Choose the right boundary
+A PHP class declares its state and actions. CakePHP templates produce the HTML;
+Alpine handles browser interactions. Interact is independent of Livewire and htmx.
 
-| You want to…                                         | Build…                                                     |
-| ---------------------------------------------------- | ---------------------------------------------------------- |
-| Filter a listing while typing                        | An island with a writable search term and a model finder   |
-| Edit several records independently                   | A keyed editor island for each record                      |
-| Recalculate choices when another field changes       | Writable fields, an `updated()` hook, and computed choices |
-| Make most of an existing action template interactive | A whole-page island using that template                    |
-| Toggle a local menu without contacting PHP           | Local Alpine state inside the island                       |
+## Features
 
-Start with one region. Your normal controller action and surrounding template
-can keep rendering the rest of the page.
+- Input binding, live search, and conditional fields.
+- PHP actions, entity validation, and explicit saving.
+- Independent nested islands and browser events.
+- Polling and temporary file uploads.
+- Alpine integration and third-party JavaScript widgets.
 
-## Keep application responsibilities familiar
+Start with [Installation](/installation) and [Quickstart](/getting-started).
+[Examples](/examples) contains complete applications. Use the documentation's
+feature and API pages for syntax, defaults, and behavior.
 
-- **Templates:** native CakePHP templates and elements own the HTML.
-- **Models:** named finders own domain queries; normal validation and rules still apply.
-- **Saving:** an explicit action calls your application's persistence code.
-- **Access:** your middleware and the island's `authorize()` check current permissions.
+## Application responsibilities
 
-An island has its own declared variables. Pass a controller value as a prop when
-mounting; load changing query results in `viewData()`. The
-[state guide](/guide/state) shows both.
+Use Table finders for queries and CakePHP validation, application rules, and
+services for persistence. Current authorization and CSRF middleware apply to
+updates. Synchronization does not save automatically.
 
-## What is available today?
+Keep browser-only UI state in Alpine. Put interactive PHP values in declared
+properties; entities, queries, and services remain on the server.
 
-The development preview includes input binding, PHP actions, validation feedback,
-search and pagination, nested islands, browser events, and whole-page islands.
-It uses its own fetch protocol, Alpine, and Alpine Morph, independently of Livewire
-and htmx.
+## Status and compatibility
 
-File uploads use explicit declarations, temporary staging, and normal CakePHP
-validation; see [file uploads](/guide/uploads).
+Interact targets **PHP 8.5 and CakePHP 6 development builds**. It is available as
+`dev-main`; there is no stable release. The API is experimental.
 
-Links still use normal CakePHP navigation. Enhanced navigation and URL-bound state
-are planned for phase 2. Automatic entity transport and a form
-adapter are outside the current implementation. Public APIs may change before release.
-
-[Build your first island](/getting-started) · [Try the demo](/examples)
+Navigation, URL-bound state, entity transport, and form-plugin adapters are not
+implemented. Normal links continue to use CakePHP navigation.

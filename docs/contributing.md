@@ -82,10 +82,11 @@ tests and demos. Escape output, use Alpine shorthand, and preserve native form
 semantics. Do not suppress rules, weaken assertions, exclude production code, or
 add coverage-ignore annotations to reach a target.
 
-For documentation, explain a task, show cooperating files, and describe what the
-reader should observe. Keep setup prerequisites visible. Prefer importing tested
-demo source for full examples and put exhaustive contracts in reference pages.
-Check snippet syntax, rendering behavior, links, and desktop/mobile navigation.
+For feature documentation, start with a direct definition and minimal syntax.
+Keep one page per topic. Small control examples use HTML-first tabs with a
+FormHelper alternative. Put focused complete applications in Examples and import
+their tested source from `tests/docs/app/`. Check snippets, behavior, links, and
+desktop/mobile navigation.
 
 ## Documentation and releases
 

@@ -1,12 +1,15 @@
 ---
-title: Rendering and services
+title: Rendering and helpers
 description: Understand TemplateView and IslandView, configure application helpers, and replace container services at explicit boundaries.
 ---
 
-# Rendering and services
+<span id="rendering-and-services"></span>
 
-Ordinary islands need a class, a template or element, and the helper. Use this
-reference when an application needs custom helpers or service implementations.
+# Rendering and helpers
+
+`TemplateView` renders island templates and elements. `IslandView` adds the
+initial mount and layout for page islands. Applications can extend their helper
+configuration and replace rendering services.
 
 ## TemplateView
 
@@ -45,7 +48,7 @@ renders:
 
 ::: code-group
 
-```php [src/View/IslandTemplateView.php]
+```php [View]
 <?php
 declare(strict_types=1);
 
@@ -54,6 +57,8 @@ namespace App\View;
 use Interact\View\TemplateView;
 
 /**
+ * src/View/IslandTemplateView.php
+ *
  * Supplies application helper configuration to every isolated island render.
  */
 class IslandTemplateView extends TemplateView
@@ -69,7 +74,7 @@ class IslandTemplateView extends TemplateView
 }
 ```
 
-```php [src/Interact/ApplicationFactory.php]
+```php [Factory]
 <?php
 declare(strict_types=1);
 
@@ -81,6 +86,8 @@ use Interact\Runtime\Factory;
 use Interact\View\TemplateView;
 
 /**
+ * src/Interact/ApplicationFactory.php
+ *
  * Applies the application's island view configuration at the rendering boundary.
  */
 class ApplicationFactory extends Factory
@@ -110,11 +117,12 @@ use App\Interact\ApplicationFactory;
 use Interact\Discovery\Registry;
 use Interact\Runtime\Factory;
 use Interact\Security\SnapshotCodec;
+use Interact\Upload\UploadManager;
 ```
 
 ```php [Inside Application::services()]
 $container->addShared(Factory::class, ApplicationFactory::class)
-    ->addArguments([Registry::class, SnapshotCodec::class]);
+    ->addArguments([Registry::class, SnapshotCodec::class, UploadManager::class]);
 ```
 
 The plugin preserves application-provided definitions. Keep the same custom
