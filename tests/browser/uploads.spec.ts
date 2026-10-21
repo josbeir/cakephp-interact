@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import type { Page, Request, Route } from '@playwright/test';
 
 const file = (name = 'notes.txt', content = 'A real text document') => ({

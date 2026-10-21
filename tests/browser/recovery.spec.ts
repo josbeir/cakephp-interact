@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import type { Page } from '@playwright/test';
 import { islandId, targetsIsland } from './requests';
 
@@ -12,12 +12,14 @@ async function recovery(page: Page) {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.clock.install();
+  await page.clock.install({ time: new Date('2026-10-20T12:00:00Z') });
 });
 
 test('a real server exception pauses typing and a new explicit sync preserves the draft', async ({
   page,
 }) => {
+  // Keep the live debounce from morphing the button during its pointer action.
+  await page.clock.pauseAt(new Date('2026-10-20T12:00:01Z'));
   const region = await recovery(page);
   const id = await islandId(region);
   const pageErrors: string[] = [];
@@ -29,9 +31,14 @@ test('a real server exception pauses typing and a new explicit sync preserves th
   await region
     .getByLabel('Recovery draft', { exact: true })
     .fill('before failure');
+  const failure = page.waitForResponse((reply) =>
+    targetsIsland(reply.request(), id),
+  );
   await region
     .getByRole('button', { name: 'Simulate server failure', exact: true })
     .click();
+  expect((await failure).status()).toBe(500);
+  await page.clock.resume();
   await expect(region.getByRole('alert')).toContainText(
     'Check the result before trying again',
   );

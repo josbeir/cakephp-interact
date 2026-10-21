@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 import { islandId, targetsIsland } from './requests';
 
 for (const kind of ['HTML', 'FormHelper']) {

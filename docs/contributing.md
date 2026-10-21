@@ -62,7 +62,21 @@ runtime, and emits declarations with the native TypeScript 7 generator. There ar
 TypeScript compatibility aliases or second compiler installations.
 
 Playwright exercises the real CakePHP application in Chromium, Firefox, and
-WebKit. Test observable behavior, security failures, races, validation, focus,
+WebKit with three parallel workers. Import `test` and `expect` from
+`tests/browser/fixtures.ts`; its worker-scoped fixture boots PHP on an OS-assigned
+port with separate SQLite, session, cache, and upload storage. Documentation
+rendering subprocesses use that same worker storage. Workers stop their server
+and remove temporary storage on teardown; PHP diagnostics remain in
+`test-results/worker-*.log`. Browser tests do not use a running demo preview.
+
+Use Playwright's native filters and worker override for focused runs:
+
+```sh
+npm run test:browser -- tests/browser/form-models.spec.ts --project=chromium
+npm run test:browser -- --workers=1
+```
+
+Test observable behavior, security failures, races, validation, focus,
 and nested ownership even when coverage totals already pass. PHP integration
 tests exercise the middleware stack in process.
 

@@ -114,6 +114,7 @@ Required Composer scripts:
 - Explicitly include unexecuted runtime source. Report statements, functions, and branches too.
 - Use fake timers for scheduling and controlled doubles at HTTP boundaries.
 - Use Playwright against a real CakePHP application in Chromium, Firefox, and WebKit.
+- Browser specs import the shared `tests/browser/fixtures.ts` test API. Keep each parallel worker's PHP server, database, sessions, and upload storage isolated; release processes and temporary storage on teardown.
 - Prefer role/label locators, auto-waiting assertions, isolated contexts, deterministic fixtures, and network interception over fixed sleeps.
 - Test tampering, CSRF, expiry, unauthorized actions, permission changes, malformed payloads, races, submit-before-blur, validation, escaping, focus, disposal, and nested-state preservation regardless of coverage totals.
 - Provide npm scripts `typecheck`, `lint`, `format-check`, `format`, `test`, `test:watch`, `test:coverage`, `test:browser`, `build`, and `check`.
