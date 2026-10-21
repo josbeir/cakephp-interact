@@ -1,156 +1,118 @@
 ---
 title: 'x-interact:poll'
-description: Refresh islands on an interval, pause while hidden or offscreen, and stop requests when PHP reports completion.
+description: Refresh a PHP island periodically, conditionally, or only while visible.
 ---
 
 # x-interact:poll
 
-Refresh a status panel periodically. Put one polling declaration inside an
-[existing island](/getting-started):
+`x-interact:poll` refreshes an island at a regular interval.
 
 ```html
 <section x-interact:poll.5s>
-  <!-- Status rendered by the island. -->
+  <!-- Island content. -->
 </section>
 ```
 
-After five seconds, Interact calls `$server.sync()` and renders the **whole
-owning island**, including fresh `viewData()`. It does not rerun the controller
-or `mount()`. The declaration's location does not limit which part is refreshed.
+The default is five seconds. Each tick calls `$server.sync()` and rerenders the
+whole island, including fresh `viewData()`. The controller and `mount()` do not
+run again. See the [job polling example](/examples/polling).
 
-## Change the interval
+<span id="change-the-interval"></span>
+
+## Intervals
+
+Use one whole-number duration ending in `ms` or `s`:
 
 ```html
-<section x-interact:poll.1500ms>
-  <!-- Refresh every 1.5 seconds. -->
-</section>
+<section x-interact:poll.1500ms>...</section>
 ```
 
-The default is 5000 ms. Use one positive whole-number duration ending in `ms`
-or `s`, from 1 through 2,147,483,647 milliseconds.
+Intervals range from 1 through 2,147,483,647 milliseconds. The first tick waits
+one interval. Each subsequent interval starts after the previous expression
+settles, preventing overlapping polls and missed-tick backlogs.
 
-The first tick waits a full interval. Each later interval starts after the
-previous expression settles, so slow requests do not overlap or create a backlog.
+<span id="call-a-php-action"></span>
 
-## Call a PHP action
-
-An expression can invoke a declared action instead of plain synchronization:
+## Actions
 
 ```html
-<section x-interact:poll.10s="$server.call('refreshStatus')">
-  <!-- Current job status. -->
-</section>
+<section x-interact:poll.10s="$server.call('refreshStatus')">...</section>
 ```
 
-The island must expose `refreshStatus()` with `#[Action]`. Polling repeats this
-call, so use it for a repeatable application operation such as reading job
-status. Starting work and saving records should be explicit application decisions.
+The island must expose `refreshStatus()` with `#[Action]`. Polling actions repeat;
+use them for repeatable operations such as reading job status.
 
-## Stop requests when PHP reports completion
+<span id="stop-requests-when-php-reports-completion"></span>
 
-Declare server-owned state and let the action update it:
-
-```php [Inside the island class]
-#[State]
-public bool $running = true;
-
-#[State]
-public int $progress = 0;
-
-/**
- * Advance a simulated job and publish whether another status request is needed.
- */
-#[Action]
-public function refreshStatus(): void
-{
-    $this->progress = min(100, $this->progress + 25);
-    $this->running = $this->progress < 100;
-}
-```
-
-Import `State` and `Action` from `Interact\Attribute`. This fragment belongs in
-an island class; the [complete job example](/guide/polling#poll-a-php-action-until-completion)
-includes its declaration, element, mount, and restart control. A real application
-reads its authorized job's status instead of incrementing a simulated value.
-
-Guard the call with that state:
+## Conditions and PHP completion
 
 ```html
 <section
   x-interact:poll.5s="$server.state.running && $server.call('refreshStatus')"
 >
-  <!-- Current progress rendered by PHP. -->
+  <!-- Current progress. -->
 </section>
 ```
 
-When PHP sets `$running = false`, the accepted response updates
-`$server.state.running`. Later ticks evaluate the condition locally and make no
-request. No separate PHP stop method is required. If an explicit restart action
-sets it to `true`, a later tick resumes requests.
+Declare `running` as server-owned state. When PHP sets it to `false`, the response
+updates `$server.state.running` and subsequent ticks make no request. The timer
+still evaluates the condition locally. Setting it back to `true` permits later
+requests; no separate PHP stop method is needed.
 
-## Let the user pause and resume
+<span id="let-the-user-pause-and-resume"></span>
 
-Use local Alpine state for a presentation preference:
+## Pause and resume
 
 ```html
 <section
   x-data="{ autoRefresh: true }"
   x-interact:poll.5s="autoRefresh && $server.sync()"
 >
-  <label>
-    <input type="checkbox" x-model="autoRefresh" />
-    Automatically refresh
-  </label>
+  <button
+    type="button"
+    @click="autoRefresh = !autoRefresh"
+    x-text="autoRefresh ? 'Pause' : 'Resume'"
+  ></button>
 </section>
 ```
 
-Changing the checkbox is local and needs no PHP property. For a job panel,
-combine the conditions:
+For a job panel, combine the conditions:
 `autoRefresh && $server.state.running && $server.call('refreshStatus')`.
-Resuming the preference then cannot restart a completed job.
+Resuming the local preference then cannot restart a completed job.
 
-## Poll only while visible
+<span id="poll-only-while-visible"></span>
+
+## Visibility
 
 ```html
-<section x-interact:poll.5s.visible>
-  <!-- A dashboard panel that refreshes while onscreen. -->
-</section>
+<section x-interact:poll.5s.visible>...</section>
 ```
 
-All polling pauses while the browser document is hidden. `.visible` additionally
-requires the declaration's element to intersect the viewport. Put it on the
-actual panel, rather than an empty marker.
+Hidden browser tabs pause all polling. `.visible` also requires the marked
+element to intersect the viewport. Put the directive on the actual panel.
+Returning to visibility starts a fresh interval without a catch-up burst.
+Visibility changes do not cancel PHP requests already accepted.
 
-Returning to visibility starts a fresh interval, without replaying missed ticks.
-Hiding a tab, scrolling away, or changing a condition does not cancel PHP work
-already accepted by the server.
+<span id="preserve-edits-and-feedback"></span>
 
-## Preserve edits and feedback
+## Edits and failures
 
-Before evaluating a polling expression, Interact skips the tick if the owning
-island has unsynchronized drafts, scheduled model updates, queued or executing
-requests, validation messages, unfinished or failed file selections, or a request
-failure that paused automatic work. Skipped ticks are not queued.
+Ticks skip unsynchronized edits, queued model synchronization, outstanding
+requests, validation messages, unfinished or failed file selections, and paused
+request failures. Skipped ticks are not queued. Newer edits made during a request
+retain normal draft and focus protections.
 
-Manual actions and explicit synchronization remain available subject to the
-normal [failure recovery rules](/guide/failures). Newer edits made during an
-in-flight poll retain the usual draft and focus protections.
+Manual interactions follow the normal [error recovery rules](/guide/failures).
+Asynchronous polling functions must return their promise. Expression failures
+use normal island request feedback.
 
-## Supported declaration and lifetime
+<span id="supported-declaration-and-lifetime"></span>
 
-Use one poller per island. Nested islands may each own a separate poller. Parent
-refreshes preserve matching keyed children; their polling lifetimes remain
-independent.
+## Options and lifetime
 
-The directive accepts a duration, optional `.visible`, and an optional Alpine
-expression. An omitted or blank expression synchronizes. Unknown or repeated
-modifiers and multiple owned declarations fail at initialization. There are no
-separate polling methods on `$server`.
+Use one poller per island. Nested islands own independent pollers. Removing a
+declaration or island releases its timer and visibility resources.
 
-Asynchronous custom functions must return their promise so polling waits before
-starting the next interval. `$server.call()` and `$server.sync()` already return
-promises. Expression errors use normal island failure feedback. Removing the
-declaration or island releases its timers and visibility resources.
-
-For complete tested PHP and element implementations, see the
-[clock and job recipes](/guide/polling).
+The directive accepts one duration, optional `.visible`, and an optional Alpine
+expression. A blank expression synchronizes. Unknown/repeated modifiers and
+multiple declarations owned by one island are initialization errors.

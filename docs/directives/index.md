@@ -1,60 +1,24 @@
 ---
-title: Template API
-description: Find each x-interact directive and the $server bridge, with practical examples and supported options.
+title: 'HTML directives'
+description: Look up Interact template directives and their supported options.
 ---
 
-# Template API
+<span id="template-api"></span>
+<span id="combine-bindings-in-a-form"></span>
+<span id="use-ordinary-alpine-for-presentation"></span>
 
-Bind a field, submit a form, refresh a status panel, or preserve a JavaScript
-widget. Each page below explains one part of Interact's template API, starting
-with a small example and then showing common variations.
+# HTML directives
 
-Complete [installation](/installation) and mount [your first island](/getting-started)
-before adding these bindings. All directives and `$server` belong inside an island.
+Interact directives connect HTML controls and forms to a PHP island. Use them
+inside an island created by `InteractHelper`.
 
-| API                                       | Use it to                                                                                                      |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| [`x-interact:model`](/directives/model)   | Bind writable PHP state to text fields, selects, radios, checkboxes, or custom widgets; stage declared uploads |
-| [`x-interact:submit`](/directives/submit) | Submit a native form and protect it while the request settles                                                  |
-| [`x-interact:poll`](/directives/poll)     | Refresh an island periodically, optionally while visible or until a job completes                              |
-| [`x-interact:ignore`](/directives/ignore) | Preserve markup managed by a JavaScript library during server updates                                          |
-| [`$server`](/reference/server)            | Read browser-visible state, call PHP actions, refresh, and display request feedback                            |
+| Directive                                 | Description                                                 |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| [`x-interact:model`](/directives/model)   | Binds a form input to a PHP island property                 |
+| [`x-interact:submit`](/directives/submit) | Handles form submission without a page reload               |
+| [`x-interact:poll`](/directives/poll)     | Refreshes an island at a regular interval                   |
+| [`x-interact:ignore`](/directives/ignore) | Preserves an element and its contents during server updates |
 
-## Combine bindings in a form
-
-For an existing island with writable `title` state and a declared `save()` action:
-
-```php [Element]
-<?= $this->Form->create(null, [
-    'url' => false,
-    'x-interact:submit' => '$server.call("save")',
-]) ?>
-    <?= $this->Form->control('title', [
-        'label' => 'Title',
-        'value' => $title,
-        'x-interact:model' => 'title',
-    ]) ?>
-    <?= $this->Form->button('Save') ?>
-<?= $this->Form->end() ?>
-```
-
-Typing changes a local draft. Submitting sends the latest title to PHP, calls
-`save()`, and renders the response. The form's submit buttons are protected
-while the submission waits or runs. Your action owns validation and persistence;
-see the complete [entity editing example](/guide/forms).
-
-## Use ordinary Alpine for presentation
-
-Use `@click`, `:disabled`, `x-show`, and `:class` alongside Interact. For example,
-a button can refresh the owning island and reflect its executing request:
-
-```html
-<button type="button" @click="$server.sync()" :disabled="$server.busy">
-  Refresh
-</button>
-```
-
-The [Alpine guide](/guide/alpine) explains local `x-data`, CSP expressions, and
-custom JavaScript through the Composer bundle's `window.Alpine`. The
-[browser reference](/reference/browser) covers scheduling and rendering behavior
-shared by these APIs.
+Use ordinary Alpine `@click`, `:disabled`, `x-show`, and `:class` for events and
+presentation. [`$server`](/reference/server) provides access to island state,
+actions, and request feedback. See [Quickstart](/getting-started) for setup.

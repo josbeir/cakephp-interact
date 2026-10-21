@@ -1,12 +1,14 @@
 ---
-title: Whole-page islands
+title: Page islands
 description: Reuse an existing controller action template as interactive page content while keeping its normal layout.
 ---
 
-# Whole-page islands
+<span id="whole-page-islands"></span>
 
-Use a whole-page island when most of an action's content should update together.
-It can reuse the action's existing template; a separate element is optional.
+# Page islands
+
+A page island renders an action template as interactive content while retaining
+its normal layout. It can reuse the existing template.
 
 This example builds on the [counter class](/getting-started). The three files
 below work together: the island selects the template, the controller selects the
@@ -16,7 +18,7 @@ island view, and the template renders the counter content.
 
 ::: code-group
 
-```php [src/Island/CounterPage.php]
+```php [Island]
 <?php
 declare(strict_types=1);
 
@@ -25,6 +27,8 @@ namespace App\Island;
 use Interact\Attribute\AsIsland;
 
 /**
+ * src/Island/CounterPage.php
+ *
  * Reuses the counter behavior as the content of a complete action template.
  */
 #[AsIsland('counter-page', template: 'Counters/index')]
@@ -33,7 +37,7 @@ class CounterPage extends Counter
 }
 ```
 
-```php [src/Controller/CountersController.php]
+```php [Controller]
 <?php
 declare(strict_types=1);
 
@@ -43,6 +47,8 @@ use Cake\Routing\Attribute\Get;
 use Interact\View\IslandView;
 
 /**
+ * src/Controller/CountersController.php
+ *
  * Selects the page island for the initial request and retains the normal layout.
  */
 class CountersController extends AppController
@@ -60,9 +66,15 @@ class CountersController extends AppController
 }
 ```
 
-```php [templates/Counters/index.php]
+```php [Template]
 <?php
-/** @var int $count */
+declare(strict_types=1);
+
+/**
+ * templates/Counters/index.php
+ *
+ * @var int $count
+ */
 ?>
 <h1>Counter</h1>
 <p aria-live="polite">Count: <?= (string)$count ?></p>

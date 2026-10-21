@@ -1,152 +1,82 @@
 ---
-title: Browser API
-description: Find directive and server bridge contracts, shared request scheduling, DOM behavior, and runtime integration.
+title: 'Requests and DOM updates'
+description: Request queueing, draft preservation, nested ownership, and browser disposal.
 ---
 
-# Browser API
+<span id="browser-api"></span>
 
-Use the [Template API](/directives/) for focused examples of each directive and
-[`$server`](/reference/server) for the browser bridge's members. This reference
-connects those APIs to shared scheduling, ownership, and rendering behavior.
+# Requests and DOM updates
 
-All bindings operate inside an island created by `InteractHelper`.
+Interact queues requests per island and applies accepted responses as HTML
+updates. These rules are shared by actions, models, forms, polling, and uploads.
 
 <span id="native-attributes"></span>
+<span id="alpine-directives"></span>
+<span id="alpine-bridge"></span>
+<span id="request-activity"></span>
+<span id="form-submission-protection"></span>
 
-## Alpine directives
+## Request queue
 
-| Directive                                 | Behavior                                                    |
-| ----------------------------------------- | ----------------------------------------------------------- |
-| [`x-interact:model`](/directives/model)   | Keep writable drafts and choose when to send them           |
-| [`x-interact:submit`](/directives/submit) | Protect native form submission while its expression settles |
-| [`x-interact:poll`](/directives/poll)     | Refresh periodically or evaluate a polling expression       |
-| [`x-interact:ignore`](/directives/ignore) | Preserve an element and its subtree during server morphs    |
+One request executes at a time per island. Actions queue in order; pending
+synchronization coalesces. Different islands operate independently. Actions
+capture current controls, including edits not yet sent by blur or debounce.
 
-Use ordinary Alpine `@event`, `:attribute`, `x-show`, and `:class` for events and
-presentation. Models use literal writable paths; submit and polling declarations
-use Alpine expressions. The feature pages describe accepted modifiers and
-initialization errors.
+[`$server.pending()`](/reference/server#pending) includes queued and executing
+work. `busy` and island-root `aria-busy` describe executing work.
+[`x-interact:submit`](/directives/submit) protects forms from acceptance through
+response application, including their queueing time.
 
-## Widget-owned DOM and custom models
+<span id="widget-owned-dom-and-custom-models"></span>
+<span id="polling"></span>
+<span id="scheduling-and-dom-behavior"></span>
 
-[`x-interact:ignore`](/directives/ignore) skips attribute and descendant morphing
-for a matching existing element, while allowing Alpine initialization and
-reactivity. Removal and replacement still work.
+## Drafts and responses
 
-An `x-modelable` wrapper can connect its local JSON-compatible value to writable
-PHP state with [`x-interact:model`](/directives/model#custom-alpine-inputs). See
-[JavaScript widgets](/guide/javascript-widgets) for library initialization,
-server-driven resets, and lifecycle cleanup.
+Accepted state refreshes surviving controls. Newer local drafts, focus, selection,
+and retained Alpine state survive an older response. The server renders current
+PHP values; browser drafts can be newer than that markup.
 
-## Polling
+Use [`x-interact:ignore`](/directives/ignore) when a library manages its own markup,
+and [`x-interact:model`](/directives/model#custom-alpine-inputs) for modelable values.
+[`x-interact:poll`](/directives/poll) skips drafts and feedback instead of
+refreshing over them.
 
-[`x-interact:poll`](/directives/poll) uses one managed poller per island. Its
-expression runs in the declaration's current Alpine scope. Hidden documents
-suspend timers, and `.visible` additionally restricts viewport visibility.
+## Nested ownership
 
-Ticks skip drafts, scheduled synchronization, outstanding requests, validation
-messages, unfinished or failed file selections, and paused failures. No missed
-ticks are queued. The [polling guide](/guide/polling) supplies complete PHP and
-element implementations.
+Model capture, polling, forms, uploads, and `$server` resolve to the nearest
+island. Parent updates preserve matching keyed children and their state.
+See [Nested islands](/guide/nesting).
 
-## Alpine bridge
+<span id="structured-failures"></span>
 
-[`$server`](/reference/server) resolves to the nearest owning island. It exposes
-browser-visible state, actions, synchronization, request activity, validation
-messages, request failures, draft export, and file transfer controls.
+## Failures and disposal
 
-`call()` and `sync()` return `Promise<RequestResult>`: `{ ok: true }` after an
-accepted render or `{ ok: false, error }` after a request failure. An accepted
-render can contain application validation errors; `ok` does not prove saving
-succeeded. See [outcomes in JavaScript](/reference/server#inspect-an-outcome-in-javascript).
+Request failures use safe structured feedback and pause automatic work. An
+accepted validation response remains renderable. See [Error handling](/guide/failures)
+for explicit recovery.
 
-## Request activity
-
-Use [`pending()` and `loading()`](/reference/server#show-queued-and-executing-work)
-for accepted queued and executing work, optionally matching an action and its
-complete argument tuple. `pending()` is immediate; `loading()` defaults to a
-200 ms visual delay. Neither includes an unsent debounce timer.
-
-`busy` and island-root `aria-busy` describe an executing request. Form protection
-also covers queueing time, with its own form-level `aria-busy`.
-
-## Form submission protection
-
-[`x-interact:submit`](/directives/submit) blocks repeated native submissions and
-temporarily disables the form's owned submit buttons until its expression
-settles. Model fields stay editable. Associated external submit buttons work
-when they belong to the same island.
-
-Application-owned disabled states are preserved across responses. Stable native
-form IDs allow an outstanding lock to follow a replacement. Enter and
-`requestSubmit()` use the protected path; direct `form.submit()` bypasses submit
-events. Custom action buttons remain repeatable unless the application disables
-them. Browser protection is not server-side idempotency.
-
-## Structured failures
-
-`$server.error` is null or `{ code, message, status, recovery }`. `status` is the
-actual HTTP status or null without a readable response. Recovery is `retry`,
-`reload`, `authenticate`, or `none`; it is guidance, never an automatic action.
-
-See [failures and recovery](/guide/failures) for categories, paused requests,
-draft export, and the `interact:error` event. Application validation feedback
-uses `$server.errors` separately.
-
-## Scheduling and DOM behavior
-
-- One request runs at a time per island; different islands work independently.
-- Pending synchronization coalesces. Actions queue in order.
-- Actions read current controls, including edits not yet sent by blur/debounce.
-- Responses preserve newer local drafts, focus, selection, and retained local Alpine state.
-- Parent morphs preserve matching keyed child islands and their ownership.
-- Removing an island cleans up timers, listeners, and its in-flight browser work.
-
-Aborting fetch is not cancellation of PHP execution. Actions are never
-automatically retried. Refreshing after expiry starts a new mount; do not replay
-a sensitive action automatically.
+Removing an island releases listeners, timers, observers, and in-flight browser
+work. Aborting fetch does not cancel PHP execution. Actions are never
+automatically retried; a failed connection can occur after persistence succeeded.
 
 ## Runtime integration
 
-The standalone bundle starts Alpine CSP and Morph. Use it once, with the layout's
-`script` block. It exposes `window.Alpine`; register custom behavior in an
-`alpine:init` listener loaded before the runtime. Adding application JavaScript
-does not require rebuilding Interact. See the
-[plain JavaScript example](/guide/alpine#access-server-from-a-javascript-file).
+The Composer bundle starts Alpine CSP and Morph and exposes `window.Alpine`.
+Application registration scripts run before it through `alpine:init`; see
+[Alpine](/guide/alpine#custom-javascript). An application owning Alpine disables
+`autoScript`, installs the npm plugin, and starts its existing instance once.
+See [Installation](/installation#application-owned-alpine).
 
-For application-owned Alpine, disable `autoScript`, register the npm plugin
-before `Alpine.start()`, and omit the standalone bundle. See
-[installation](/installation#application-owned-alpine).
+Generated `data-interact-*` metadata and HTTP envelopes are runtime protocols.
+Use public directives and the bridge rather than constructing a parallel client.
 
-Treat generated `data-interact-*` root metadata as runtime-owned. Snapshots and
-HTTP envelopes are an implementation protocol, not a public custom-client API.
+<span id="file-transfers"></span>
 
-## File transfers
+## File transport
 
-Native file inputs bind to declared `#[Upload]` fields with `x-interact:model`
-and no timing modifiers. Selection starts staging immediately. PHP file objects
-and bytes stay outside `$server.state` and snapshots.
-
-Field declarations can lower global staging ceilings with `maxFileSize`
-and `maxFiles`. Browser checks improve feedback; PHP enforces
-actual bytes, ownership, and capacity independently. See
-[field limits](/guide/uploads#set-limits-for-each-upload-field).
-
-[`$server.uploads`](/reference/server#file-transfer-feedback-and-controls) exposes
-per-field progress and explicit transfer controls. Opaque file IDs confer no
-access outside their verified session, route scope, island, and field. Cancel is
-browser-local and does not guarantee PHP stopped processing. Retry transfers
-files only, never a blocked application action.
-
-Saves wait for preceding transfers and do not execute after failed or cancelled
-prerequisites. Failed selections count as dirty; accepted staged files are
-synchronized but remain unsaved application data. Polling skips unfinished or
-failed selections. Draft export excludes files and their references.
-
-Native multipart transport uses XMLHttpRequest for upload progress. Ordinary
-JSON updates retain fetch. Both use the same endpoint, CSRF protection, response
-validation, and reconciliation. Upload bindings and disposal retain nested
-island ownership.
-
-The [upload guide](/guide/uploads) includes PHP rendering, complete FormHelper
-examples, controls, retention settings, and cleanup.
+Native multipart uploads use XMLHttpRequest for progress; ordinary JSON updates
+use fetch. Both share the endpoint, CSRF protection, response validation, and
+rendering. File references remain bound to the session, route scope, island, and
+field. See [File uploads](/guide/uploads) and
+[`$server.uploads`](/reference/server#uploads).

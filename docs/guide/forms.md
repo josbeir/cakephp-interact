@@ -1,237 +1,138 @@
 ---
-title: Forms and validation
-description: Keep editable drafts in an island and use normal CakePHP authorization, validation, and saving.
+title: 'Validation'
+description: Render CakePHP entity errors and return field feedback with setErrors().
 ---
 
-# Forms and validation
+<span id="forms-and-validation"></span>
 
-Edit an article title, display a validation error, and save explicitly through
-CakePHP's ORM. [Run the demo](/examples) and open `/` to try it: clear an article
-title to see the browser’s required-field check, then enter a valid title and save.
+# Validation
 
-This example uses the demo's `Articles` table and fixture identity. In your
-application, keep your own authentication integration, access policies, Table
-validation, and application rules.
+Interact displays validation errors returned by your application. Validation
+and saving use CakePHP's normal entity, Table, and service APIs.
 
-## Separate the record from the draft
+<span id="validate-and-save-in-the-action"></span>
 
-The editor receives a mount-only record ID and declares an editable title:
+## setErrors()
 
-```php [ArticleEditor — property declarations]
-#[Prop]
-public int $articleId;
+Pass an entity's errors after a failed save:
 
-#[State(writable: true)]
-public string $title = '';
+```php
+$this->setErrors($article->getErrors());
 ```
 
-`authorize(IslandContext $context)` checks the current identity and record
-ownership on the initial mount **and every update**. `mount()` then loads the
-title on the first render only. Later requests restore the user's draft, rather
-than replacing it with the current database value.
+`setErrors()` supplies PHP `$errors` and browser `$server.errors`, selects a
+renderable HTTP 422 response, and suppresses success events. It does not run
+validation or save a record. See the complete [article form](/examples/article-form).
 
-Entities stay on the server. A signed article ID establishes snapshot integrity;
-your current authorization checks establish access.
-
+<span id="separate-the-record-from-the-draft"></span>
 <span id="render-a-normal-form"></span>
+<span id="render-with-formhelper"></span>
 
-## Render with FormHelper
+## FormHelper entity errors
 
-Here is a compact version of the editor element. It receives the server-only
-`article` entity through `viewData()`, the declared draft and ID, and the reserved
-`errors` variable:
+Keep the failed entity in a protected property and return that same instance
+from `viewData()`. FormHelper reads its validation errors when you pass it to
+`Form->create()`.
 
-```php [templates/element/Interact/article_editor.php]
-<?php
-declare(strict_types=1);
-
-use function Cake\Core\h;
-
-/**
- * @var \Interact\View\TemplateView $this
- * @var \Cake\Datasource\EntityInterface $article
- * @var int $articleId
- * @var string $title
- * @var array<string, list<string>> $errors
- */
-?>
+```php
 <?= $this->Form->create($article, [
     'url' => false,
-    'id' => 'article-form-' . (string)$articleId,
-    'idPrefix' => 'article-' . (string)$articleId,
     'x-interact:submit' => '$server.call("save")',
 ]) ?>
-    <?= $this->Form->control('title', [
-        'label' => 'Article title',
-        'value' => $title,
-        'x-interact:model' => 'title',
-        'templates' => [
-            'error' => '<div id="{{id}}" role="alert">{{content}}</div>',
-        ],
-    ]) ?>
-    <?php foreach ($errors['_form'] ?? [] as $message): ?>
-        <p role="alert"><?= (string)h($message) ?></p>
-    <?php endforeach; ?>
-    <?= $this->Form->button('Save article') ?>
-    <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
-<?= $this->Form->end() ?>
 ```
 
-`create($article)` gives FormHelper its normal entity context. It renders field
-errors, associates them with the input, and derives native validation constraints.
-The `error` template adds an accessible alert role; FormHelper still owns message
-escaping and the error ID. The island view disables FormHelper's inline custom
-validity handlers so native browser validation works under a strict CSP.
+The entity stays on the server. Reloading a new entity after validation loses
+the failed instance's errors. Interact does not infer failure from arbitrary
+objects in `viewData()`; call `setErrors()` to set its response feedback too.
 
-The explicit `value` uses the current island draft, including invalid values that
-CakePHP's marshaller did not assign to the entity. `idPrefix` keeps fields distinct
-between editors, and the form's stable `id` preserves its identity through updates.
-Use an instance-specific prefix if the same record appears more than once.
-`url => false` omits the form action because Interact handles submission.
+<span id="use-custom-or-nested-errors"></span>
 
-Typing alone sends no request. A valid submission flushes the current control
-value before calling `save()`. Browser constraints improve feedback; the server
-must validate independently because clients can bypass them.
-
-## Validate and save in the action
-
-The demo loads the record, patches only the allowed `title` field, and uses the
-Table's normal `save()`. On failure, pass CakePHP's errors directly:
-
-```php [Inside ArticleEditor::save()]
-$articles = $this->articles();
-$article = $articles->patchEntity(
-    $articles->get($this->articleId),
-    ['title' => $this->title],
-    ['fields' => ['title']],
-);
-
-$this->article = $article;
-if (!$articles->save($article)) {
-    $this->setErrors($article->getErrors() ?: [
-        '_form' => ['Unable to save the article.'],
-    ]);
-
-    return;
-}
-
-$this->saved = true;
-$this->dispatch('article-saved', ['id' => $this->articleId]);
-```
-
-Keep the entity in a protected property and return that **same instance** from
-`viewData()`. Loading a fresh entity after validation would lose its errors:
-
-```php [ArticleEditor — transient entity and view data]
-/**
- * @var \Cake\Datasource\EntityInterface|null Entity context for this request only.
- */
-protected ?EntityInterface $article = null;
-
-/**
- * Preserve the entity's validation feedback for FormHelper without transporting it.
- *
- * @return array{article: \Cake\Datasource\EntityInterface}
- */
-public function viewData(): array
-{
-    return ['article' => $this->article ?? $this->articles()->get($this->articleId)];
-}
-```
-
-Import `Cake\Datasource\EntityInterface` in the island class. The protected
-property is not declared state and never enters the snapshot. Each request gets a
-fresh island, so this entity is retained only for its current render.
-
-FormHelper reads the entity's original errors. Separately, `setErrors()` supplies
-`$errors` and `$server.errors`, selects HTTP 422, and suppresses success events.
-Neither mechanism runs validation or saves automatically. If only the entity
-has errors, FormHelper can display them, but Interact does not infer a failed
-response from arbitrary view data. For a failed save without entity errors, the
-example supplies an application-owned `_form` message.
-
-## Use custom or nested errors
-
-Application-defined message lists remain supported, including alongside entity
-errors:
+## Custom and nested errors
 
 ```php
 $this->setErrors([
-    ...$this->article->getErrors(),
+    ...$article->getErrors(),
     '_form' => ['Please review the highlighted fields.'],
 ]);
 ```
 
-A field can contain a list of strings or strings keyed by CakePHP rule names.
-For example, `['title' => ['_empty' => 'A title is required.']]` becomes
-`['title' => ['A title is required.']]`. Nested association errors become dotted
-paths such as `comments.0.body`; rule names are omitted. The original entity is
-unchanged. See the [validation error contract](/api#validation-errors) for exact
-accepted shapes and clearing behavior.
+Each field accepts message lists or CakePHP rule-to-message maps. For example,
+`['title' => ['_empty' => 'A title is required.']]` becomes
+`['title' => ['A title is required.']]`. Nested associations become dotted fields
+such as `comments.0.body`; rule names are omitted. The entity is unchanged.
 
-:::: details Full editor, element, and Table implementation
+Use `_form` for an application-wide message, including a failed save without
+field errors. Each call replaces response-local feedback; `setErrors([])` clears it.
+The root maps non-empty string field names to arrays. Message strings retain
+order and contents; their rule keys are discarded. Nested arrays extend paths
+through field names or association indices. Dotted root keys are accepted, and
+overlapping paths append in traversal order.
 
-These are the tested files used by the demo. Its element includes loading,
-draft, and success feedback.
+Empty arrays contribute no messages. Bare root strings, nulls, booleans, numbers,
+objects, empty nested keys, and nesting beyond 32 child levels are rejected with
+`InvalidArgumentException`; invalid input leaves previous feedback unchanged.
+Custom errors are not attached to the entity. Attach them separately if
+FormHelper should render them through that context.
 
-::: code-group
+## errors()
 
-<<< @/../tests/test_app/src/Island/ArticleEditor.php [Editor island]
+`errors(): array` returns normalized `array<string, list<string>>` feedback,
+also available as PHP `$errors` and `$server.errors`.
 
-<<< @/../tests/test_app/templates/element/Interact/article_editor.php [Element]
+## Rendering errors
 
-<<< @/../tests/test_app/src/Model/Table/ArticlesTable.php [Table and validation]
-
-:::
-
-::::
-
-## Add dependent or conditional fields
-
-Open `/` for country and city choices. The `dependent-selects` island:
-
-1. Sends country changes using `x-interact:model.change`.
-2. Clears `cityId` in `updated()` when `country` changes.
-3. Loads city choices through the Table's `inCountry` finder in `viewData()`.
-4. Rechecks city membership in its `confirm()` action.
-
-Rendered options are a convenience, not authorization. A forged city ID still
-needs rejection on the server.
-
-:::: details Full dependent-select implementation
+For an island with writable `title` state:
 
 ::: code-group
 
-<<< @/../tests/test_app/src/Island/DependentSelects.php [Island]
+```html [HTML]
+<label for="title">Title</label>
+<input
+  id="title"
+  name="title"
+  type="text"
+  x-interact:model="title"
+  aria-describedby="title-errors"
+/>
+<ul id="title-errors" role="alert">
+  <template
+    x-for="(message, index) in ($server.errors.title || [])"
+    :key="index"
+  >
+    <li x-text="message"></li>
+  </template>
+</ul>
+```
 
-<<< @/../tests/test_app/src/Model/Table/CitiesTable.php [Finders]
-
-<<< @/../tests/test_app/templates/element/Interact/dependent_selects.php [Element]
+```php [FormHelper]
+<?= $this->Form->control('title', [
+    'label' => 'Title',
+    'value' => $title,
+    'x-interact:model' => 'title',
+]) ?>
+```
 
 :::
 
-::::
+The FormHelper version assumes the current entity is its form context. A form
+created with `null` has no entity errors; render `$errors` explicitly or use the
+browser binding shown in the HTML tab.
 
-For conditional fields, open the workshop planner at `/playground`. Toggling a
-business booking reveals company inputs, and the PHP action validates the
-required company value. Hiding a control in the browser does not replace those
-server checks.
+<span id="add-dependent-or-conditional-fields"></span>
 
-## Keep protection and persistence explicit
+## Dependent and conditional fields
 
-FormHelper generates the markup; Interact reads controls carrying
-`x-interact:model` and sends their declared writable values as JSON.
-FormHelper's hidden fields are not transported as island state. CSRF remains
-protected through the update request's token header and CakePHP middleware.
+Reset dependent values in `updated()` and recheck allowed combinations in the
+action. Hidden inputs and rendered choices are not authorization. The
+[dependent fields example](/examples/dependent-fields) checks city membership
+through a Table finder.
 
-Validation still runs in the application's Table and action. Forms created with
-`create(null)` have no entity context; render their application errors from
-`$errors` explicitly. Using FormHelper does not add automatic FormProtection field-hash validation to
-the JSON update protocol. Keep protection on ordinary form endpoints and scope
-update-route middleware appropriately; do not disable application protections.
+<span id="keep-protection-and-persistence-explicit"></span>
 
-For file inputs, see [file uploads](/guide/uploads). Entity transport and form-plugin
-integration remain deferred. Use explicit state and actions. Navigation and automatic saving are not
-part of the form's synchronization behavior.
+## Native form protection
 
-**Next:** [Refresh a parent listing after a save](/guide/nesting).
+Native `required`, `min`, and `max` constraints still apply. Keep server validation
+as well. FormHelper hidden fields are not transported as island state, and its
+FormProtection field hash is not automatically validated by the JSON protocol.
+CSRF uses CakePHP's middleware and the request token header. See
+[security and deployment](/security) for scoped middleware.

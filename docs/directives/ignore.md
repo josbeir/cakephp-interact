@@ -1,129 +1,87 @@
 ---
 title: 'x-interact:ignore'
-description: Preserve widget-owned markup across island renders while keeping Alpine reactive and allowing explicit removal or replacement.
+description: Preserve JavaScript-managed markup during server-rendered updates.
 ---
+
+<span id="protect-a-widget-s-markup"></span>
 
 # x-interact:ignore
 
-Preserve an existing element's attributes and descendants when Interact applies
-new server HTML. This is useful when a JavaScript library owns a chart, editor,
-map, or enhanced input.
-
-## Protect a widget's markup
-
-Inside an existing island, mark the element the library owns:
+`x-interact:ignore` prevents server updates from changing an existing element's
+attributes and contents.
 
 ```html
 <div id="orders-chart" x-interact:ignore>
   <canvas role="img" aria-label="Daily orders"></canvas>
 </div>
-<p>Other content here still receives server updates.</p>
 ```
 
-After initialization, a normal island refresh preserves this element's current
-attributes and children. It still updates surrounding markup. Put the directive
-**below the island root**, around only the library-owned region.
+Use it for markup managed by a chart, editor, map, or enhanced input. Other island
+content still updates. Put the directive below the island root.
 
-Open `/playground` to try the **Morph protection** example: PHP renders the same
-count in two colored panels, but only the ordinary panel changes on refresh.
-The [widget guide](/guide/javascript-widgets#see-what-protection-changes) includes
-the complete island and element.
+<span id="keep-alpine-behavior-active"></span>
 
-## Keep Alpine behavior active
+## Alpine behavior
 
-Alpine still initializes and updates expressions inside the protected region:
+Alpine still initializes and updates bindings inside the element:
 
 ```html
 <div x-interact:ignore x-data="{ expanded: false }">
-  <button type="button" @click="expanded = !expanded" :aria-expanded="expanded">
-    Toggle details
-  </button>
-  <p x-show="expanded">Local Alpine state stays interactive.</p>
+  <button type="button" @click="expanded = !expanded">Toggle details</button>
+  <p x-show="expanded">Local content.</p>
 </div>
 ```
 
-Interact skips **server morphing** for this region. Alpine's `x-ignore` has a
-different purpose: it prevents Alpine from initializing the subtree. Use
-`x-interact:ignore` when a widget needs both preserved markup and Alpine behavior.
+Alpine's `x-ignore` prevents Alpine initialization. `x-interact:ignore` only
+controls Interact's server HTML updates.
 
-## Connect a custom input
+<span id="connect-a-custom-input"></span>
 
-Keep the wrapper's exposed value and validation feedback outside the protected
-subtree. For an application-registered `countryPicker` wrapper exposing
-`selection` and an island with writable `country` state:
+## Custom inputs
 
-```php [Inside the element]
+Keep the modelable wrapper outside the ignored markup:
+
+```html
 <div
-    x-data="countryPicker"
-    x-modelable="selection"
-    x-interact:model.change="country"
+  x-data="countryPicker"
+  x-modelable="selection"
+  x-interact:model.change="country"
 >
-    <div x-interact:ignore>
-        <?= $this->Form->control('country', [
-            'type' => 'select',
-            'label' => 'Country',
-            'options' => $countries,
-            'value' => $country,
-        ]) ?>
-    </div>
-</div>
-<?= $this->Form->error('country') ?>
-```
-
-Your wrapper creates the library instance, exposes user changes through
-`selection`, and applies accepted PHP values through the library's API. Supply
-`$countries` through `viewData()` and use the application's FormHelper context
-for its field errors. The complete
-[Tom Select example](/guide/javascript-widgets#try-an-enhanced-select) shows
-registration, accessible errors, and cleanup.
-
-Do not put server-rendered errors inside the ignored region: they would also be
-preserved instead of receiving new PHP output.
-
-## Update a chart without replacing it
-
-DOM protection does not freeze the JavaScript library. Declare server-owned
-chart data with `#[State]`, then watch it in the Alpine wrapper's `init()`:
-
-```js
-this.$watch('$server.state.chartData', (data) => {
-  chart.data = JSON.parse(JSON.stringify(data));
-  chart.update();
-});
-```
-
-Here `chart` is an application-created Chart.js instance kept outside reactive
-state. Copying the data lets the library manage it without mutating island state.
-The [complete chart recipe](/guide/javascript-widgets#refresh-display-only-widgets)
-shows the PHP declaration, wrapper, element, registration, and mount. Display-only
-widgets need no `x-modelable` binding.
-
-## Recreate or remove the widget
-
-Protection applies to an existing matching element. PHP can still remove it or
-replace it by changing its stable HTML ID or element type. For an island that
-declares integer `generation` state:
-
-```php [Inside the element]
-<div id="orders-chart-<?= (int)$generation ?>" x-interact:ignore>
-    <!-- Widget-owned markup. -->
+  <div x-interact:ignore>
+    <!-- Library-managed input. -->
+  </div>
 </div>
 ```
 
-Keep the ID unchanged to preserve the widget. An explicit action can increment
-`generation` when it should be recreated. If the region contains an Alpine
-wrapper, use its `destroy()` to release library resources and `init()` to create
-the replacement. Cleanup must include any overlays placed outside the wrapper.
+The application registers `countryPicker`, exposes `selection`, and declares
+writable `country` state. Keep server-rendered validation errors outside the
+ignored region too. See the complete [enhanced select](/examples/enhanced-select).
 
-Changes to protected PHP option markup are also ignored. Update a widget's
-choices through its library API or replace its keyed boundary deliberately.
+<span id="update-a-chart-without-replacing-it"></span>
 
-## Supported declaration
+## Data updates
 
-Use `x-interact:ignore` without an expression or modifiers. It protects both the
-element's attributes and its descendants. There is no `.self` variation.
-Root placement, expressions, and modifiers fail at initialization.
+DOM protection does not prevent library updates through JavaScript. Watch PHP
+state from an Alpine wrapper and call the library's update method. The
+[chart example](/examples/chart) shows initialization, data changes, and cleanup.
 
-Keep nested islands and server-rendered feedback outside a protected region.
-This directive defines DOM ownership; it does not authorize requests or validate
-submitted widget values.
+<span id="recreate-or-remove-the-widget"></span>
+
+## Replacement and removal
+
+A changed HTML ID or element type replaces the protected region. PHP can also
+remove it. Keep IDs stable to preserve a widget; change an ID deliberately to
+recreate it. Use Alpine `destroy()` to release the library instance, including
+any overlays it created outside the wrapper.
+
+Protected option markup also stays unchanged. Update options through the
+library's API or replace the keyed region.
+
+<span id="supported-declaration"></span>
+
+## Options
+
+The directive accepts no expression or modifiers, including `.self`. Root
+placement and invalid declarations fail at initialization. Keep nested islands
+outside ignored regions. DOM protection does not authorize requests or validate
+widget values.

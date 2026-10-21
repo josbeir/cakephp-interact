@@ -1,119 +1,101 @@
 ---
 title: 'x-interact:model'
-description: Bind writable PHP state to text, numbers, selects, radio buttons, checkbox groups, uploads, and Alpine modelable widgets.
+description: Bind HTML inputs to PHP properties and configure when edits reach the server.
 ---
+
+<span id="preview-a-name"></span>
 
 # x-interact:model
 
-Keep a field's value in the owning island's writable PHP state. The default
-binding updates a browser draft immediately and sends it with the next action
-or explicit synchronization.
+`x-interact:model` binds a form input to a PHP island property.
 
-## Preview a name
+Declare the property as writable state. Import `State` from `Interact\Attribute`:
 
-After [installation](/installation), add these three cooperating files. This
-example previews a draft; it does not save a record.
+```php
+#[State(writable: true)]
+public string $title = '';
+```
 
 ::: code-group
 
-```php [Island]
-<?php
-declare(strict_types=1);
-
-namespace App\Island;
-
-use Interact\Attribute\AsIsland;
-use Interact\Attribute\State;
-use Interact\Island;
-
-/**
- * Owns an editable name and renders its synchronized preview.
- *
- * Save as src/Island/ProfileDraft.php.
- */
-#[AsIsland('profile-draft', element: 'Interact/profile_draft')]
-class ProfileDraft extends Island
-{
-    #[State(writable: true)]
-    public string $name = '';
-}
+```html [HTML]
+<label for="title">Title</label>
+<input id="title" name="title" type="text" x-interact:model="title" />
 ```
 
-```php [Element]
-<?php
-declare(strict_types=1);
-
-use function Cake\Core\h;
-
-/**
- * templates/element/Interact/profile_draft.php
- *
- * @var \Interact\View\TemplateView $this
- * @var string $name
- */
-?>
-<?= $this->Form->create(null, [
-    'url' => false,
-    'x-interact:submit' => '$server.sync()',
+```php [FormHelper]
+<?= $this->Form->control('title', [
+    'label' => 'Title',
+    'value' => $title,
+    'x-interact:model' => 'title',
 ]) ?>
-    <?= $this->Form->control('name', [
-        'label' => 'Your name',
-        'value' => $name,
-        'x-interact:model' => 'name',
-    ]) ?>
-    <?= $this->Form->button('Preview') ?>
-<?= $this->Form->end() ?>
-<p aria-live="polite">Preview: <?= h($name) ?></p>
-```
-
-```php [Mount]
-<?= $this->Interact->render('profile-draft') ?>
 ```
 
 :::
 
-Typing updates `$server.state.name` in the browser. Pressing **Preview** sends
-the draft to PHP and rerenders the preview. For a live preview, replace the
-binding with `x-interact:model.live`.
+The attribute contains a literal property path, such as `title` or
+`form.address.city`. Props and state without `writable: true` cannot receive
+model edits. See [Properties](/guide/state) for declarations.
 
-The directive's value is a **literal writable path**, such as `name` or
-`form.address.city`. Use `name`, rather than `$server.state.name`, in this
-attribute. Props and state without `writable: true` cannot receive model edits.
+<span id="choose-when-to-send-edits"></span>
 
-## Choose when to send edits
+## Update timing
 
-| Binding                                       | When it sends a request                  |
-| --------------------------------------------- | ---------------------------------------- |
-| `x-interact:model="name"`                     | With the next action or `$server.sync()` |
-| `x-interact:model.live="name"`                | After a typing pause, 250 ms by default  |
-| `x-interact:model.live.debounce.400ms="name"` | After a 400 ms typing pause              |
-| `x-interact:model.blur="name"`                | When the field loses focus               |
-| `x-interact:model.change="name"`              | On the native change event               |
+| Binding                | Request timing                           |
+| ---------------------- | ---------------------------------------- |
+| `x-interact:model`     | With the next action or `$server.sync()` |
+| `.live`                | After a typing pause, 250 ms by default  |
+| `.live.debounce.400ms` | After a 400 ms typing pause              |
+| `.blur`                | When the input loses focus               |
+| `.change`              | On its native change event               |
 
-All modes update the browser draft immediately. Debounce delays the server
-request, not local typing. An action captures the latest bound controls even
-when a field has not blurred or its debounce has not expired.
+All modes update local browser state immediately. An action captures current
+control values even before blur or an outstanding debounce. Synchronization does
+not save a database record.
 
-Choose one timing mode. Only `.live` accepts `.debounce`, optionally followed by
-whole milliseconds from `0ms` through `60000ms`. `.debounce` without a duration
-uses 250 ms. Unknown, repeated, or conflicting modifiers fail at initialization.
+Use one timing mode. `.debounce` is valid only with `.live`, optionally followed
+by `0ms` through `60000ms`. Without a duration it uses 250 ms. Unknown, repeated,
+or conflicting modifiers are errors.
 
-Use ordinary Alpine `x-model` for browser-only preferences, such as opening a
-menu. Interact's binding additionally coordinates server updates, PHP type
-conversion, and draft reconciliation. Use one model binding per control;
-do not combine `x-model` and `x-interact:model` on the same element.
+::: code-group
 
-## Text fields and textareas
-
-The first example uses a text input. For longer text, declare writable string
-state named `bio` and bind a textarea:
-
-```php [Inside the island class]
-#[State(writable: true)]
-public string $bio = '';
+```html [HTML]
+<input
+  type="search"
+  aria-label="Search"
+  x-interact:model.live.debounce.400ms="search"
+/>
 ```
 
-```php [Inside the element]
+```php [FormHelper]
+<?= $this->Form->control('search', [
+    'type' => 'search',
+    'label' => false,
+    'aria-label' => 'Search',
+    'value' => $search,
+    'x-interact:model.live.debounce.400ms' => 'search',
+]) ?>
+```
+
+:::
+
+This assumes a writable string `search` property. See the
+[search example](/examples/search) for a model-backed listing.
+
+<span id="text-fields-and-textareas"></span>
+
+## Textareas
+
+For a writable string `bio` property:
+
+::: code-group
+
+```html [HTML]
+<label for="bio">About you</label>
+<textarea id="bio" name="bio" x-interact:model.blur="bio"></textarea>
+```
+
+```php [FormHelper]
 <?= $this->Form->control('bio', [
     'type' => 'textarea',
     'label' => 'About you',
@@ -122,19 +104,26 @@ public string $bio = '';
 ]) ?>
 ```
 
-`State` is imported from `Interact\Attribute`, as in the complete class above.
-The remaining variations add properties to that class and controls to its form.
+:::
 
-## Select one option
+<span id="select-one-option"></span>
 
-Use a writable string for a select whose option values are strings:
+## Selects
 
-```php [Inside the island class]
-#[State(writable: true)]
-public string $country = '';
+For a writable string `country` property initialized to `''`:
+
+::: code-group
+
+```html [HTML]
+<label for="country">Country</label>
+<select id="country" name="country" x-interact:model.change="country">
+  <option value="">Choose a country</option>
+  <option value="BE">Belgium</option>
+  <option value="NL">Netherlands</option>
+</select>
 ```
 
-```php [Inside the element]
+```php [FormHelper]
 <?= $this->Form->control('country', [
     'type' => 'select',
     'label' => 'Country',
@@ -145,21 +134,40 @@ public string $country = '';
 ]) ?>
 ```
 
-Changing the selection synchronizes immediately. Use this for dependent choices;
-the [forms guide](/guide/forms#add-dependent-or-conditional-fields) demonstrates
-loading new city options and clearing the previous city on the server.
+:::
+
+`.change` sends the selected value immediately. For dependent choices, see
+[country and city fields](/examples/dependent-fields).
 
 ## Radio buttons
 
-A radio group binds one selected value to one scalar property. Keep the same
-native field name and model path across the group's options:
+A radio group assigns one selected value to a scalar property. For a writable
+string `format` property initialized to `'remote'`:
 
-```php [Inside the island class]
-#[State(writable: true)]
-public string $format = 'remote';
+::: code-group
+
+```html [HTML]
+<label>
+  <input
+    type="radio"
+    name="format"
+    value="remote"
+    x-interact:model.change="format"
+  />
+  Online
+</label>
+<label>
+  <input
+    type="radio"
+    name="format"
+    value="studio"
+    x-interact:model.change="format"
+  />
+  In person
+</label>
 ```
 
-```php [Inside the element]
+```php [FormHelper]
 <?= $this->Form->radio('format', [
     'remote' => 'Online',
     'studio' => 'In person',
@@ -169,19 +177,28 @@ public string $format = 'remote';
 ]) ?>
 ```
 
-Choosing **In person** sets `$format` to `'studio'`. Unchecked radios do not
-overwrite the selected value when an action captures the form.
+:::
 
-## A boolean checkbox
+All options use the same native name and model path. Choosing **In person** sets
+`format` to `'studio'`. Unchecked radios do not overwrite the selected value.
 
-A single checkbox binds its checked state to a boolean:
+<span id="a-boolean-checkbox"></span>
 
-```php [Inside the island class]
-#[State(writable: true)]
-public bool $business = false;
+## Boolean checkboxes
+
+A single checkbox assigns `true` or `false`. Declare writable boolean `business`
+state initialized to `false`:
+
+::: code-group
+
+```html [HTML]
+<label>
+  <input type="checkbox" name="business" x-interact:model.change="business" />
+  Book for a company
+</label>
 ```
 
-```php [Inside the element]
+```php [FormHelper]
 <?= $this->Form->control('business', [
     'type' => 'checkbox',
     'label' => 'Book for a company',
@@ -190,24 +207,39 @@ public bool $business = false;
 ]) ?>
 ```
 
-Checking it sends `true`; unchecking it sends `false`. Use this state to render
-conditional fields in PHP or to show local feedback through Alpine.
+:::
 
-## Multiple checkboxes
+<span id="multiple-checkboxes"></span>
 
-Use an array for a checkbox group. Every checkbox binds to the same array path:
+## Checkbox groups
 
-```php [Inside the island class]
-/**
- * Selected optional workshop extras.
- *
- * @var list<string>
- */
-#[State(writable: true)]
-public array $extras = [];
+Multiple checkboxes add or remove their string values from an array. Declare
+writable array `extras` state initialized to `[]`:
+
+::: code-group
+
+```html [HTML]
+<label>
+  <input
+    type="checkbox"
+    name="extras[]"
+    value="materials"
+    x-interact:model.change="extras"
+  />
+  Printed materials
+</label>
+<label>
+  <input
+    type="checkbox"
+    name="extras[]"
+    value="recording"
+    x-interact:model.change="extras"
+  />
+  Session recording
+</label>
 ```
 
-```php [Inside the element]
+```php [FormHelper]
 <?= $this->Form->multiCheckbox('extras', [
     'materials' => 'Printed materials',
     'recording' => 'Session recording',
@@ -217,44 +249,64 @@ public array $extras = [];
 ]) ?>
 ```
 
-Selecting both options produces `['materials', 'recording']`. Unchecking an
-option removes its value; unchecking everything produces `[]`. These are native
-input values, so checkbox option values are strings.
+:::
 
-The **Workshop planner** at `/playground` demonstrates checkbox groups,
-conditional company fields, and server validation. The
-[forms guide](/guide/forms) explains validation and dependent choices.
+Both selected options produce `['materials', 'recording']`. Clearing all options
+produces `[]`.
 
 ## Multiple selects
 
-A multiple select also uses array state. With the preceding `extras` property,
-use this control **instead of** the checkbox group:
+The same array property can use a multiple select instead:
 
-```php [Inside the element]
+::: code-group
+
+```html [HTML]
+<label for="extras">Optional extras</label>
+<select id="extras" name="extras[]" multiple x-interact:model.change="extras">
+  <option value="materials">Printed materials</option>
+  <option value="recording">Session recording</option>
+</select>
+```
+
+```php [FormHelper]
 <?= $this->Form->control('extras', [
     'type' => 'select',
     'label' => 'Optional extras',
     'multiple' => true,
-    'options' => ['materials' => 'Printed materials', 'recording' => 'Recording'],
+    'options' => ['materials' => 'Printed materials', 'recording' => 'Session recording'],
     'value' => $extras,
     'x-interact:model.change' => 'extras',
 ]) ?>
 ```
 
-The array contains all selected option values. Clearing the selection produces
-an empty array.
+:::
 
-## Numbers and empty values
+<span id="numbers-and-empty-values"></span>
 
-Declare the PHP type you need. Numeric strings from native controls are converted
-using the declared `int` or `float` metadata:
+## Numbers
 
-```php [Inside the island class]
+Declare `int` or `float` state for numeric conversion. A nullable numeric property
+allows an empty input to become `null`:
+
+```php
 #[State(writable: true)]
 public ?int $attendees = null;
 ```
 
-```php [Inside the element]
+::: code-group
+
+```html [HTML]
+<label for="attendees">Attendees</label>
+<input
+  id="attendees"
+  name="attendees"
+  type="number"
+  min="0"
+  x-interact:model.change="attendees"
+/>
+```
+
+```php [FormHelper]
 <?= $this->Form->control('attendees', [
     'type' => 'number',
     'label' => 'Attendees',
@@ -264,17 +316,18 @@ public ?int $attendees = null;
 ]) ?>
 ```
 
-`0` remains zero; an empty nullable numeric field becomes `null`. HTML constraints
-are user feedback. PHP still checks types, and application validation must check
-allowed ranges and choices.
+:::
+
+Zero remains `0`. HTML constraints provide browser feedback; application
+validation must still check ranges and allowed choices.
 
 ## Nested values
 
-Declare the owning array as writable and initialize its shape:
+Declare the owning array as writable and initialize its structure:
 
-```php [Inside the island class]
+```php
 /**
- * Editable address fields for the preview.
+ * Editable address fields.
  *
  * @var array{address: array{city: string}}
  */
@@ -282,7 +335,19 @@ Declare the owning array as writable and initialize its shape:
 public array $form = ['address' => ['city' => '']];
 ```
 
-```php [Inside the element]
+::: code-group
+
+```html [HTML]
+<label for="city">City</label>
+<input
+  id="city"
+  name="form[address][city]"
+  type="text"
+  x-interact:model="form.address.city"
+/>
+```
+
+```php [FormHelper]
 <?= $this->Form->control('form.address.city', [
     'label' => 'City',
     'value' => $form['address']['city'],
@@ -290,48 +355,49 @@ public array $form = ['address' => ['city' => '']];
 ]) ?>
 ```
 
-This writes a nested array value. It does not transport an entity or call the
-Table layer. Keep entities in PHP through `viewData()` and map drafts explicitly
-when [validating and saving](/guide/forms).
+:::
 
 ## Custom Alpine inputs
 
-An `x-modelable` wrapper exposes a local property that Interact can bind. With
-the earlier writable `country` property, this small wrapper works with the
-Composer bundle's CSP runtime:
+A wrapper with `x-modelable` can expose a local value to Interact. For the earlier
+writable `country` property:
 
-```php [Inside the element]
+```html
 <div
-    x-data="{ selection: '' }"
-    x-modelable="selection"
-    x-interact:model.change="country"
+  x-data="{ selection: '' }"
+  x-modelable="selection"
+  x-interact:model.change="country"
 >
-    <?= $this->Form->control('country', [
-        'type' => 'select',
-        'label' => 'Country',
-        'options' => ['BE' => 'Belgium', 'NL' => 'Netherlands'],
-        'empty' => 'Choose a country',
-        'x-model' => 'selection',
-    ]) ?>
+  <label for="widget-country">Country</label>
+  <select id="widget-country" x-model="selection">
+    <option value="">Choose a country</option>
+    <option value="BE">Belgium</option>
+    <option value="NL">Netherlands</option>
+  </select>
 </div>
 ```
 
-Here the inner control uses Alpine's local model; the outer wrapper connects
-that value to PHP. Custom `.change` bindings synchronize exposed-value changes;
-`.live` debounces them; `.blur` waits until focus leaves the whole wrapper.
-Accepted PHP values update the wrapper without causing another request.
+The inner `x-model` binds local Alpine state. The wrapper connects it to PHP.
+Custom `.change` bindings synchronize value changes; `.live` debounces them;
+`.blur` waits until focus leaves the wrapper. Accepted PHP values update the
+wrapper without sending another request.
 
-For a library-managed input, use its API to update the exposed value. See the
-[enhanced-select example](/guide/javascript-widgets#try-an-enhanced-select) for
-initialization, cleanup, and protected widget markup.
+Do not combine `x-model` and `x-interact:model` on the same element. Use JSON
+values and keep library instances outside reactive state. See the
+[enhanced select example](/examples/enhanced-select).
 
 ## File inputs
 
-Files bind to a declared `#[Upload]` property, using `x-interact:model` without
-timing modifiers. Selection starts staging immediately, unlike a deferred text
-draft. The file stays a server-side uploaded-file object; it is not JSON state.
+Files require an [`#[Upload]` declaration](/guide/uploads), without timing modifiers:
 
-```php [Inside an upload island's element]
+::: code-group
+
+```html [HTML]
+<label for="document">Document</label>
+<input id="document" name="document" type="file" x-interact:model="document" />
+```
+
+```php [FormHelper]
 <?= $this->Form->control('document', [
     'type' => 'file',
     'label' => 'Document',
@@ -339,18 +405,20 @@ draft. The file stays a server-side uploaded-file object; it is not JSON state.
 ]) ?>
 ```
 
-Follow the [upload guide](/guide/uploads) for the required property declaration,
-multiple files, limits, validation, and explicit saving.
+:::
 
-## Drafts, disabled controls, and validation
+File selection starts staging immediately. Files are PHP objects rather than
+JSON state. See [File uploads](/guide/uploads) for limits and validation.
 
-Newer edits survive an older response, and accepted values refresh surviving
-controls. Disabled controls are excluded from capture. A custom wrapper's
-`disabled` attribute also suspends automatic synchronization; use the library's
-disable API when the widget must become noninteractive. A queued live timer
-checks current disabled state and island ownership before sending.
+<span id="drafts-disabled-controls-and-validation"></span>
 
-Synchronization never implies database saving. Render field errors through
-FormHelper or `$server.errors`; see [forms and validation](/guide/forms).
-Use distinct stable IDs for repeated fields. Bindings resolve to their nearest
-island, so parent forms do not capture a nested child's drafts.
+## Disabled controls and responses
+
+Disabled controls are excluded from capture. A custom wrapper's `disabled`
+attribute also suspends automatic synchronization; disable the actual widget
+through its library API when needed. Queued live timers recheck disabled state
+and island ownership before sending.
+
+Accepted responses update surviving controls while preserving newer edits and
+focus. Use stable, unique IDs for repeated controls. Parent islands do not
+capture nested child drafts. See [Validation](/guide/forms) for field errors.

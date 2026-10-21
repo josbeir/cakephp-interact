@@ -1,161 +1,132 @@
 ---
-title: State and input binding
-description: Pass initial props, bind editable fields, and compute template data without transporting query results.
+title: 'Properties'
+description: Declare props, writable state, supported value types, and PHP-only view data.
 ---
 
-# State and input binding
+<span id="state-and-input-binding"></span>
 
-Build a greeting that changes as you type. This example uses the helper and
-runtime configured in [installation](/installation).
+# Properties
 
-To read these values in browser expressions or JavaScript files, see
-[Alpine and `$server`](/guide/alpine). For examples of radios, checkbox groups,
-selects, and every synchronization mode, see [`x-interact:model`](/directives/model).
+Island properties hold values used by PHP and exposed to the browser. Declare
+mount parameters with `#[Prop]` and interactive values with `#[State]`.
 
-## Bind a text input
+Import both attributes from `Interact\Attribute`.
 
-The class and element below work together. Mount them with
-`$this->Interact->render('greeting')` in an existing action template.
+<span id="bind-a-text-input"></span>
+<span id="choose-when-to-send-edits"></span>
 
-::: code-group
+## #[State] {#state}
 
-```php [src/Island/Greeting.php]
-<?php
-declare(strict_types=1);
-
-namespace App\Island;
-
-use Interact\Attribute\AsIsland;
-use Interact\Attribute\Prop;
-use Interact\Attribute\State;
-use Interact\Island;
-
-/**
- * Owns an editable name and a mount-time greeting for one page region.
- */
-#[AsIsland('greeting', element: 'Interact/greeting')]
-class Greeting extends Island
-{
-    #[Prop]
-    public string $salutation = 'Hello';
-
-    #[State(writable: true)]
-    public string $name = '';
-}
+```php
+#[State]
+public int $count = 0;
 ```
 
-```php [templates/element/Interact/greeting.php]
-<?php
-declare(strict_types=1);
+PHP can change this value during an action. The template receives `$count`, and
+JavaScript can read `$server.state.count`.
 
-use function Cake\Core\h;
+### Writable state
 
-/**
- * @var \Interact\View\TemplateView $this
- * @var string $salutation
- * @var string $name
- */
-?>
-<?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'greeting', 'x-interact:submit' => '$server.sync()']) ?>
-    <?= $this->Form->control('name', [
-        'type' => 'text',
-        'label' => 'Your name',
-        'value' => $name,
-        'x-interact:model.live' => 'name',
-    ]) ?>
-<?= $this->Form->end() ?>
-<p aria-live="polite"><?= (string)h($salutation) ?> <?= (string)h($name) ?></p>
-<p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
+```php
+#[State(writable: true)]
+public string $title = '';
 ```
 
-:::
+`writable: true` allows browser updates. Use
+[`x-interact:model`](/directives/model) to bind a control to the property.
+Synchronization updates the island; your application decides when to save.
 
-Type a name: after a short pause, the server receives the new value and renders
-the greeting. FormHelper escapes control values; escape other application text
-when putting it back into HTML.
+<span id="pass-a-controller-value-explicitly"></span>
 
-## Pass a controller value explicitly
+## #[Prop] {#prop}
 
-If your controller sets `$welcome = 'Welcome'`, pass it at the mount site:
-
-```php [Your action template]
-<?= $this->Interact->render('greeting', props: ['salutation' => $welcome]) ?>
+```php
+#[Prop]
+public int $articleId;
 ```
 
-The prop initializes the island and remains available on updates. Other
-controller variables are not inherited. A prop is browser-visible and cannot
-be reassigned through input binding; it is not a place for secrets.
+Supply required props when mounting:
 
-To seed **editable** state from a prop, declare a separate writable property and
-copy the prop into it in `mount()`. That hook runs only on the first render,
-so later updates do not overwrite the user's draft.
-
-## Choose when to send edits
-
-A plain `x-interact:model="name"` keeps edits local. Add a modifier to choose when
-they synchronize:
-
-| Modifier  | Network behavior                             |
-| --------- | -------------------------------------------- |
-| None      | Send with the next action or explicit sync   |
-| `.live`   | Send after a typing pause, 250 ms by default |
-| `.blur`   | Send when the control loses focus            |
-| `.change` | Send on its native change event              |
-
-For a different typing delay:
-
-```html
-<input x-interact:model.live.debounce.400ms="name" />
+```php
+<?= $this->Interact->render('article-editor', props: ['articleId' => 7]) ?>
 ```
 
-Use `.change` for selects and `.live` for search. Choose one synchronization mode;
-debounce overrides only apply to `.live` and accept 0–60,000 whole milliseconds.
-Model values are literal writable paths, not Alpine expressions. An action
-flushes the latest control values, including a field that has not blurred yet.
-Updating a draft never saves it automatically.
+Props initialize the island and remain available on subsequent requests. They
+cannot be changed through model bindings. Props are browser-visible; use current
+application authorization to control access to the referenced record.
 
-## Bind other native controls
+### Initial editable values
 
-Use the same model directive on textareas, selects, radio groups, checkboxes,
-and multiple selects. Match the PHP property to the control: `bool` for a single
-checkbox, an array for a checkbox group or multiple select, and `int`/`float`
-for numeric state. Nullable numeric state can represent an empty selection.
-
-Dotted paths address nested arrays, for example:
-
-```php [Inside a FormHelper form]
-<?= $this->Form->control('form.address.city', [
-    'type' => 'text',
-    'label' => 'City',
-    'value' => $form['address']['city'],
-    'x-interact:model' => 'form.address.city',
-]) ?>
-```
-
-Declare the owning `form` property as writable array state and initialize its
-shape. Use distinct stable control IDs when rendering repeated fields.
-File inputs use explicit `#[Upload]` properties rather than JSON state. See
-[file uploads](/guide/uploads) for staged transfers and native PHP file objects.
-
-## Compute data for a render
-
-Add this method to the greeting class to provide an extra template variable:
+Copy an initial prop to writable state in `mount()`. For an island that declares
+`initialTitle` as a prop and `title` as writable state:
 
 ```php
 /**
- * Describe the current draft without adding derived data to the snapshot.
+ * Initialize the editable title on the first render.
+ */
+public function mount(): void
+{
+    $this->title = $this->initialTitle;
+}
+```
+
+`mount()` runs once. See [Lifecycle](/guide/lifecycle).
+
+## Supported types
+
+| PHP type                | Transported value             |
+| ----------------------- | ----------------------------- |
+| `string`                | String, including `''`        |
+| `int`                   | Integer, including `0`        |
+| `float`                 | Finite number                 |
+| `bool`                  | `true` or `false`             |
+| Nullable supported type | Value or `null`               |
+| `array`                 | Nested JSON-compatible values |
+
+Declare concrete property types. Required props may be uninitialized until
+mounting. Entities, queries, services, resources, and arbitrary objects cannot
+be transported. Files use [`#[Upload]`](/guide/uploads).
+
+<span id="bind-other-native-controls"></span>
+
+## Nested values
+
+```php
+/**
+ * Editable address fields.
+ *
+ * @var array{address: array{city: string}}
+ */
+#[State(writable: true)]
+public array $form = ['address' => ['city' => '']];
+```
+
+Bind nested values using dotted paths such as `form.address.city`. See
+[nested input bindings](/directives/model#nested-values).
+
+<span id="compute-data-for-a-render"></span>
+
+## viewData()
+
+`viewData()` supplies PHP template variables without exposing them as browser
+state. Use it for entities, query results, choices, and computed values.
+
+```php
+/**
+ * Supply a derived value for this render.
  *
  * @return array{characters: int}
  */
 public function viewData(): array
 {
-    return ['characters' => mb_strlen($this->name)];
+    return ['characters' => mb_strlen($this->title)];
 }
 ```
 
-The element can now use `$characters`. For model-backed listings, return query
-results here too. Only props and state travel in the snapshot; query results,
-services, and entities stay on the server.
+The template receives `$characters`; `$server.state.characters` is not created.
+The method runs on initial and subsequent renders. Keep database queries in
+Table finders and execute them from the island.
 
-`viewData()` cannot reuse a prop or state name, or the reserved `errors` name.
-See [the PHP reference](/api#declarations) for supported transported values.
+Returned names must not duplicate props, state, or the reserved `errors` name.
+The [article form example](/examples/article-form) passes an entity to FormHelper
+through `viewData()`.

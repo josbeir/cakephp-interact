@@ -1,11 +1,13 @@
 ---
-title: Your first island
+title: Quickstart
 description: Build a working counter with a PHP action, a native CakePHP element, and a mount call in an existing page.
 ---
 
 <span id="build-an-interactive-region"></span>
 
-# Your first island
+<span id="your-first-island"></span>
+
+# Quickstart
 
 Build a counter that updates without reloading its surrounding page. You will
 add a PHP class, an element, and one mount call to an existing controller view.
@@ -130,14 +132,15 @@ the count is interaction state, and this example does not save it to a database.
 
 | Task                                                   | Guide                                     |
 | ------------------------------------------------------ | ----------------------------------------- |
-| Look up a directive or a `$server` operation           | [Template API](/directives/)              |
-| Bind an input or pass an initial value                 | [State and input binding](/guide/state)   |
+| Look up a directive                                    | [HTML directives](/directives/)           |
+| Look up a JavaScript bridge member                     | [$server](/reference/server)              |
+| Bind an input or pass an initial value                 | [Properties](/guide/state)                |
 | Read PHP data from Alpine or a JavaScript file         | [Alpine and `$server`](/guide/alpine)     |
-| Call an action with arguments or show loading feedback | [Actions and feedback](/guide/actions)    |
+| Call an action with arguments or show loading feedback | [Actions](/guide/actions)                 |
 | Upload and validate files                              | [File uploads](/guide/uploads)            |
-| Filter a larger model-backed listing                   | [Search and pagination](/guide/search)    |
-| Validate and save an editable record                   | [Forms and validation](/guide/forms)      |
-| Reuse a controller action's template                   | [Whole-page islands](/guide/page-islands) |
+| Filter a larger model-backed listing                   | [Search and pagination](/examples/search) |
+| Validate and save an editable record                   | [Article form](/examples/article-form)    |
+| Reuse a controller action's template                   | [Page islands](/guide/page-islands)       |
 
 ## Application-owned Alpine
 

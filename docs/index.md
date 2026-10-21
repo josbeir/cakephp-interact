@@ -100,12 +100,12 @@ declare(strict_types=1);
 
 :::
 
-Use the same approach for [live search](/guide/search),
+Use the same approach for [live search](/examples/search),
 [editable forms](/guide/forms), and [independent nested editors](/guide/nesting).
 CakePHP continues to own queries, validation, authorization, and saving.
 
-Browse the [Template API](/directives/) for a page per directive and the `$server`
-bridge, with examples for different controls and interactions.
+See [HTML directives](/directives/) and [`$server`](/reference/server) for syntax
+and options, or [Examples](/examples) for complete implementations.
 
 Interact is a development preview for **PHP 8.5 and CakePHP 6 development builds**.
 Install `dev-main` from [Packagist](https://packagist.org/packages/josbeir/cakephp-interact);

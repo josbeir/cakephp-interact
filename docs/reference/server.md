@@ -1,66 +1,61 @@
 ---
 title: '$server'
-description: Read island state, call PHP actions, synchronize drafts, show activity and validation feedback, and control file transfers from Alpine.
+description: Look up island state, actions, synchronization, activity, errors, and transfer controls.
 ---
+
+<span id="member-reference"></span>
 
 # $server
 
-`$server` is the browser bridge to the nearest owning island. Use it in ordinary
-Alpine expressions to read data, call PHP actions, refresh, and show feedback.
+`$server` gives Alpine expressions and JavaScript access to an island's state
+and actions. It resolves to the nearest containing island.
 
-## Read data and call an action
+| Member                                  | Description                                           |
+| --------------------------------------- | ----------------------------------------------------- |
+| [`state`](#state)                       | Props and state, including local edits                |
+| [`call(action, ...args)`](#call)        | Call a declared PHP action                            |
+| [`sync()`](#sync)                       | Send edits and render without an action               |
+| [`pending(target?, ...args)`](#pending) | Match queued or executing requests                    |
+| [`loading(target?, ...args)`](#loading) | Match requests after a visual delay                   |
+| [`busy`](#busy)                         | Whether a request is executing                        |
+| [`dirty`](#dirty)                       | Whether edits or file selections need synchronization |
+| [`errors`](#errors)                     | Field validation messages                             |
+| [`error`](#error)                       | Current request failure or `null`                     |
+| [`paused`](#paused)                     | Whether automatic updates are paused after a failure  |
+| [`exportDraft()`](#exportdraft)         | Export writable values as JSON                        |
+| [`uploads`](#uploads)                   | Per-field file progress and controls                  |
 
-With the PHP counter from [your first island](/getting-started), add this to its
-element:
+<span id="state-and-scope"></span>
+
+## state
 
 ```html
 <p x-text="'Count: ' + $server.state.count"></p>
-<button
-  type="button"
-  @click="$server.call('increment')"
-  :disabled="$server.busy"
->
-  Add one
-</button>
 ```
 
-The PHP class declares `#[State] public int $count = 0` and an
-`#[Action] increment()` method. Interact exposes the count, sends the action
-request, and updates the browser state and server-rendered HTML together.
-The island root already initializes Alpine; these bindings need no extra `x-data`.
+For `#[State] public int $count`, PHP sees `$count` and JavaScript sees
+`$server.state.count`. Props are available the same way. Only writable state can
+receive browser edits. Entities and `viewData()` are not included.
 
-## State and scope
+Use [`x-interact:model`](/directives/model) for inputs. Local edits appear in
+`state` immediately; PHP-rendered text changes on the next accepted response.
 
-`$server.state` contains declared props and state, including current writable
-drafts. A PHP `$name` property is available as `$server.state.name`. The
-[Alpine guide](/guide/alpine#know-which-data-reaches-javascript) maps PHP declarations
-to browser access and explains why entities and `viewData()` stay PHP-only.
+<span id="read-data-and-call-an-action"></span>
+<span id="call-php-actions-with-arguments"></span>
 
-Use [`x-interact:model`](/directives/model) for editable controls. Reading a prop
-or server-owned state does not make it writable. Model drafts update immediately
-in the browser; PHP-rendered values change after an accepted server response.
-
-`$server` belongs to the **nearest containing island**. Nested islands use their
-own bridge. Two instances of the same island have independent state; `$server`
-does not become available outside islands or create shared application state.
-
-## Call PHP actions with arguments
+## call()
 
 ```html
 <button type="button" @click="$server.call('adjust', 5)">Add five</button>
 ```
 
-The island must declare an action such as `adjust(int $amount)` with `#[Action]`;
-the [action guide](/guide/actions#pass-an-argument) includes that implementation.
-Arguments are JSON-compatible values, passed after the action name. Only declared
-actions are callable. PHP still validates allowed values and authorizes any
-records identified by arguments.
+`call(action, ...args): Promise<RequestResult>` queues a declared `#[Action]`
+method with JSON-compatible arguments. PHP validates types and application rules.
+See [Actions](/guide/actions) for the corresponding `adjust()` implementation.
 
-Each island runs one request at a time. Actions queue in order and capture the
-current draft when preparing their request. Different islands work independently.
-Actions are never automatically retried.
+<span id="synchronize-or-refresh"></span>
 
-## Synchronize or refresh
+## sync()
 
 ```html
 <button type="button" @click="$server.sync()" :disabled="$server.busy">
@@ -68,25 +63,17 @@ Actions are never automatically retried.
 </button>
 ```
 
-`sync()` sends writable drafts and rerenders the owning island without invoking
-an action. Fresh `viewData()` can load new application data. It does not rerun the
-controller or `mount()`, and synchronization never implies database saving.
-Pending synchronization requests coalesce.
+`sync(): Promise<RequestResult>` sends current writable edits and renders the
+island without invoking an action. Fresh `viewData()` can query new data. It does
+not rerun the controller or `mount()`, or automatically save a record.
 
-To refresh after another island saves, listen inside the receiving island:
+Actions queue in order; pending synchronization coalesces. Each island processes
+one request at a time. [Events](/guide/events) can trigger another island's
+refresh; [`x-interact:poll`](/directives/poll) schedules periodic refreshes.
 
-```html
-<section @article-saved.window="$server.sync()">
-  <!-- This island's listing. -->
-</section>
-```
+<span id="show-queued-and-executing-work"></span>
 
-The saving island dispatches the application event. The
-[event examples](/guide/nesting#refresh-another-island) cover dispatching,
-parent/sibling listeners, matching records, and what a refresh updates. For
-periodic refreshes, use [`x-interact:poll`](/directives/poll).
-
-## Show queued and executing work
+## pending()
 
 ```html
 <button
@@ -96,69 +83,73 @@ periodic refreshes, use [`x-interact:poll`](/directives/poll).
 >
   Save
 </button>
+```
+
+`pending()` becomes true immediately for matching accepted queued or executing
+work. Ordinary action buttons remain repeatable unless explicitly disabled;
+[`x-interact:submit`](/directives/submit) protects forms automatically.
+
+| Query                                       | Matches                                          |
+| ------------------------------------------- | ------------------------------------------------ |
+| `pending()`                                 | All accepted requests, including transfers       |
+| `pending('save')`                           | Any invocation of `save`                         |
+| `pending('remove', 42)`                     | `remove` with the complete argument tuple `[42]` |
+| `pending(null)`                             | Synchronization requests                         |
+| `pending({ action: 'remove', args: [42] })` | Equivalent object selector                       |
+
+Omitting `action` matches all requests; `null` matches synchronization. Argument
+filters require a named action and its complete argument tuple. Scalar types are
+preserved, so `42` and `'42'` differ. Object key order is ignored. Unsent model
+debounce timers do not count.
+
+## loading()
+
+```html
 <span role="status" x-show="$server.loading('save')" x-cloak>Saving…</span>
 ```
 
-This assumes a declared `save()` action. `pending()` matches accepted queued or
-executing work immediately. `loading()` uses the same matching but waits 200 ms
-by default, so fast requests do not flash an indicator. Include
-`[x-cloak] { display: none !important; }` in your stylesheet.
-
-| Query                                               | Matches                                         |
-| --------------------------------------------------- | ----------------------------------------------- |
-| `$server.pending()`                                 | Any accepted queued or executing request        |
-| `$server.pending('save')`                           | Any invocation of `save`                        |
-| `$server.pending('remove', 42)`                     | `remove` with exactly the argument tuple `[42]` |
-| `$server.pending(null)`                             | Synchronization without an action               |
-| `$server.pending({ action: 'remove', args: [42] })` | The equivalent object selector                  |
-
-`loading()` accepts all these selectors. Its object form can override the delay:
+`loading()` accepts the same targets as `pending()`, with a 200 ms default delay.
+The object form can set a delay from 0 to 60,000 whole milliseconds:
 
 ```html
 <span
   role="status"
   x-show="$server.loading({ action: 'remove', args: [42], delay: 500 })"
   x-cloak
+  >Removing…</span
 >
-  Removing this article…
-</span>
 ```
 
-Use this inside an island that exposes `remove()`. It only reflects removal of
-record 42. Matching preserves scalar types and ignores object key order;
-`42` and `'42'` are different arguments. Argument selectors require a named action
-and its complete argument tuple. Omitting `action` matches all requests; `null`
-matches synchronization.
+The delay controls presentation only. It includes continuously matching queued
+and executing work; overlapping matching requests keep the indicator visible.
+Equivalent queries share timers. Resources are released when matching work ends
+or the island disappears. Add `[x-cloak] { display: none !important; }` to the
+stylesheet when using `x-cloak`.
 
-The visual delay must be an integer from 0 to 60,000 ms. It never delays a request
-or form protection. Neither helper counts an unsent model debounce timer.
-Unqualified queries include file transfers; action selectors continue to match
-PHP actions. Equivalent delayed queries share their timing while work remains
-continuously pending, including time queued behind other work. Timing resources
-are released when that interval ends or the island disappears.
+## busy
 
-`busy` means a request is **executing**; it does not include time queued behind
-another request. An island root's `aria-busy` follows that executing state.
-[`x-interact:submit`](/directives/submit) provides automatic per-form protection
-and form-level `aria-busy` while a submission waits or runs.
+`busy` is true while a request executes. It excludes queued work and drives the
+island root's `aria-busy`. Form submission protection also covers queueing time.
 
-## Show unsynchronized drafts
+<span id="show-unsynchronized-drafts"></span>
 
-```html
-<p x-show="$server.dirty">Your edits have not reached the server yet.</p>
-```
+## dirty
 
-`dirty` means the browser has unsynchronized edits, unfinished transfers, or
-failed file selections. It does **not** tell you whether a database record has
-been saved. Accepted drafts may still be unsaved application data.
+`dirty` is true for unsynchronized edits, unfinished transfers, and failed file
+selections. It does not describe whether database changes were saved. Accepted
+state and staged files can still be unsaved application data.
 
-## Validation feedback and request failures
+<span id="validation-feedback-and-request-failures"></span>
 
-For an island with a `title` field, browser-accessible application messages are
-available as lists in `$server.errors`:
+## errors
+
+`errors` maps fields to message lists. PHP supplies these through
+[`setErrors()`](/guide/forms#seterrors). A renderable HTTP 422 updates field
+feedback without pausing the island. FormHelper can read the entity's original
+validation errors separately.
 
 ```html
-<ul role="alert" aria-label="Title errors">
+<ul role="alert">
   <template
     x-for="(message, index) in ($server.errors.title || [])"
     :key="index"
@@ -168,116 +159,98 @@ available as lists in `$server.errors`:
 </ul>
 ```
 
-CakePHP forms can render entity errors through FormHelper instead. Use the normal
-[forms and validation flow](/guide/forms); the bridge does not run validation.
-
-Request failures appear separately in `$server.error`:
+## error
 
 ```html
 <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
-`error` is `null` or `{ code, message, status, recovery }`. A null `status` means
-there was no readable HTTP response. `recovery` is `retry`, `reload`,
-`authenticate`, or `none`. It describes the possible next step; it never triggers
-an automatic action. Ordinary handlers need no `.catch()` callback.
+`error` is `null` or `{ code, message, status, recovery }`. See
+[Error handling](/guide/failures) for failure categories and recovery. Ordinary
+handlers do not need `.catch()` markup.
 
-`paused` becomes true after a request failure pauses automatic updates. User
-editing continues. Use the [failure guide](/guide/failures) for explicit recovery,
-status categories, and the `interact:error` event. A valid renderable HTTP 422
-instead supplies validation messages and does not pause the island.
+## paused
 
-## Inspect an outcome in JavaScript
+`paused` is true after a request failure pauses automatic updates. Local editing
+continues. Explicit recovery depends on the failure's `recovery` value; failed
+actions are never automatically retried.
 
-Both `call()` and `sync()` return `Promise<RequestResult>`. In a registered
-Alpine object's method:
+<span id="export-the-current-writable-draft"></span>
 
-```js
-async save() {
-  const result = await this.$server.call('save');
-  if (!result.ok) {
-    console.log(result.error.code);
-  }
-}
+## exportDraft()
+
+`exportDraft(): string` returns formatted JSON for all current writable values,
+including synchronized values. It excludes props, server-owned state, files and
+upload references, snapshots, and runtime metadata. It does not persist data.
+
+For a user-controlled copy field:
+
+::: code-group
+
+```html [HTML]
+<label for="draft-export">Copy draft</label>
+<textarea id="draft-export" readonly :value="$server.exportDraft()"></textarea>
 ```
 
-An accepted render returns `{ ok: true }`; a request failure returns
-`{ ok: false, error }`. A renderable HTTP 422 is an accepted render, so `ok` does
-not prove validation or persistence succeeded. Use application state or events
-to announce a successful save.
-
-The [Alpine registration example](/guide/alpine#access-server-from-a-javascript-file)
-shows where to place methods in an external script. There, use `this.$server`;
-inside template expressions, use `$server`. A reusable registration can live
-outside the template, while each `x-data` instance still gets its owning island.
-
-## Export the current writable draft
-
-For an intentional user-controlled export, render a readonly textarea:
-
-```php [Inside the island element]
+```php [FormHelper]
 <?= $this->Form->control('draftExport', [
     'type' => 'textarea',
-    'label' => 'Copy current draft',
+    'label' => 'Copy draft',
     'readonly' => true,
     ':value' => '$server.exportDraft()',
 ]) ?>
 ```
 
-`exportDraft()` returns formatted JSON for all writable values, including already
-synchronized values. It excludes props, server-owned state, files and upload
-references, snapshots, and runtime metadata. It does not persist data in browser
-storage. See the [recovery recipe](/guide/failures#keep-the-draft-and-offer-a-choice)
-for when to offer it and how to handle sensitive writable values.
+:::
 
-## File transfer feedback and controls
+Writable data may be sensitive. Offer copying intentionally; see
+[recovery](/guide/failures#recovery).
 
-For a declared `#[Upload]` field named `document`:
+<span id="file-transfer-feedback-and-controls"></span>
+
+## uploads
+
+For a declared upload property named `document`:
 
 ```html
 <progress
   max="100"
+  aria-label="Upload progress"
   x-show="$server.uploads.document.pending"
   :value="$server.uploads.document.progress"
-  aria-label="Document upload progress"
 ></progress>
 <button type="button" @click="$server.uploads.document.cancel()">
   Cancel transfer
 </button>
 ```
 
-`$server.uploads.document` exposes `pending`, `progress`, and `files`, plus
-`cancel(id?)`, `remove(id?)`, and `retry(id?)`. Progress is 0–100 or `null` when
-unavailable. File items expose `id`, `name`, `size`, `status`, and `progress`;
-status is `queued`, `uploading`, `ready`, or `failed`.
+Each field exposes `pending`, `progress`, `files`, `cancel(id?)`, `remove(id?)`,
+and `retry(id?)`. Progress is 0–100 or `null`. File items expose `id`, `name`,
+`size`, `status`, and `progress`. Status is `queued`, `uploading`, `ready`, or
+`failed`. Omit an ID to target the field's applicable items.
 
-Cancel stops browser transfer work without guaranteeing PHP stopped processing.
-Removal accepts a browser item ID or a PHP `TemporaryUpload::id`; omit it to
-clear the field. Retry transfers files only and never repeats a failed save.
+Cancellation does not guarantee PHP stopped processing. Retry transfers files;
+it never replays a failed save. Accepted files are PHP uploaded-file objects.
+See [File uploads](/guide/uploads) for staging behavior and limits.
 
-Accepted files are available as PHP uploaded-file variables. The bridge exposes
-transfer feedback and controls, not file objects or image processing. See
-[file uploads](/guide/uploads) for binding, server validation, field limits, and
-saving through an entity and Table.
+<span id="inspect-an-outcome-in-javascript"></span>
 
-## Member reference
+## Request results
 
-| Member                      | Contract                                                    |
-| --------------------------- | ----------------------------------------------------------- |
-| `state`                     | Reactive props and state, including current writable drafts |
-| `call(action, ...args)`     | Queue a declared PHP action with JSON-compatible arguments  |
-| `sync()`                    | Synchronize writable drafts and rerender without an action  |
-| `pending(target?, ...args)` | Match queued or executing work immediately                  |
-| `loading(target?, ...args)` | Match the same work after a configurable visual delay       |
-| `busy`                      | A request is executing                                      |
-| `dirty`                     | Local edits or file selections need synchronization         |
-| `errors`                    | Application messages as a field-to-message-list map         |
-| `error`                     | Structured request failure, or `null`                       |
-| `paused`                    | Automatic updates are paused after a request failure        |
-| `exportDraft()`             | Export current writable values as formatted JSON            |
-| `uploads`                   | Per-field transfer feedback and controls                    |
+`call()` and `sync()` return `{ ok: true }` after an accepted render, or
+`{ ok: false, error }` after a request failure. An accepted HTTP 422 can contain
+validation errors, so `ok` does not prove a save succeeded.
 
-Removing an island releases its browser timers, listeners, observers, and
-in-flight browser work. Aborting a fetch does not promise cancellation of PHP
-execution. The [browser reference](/reference/browser#scheduling-and-dom-behavior)
-describes shared request scheduling and DOM preservation.
+Inside a registered Alpine method:
+
+```js
+async save() {
+  const result = await this.$server.call('save');
+  if (!result.ok) console.log(result.error.code);
+}
+```
+
+Use `this.$server` in JavaScript methods and `$server` in template expressions.
+See [Alpine registration](/guide/alpine#custom-javascript). Removed islands settle
+waiting requests with `cancelled` and do not emit new error UI. Aborting fetch
+does not cancel server execution.
