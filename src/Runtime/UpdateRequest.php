@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Runtime;
 
+use Interact\Loading\Initialization;
 use Interact\Upload\UploadOperation;
 use Interact\Url\RequestContext;
 use InvalidArgumentException;
@@ -17,6 +18,8 @@ readonly class UpdateRequest
     public string $pageQuery;
 
     public bool $urlRestore;
+
+    public bool $initialize;
 
     /**
      * @var array<string, mixed> Browser edits, still subject to property-level authorization.
@@ -63,6 +66,7 @@ readonly class UpdateRequest
             throw new InvalidArgumentException('Invalid island update envelope.');
         }
 
+        $this->initialize = Initialization::read($request);
         $url = new RequestContext($request);
         $this->pageQuery = $url->query;
         $this->urlRestore = $url->restoring;

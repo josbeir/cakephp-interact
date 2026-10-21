@@ -4,12 +4,14 @@ declare(strict_types=1);
 namespace Interact\Rendering;
 
 use Interact\Discovery\Definition;
+use Interact\Loading\Options;
+use Interact\Loading\PlaceholderRenderer;
 use Interact\View\TemplateView;
 
 /**
  * Bridges the runtime's explicit render contract to CakePHP's native PHP view engine.
  */
-class PhpRenderer implements RendererInterface
+class PhpRenderer implements RendererInterface, PlaceholderRendererInterface
 {
     /**
      * Applications can supply a TemplateView subclass with their own helper initialization.
@@ -26,5 +28,15 @@ class PhpRenderer implements RendererInterface
     public function render(Definition $definition, array $data): string
     {
         return $this->view->island($definition->declaration, $data);
+    }
+
+    /**
+     * Render a placeholder through the same application-configured isolated view.
+     *
+     * @param array<string, mixed> $props Declared mount props including defaults.
+     */
+    public function placeholder(Options $options, array $props): string
+    {
+        return new PlaceholderRenderer($this->view)->render($options, $props);
     }
 }

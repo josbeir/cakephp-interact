@@ -5,7 +5,7 @@ import { readQuery, writeQuery } from './codec';
 
 interface Owner {
   fields: UrlFields;
-  accepted: State;
+  accepted: State | undefined;
   restore: (target: UrlRestoration) => void;
   failure: (cause: unknown) => void;
   root: HTMLElement | undefined;
@@ -48,7 +48,7 @@ export class UrlCoordinator {
   /** Register all claims atomically and canonicalize initial values without pushing history. */
   register(
     fields: UrlFields,
-    accepted: State,
+    accepted: State | undefined,
     restore: Owner['restore'],
     failure: Owner['failure'] = (cause) => {
       throw cause;
@@ -66,7 +66,7 @@ export class UrlCoordinator {
       this.host.addEventListener('popstate', this.navigate);
     const owner: Owner = {
       fields,
-      accepted: clone(accepted),
+      accepted: accepted === undefined ? undefined : clone(accepted),
       restore,
       failure,
       root,
@@ -120,6 +120,7 @@ export class UrlCoordinator {
     writeQuery(url, owner.fields, state);
     const push =
       !restoring &&
+      previous !== undefined &&
       Object.entries(owner.fields).some(
         ([property, field]) =>
           field.history && !equal(previous[property], state[property]),
@@ -139,7 +140,8 @@ export class UrlCoordinator {
   protected initialize(): void {
     const url = new URL(this.host.location.href);
     for (const owner of this.owners)
-      writeQuery(url, owner.fields, owner.accepted);
+      if (owner.accepted !== undefined)
+        writeQuery(url, owner.fields, owner.accepted);
     this.write(url, false);
   }
 

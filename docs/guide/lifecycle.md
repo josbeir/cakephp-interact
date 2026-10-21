@@ -96,3 +96,7 @@ Alpine state, and matching nested islands. Removing an island releases its
 browser resources. See [Requests and DOM updates](/reference/browser).
 
 A successful action redirect skips view data and rendering. Downloads accompany an accepted render. Both helpers are restricted to declared actions; see [redirects and downloads](/guide/redirects-and-downloads#action-lifecycle).
+
+## Deferred initialization
+
+[Lazy loading](/guide/lazy-loading) authorizes the initial placeholder without running `mount()` or rendering island content. Initialization constructs a fresh instance and authorizes again before mounting. Normal updates then follow the lifecycle above.

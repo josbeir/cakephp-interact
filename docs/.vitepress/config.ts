@@ -85,6 +85,7 @@ export default defineConfig({
             { text: 'Dependent fields', link: '/examples/dependent-fields' },
             { text: 'Single document upload', link: '/examples/upload' },
             { text: 'Job polling', link: '/examples/polling' },
+            { text: 'Lazy resource count', link: '/examples/lazy-loading' },
             { text: 'Enhanced select', link: '/examples/enhanced-select' },
             { text: 'Chart updates', link: '/examples/chart' },
           ],
@@ -115,6 +116,7 @@ export default defineConfig({
           text: 'Features',
           items: [
             { text: 'URL state', link: '/guide/url-state' },
+            { text: 'Lazy loading', link: '/guide/lazy-loading' },
             {
               text: 'Redirects and downloads',
               link: '/guide/redirects-and-downloads',

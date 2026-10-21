@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+use Interact\Loading\Options;
 use Interact\Runtime\Values;
 use Interact\Test\Fixture\DocumentationRuntime;
 
@@ -20,5 +21,5 @@ if ($input !== '') {
     echo json_encode($result->payload(), JSON_THROW_ON_ERROR);
 } else {
     $alias = $argv[1] ?? 'article-form';
-    echo $examples->runtime->mount($alias, [], $alias, $examples->context)->html;
+    echo $examples->runtime->mount($alias, [], $alias, $examples->context, new Options($argv[2] ?? 'eager'))->html;
 }

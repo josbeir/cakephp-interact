@@ -7,6 +7,7 @@ import { readFailure, requestError } from './failure';
  * Versioned browser request carrying a signed baseline and explicit writable edits.
  */
 export type UpdatePayload = Pick<Invocation, 'action' | 'args'> & {
+  initialize?: boolean;
   upload?: { kind: 'stage' | 'remove'; field: string; id?: string };
   version: 1;
   snapshot: string;

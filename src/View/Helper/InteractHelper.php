@@ -9,6 +9,7 @@ use Cake\View\Helper;
 use Cake\View\Helper\HtmlHelper;
 use Interact\Discovery\Registry;
 use Interact\IslandContext;
+use Interact\Loading\Options;
 use Interact\Runtime\Factory;
 use Interact\Runtime\Runtime;
 use Interact\Security\SnapshotCodec;
@@ -47,9 +48,12 @@ class InteractHelper extends Helper
         }
     }
 
+    // Approved exception: named loading options keep ordinary mount calls readable.
+    // @mago-expect lint:excessive-parameter-list
     /**
      * Mount a named island using explicit props and a stable sibling key.
      *
+     * Loading accepts eager (default), lazy, defer, or manual; placeholder names a native element.
      * Repeated children need distinct keys; changing their props requires a new key.
      *
      * ```php
@@ -58,9 +62,21 @@ class InteractHelper extends Helper
      *
      * @param array<string, mixed> $props Server-owned parameters declared with Prop.
      */
-    public function render(string $alias, array $props = [], ?string $key = null, ?string $urlPrefix = null): string
-    {
-        return $this->runtime()->mount($alias, $props, $key ?? $alias, $this->context(), $urlPrefix)->html;
+    public function render(
+        string $alias,
+        array $props = [],
+        ?string $key = null,
+        ?string $urlPrefix = null,
+        string $loading = 'eager',
+        ?string $placeholder = null,
+    ): string {
+        return $this->runtime()->mount(
+            $alias,
+            $props,
+            $key ?? $alias,
+            $this->context(),
+            new Options($loading, $placeholder, $urlPrefix),
+        )->html;
     }
 
     /**

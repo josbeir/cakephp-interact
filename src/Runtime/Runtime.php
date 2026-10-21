@@ -8,6 +8,10 @@ use Interact\Discovery\Definition;
 use Interact\Discovery\Registry;
 use Interact\Island;
 use Interact\IslandContext;
+use Interact\Loading\Initialization;
+use Interact\Loading\MountRenderer;
+use Interact\Loading\Options;
+use Interact\Loading\PendingMount;
 use Interact\Rendering\RendererInterface;
 use Interact\Security\SnapshotCodec;
 use Interact\Upload\UploadManager;
@@ -35,6 +39,8 @@ class Runtime
 
     protected Hydrator $hydrator;
 
+    protected MountRenderer $mounts;
+
     /**
      * Fixed collaborators; mutable state is limited to the current render stack.
      */
@@ -55,20 +61,24 @@ class Runtime
         );
         $this->actions = new ActionInvoker();
         $this->hydrator = new Hydrator($this->state);
+        $this->mounts = new MountRenderer($this->html, $snapshots, $this->hydrator, $state);
     }
 
     /**
      * Construct, authorize, and render an island, or preserve an existing keyed child.
      *
      * @param array<string, mixed> $props Server-owned mount parameters; changing them requires a new child key.
+     * @param string|Options|null $urlPrefix Existing URL prefix or complete mount loading options.
      */
     public function mount(
         string $alias,
         array $props,
         string $key,
         IslandContext $context,
-        ?string $urlPrefix = null,
+        string|Options|null $urlPrefix = null,
     ): Result {
+        $loading = Options::resolve($urlPrefix);
+        $urlPrefix = $loading->urlPrefix;
         $parent = $this->stack->parent();
         $definition = $this->registry->definition($alias);
         $preserved = $this->stack->preserve($definition->declaration, $props, $key, $urlPrefix);
@@ -85,8 +95,6 @@ class Runtime
             $urlPrefix,
         );
         $island->authorize($context);
-        $island->mount();
-
         $id = bin2hex(random_bytes(16));
         $identity = new SnapshotData([
             'alias' => $alias,
@@ -97,7 +105,7 @@ class Runtime
             'urlPrefix' => $urlPrefix,
             'routing' => ($this->pageRouting ?? RouteContext::fromRequest($context->request))->defaults,
         ]);
-        $result = $this->html->render($island, $definition, $identity, $context);
+        $result = $this->mounts->render($island, $definition, $identity, $context, $loading);
         $childKey = 'key:' . $key;
         if ($parent instanceof RenderFrame) {
             $parent->children[$childKey] = [
@@ -119,7 +127,12 @@ class Runtime
     public function update(array $request, IslandContext $context): Result
     {
         $input = new UpdateRequest($request);
-        $data = new SnapshotData($this->snapshots->open($input->snapshot, $context->binding(), $context->scope));
+        $verified = $this->snapshots->open($input->snapshot, $context->binding(), $context->scope);
+        if ($input->initialize) {
+            return $this->initialize(new PendingMount($verified), $input, $context);
+        }
+
+        $data = new SnapshotData($verified);
         $definition = $this->registry->definition($data->alias);
         $this->actions->validate($definition, $input->action, $input->arguments);
         $island = $this->registry->create($definition);
@@ -134,6 +147,33 @@ class Runtime
         } finally {
             $this->pageQuery = $previous;
             $this->pageRouting = $previousRouting;
+        }
+    }
+
+    /**
+     * Initialize a verified pending identity without allowing edits or application actions.
+     */
+    protected function initialize(PendingMount $pending, UpdateRequest $input, IslandContext $context): Result
+    {
+        Initialization::assertNoFiles($context->request);
+
+        $data = $pending->identity;
+        $definition = $this->registry->definition($data->alias);
+        $island = $this->registry->create($definition);
+        $this->hydrator->mount($island, $definition, $pending->props);
+        $this->state->initializeUrl($island, $definition, $input->pageQuery, $data->urlPrefix);
+        $island->authorize($context);
+        $previousRouting = $this->pageRouting;
+        $previousQuery = $this->pageQuery;
+        $this->pageRouting = $data->routing;
+        $this->pageQuery = $input->pageQuery;
+        try {
+            $island->mount();
+
+            return $this->html->render($island, $definition, $data, $context);
+        } finally {
+            $this->pageRouting = $previousRouting;
+            $this->pageQuery = $previousQuery;
         }
     }
 

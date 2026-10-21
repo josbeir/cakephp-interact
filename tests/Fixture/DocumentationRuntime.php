@@ -10,6 +10,7 @@ use App\Island\DependentSelects;
 use App\Island\DocumentUpload;
 use App\Island\InvoiceDownload;
 use App\Island\JobProgress;
+use App\Island\ResourceCount;
 use App\Island\ResourceSearch;
 use App\Island\SalesChart;
 use App\Model\Table\ArticlesTable;
@@ -81,6 +82,7 @@ class DocumentationRuntime
             DocumentUpload::class,
             JobProgress::class,
             ResourceSearch::class,
+            ResourceCount::class,
             SalesChart::class,
         ] as $class) {
             $registry->register($class);

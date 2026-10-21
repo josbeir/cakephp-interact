@@ -257,3 +257,7 @@ Use `this.$server` in JavaScript methods and `$server` in template expressions.
 See [Alpine registration](/guide/alpine#custom-javascript). Removed islands settle
 waiting requests with `cancelled` and do not emit new error UI. Aborting fetch
 does not cancel server execution.
+
+## Before a deferred mount
+
+For a [pending island](/guide/lazy-loading), `sync()` initializes its content. Request feedback works normally; state and uploads remain empty until loading succeeds. Actions, model bindings, and polling require loaded content. Repeated initialization triggers share one request.

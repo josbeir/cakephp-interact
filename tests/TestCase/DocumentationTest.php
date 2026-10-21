@@ -4,13 +4,19 @@ declare(strict_types=1);
 namespace Interact\Test\TestCase;
 
 use App\Controller\InvoicesController;
+use App\Island\ResourceCount;
 use Cake\Core\Configure;
 use Cake\Http\ServerRequest;
 use Cake\ORM\Locator\LocatorInterface;
 use Cake\ORM\TableRegistry;
+use Interact\Discovery\Registry;
 use Interact\IslandContext;
+use Interact\Loading\Options;
+use Interact\Runtime\Factory;
 use Interact\Runtime\RedirectResult;
+use Interact\Security\SnapshotCodec;
 use Interact\Test\Fixture\DocumentationRuntime;
+use Interact\View\TemplateView;
 use Laminas\Diactoros\Stream;
 use Laminas\Diactoros\UploadedFile;
 use PHPUnit\Framework\TestCase;
@@ -42,6 +48,51 @@ class DocumentationTest extends TestCase
         TableRegistry::setTableLocator($this->previousLocator);
         Configure::write('App.paths.templates', $this->previousPaths);
         parent::tearDown();
+    }
+
+    public function testDeferredCountUsesDeclaredDefaultPropsAndNativePlaceholderElements(): void
+    {
+        $runtime = $this->examples->runtime;
+        $context = $this->examples->context;
+        $pending = $runtime->mount(
+            'resource-count',
+            ['search' => 'Resource 01'],
+            'count',
+            $context,
+            new Options('manual', 'Interact/resource_count_placeholder'),
+        );
+        static::assertSame([], $pending->state);
+        static::assertStringContainsString('Resource 01', $pending->html);
+        static::assertStringNotContainsString('matching resources', $pending->html);
+        $loaded = $runtime->update(['snapshot' => $pending->snapshot, 'initialize' => true], $context);
+        static::assertStringContainsString('1 matching resources', $loaded->html);
+        $refreshed = $runtime->update(['snapshot' => $loaded->snapshot], $context);
+        static::assertStringContainsString('1 matching resources', $refreshed->html);
+    }
+
+    public function testPlaceholderReceivesDefaultsWithoutControllerVariableLeakage(): void
+    {
+        $view = new TemplateView($this->examples->context->request);
+        $view->set('search', 'host-only');
+
+        $registry = new Registry(collection: 'isolated-placeholder');
+        $registry->register(ResourceCount::class);
+
+        $runtime = new Factory($registry, new SnapshotCodec(str_repeat('d', 32)))->create(
+            $view,
+            $this->examples->context,
+        );
+        $pending = $runtime->mount(
+            'resource-count',
+            [],
+            'default-count',
+            $this->examples->context,
+            new Options('manual', 'Interact/resource_count_placeholder'),
+        );
+        static::assertStringNotContainsString('host-only', $pending->html);
+        static::assertSame('host-only', $view->get('search'));
+        $loaded = $runtime->update(['snapshot' => $pending->snapshot, 'initialize' => true], $this->examples->context);
+        static::assertStringContainsString('25 matching resources', $loaded->html);
     }
 
     public function testArticleValidationPreservesEntityErrorsAndSuccessfulSaveDispatches(): void

@@ -145,3 +145,7 @@ non-Table services can remain constructor dependencies.
 Custom renderers belong at `RendererInterface`, usually assembled by a custom
 factory. Keep signing, authorization, and state validation in the normal runtime
 flow rather than bypassing them in an adapter.
+
+## Loading placeholders
+
+Use the mount call’s `loading` and `placeholder` options for [lazy loading](/guide/lazy-loading). Custom placeholders use the configured `TemplateView` with declared props only. A custom `RendererInterface` can also implement `PlaceholderRendererInterface::placeholder(Options $options, array $props): string`; otherwise the built-in placeholder is used.

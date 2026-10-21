@@ -46,9 +46,19 @@ Render an island from a normal CakePHP template:
 <?= $this->Interact->render('article-form') ?>
 ```
 
-`InteractHelper::render(string $alias, array $props = [], ?string $key = null, ?string $urlPrefix = null)`
-returns the island's HTML. [Installation](/installation) configures the helper
+`InteractHelper::render()` returns the island's HTML. [Installation](/installation) configures the helper
 and browser runtime. [Quickstart](/getting-started) contains a complete counter.
+
+| Argument      | Default   | Description                                                           |
+| ------------- | --------- | --------------------------------------------------------------------- |
+| `alias`       | Required  | Registered island alias                                               |
+| `props`       | `[]`      | Values declared with `#[Prop]`                                        |
+| `key`         | Alias     | Stable identity among siblings                                        |
+| `urlPrefix`   | `null`    | Prefix for this instance's URL parameters                             |
+| `loading`     | `'eager'` | Eager rendering, lazy visibility, deferred startup, or manual loading |
+| `placeholder` | `null`    | Custom placeholder element for a deferred mount                       |
+
+See [lazy loading](/guide/lazy-loading) for loading modes and placeholders.
 
 ### Helper options
 
@@ -96,3 +106,7 @@ Every update constructs a fresh PHP instance, restores its declared properties,
 and renders its content. It does not rerun the original controller action.
 See [Lifecycle](/guide/lifecycle) for request order and
 [Rendering and helpers](/reference/rendering) for custom view configuration.
+
+## Defer an embedded island
+
+Use `render('resource-count', loading: 'lazy')` to load when visible, `defer` after startup, or `manual` on request. Eager rendering remains the default. See [lazy loading](/guide/lazy-loading) for placeholders and lifecycle rules.
