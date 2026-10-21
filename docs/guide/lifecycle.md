@@ -95,4 +95,4 @@ The browser applies returned HTML while preserving newer drafts, focus, local
 Alpine state, and matching nested islands. Removing an island releases its
 browser resources. See [Requests and DOM updates](/reference/browser).
 
-A successful action redirect skips view data and rendering. Downloads accompany an accepted render. Both helpers are restricted to declared actions; see [redirects](/guide/redirects#action-lifecycle) and [downloads](/guide/downloads#action-lifecycle).
+A successful action redirect skips view data and rendering. Downloads accompany an accepted render. Both helpers are restricted to declared actions; see [redirects and downloads](/guide/redirects-and-downloads#action-lifecycle).

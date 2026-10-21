@@ -30,5 +30,5 @@ The browser requests `/invoices/sample` after the island renders the new count.
 CakePHP's `withDownload()` supplies the filename. For a protected example with
 current-permission checks, open `/outcomes` in the larger demo.
 
-See [downloads](/guide/downloads) for destination rules, file responses, and the
+See [downloads](/guide/redirects-and-downloads#downloads) for destination rules, file responses, and the
 limits of transfer feedback.

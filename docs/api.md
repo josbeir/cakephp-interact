@@ -38,8 +38,8 @@ PHP contracts are documented with their related features.
 
 [Lifecycle hooks](/guide/lifecycle), [setErrors()](/guide/forms#seterrors),
 [errors()](/guide/forms#errors), [dispatch()](/guide/events#dispatch), and
-[events()](/guide/events#events), [redirect()](/guide/redirects), and
-[downloadUrl()](/guide/downloads).
+[events()](/guide/events#events), [redirect()](/guide/redirects-and-downloads), and
+[downloadUrl()](/guide/redirects-and-downloads#downloads).
 
 ## Binding and actions
 

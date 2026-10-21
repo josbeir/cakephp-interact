@@ -55,7 +55,7 @@ See [Actions](/guide/actions) for the corresponding `adjust()` implementation.
 
 <span id="synchronize-or-refresh"></span>
 
-PHP actions can request [redirects](/guide/redirects) and [downloads](/guide/downloads). No additional bridge methods are needed. A successful download action result means the download was requested, not that its transfer completed.
+PHP actions can request [redirects](/guide/redirects-and-downloads) and [downloads](/guide/redirects-and-downloads#downloads). No additional bridge methods are needed. A successful download action result means the download was requested, not that its transfer completed.
 
 ## sync()
 

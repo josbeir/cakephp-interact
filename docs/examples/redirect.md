@@ -26,7 +26,7 @@ detail template. For protected records, authorize creation and viewing in the ap
 :::
 
 `redirect()` skips the final island render. No redirect directive or browser
-callback is needed. See [redirects](/guide/redirects) for routing defaults,
+callback is needed. See [redirects](/guide/redirects-and-downloads) for routing defaults,
 external URLs, history replacement, and lifecycle rules.
 
 The larger demo at `/outcomes` also provides save-and-redirect controls, including
