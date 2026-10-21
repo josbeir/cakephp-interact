@@ -80,3 +80,7 @@ failures and [Contributing](/contributing) for quality checks.
 [Save and redirect](/examples/redirect) follows model validation with native navigation.
 [Invoice download](/examples/download) serves a file from a separate CakePHP endpoint.
 The larger demo combines both at `/outcomes`.
+
+## Lazy loading
+
+[Lazy resource count](/examples/lazy-loading) defers a finder query. Open `/loading` in the larger demo for all loading modes and nested preservation.

@@ -1,3 +1,4 @@
+import { LoadTrigger } from './loading/trigger';
 import { BrowserEffects } from './effects/browser';
 import { sameFields } from './url/codec';
 import { pageUrl } from './url/coordinator';
@@ -6,7 +7,7 @@ import type { UrlRestoration } from './url/types';
 import { displaySize } from './uploads/size';
 import { UploadFields } from './uploads/fields';
 import { postUpload } from './uploads/transport';
-import type { UploadJob, Uploader } from './uploads/types';
+import type { UploadJob, Uploader, UploadMetadata } from './uploads/types';
 import { Controls } from './bindings/controls';
 import type { Control } from './bindings/control-values';
 import type { ModelBinding } from './bindings/model';
@@ -51,13 +52,16 @@ export class IslandClient {
   private readonly requests: RequestActivity;
   private readonly lifetime = new AbortController();
   private snapshot: string;
+  private mounted: boolean;
+  private initializing: Promise<RequestResult> | undefined;
+  private trigger: LoadTrigger | undefined;
   private baseline: State;
   private writable: Writable;
   private disposed = false;
   private leaving = false;
   private readonly activity: { paused: boolean };
   private poller: Poller | undefined;
-  private readonly uploads: UploadFields;
+  private uploads: UploadFields;
   private readonly url: UrlRegistration | undefined;
   private urlTarget: UrlRestoration | undefined;
 
@@ -72,7 +76,7 @@ export class IslandClient {
   constructor(
     readonly root: HTMLElement,
     private readonly patch: Patcher,
-    reactive: <T extends object>(value: T) => T,
+    private readonly reactive: <T extends object>(value: T) => T,
     private readonly fetcher: Fetcher = (url, init) => fetch(url, init),
     private readonly uploader: Uploader = postUpload,
     private readonly effects: BrowserEffects = new BrowserEffects(),
@@ -82,16 +86,10 @@ export class IslandClient {
     const activity = this.activity;
     this.metadata = readMetadata(root);
     this.snapshot = this.metadata.snapshot;
+    this.mounted = this.metadata.loading === undefined;
     this.baseline = clone(this.metadata.state);
     this.writable = this.metadata.writable;
-    this.uploads = new UploadFields(
-      this.metadata.uploads,
-      reactive,
-      (job) => this.request(null, [], job),
-      (element) =>
-        this.root.contains(element) &&
-        element.closest('[data-interact-id]') === this.root,
-    );
+    this.uploads = this.createUploads(this.metadata.uploads);
     const dirty = () =>
       this.uploads.pending() ||
       this.uploads.blocked() ||
@@ -136,18 +134,37 @@ export class IslandClient {
     this.url = Object.keys(this.metadata.url).length
       ? pageUrl(window).register(
           this.metadata.url,
-          this.baseline,
+          this.mounted ? this.baseline : undefined,
           (target) => this.restoreUrl(target),
           (cause) => this.failed(requestError('client_error', null, cause)),
           root,
         )
       : undefined;
+    if (this.metadata.loading !== undefined)
+      this.trigger = new LoadTrigger(root, this.metadata.loading, () =>
+        this.request(null, []),
+      );
+  }
+
+  /**
+   * Build transfer handles from declarations available only after a real mount.
+   */
+  private createUploads(metadata: UploadMetadata): UploadFields {
+    return new UploadFields(
+      metadata,
+      this.reactive,
+      (job) => this.request(null, [], job),
+      (element) =>
+        this.root.contains(element) &&
+        element.closest('[data-interact-id]') === this.root,
+    );
   }
 
   /**
    * Register a native model for the lifetime managed by its Alpine directive.
    */
   bindModel(control: Control, binding: ModelBinding): () => void {
+    if (!this.mounted) throw new Error('Models require a loaded island.');
     if (control instanceof HTMLInputElement && control.type === 'file')
       return this.uploads.bind(control, binding);
     return this.controls.bindModel(control, binding);
@@ -161,6 +178,7 @@ export class IslandClient {
     binding: ModelBinding,
     source: CustomModel,
   ): () => void {
+    if (!this.mounted) throw new Error('Models require a loaded island.');
     return this.controls.bindCustomModel(element, binding, source);
   }
 
@@ -191,6 +209,7 @@ export class IslandClient {
     binding: PollBinding,
     evaluate: () => unknown,
   ): () => void {
+    if (!this.mounted) throw new Error('Polling requires a loaded island.');
     if (this.poller)
       throw new Error('Use one x-interact:poll declaration per island.');
     const poller = new Poller(
@@ -215,6 +234,7 @@ export class IslandClient {
   dispose(): void {
     this.disposed = true;
     this.lifetime.abort();
+    this.trigger?.dispose();
     this.poller?.dispose();
     this.uploads.dispose();
     this.controls.dispose();
@@ -248,7 +268,29 @@ export class IslandClient {
    * The queue publishes failures before this result settles. Detached islands report
    * cancellation only to their callers, without resurrecting removed UI feedback.
    */
-  private async request(
+  private request(
+    action: string | null,
+    args: Json[],
+    upload?: UploadJob,
+  ): Promise<RequestResult> {
+    if (this.mounted) return this.sendRequest(action, args, upload);
+    if (action !== null || args.length || upload !== undefined) {
+      const error = requestError('client_error', null);
+      if (!this.disposed) this.failed(error);
+      return Promise.resolve({ ok: false, error: error.failure });
+    }
+    if (this.initializing) return this.initializing;
+    this.trigger?.dispose();
+    this.initializing = this.sendRequest(null, []).finally(() => {
+      this.initializing = undefined;
+    });
+    return this.initializing;
+  }
+
+  /**
+   * Route a synchronization or action through the request queue and settled feedback.
+   */
+  private async sendRequest(
     action: string | null,
     args: Json[],
     upload?: UploadJob,
@@ -261,7 +303,7 @@ export class IslandClient {
           this.bridge.error ?? requestError('client_error', null).failure,
         );
       }
-      if (this.urlTarget && !upload) {
+      if (this.mounted && this.urlTarget && !upload) {
         await this.queue.enqueue({
           action: null,
           args: [],
@@ -361,6 +403,7 @@ export class IslandClient {
         : clone(this.bridge.state);
       const payload = {
         version: 1 as const,
+        ...(!this.mounted ? { initialize: true } : {}),
         snapshot: this.snapshot,
         updates: restoration
           ? restoration.values
@@ -464,6 +507,8 @@ export class IslandClient {
     const restoreSelection = preserveSelection(this.root);
     const previous = {
       state: this.bridge.state,
+      mounted: this.mounted,
+      uploads: this.uploads,
       errors: this.bridge.errors,
       snapshot: this.snapshot,
       baseline: this.baseline,
@@ -471,6 +516,14 @@ export class IslandClient {
     };
     try {
       this.controls.beforeMorph();
+      if (!this.mounted) {
+        this.mounted = true;
+        this.writable = payload.writable;
+        this.bridge.state = payload.state;
+        this.bridge.errors = payload.errors;
+        this.uploads = this.createUploads(payload.uploads ?? {});
+        this.bridge.uploads = this.uploads.fields;
+      }
       this.patch(this.root, replacement);
       this.snapshot = payload.snapshot;
       this.baseline = clone(payload.state);
@@ -481,6 +534,12 @@ export class IslandClient {
       this.controls.refresh();
       restoreSelection();
     } catch (cause: unknown) {
+      if (!previous.mounted) {
+        this.uploads.dispose();
+        this.uploads = previous.uploads;
+        this.bridge.uploads = this.uploads.fields;
+      }
+      this.mounted = previous.mounted;
       this.bridge.state = previous.state;
       this.bridge.errors = previous.errors;
       this.snapshot = previous.snapshot;
@@ -499,6 +558,12 @@ export class IslandClient {
       invocation?.urlEpoch ?? 0,
       invocation?.urlRestore !== undefined,
     );
+    if (!previous.mounted) previous.uploads.dispose();
+    if (!previous.mounted && this.urlTarget) {
+      const target = this.urlTarget;
+      this.urlTarget = undefined;
+      this.restoreUrl(target);
+    }
     if (payload.download) this.effects.download(payload.download);
     for (const effect of payload.events)
       this.root.dispatchEvent(
@@ -511,6 +576,10 @@ export class IslandClient {
    */
   private restoreUrl(target: UrlRestoration): void {
     if (this.disposed || this.leaving) return;
+    if (!this.mounted) {
+      this.urlTarget = target;
+      return;
+    }
     this.controls.captureAll();
     const unchanged = Object.entries(target.values).every(
       ([key, value]) =>

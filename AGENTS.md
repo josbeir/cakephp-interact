@@ -20,6 +20,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Use `x-interact:poll` for managed periodic refreshes. Keep refreshes and actions on the existing `$server` bridge, and use Alpine conditions for application-controlled pauses or completion.
 - Use `x-interact:ignore` for widget-owned DOM and `x-modelable` with `x-interact:model` for custom values. Keep library instances outside reactive state, manage their lifecycle through application Alpine wrappers, and leave server-rendered errors outside protected regions.
 - Use State URL options for query bindings and the existing `$server` bridge for updates. Keep URL parameter ownership explicit, preserve unrelated drafts and history state, and never replay actions on Back/Forward.
+- Choose embedded loading with the mount call’s `loading` option (eager, lazy, defer, manual). Pending tickets allow initialization only; authorize placeholders and loading requests, defer mount/render work, and keep manual loading on `$server.sync()`. Custom placeholders receive declared props only.
 - Use `redirect()` and `downloadUrl()` only in declared actions. Preserve CakePHP page routing defaults in signed identity; keep downloads as independently authorized native requests and enhanced navigation separate.
 - Use Alpine shorthand consistently in code and documentation: `@event` for event listeners and `:attribute` for bindings.
 
@@ -83,6 +84,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 
 - Use the CakePHP Mago preset, discover project source and vendor dependencies, and keep method/property limits at 30.
 - Preserve Rector's prepared sets and approved skips for CakePHP assertion style, explicit casts, mixed annotations, fluent return contracts, and normalized template paths.
+- `InteractHelper::render()` has an approved, method-local exception to the five-parameter lint limit: its six named mount options keep ordinary template usage readable. Keep the limit unchanged elsewhere.
 - No baselines, coverage-ignore annotations, disabled rules, or suppressions without explicit user authorization.
 - PHPUnit fails on warnings, risky tests, and deprecations.
 - Require at least 95% unrounded line coverage across all production PHP under `src/`, including unexecuted files. Report branch coverage when available.

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Runtime;
 
+use Closure;
 use Interact\Attribute\AsIsland;
 use InvalidArgumentException;
 
@@ -19,6 +20,8 @@ class RenderStack
      */
     protected array $frames = [];
 
+    protected bool $placeholder = false;
+
     /**
      * Return the current owner when mounting a nested island.
      */
@@ -34,6 +37,10 @@ class RenderStack
      */
     public function preserve(AsIsland $declaration, array $props, string $key, ?string $urlPrefix = null): ?Result
     {
+        if ($this->placeholder) {
+            throw new InvalidArgumentException('Loading placeholders cannot mount nested islands.');
+        }
+
         if ($key === '') {
             throw new InvalidArgumentException('Island keys cannot be empty.');
         }
@@ -71,6 +78,21 @@ class RenderStack
                 . '>',
             '',
         );
+    }
+
+    /**
+     * Isolate placeholder content from the surrounding parent's child ownership.
+     *
+     * @param \Closure(): string $render Lightweight loading content.
+     */
+    public function placeholder(Closure $render): string
+    {
+        $this->placeholder = true;
+        try {
+            return $render();
+        } finally {
+            $this->placeholder = false;
+        }
     }
 
     /**

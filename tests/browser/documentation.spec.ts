@@ -2,11 +2,11 @@ import { execFile } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
 
-function render(alias: string, input = ''): Promise<string> {
+function render(alias: string, input = '', loading = 'eager'): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = execFile(
       'php',
-      ['tests/docs/render.php', alias],
+      ['tests/docs/render.php', alias, loading],
       { maxBuffer: 1024 * 1024 },
       (error, stdout, stderr) => {
         if (error || stderr) reject(error ?? new Error(stderr));
@@ -23,6 +23,7 @@ async function example(
   alias: string,
   scripts: string[] = [],
   styles: string[] = [],
+  loading = 'eager',
 ) {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -36,7 +37,7 @@ async function example(
     await route.fulfill({
       contentType: 'text/html',
       headers: { 'Content-Security-Policy': "script-src 'self'" },
-      body: `<!doctype html><html><head><meta charset="utf-8">${styles.map((href) => `<link rel="stylesheet" href="${href}">`).join('')}</head><body>${await render(alias)}${scripts.map((src) => `<script defer src="${src}"></script>`).join('')}<script defer src="/interact/js/runtime.js"></script></body></html>`,
+      body: `<!doctype html><html><head><meta charset="utf-8">${styles.map((href) => `<link rel="stylesheet" href="${href}">`).join('')}</head><body>${await render(alias, '', loading)}${scripts.map((src) => `<script defer src="${src}"></script>`).join('')}<script defer src="/interact/js/runtime.js"></script></body></html>`,
     });
   });
   await page.goto('/documentation-example');
@@ -189,5 +190,21 @@ test('the chart example updates and disposes its library instance under CSP', as
     'data-chart-destroyed',
     'true',
   );
+  expect(errors).toEqual([]);
+});
+
+test('loads the resource-count documentation example through the standard bridge', async ({
+  page,
+}) => {
+  const errors = await example(page, 'resource-count', [], [], 'manual');
+  await expect(page.getByText('25 matching resources')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Load content', exact: true }).click();
+  await expect(
+    page.getByRole('region', { name: 'Resource count' }),
+  ).toContainText('25 matching resources');
+  await page.getByRole('button', { name: 'Refresh count' }).click();
+  await expect(
+    page.getByRole('region', { name: 'Resource count' }),
+  ).toContainText('25 matching resources');
   expect(errors).toEqual([]);
 });

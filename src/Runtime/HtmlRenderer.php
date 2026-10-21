@@ -6,6 +6,9 @@ namespace Interact\Runtime;
 use Interact\Discovery\Definition;
 use Interact\Island;
 use Interact\IslandContext;
+use Interact\Loading\Options;
+use Interact\Loading\PlaceholderRenderer;
+use Interact\Rendering\PlaceholderRendererInterface;
 use Interact\Rendering\RendererInterface;
 use Interact\Security\SnapshotCodec;
 use Interact\Upload\UploadManager;
@@ -85,19 +88,47 @@ class HtmlRenderer
                 'events' => $island->errors() === [] ? $island->events() : [],
             ];
             Values::validate($values['events']);
-            $attributes = $this->attributes(new Result($identity->id, '', $snapshot, $values), $context);
-            $tag = $definition->declaration->tag;
-            $html = '<' . $tag;
-            foreach ($attributes as $name => $value) {
-                $html .= ' ' . $name . '="' . htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"';
-            }
 
-            $html .= '>' . $content . '</' . $tag . '>';
-
-            return new Result($identity->id, $html, $snapshot, $values);
+            return $this->wrap($definition, new Result($identity->id, $content, $snapshot, $values), $context);
         } finally {
             $this->stack->pop();
         }
+    }
+
+    /**
+     * Render lightweight content without allowing nested mounts to escape its pending identity.
+     *
+     * @param array<string, mixed> $props Validated declared props, including defaults.
+     */
+    public function placeholder(Options $loading, array $props): string
+    {
+        return $this->stack->placeholder(fn(): string => $this->renderer instanceof PlaceholderRendererInterface
+            ? $this->renderer->placeholder($loading, $props)
+            : new PlaceholderRenderer()->render($loading, $props));
+    }
+
+    /**
+     * Wrap content in its declared root with escaped runtime-owned metadata.
+     *
+     * @param array<string, string> $extra Additional generated bootstrap attributes.
+     */
+    public function wrap(Definition $definition, Result $result, IslandContext $context, array $extra = []): Result
+    {
+        $html = '<' . $definition->declaration->tag;
+        foreach ($this->attributes($result, $context) + $extra as $name => $value) {
+            $html .= ' ' . $name . '="' . htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"';
+        }
+
+        $html .= '>' . $result->html . '</' . $definition->declaration->tag . '>';
+
+        return new Result($result->id, $html, $result->snapshot, [
+            'state' => $result->state,
+            'writable' => $result->writable,
+            'url' => $result->url,
+            'uploads' => $result->uploads,
+            'errors' => $result->errors,
+            'events' => $result->events,
+        ]);
     }
 
     /**

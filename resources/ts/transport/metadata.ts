@@ -1,3 +1,4 @@
+import type { LoadingMode } from '../loading/trigger';
 import { urlFields, urlState } from '../url/codec';
 import type { UrlFields } from '../url/types';
 import { uploadMetadata } from '../uploads/protocol';
@@ -10,6 +11,7 @@ import { writable } from './protocol';
  * Validated bootstrap data emitted by PHP for one owned island root.
  */
 export interface MountMetadata {
+  loading?: LoadingMode;
   id: string;
   snapshot: string;
   state: State;
@@ -26,6 +28,14 @@ export interface MountMetadata {
  * @throws Error When the markup cannot safely initialize an island client.
  */
 export function readMetadata(root: HTMLElement): MountMetadata {
+  const loading = root.dataset.interactLoading;
+  if (
+    loading !== undefined &&
+    loading !== 'lazy' &&
+    loading !== 'defer' &&
+    loading !== 'manual'
+  )
+    throw new Error('Invalid initial loading mode.');
   const url: unknown = JSON.parse(root.dataset.interactUrl ?? '{}');
   if (!urlFields(url)) throw new Error('Invalid initial URL metadata.');
   const uploads: unknown = JSON.parse(root.dataset.interactUploads ?? '{}');
@@ -33,7 +43,15 @@ export function readMetadata(root: HTMLElement): MountMetadata {
     throw new Error('Invalid initial upload metadata.');
   const initial: unknown = JSON.parse(root.dataset.interactState ?? '{}');
   const fields: unknown = JSON.parse(root.dataset.interactWritable ?? '{}');
-  if (!state(initial) || !writable(fields) || !urlState(initial, url))
+  if (
+    !state(initial) ||
+    !writable(fields) ||
+    (loading === undefined
+      ? !urlState(initial, url)
+      : Object.keys(initial).length > 0 ||
+        Object.keys(fields).length > 0 ||
+        Object.keys(uploads).length > 0)
+  )
     throw new Error('Invalid initial island state.');
   const id = root.dataset.interactId ?? '';
   const snapshot = root.dataset.interactSnapshot ?? '';
@@ -45,6 +63,7 @@ export function readMetadata(root: HTMLElement): MountMetadata {
   if (endpoint.origin !== window.location.origin)
     throw new Error('Island endpoints must be same-origin.');
   return {
+    ...(loading === undefined ? {} : { loading }),
     uploads,
     url,
     id,

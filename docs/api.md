@@ -25,6 +25,7 @@ PHP contracts are documented with their related features.
 ## Mounting
 
 [`InteractHelper::render()` and helper options](/guide/islands#mounting).
+[Loading modes and placeholders](/guide/lazy-loading).
 
 ## Lifecycle
 

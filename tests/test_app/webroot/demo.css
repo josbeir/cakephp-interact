@@ -1035,3 +1035,76 @@ progress::-moz-progress-bar {
     grid-template-columns: 1fr;
   }
 }
+
+.loading-dashboard {
+  display: grid;
+  gap: 1.5rem;
+}
+.loading-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: space-between;
+  align-items: center;
+}
+.loading-controls p,
+.loading-report .card-description {
+  margin-bottom: 1rem;
+}
+.loading-report > [data-interact-id],
+.loading-panel {
+  margin-top: 1.5rem;
+}
+.resource-report {
+  display: grid;
+  gap: 1.25rem;
+}
+.resource-report label {
+  display: grid;
+  gap: 0.5rem;
+}
+.report-total {
+  font-size: 1.2rem;
+}
+.report-total strong {
+  font-size: 2.5rem;
+  color: var(--accent, #176b5a);
+}
+.report-placeholder {
+  display: grid;
+  gap: 1rem;
+}
+.report-placeholder button {
+  justify-self: start;
+}
+.report-skeleton {
+  display: grid;
+  gap: 0.6rem;
+  max-width: 28rem;
+}
+.report-skeleton span {
+  height: 0.8rem;
+  border-radius: 0.3rem;
+  background: #e5eeeb;
+}
+.report-skeleton span:first-child {
+  width: 45%;
+  height: 2.5rem;
+}
+.report-skeleton span:last-child {
+  width: 75%;
+}
+.loading-scroll-hint {
+  min-height: 70vh;
+  padding: 5rem 1rem;
+  text-align: center;
+}
+.loading-scroll-hint p {
+  margin: 1rem 0;
+}
+
+.resource-report .report-auto {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}

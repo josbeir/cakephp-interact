@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Runtime;
 
 use Interact\Action\RouteContext;
+use Interact\Loading\Initialization;
 use Interact\Upload\UploadReferences;
 use Interact\Url\Names;
 use InvalidArgumentException;
@@ -46,6 +47,8 @@ readonly class SnapshotData
      */
     public function __construct(array $data)
     {
+        Initialization::assertMounted($data);
+
         if (!is_string($data['alias'] ?? null) || !is_string($data['id'] ?? null) || !is_string($data['key'] ?? null)) {
             throw new InvalidArgumentException('Invalid signed island identity.');
         }

@@ -61,6 +61,28 @@ class Hydrator
     }
 
     /**
+     * Export initialized mount props without requiring pre-mount state to exist.
+     *
+     * @return array<string, mixed> Declared props, including their PHP defaults.
+     */
+    public function props(Island $island, Definition $definition): array
+    {
+        $props = [];
+        foreach ($definition->properties as $name => $property) {
+            if (!$property->prop) {
+                continue;
+            }
+
+            /** @var mixed $value */
+            $value = $property->reflection->getValue($island);
+            Values::validate($value);
+            $props[$name] = $value;
+        }
+
+        return $props;
+    }
+
+    /**
      * Restore signed values and verify that all transported properties can be exported.
      *
      * @param array<string, mixed> $values Verified state from the preceding render.
