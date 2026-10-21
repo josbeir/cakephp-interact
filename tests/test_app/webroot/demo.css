@@ -110,14 +110,15 @@ h3 {
   font-weight: 600;
 }
 .site-header {
-  min-height: 5.4rem;
   border-bottom: 1px solid var(--line);
   background: var(--paper);
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 2rem;
-  padding: 1rem max(1.5rem, calc((100vw - 1200px) / 2));
+  gap: 0.75rem 1.5rem;
+  padding: 1.25rem max(1.5rem, calc((100vw - 1200px) / 2));
 }
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -150,13 +151,15 @@ nav {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  margin-left: auto;
+  grid-column: 1 / -1;
+  grid-row: 2;
   flex-wrap: wrap;
+  min-width: 0;
 }
 nav a {
   color: var(--muted);
   text-decoration: none;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 600;
   padding: 0.5rem 0.8rem;
   border-radius: 0.5rem;
@@ -171,6 +174,9 @@ nav a[aria-current='page'] {
   background: var(--soft);
 }
 .version-tag {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
   color: #8b6023;
   border: 1px solid #ead9b8;
   background: #fff9ec;
@@ -659,6 +665,18 @@ progress::-moz-progress-bar {
   color: #a43e2e;
   background: #fff1ec;
 }
+.saved-article {
+  display: grid;
+  justify-items: start;
+  gap: 1.25rem;
+  margin-top: clamp(2rem, 5vw, 4rem);
+}
+.saved-article .eyebrow {
+  margin-bottom: 0;
+}
+.saved-article h1 {
+  overflow-wrap: anywhere;
+}
 .site-footer {
   display: flex;
   justify-content: space-between;
@@ -715,18 +733,14 @@ progress::-moz-progress-bar {
 
 @media (max-width: 760px) {
   .site-header {
-    flex-wrap: wrap;
     gap: 0.8rem;
     padding: 1rem;
   }
   nav {
-    margin-left: 0;
-    width: 100%;
-    gap: 0;
+    gap: 0.25rem;
   }
   nav a {
-    padding: 0.5rem 0.65rem;
-    font-size: 0.75rem;
+    padding: 0.6rem 0.75rem;
   }
   .page-shell,
   .site-footer {

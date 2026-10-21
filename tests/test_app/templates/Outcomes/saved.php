@@ -6,7 +6,7 @@ use function Cake\Core\h;
  * @var \Cake\Datasource\EntityInterface $article
  */
 ?>
-<section class="demo-card">
+<section class="demo-card saved-article">
     <p class="eyebrow">Saved article</p>
     <h1><?= (string)h($article->get('title')) ?></h1>
     <p>This is a normal CakePHP page reached after a successful island action.</p>
