@@ -456,6 +456,18 @@ describe('form model discovery and values', () => {
     expect(failure).toHaveBeenCalledOnce();
   });
 
+  it('rejects an edit with an invalid new name before mutation discovery runs', () => {
+    const { root, client, fetcher } = setup('<input name="title">', {
+      title: 'accepted draft',
+    });
+    const title = input(root, 'title');
+    title.name = 'comments[][body]';
+    edit(title, 'must not capture');
+    expect(client.bridge.error?.code).toBe('client_error');
+    expect(client.bridge.state.data).toEqual({ title: 'accepted draft' });
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it('reports unsafe dynamic names and cleans up partially registered invalid forms', async () => {
     const { root, client, form } = setup('<input name="title">');
     input(root, 'title').name = 'comments[][body]';
