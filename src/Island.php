@@ -47,9 +47,9 @@ abstract class Island
      *
      * @throws \LogicException When called outside an action or after another outcome.
      */
-    public function redirect(array|string|UriInterface $url, bool $replace = false): void
+    public function redirect(array|string|UriInterface $url, bool $replace = false, bool $navigate = false): void
     {
-        $this->actionEffects()->record(new Outcome('redirect', $url, $replace));
+        $this->actionEffects()->record(new Outcome('redirect', $url, $replace, $navigate));
     }
 
     /**

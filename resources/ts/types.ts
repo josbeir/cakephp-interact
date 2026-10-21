@@ -31,6 +31,7 @@ export interface Invocation {
   upload?: UploadJob;
   uploadRevision?: number;
   urlEpoch?: number;
+  navigationEpoch?: number;
   urlRestore?: UrlRestoration;
 }
 

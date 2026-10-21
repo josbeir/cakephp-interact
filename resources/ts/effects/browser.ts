@@ -3,6 +3,7 @@ import { record } from '../state/values';
 export interface Redirect {
   url: string;
   replace: boolean;
+  navigate?: boolean;
 }
 
 /** Validate server destinations before applying markup, state, or browser effects. */
@@ -41,7 +42,9 @@ export function destination(
 export function redirect(value: unknown): value is Redirect {
   return (
     record(value) &&
-    Object.keys(value).length === 2 &&
+    (Object.keys(value).length === 2 ||
+      (Object.keys(value).length === 3 &&
+        typeof value.navigate === 'boolean')) &&
     destination(value.url) &&
     typeof value.replace === 'boolean'
   );

@@ -10,6 +10,7 @@ use Cake\View\Helper\HtmlHelper;
 use Interact\Discovery\Registry;
 use Interact\IslandContext;
 use Interact\Loading\Options;
+use Interact\Navigation\DocumentMiddleware;
 use Interact\Runtime\Factory;
 use Interact\Runtime\Runtime;
 use Interact\Security\SnapshotCodec;
@@ -27,7 +28,12 @@ class InteractHelper extends Helper
     /**
      * @var array<string, mixed> Explicit integration overrides; npm users disable autoScript.
      */
-    protected array $defaultConfig = ['autoScript' => true, 'scope' => 'default', 'endpoint' => null];
+    protected array $defaultConfig = [
+        'autoScript' => true,
+        'scope' => 'default',
+        'endpoint' => null,
+        'document' => true,
+    ];
 
     protected ?Runtime $runtime = null;
 
@@ -41,6 +47,10 @@ class InteractHelper extends Helper
     public function initialize(array $config): void
     {
         parent::initialize($config);
+        if ($this->getConfig('document') === true) {
+            $this->getView()->append('script', DocumentMiddleware::PLACEHOLDER);
+        }
+
         if ($this->getConfig('autoScript') === true) {
             $html = $this->getView()->loadHelper('Html');
             assert($html instanceof HtmlHelper, 'The configured collaborator must satisfy its declared contract.');

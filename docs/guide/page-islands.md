@@ -124,3 +124,7 @@ for application-specific helpers.
 Whole-page rendering does not add client-side routing. Links navigate through
 CakePHP normally; the update route handles island interactions. [URL-bound state](/guide/url-state) supports query parameters and browser history.
 Enhanced navigation remains deferred.
+
+## Enhanced page visits
+
+Use [x-interact:navigate](/directives/navigate) on links between ordinary CakePHP pages. Page islands mount fresh on each visit. Explicit [persistent layout regions](/directives/persist) can retain compatible embedded islands outside page-owned roots.

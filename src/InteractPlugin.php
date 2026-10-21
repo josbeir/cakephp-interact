@@ -12,11 +12,13 @@ use Cake\Core\ContainerApplicationInterface;
 use Cake\Core\PluginApplicationInterface;
 use Cake\Event\EventInterface;
 use Cake\Event\EventManagerInterface;
+use Cake\Http\MiddlewareQueue;
 use Cake\Routing\RouteBuilder;
 use Cake\Utility\Security;
 use Interact\Discovery\Registry;
 use Interact\Http\FailureResponder;
 use Interact\Http\UpdateErrorListener;
+use Interact\Navigation\DocumentMiddleware;
 use Interact\Runtime\Factory;
 use Interact\Security\SnapshotCodec;
 use Interact\Upload\UploadManager;
@@ -54,6 +56,14 @@ class InteractPlugin extends BasePlugin
         }
 
         parent::bootstrap($app);
+    }
+
+    /**
+     * Observe final document policies outside the application's request middleware.
+     */
+    public function middleware(MiddlewareQueue $middlewareQueue): MiddlewareQueue
+    {
+        return $middlewareQueue->prepend(new DocumentMiddleware());
     }
 
     /**

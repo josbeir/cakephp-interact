@@ -292,3 +292,213 @@ it('stops an existing polling timer when an action redirects', async () => {
   expect(evaluate).toHaveBeenCalledOnce();
   unbind();
 });
+
+it('keeps canceled enhanced redirects usable and ignores redirects from before a newer page visit', async () => {
+  const { registerNavigation } =
+    await import('../../resources/ts/navigation/registry');
+  let epoch = 0;
+  const visit = vi.fn().mockResolvedValue('cancelled');
+  const service = {
+    epoch: () => epoch,
+    visit,
+    invalidate: vi.fn(),
+    query: vi.fn(),
+  };
+  const unregister = registerNavigation(window, service);
+  const native = vi
+    .spyOn(BrowserEffects.prototype, 'navigate')
+    .mockImplementation(() => {});
+  let release: (response: Response) => void = () => {};
+  const fetcher = vi
+    .fn<Fetcher>()
+    .mockResolvedValueOnce(
+      result({
+        version: 1,
+        id: 'outcome',
+        redirect: { url: '/next', replace: false, navigate: true },
+      }),
+    )
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    );
+  const { client, root } = setup(fetcher);
+  try {
+    await expect(client.bridge.call('leave')).resolves.toEqual({ ok: true });
+    expect(visit).toHaveBeenCalledWith('/next', { replace: false });
+    const fresh = document.createElement('div');
+    fresh.dataset.interactCsrf = 'fresh-context';
+    client.refreshContext(fresh);
+    expect(root.dataset.interactCsrf).toBe('fresh-context');
+    const pending = client.bridge.call('old-action');
+    epoch++;
+    release(
+      result({
+        version: 1,
+        id: 'outcome',
+        redirect: { url: '/old', replace: false, navigate: true },
+      }),
+    );
+    await expect(pending).resolves.toEqual({ ok: true });
+    expect(visit).toHaveBeenCalledOnce();
+    expect(native).not.toHaveBeenCalled();
+    expect(fetcher.mock.calls[1]?.[1].headers).toHaveProperty(
+      'X-CSRF-Token',
+      'fresh-context',
+    );
+  } finally {
+    unregister();
+  }
+});
+
+it('does not let an action queued on an older page redirect a newer visit', async () => {
+  const { registerNavigation } =
+    await import('../../resources/ts/navigation/registry');
+  let epoch = 0;
+  const visit = vi.fn().mockResolvedValue('enhanced');
+  const unregister = registerNavigation(window, {
+    epoch: () => epoch,
+    visit,
+    invalidate: vi.fn(),
+    query: vi.fn(),
+  });
+  let release: (response: Response) => void = () => {};
+  const fetcher = vi
+    .fn<Fetcher>()
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          release = resolve;
+        }),
+    )
+    .mockResolvedValueOnce(
+      result({
+        version: 1,
+        id: 'outcome',
+        redirect: { url: '/old-page', replace: false, navigate: true },
+      }),
+    );
+  const { client } = setup(fetcher);
+  try {
+    const first = client.bridge.call('refresh');
+    const queued = client.bridge.call('leave');
+    epoch++;
+    release(result(render()));
+    await expect(first).resolves.toEqual({ ok: true });
+    await expect(queued).resolves.toEqual({ ok: true });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(visit).not.toHaveBeenCalled();
+    const options = fetcher.mock.calls[1]?.[1];
+    expect(options?.body).not.toContain('navigationEpoch');
+  } finally {
+    unregister();
+  }
+});
+
+it.each([false, true])(
+  'closes polling and queued actions immediately for native fallback (registered service: %s)',
+  async (registered) => {
+    vi.useFakeTimers();
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
+    const { registerNavigation } =
+      await import('../../resources/ts/navigation/registry');
+    const unregister = registered
+      ? registerNavigation(window, {
+          epoch: () => 0,
+          visit: async () => 'native',
+          invalidate: vi.fn(),
+          query: vi.fn(),
+        })
+      : () => {};
+    const native = vi
+      .spyOn(BrowserEffects.prototype, 'navigate')
+      .mockImplementation(() => {});
+    const fetcher = vi.fn<Fetcher>(async () =>
+      result({
+        version: 1,
+        id: 'outcome',
+        redirect: { url: '/native-destination', replace: true, navigate: true },
+      }),
+    );
+    const { client, root } = setup(fetcher);
+    const poll = vi.fn();
+    const unbind = client.bindPoll(
+      root,
+      { interval: 100, visible: false },
+      poll,
+    );
+    try {
+      await vi.advanceTimersByTimeAsync(100);
+      expect(poll).toHaveBeenCalledOnce();
+      const departing = client.bridge.call('leave');
+      const queued = client.bridge.call('unsent');
+      await expect(departing).resolves.toEqual({ ok: true });
+      await expect(queued).resolves.toMatchObject({
+        ok: false,
+        error: { code: 'cancelled' },
+      });
+      await expect(client.bridge.call('again')).resolves.toMatchObject({
+        ok: false,
+        error: { code: 'cancelled' },
+      });
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(poll).toHaveBeenCalledOnce();
+      expect(fetcher).toHaveBeenCalledOnce();
+      if (registered) expect(native).not.toHaveBeenCalled();
+      else
+        expect(native).toHaveBeenCalledWith({
+          url: '/native-destination',
+          replace: true,
+          navigate: true,
+        });
+    } finally {
+      unbind();
+      unregister();
+    }
+  },
+);
+
+it('releases a page-owned action queue when enhanced navigation removes its island', async () => {
+  const { registerNavigation } =
+    await import('../../resources/ts/navigation/registry');
+  const fetcher = vi.fn<Fetcher>(async () =>
+    result({
+      version: 1,
+      id: 'outcome',
+      redirect: { url: '/next', replace: false, navigate: true },
+    }),
+  );
+  const { client } = setup(fetcher);
+  const native = vi
+    .spyOn(BrowserEffects.prototype, 'navigate')
+    .mockImplementation(() => {});
+  const visit = vi.fn(async () => {
+    client.dispose();
+    return 'enhanced' as const;
+  });
+  const unregister = registerNavigation(window, {
+    epoch: () => 0,
+    visit,
+    invalidate: vi.fn(),
+    query: vi.fn(),
+  });
+  try {
+    const departing = client.bridge.call('leave');
+    const queued = client.bridge.call('unsent');
+    await expect(departing).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'cancelled' },
+    });
+    await expect(queued).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'cancelled' },
+    });
+    expect(visit).toHaveBeenCalledOnce();
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(native).not.toHaveBeenCalled();
+  } finally {
+    unregister();
+  }
+});

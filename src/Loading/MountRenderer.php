@@ -6,6 +6,7 @@ namespace Interact\Loading;
 use Interact\Discovery\Definition;
 use Interact\Island;
 use Interact\IslandContext;
+use Interact\Navigation\Identity;
 use Interact\Runtime\HtmlRenderer;
 use Interact\Runtime\Hydrator;
 use Interact\Runtime\Result;
@@ -69,6 +70,9 @@ class MountRenderer
             'url' => $this->state->urlMetadata($definition, $identity->urlPrefix),
         ]);
 
-        return $this->html->wrap($definition, $result, $context, ['data-interact-loading' => $loading->mode]);
+        return $this->html->wrap($definition, $result, $context, [
+            'data-interact-loading' => $loading->mode,
+            'data-interact-mount' => new Identity()->fingerprint($island, $definition, $identity, $context),
+        ]);
     }
 }

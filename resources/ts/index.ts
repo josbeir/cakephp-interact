@@ -1,5 +1,7 @@
 import morph from '@alpinejs/morph';
 import type { Alpine } from 'alpinejs';
+import { NavigationController } from './navigation/controller';
+import { navigationBinding } from './navigation/alpine';
 import { IslandClient } from './client';
 import { registerBindings } from './bindings/alpine';
 import { morphRoot } from './dom/morph';
@@ -17,6 +19,8 @@ export type {
   UploadedFileInfo,
   Uploader,
 } from './uploads/types';
+export type { NavigationStore } from './navigation/activity';
+export type { NavigationDetail } from './navigation/controller';
 export { IslandClient } from './client';
 const installed = new WeakSet<Alpine>();
 
@@ -60,11 +64,34 @@ export default function install(Alpine: Alpine): void {
       Alpine.onElRemoved(element, () => client.dispose());
     }),
   );
-  registerBindings(Alpine, (element) => {
-    const root = element.closest<HTMLElement>('[data-interact-id]');
-    const client = root === null ? undefined : clients.get(root);
-    if (!client)
-      throw new Error('$server is only available inside an Interact island.');
-    return client;
-  });
+  const navigation = new NavigationController(Alpine, (root, incoming) =>
+    clients.get(root)?.refreshContext(incoming),
+  );
+  for (const suffix of [
+    '',
+    '.hover',
+    '.preserve-scroll',
+    '.hover.preserve-scroll',
+    '.preserve-scroll.hover',
+  ]) {
+    Alpine.addInitSelector(
+      () =>
+        `[${Alpine.prefixed(`interact:navigate${suffix}`).replaceAll(':', '\\:').replaceAll('.', '\\.')}]`,
+    );
+  }
+  Alpine.addInitSelector(
+    () => `[${Alpine.prefixed('interact:persist').replaceAll(':', '\\:')}]`,
+  );
+  registerBindings(
+    Alpine,
+    (element) => {
+      const root = element.closest<HTMLElement>('[data-interact-id]');
+      const client = root === null ? undefined : clients.get(root);
+      if (!client)
+        throw new Error('$server is only available inside an Interact island.');
+      return client;
+    },
+    (element, value, modifiers, expression) =>
+      navigationBinding(navigation, element, value, modifiers, expression),
+  );
 }

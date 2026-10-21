@@ -86,3 +86,7 @@ The larger demo combines both at `/outcomes`.
 ## Lazy loading
 
 [Lazy resource count](/examples/lazy-loading) defers a finder query. Open `/loading` in the larger demo for all loading modes and nested preservation.
+
+## Navigation
+
+Open `/navigation` in the demo for [enhanced visits and a persistent notebook](/examples/navigation), including active links, scroll, and application-owned loading feedback.

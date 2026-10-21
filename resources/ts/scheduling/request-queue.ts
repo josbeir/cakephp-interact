@@ -89,6 +89,9 @@ export class RequestQueue {
       await this.execute({
         action: task.action,
         args: task.args,
+        ...(task.navigationEpoch === undefined
+          ? {}
+          : { navigationEpoch: task.navigationEpoch }),
         ...(task.urlEpoch === undefined ? {} : { urlEpoch: task.urlEpoch }),
         ...(task.urlRestore ? { urlRestore: task.urlRestore } : {}),
         ...(task.upload ? { upload: task.upload } : {}),

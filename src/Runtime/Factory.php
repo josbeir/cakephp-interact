@@ -50,6 +50,7 @@ class Factory
                 'runtime' => $runtime,
                 'context' => $context,
                 'autoScript' => false,
+                'document' => false,
             ]);
         }
 

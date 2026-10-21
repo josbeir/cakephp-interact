@@ -13,6 +13,12 @@ import { customModel } from './custom-model';
 export function registerBindings(
   Alpine: Alpine,
   resolve: (element: HTMLElement) => IslandClient,
+  pageBinding?: (
+    element: HTMLElement,
+    value: string,
+    modifiers: string[],
+    expression: string,
+  ) => () => void,
 ): void {
   Alpine.magic('server', (element) => resolve(element).bridge);
   Alpine.directive(
@@ -23,6 +29,10 @@ export function registerBindings(
         { value, modifiers, expression, original },
         { cleanup, effect },
       ) => {
+        if ((value === 'navigate' || value === 'persist') && pageBinding) {
+          cleanup(pageBinding(element, value, modifiers, expression));
+          return;
+        }
         const client = resolve(element);
         if (value === 'model') {
           if (
@@ -89,7 +99,7 @@ export function registerBindings(
           );
         } else
           throw new Error(
-            'Unknown x-interact directive. Use model, submit, poll, or ignore.',
+            'Unknown x-interact directive. Use model, submit, poll, ignore, navigate, or persist.',
           );
       },
     ),

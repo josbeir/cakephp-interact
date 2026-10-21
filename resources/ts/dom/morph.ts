@@ -9,6 +9,18 @@ import type { Patcher } from '../types';
  */
 export function morphRoot(Alpine: Alpine): Patcher {
   return (root, replacement) => {
+    // A loading placeholder owns no application DOM. Its x-show state must not
+    // migrate onto same-tag content in the island's first real render.
+    if (
+      root.hasAttribute('data-interact-loading') &&
+      !replacement.hasAttribute('data-interact-loading')
+    ) {
+      Alpine.mutateDom(() => {
+        const placeholder = document.createElement('div');
+        placeholder.append(...root.childNodes);
+        Alpine.destroyTree(placeholder);
+      });
+    }
     Alpine.morph(root, replacement, {
       key: (node) =>
         node instanceof Element

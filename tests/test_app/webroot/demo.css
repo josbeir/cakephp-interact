@@ -1122,3 +1122,128 @@ progress::-moz-progress-bar {
   align-items: center;
   gap: 0.6rem;
 }
+
+/* The application owns navigation feedback; Interact ships no styles. */
+.navigation-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 3px;
+  z-index: 100;
+  overflow: hidden;
+  background: var(--soft);
+}
+.navigation-progress::after {
+  content: '';
+  display: block;
+  width: 35%;
+  height: 100%;
+  background: var(--accent);
+  animation: navigation-progress 1s ease-in-out infinite;
+}
+@keyframes navigation-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(390%);
+  }
+}
+.navigation-example {
+  display: grid;
+  grid-template-columns: minmax(17rem, 1fr) minmax(0, 1.8fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+.navigation-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+.navigation-links [aria-current='page'] {
+  font-weight: 700;
+  text-decoration-thickness: 3px;
+}
+.navigation-scroll {
+  max-height: 160px;
+  overflow: auto;
+  margin-top: 1rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.navigation-notebook .button-row {
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+.navigation-notebook-status {
+  margin-block: 1rem 0.25rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.navigation-tools {
+  margin-top: 2rem;
+}
+.navigation-experiments {
+  margin: 1.25rem 0 0;
+}
+.navigation-experiments > div {
+  padding: 1rem 0;
+  border-top: 1px solid var(--line);
+}
+.navigation-experiments dt {
+  font-weight: 600;
+}
+.navigation-experiments dd {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.navigation-history-note {
+  padding: 2rem 0;
+  margin-block: 1.5rem 4rem;
+  border-block: 1px solid var(--line);
+}
+.navigation-history-note > p:last-child {
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+#destination {
+  scroll-margin-top: 2rem;
+}
+.navigation-page > p:last-child {
+  margin-top: 0.75rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+@media (max-width: 760px) {
+  .navigation-example {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .navigation-progress::after {
+    animation: none;
+    width: 100%;
+  }
+}
+.navigation-lifecycle {
+  margin-top: 1.5rem;
+}
+.navigation-lifecycle > summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+}
+.navigation-lifecycle .navigation-example {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+@media (max-width: 760px) {
+  .navigation-lifecycle .navigation-example {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,3 +1,4 @@
+import { navigation, enhancedRedirect } from './navigation/registry';
 import { LoadTrigger } from './loading/trigger';
 import { BrowserEffects } from './effects/browser';
 import { sameFields } from './url/codec';
@@ -64,6 +65,12 @@ export class IslandClient {
   private uploads: UploadFields;
   private readonly url: UrlRegistration | undefined;
   private urlTarget: UrlRestoration | undefined;
+
+  /** Refresh request context after a compatible layout region survives a page visit. */
+  refreshContext(incoming: HTMLElement): void {
+    this.metadata.csrf = incoming.dataset.interactCsrf ?? '';
+    this.root.dataset.interactCsrf = this.metadata.csrf;
+  }
 
   /**
    * Initialize the bridge and request-scoped collaborators from PHP-rendered metadata.
@@ -307,6 +314,7 @@ export class IslandClient {
     args: Json[],
     upload?: UploadJob,
   ): Promise<RequestResult> {
+    const navigationEpoch = navigation(window)?.epoch();
     try {
       if (this.leaving)
         return { ok: false, error: requestError('cancelled', null).failure };
@@ -323,7 +331,7 @@ export class IslandClient {
           urlEpoch: this.urlTarget.epoch,
         });
       }
-      await this.enqueue(action, args, upload);
+      await this.enqueue(action, args, upload, navigationEpoch);
       if (!this.disposed) return { ok: true };
     } catch (cause: unknown) {
       if (this.leaving)
@@ -346,6 +354,7 @@ export class IslandClient {
     action: string | null,
     args: Json[],
     upload?: UploadJob,
+    navigationEpoch?: number,
   ): Promise<void> {
     this.controls.clearPending();
     if (this.disposed) return Promise.reject(new Error('Island was removed.'));
@@ -367,6 +376,7 @@ export class IslandClient {
     this.bridge.error = null;
     this.activity.paused = false;
     return this.queue.enqueue({
+      ...(navigationEpoch === undefined ? {} : { navigationEpoch }),
       ...(this.url ? { urlEpoch: this.url.epoch() } : {}),
       action,
       args,
@@ -406,6 +416,9 @@ export class IslandClient {
         });
       }
     }
+    const page = navigation(window);
+    const pageEpoch = invocation.navigationEpoch ?? page?.epoch();
+    page?.invalidate();
     this.bridge.busy = true;
     this.root.setAttribute('aria-busy', 'true');
     try {
@@ -466,7 +479,14 @@ export class IslandClient {
           invocation.urlRestore
         )
           throw requestError('invalid_response', result.status);
-        this.effects.navigate(accepted.redirect);
+        if (page && pageEpoch !== page.epoch()) return;
+        if (accepted.redirect.navigate) {
+          const visit = await enhancedRedirect(accepted.redirect, () =>
+            this.effects.navigate(accepted.redirect),
+          );
+          if (visit === 'cancelled' || (visit === 'enhanced' && !this.disposed))
+            return;
+        } else this.effects.navigate(accepted.redirect);
         this.leaving = true;
         this.controls.clearPending();
         this.poller?.dispose();

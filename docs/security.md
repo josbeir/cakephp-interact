@@ -121,3 +121,9 @@ For safe error responses and middleware integration, see
 [failures and recovery](/guide/failures#server-integration).
 
 Redirect destinations must be validated by the application when they originate from user input. HTTP(S) external redirects are supported. Download URLs are same-origin and their endpoints must independently authorize file access; an island response is not an access token. See [redirects and downloads](/guide/redirects-and-downloads).
+
+## Enhanced navigation
+
+Page visits use ordinary CakePHP GET routes and run their normal middleware and authorization. Compatible document metadata guides browser replacement; it is not an authorization capability. Every destination island mounts and authorizes, and retained islands still authorize every update.
+
+Navigation does not replace the original document's HTTP security policy. Changed session, CSP, or runtime compatibility triggers native navigation. Nonces are not rewritten. Keep the document middleware outside security-header middleware and account for headers added by other plugins or reverse proxies. See [navigation](/directives/navigate#head-elements-and-scripts).
