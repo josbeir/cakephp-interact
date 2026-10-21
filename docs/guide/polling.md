@@ -5,6 +5,10 @@ description: Refresh an island periodically with managed timers, conditional PHP
 
 # Polling
 
+For the directive's syntax and focused variations, see
+[`x-interact:poll`](/directives/poll). This guide includes complete clock and job
+implementations from the demo.
+
 Keep a status panel current without making the user press Refresh. Add a polling
 declaration inside an [existing island](/getting-started):
 

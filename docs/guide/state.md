@@ -9,7 +9,8 @@ Build a greeting that changes as you type. This example uses the helper and
 runtime configured in [installation](/installation).
 
 To read these values in browser expressions or JavaScript files, see
-[Alpine and `$server`](/guide/alpine).
+[Alpine and `$server`](/guide/alpine). For examples of radios, checkbox groups,
+selects, and every synchronization mode, see [`x-interact:model`](/directives/model).
 
 ## Bind a text input
 

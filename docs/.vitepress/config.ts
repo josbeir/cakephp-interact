@@ -70,6 +70,7 @@ export default defineConfig({
     },
     nav: [
       { text: 'Guide', link: '/getting-started' },
+      { text: 'Template API', link: '/directives/' },
       { text: 'Examples', link: '/examples' },
       { text: 'Reference', link: '/api' },
     ],
@@ -97,6 +98,17 @@ export default defineConfig({
           { text: 'Failures and recovery', link: '/guide/failures' },
           { text: 'Nested islands and events', link: '/guide/nesting' },
           { text: 'Whole-page islands', link: '/guide/page-islands' },
+        ],
+      },
+      {
+        text: 'Template API',
+        items: [
+          { text: 'Overview', link: '/directives/' },
+          { text: 'x-interact:model', link: '/directives/model' },
+          { text: 'x-interact:submit', link: '/directives/submit' },
+          { text: 'x-interact:poll', link: '/directives/poll' },
+          { text: 'x-interact:ignore', link: '/directives/ignore' },
+          { text: '$server', link: '/reference/server' },
         ],
       },
       {

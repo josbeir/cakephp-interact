@@ -62,6 +62,10 @@ flushes bound controls, and calls `save()`. Pressing Enter and `requestSubmit()`
 use the same path. The action decides whether and how to save; see the complete
 [article editing example](/guide/forms).
 
+The [`x-interact:submit` page](/directives/submit) covers previews, arguments,
+external submit buttons, and custom Alpine submission functions. The
+[`$server` page](/reference/server) explains each bridge member with examples.
+
 While that submission waits or runs, Interact blocks repeated submissions and
 disables its submit buttons. Inputs stay editable. Success, validation feedback,
 or a request failure releases the protection while preserving application-owned

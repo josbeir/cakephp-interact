@@ -12,6 +12,9 @@ island.
 For the PHP-to-JavaScript data mapping, `$server` scope, and JavaScript file
 registration, start with [Alpine and `$server`](/guide/alpine).
 
+For focused usage variations, see [`x-interact:ignore`](/directives/ignore) and
+[`x-interact:model`](/directives/model#custom-alpine-inputs).
+
 ## See what protection changes
 
 Both panels below render the **same PHP value**. After an update, the normal panel

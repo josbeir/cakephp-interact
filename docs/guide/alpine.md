@@ -10,6 +10,9 @@ props and state, plus operations such as calling PHP actions. Ordinary Alpine
 directives can read it directly; a separate JavaScript file is only needed when
 you want reusable JavaScript behavior or a library integration.
 
+For examples of each bridge operation and its public contract, see
+[`$server`](/reference/server).
+
 ## Read a PHP value in the browser
 
 Start with the counter from [your first island](/getting-started). Its PHP class
