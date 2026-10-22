@@ -479,6 +479,129 @@ it('debounces live model changes and cancels timers on disposal', async () => {
   expect(parent.requests).toHaveLength(1);
 });
 
+it('clears live child-model timers captured by a parent action', async () => {
+  vi.useFakeTimers();
+  const { parent, input } = await fixture({
+    timing: 'live',
+    delay: 300,
+    parentRenderless: true,
+  });
+  edit(input, 'captured');
+  await Promise.resolve();
+  await parent.client.bridge.call('save');
+  expect(parent.requests[0]).toMatchObject({
+    action: 'save',
+    updates: { data: { value: 'captured' } },
+  });
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(parent.requests.map((request) => request.action)).toEqual(['save']);
+});
+
+it('retains live child-model timers for edits made after a parent request starts', async () => {
+  vi.useFakeTimers();
+  let release: () => void = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const { parent, child, input } = await fixture({
+    timing: 'live',
+    delay: 300,
+    parentRenderless: true,
+    childRenderless: true,
+    parentServer: async (request, current) => {
+      if (request.action === 'save') await held;
+      return current;
+    },
+  });
+  edit(input, 'captured');
+  const saving = parent.client.bridge.call('save');
+  expect(parent.requests).toHaveLength(1);
+  edit(input, 'newer');
+  await Promise.resolve();
+  release();
+  await saving;
+  expect(child.client.bridge.state.value).toBe('newer');
+  await vi.advanceTimersByTimeAsync(299);
+  expect(parent.requests).toHaveLength(1);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(parent.requests.map((request) => request.action)).toEqual([
+    'save',
+    null,
+  ]);
+  expect(parent.requests[1]).toMatchObject({
+    updates: { data: { value: 'newer' } },
+  });
+});
+
+it('clears captured child debounces while a parent action waits behind another request', async () => {
+  vi.useFakeTimers();
+  let release: () => void = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const { parent, input } = await fixture({
+    timing: 'live',
+    delay: 300,
+    parentRenderless: true,
+    childRenderless: true,
+    parentServer: async (request, current) => {
+      if (request.action === 'hold') await held;
+      return current;
+    },
+  });
+  const first = parent.client.bridge.call('hold');
+  edit(input, 'queued edit');
+  await Promise.resolve();
+  const saving = parent.client.bridge.call('save');
+  await vi.advanceTimersByTimeAsync(500);
+  expect(parent.requests).toHaveLength(1);
+  release();
+  await Promise.all([first, saving]);
+  await vi.runAllTimersAsync();
+  expect(parent.requests.map((request) => request.action)).toEqual([
+    'hold',
+    'save',
+  ]);
+  expect(parent.requests[1]).toMatchObject({
+    updates: { data: { value: 'queued edit' } },
+  });
+});
+
+it('drops obsolete child debounces when a parent draft overrides their value', async () => {
+  vi.useFakeTimers();
+  const { parent, input } = await fixture({
+    timing: 'live',
+    delay: 300,
+    parentRenderless: true,
+  });
+  edit(input, 'obsolete edit');
+  await Promise.resolve();
+  parent.client.bridge.state.data = { value: 'parent override', end: '' };
+  await parent.client.bridge.call('save');
+  await vi.advanceTimersByTimeAsync(500);
+  expect(parent.requests.map((request) => request.action)).toEqual(['save']);
+  expect(parent.requests[0]).toMatchObject({
+    updates: { data: { value: 'parent override' } },
+  });
+});
+
+it('does not flush a child debounce when a history snapshot omits that draft', async () => {
+  vi.useFakeTimers();
+  const { parent, input } = await fixture({
+    timing: 'live',
+    delay: 300,
+    parentRenderless: true,
+  });
+  edit(input, 'unsent draft');
+  await Promise.resolve();
+  parent.client.composition?.begin(null, { data: { value: 'restored value' } });
+  await vi.advanceTimersByTimeAsync(300);
+  expect(parent.requests).toHaveLength(1);
+  expect(parent.requests[0]).toMatchObject({
+    updates: { data: { value: 'unsent draft' } },
+  });
+});
+
 it('waits until focus leaves the child for blur timing', async () => {
   const { parent, childRoot, input } = await fixture({ timing: 'blur' });
   edit(input, 'new');

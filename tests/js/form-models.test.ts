@@ -49,6 +49,7 @@ afterEach(() => {
     client.dispose();
   });
   document.body.innerHTML = '';
+  vi.restoreAllMocks();
   vi.useRealTimers();
 });
 
@@ -89,6 +90,51 @@ describe('native form names', () => {
 });
 
 describe('form model discovery and values', () => {
+  it('discovers a large form once during explicit registration and reuses it while typing', async () => {
+    const discover = vi.spyOn(HTMLFormElement.prototype, 'elements', 'get');
+    const { root, client } = setup(
+      Array.from(
+        { length: 100 },
+        (_, index) =>
+          `<input name="field${index}" x-interact:model="data.field${index}">`,
+      ).join('') + '<input name="inferred">',
+    );
+    expect(discover).toHaveBeenCalledTimes(1);
+    discover.mockClear();
+    for (let index = 0; index < 10; index++)
+      edit(input(root, 'field0'), `draft${index}`);
+    edit(input(root, 'inferred'), 'inferred draft');
+    client.captureModels();
+    expect(client.bridge.state.data).toMatchObject({
+      field0: 'draft9',
+      inferred: 'inferred draft',
+    });
+    expect(discover).not.toHaveBeenCalled();
+    root.setAttribute('class', 'presentation');
+    await Promise.resolve();
+    edit(input(root, 'field0'), 'after presentation');
+    expect(discover).not.toHaveBeenCalled();
+  });
+
+  it('invalidates discovery before synchronous capture and uses one scan for both refresh passes', () => {
+    const { root, client, form } = setup('<input name="title">', {
+      renamed: 'initial',
+    });
+    const discover = vi.spyOn(form, 'elements', 'get');
+    const title = input(root, 'title');
+    title.name = 'renamed';
+    const added = document.createElement('input');
+    added.name = 'added';
+    form.append(added);
+    client.captureModels();
+    expect(discover).toHaveBeenCalledTimes(1);
+    expect(title.value).toBe('initial');
+    added.value = 'before input';
+    client.captureModels();
+    expect(client.bridge.state.data).toMatchObject({ added: 'before input' });
+    expect(discover).toHaveBeenCalledTimes(1);
+  });
+
   it('uses declared state, empty semantics, and explicit absolute overrides', async () => {
     const { root, client } = setup(
       `

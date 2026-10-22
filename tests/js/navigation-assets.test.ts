@@ -81,6 +81,70 @@ it('loads styles before activating them and runs each new external script only o
   );
 });
 
+it('downloads styles concurrently in document order before running scripts in order', async () => {
+  const assets = new PageAssets(document);
+  const next = parsed(
+    '<link rel="stylesheet" href="/first.css" media="screen"><link rel="stylesheet" href="/second.css" media="print"><script src="/first.js"></script><script src="/second.js"></script>',
+  );
+  const prepared = assets.prepare(
+    next,
+    window.location.href,
+    new AbortController().signal,
+  );
+  const links = [...document.head.querySelectorAll('link')];
+  expect(links.map((link) => link.getAttribute('href'))).toEqual([
+    new URL('/first.css', window.location.href).href,
+    new URL('/second.css', window.location.href).href,
+  ]);
+  expect(links.map((link) => link.media)).toEqual(['not all', 'not all']);
+  links[1]?.dispatchEvent(new Event('load'));
+  await Promise.resolve();
+  expect(document.querySelector('script')).toBeNull();
+  links[0]?.dispatchEvent(new Event('load'));
+  await vi.waitFor(() =>
+    expect(document.querySelectorAll('script')).toHaveLength(1),
+  );
+  document.querySelector('script')?.dispatchEvent(new Event('load'));
+  await vi.waitFor(() =>
+    expect(document.querySelectorAll('script')).toHaveLength(2),
+  );
+  document.querySelectorAll('script')[1]?.dispatchEvent(new Event('load'));
+  const activate = await prepared;
+  expect(
+    [...document.querySelectorAll('script')].map((script) => script.src),
+  ).toEqual([
+    new URL('/first.js', window.location.href).href,
+    new URL('/second.js', window.location.href).href,
+  ]);
+  activate();
+  expect(links.map((link) => link.media)).toEqual(['screen', 'print']);
+});
+
+it.each(['error', 'abort'])(
+  'releases all concurrent stylesheet loads on %s',
+  async (failure) => {
+    vi.useFakeTimers();
+    const assets = new PageAssets(document);
+    const controller = new AbortController();
+    const prepared = assets.prepare(
+      parsed(
+        '<link rel="stylesheet" href="/one.css"><link rel="stylesheet" href="/two.css">',
+      ),
+      window.location.href,
+      controller.signal,
+    );
+    const rejected = expect(prepared).rejects.toThrow(
+      failure === 'abort' ? 'cancel' : 'failed',
+    );
+    expect(document.querySelectorAll('link')).toHaveLength(2);
+    if (failure === 'abort') controller.abort();
+    else document.querySelector('link')?.dispatchEvent(new Event('error'));
+    await rejected;
+    expect(document.querySelector('link')).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+  },
+);
+
 it('rejects executable inline scripts and failed assets without leaving staged styles behind', async () => {
   const assets = new PageAssets(document);
   for (const type of [
@@ -366,11 +430,13 @@ it('claims native fragment entries with cleared state once and preserves the req
 });
 
 it('records live scroll, retains replacement indices, and leaves unrelated history entries untouched', () => {
+  vi.useFakeTimers();
   const restore = vi.fn();
   const y = vi.spyOn(window, 'scrollY', 'get').mockReturnValue(240);
   const history = new NavigationHistory(window, restore);
   y.mockReturnValue(360);
   window.dispatchEvent(new Event('scroll'));
+  vi.advanceTimersByTime(500);
   expect(pageEntry(window.history.state)?.y).toBe(360);
   const current = { ...history.current };
   history.query(new URL('/start?q=one', window.location.href), false);

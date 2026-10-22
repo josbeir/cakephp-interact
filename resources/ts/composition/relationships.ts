@@ -31,11 +31,17 @@ export class Relationships {
     let epoch = 0;
     let action: string | null = null;
     let sent: State = {};
+    const flush = (values: State) => {
+      for (const link of this.links)
+        if (link.parent === client) link.flush(values);
+    };
     client.composition = {
+      flush,
       begin: (invocation, values) => {
         epoch = ++this.clock;
         action = invocation;
         sent = clone(values);
+        flush(sent);
       },
       preserve: (incoming) => {
         const values = clone(incoming);

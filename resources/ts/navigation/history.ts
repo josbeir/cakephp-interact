@@ -38,6 +38,7 @@ export class NavigationHistory {
   current: PageEntry;
   protected readonly previousScroll: ScrollRestoration;
   protected restoring: number | undefined;
+  protected scrollTimer: number | undefined;
   protected currentUrl: string;
   protected readonly hash = () => {
     if (this.host.location.href === this.currentUrl) return;
@@ -59,15 +60,20 @@ export class NavigationHistory {
     this.visit(this.current);
   };
   protected readonly scroll = () => {
-    const active = pageEntry(this.host.history.state);
-    if (
-      active?.index === this.current.index &&
-      active.page === this.current.page &&
-      this.host.location.href === this.currentUrl
-    )
-      this.save();
+    if (this.scrollTimer !== undefined) return;
+    this.scrollTimer = this.host.setTimeout(() => {
+      this.scrollTimer = undefined;
+      const active = pageEntry(this.host.history.state);
+      if (
+        active?.index === this.current.index &&
+        active.page === this.current.page &&
+        this.host.location.href === this.currentUrl
+      )
+        this.save();
+    }, 500);
   };
   protected readonly pop = (event: PopStateEvent) => {
+    this.clearScroll();
     const entry = pageEntry(event.state);
     const before = new URL(this.currentUrl);
     const after = this.host.location;
@@ -146,6 +152,7 @@ export class NavigationHistory {
   }
 
   acceptQuery(entry: PageEntry): void {
+    this.clearScroll();
     this.current = entry;
     this.currentUrl = this.host.location.href;
   }
@@ -156,6 +163,7 @@ export class NavigationHistory {
   }
 
   dispose(): void {
+    this.clearScroll();
     this.host.removeEventListener('popstate', this.pop);
     this.host.removeEventListener('scroll', this.scroll);
     this.host.removeEventListener('hashchange', this.hash);
@@ -163,6 +171,7 @@ export class NavigationHistory {
   }
 
   protected write(entry: PageEntry, url: string, push: boolean): void {
+    this.clearScroll();
     const state: unknown = this.host.history.state;
     this.currentUrl = url;
     this.host.history[push ? 'pushState' : 'replaceState'](
@@ -170,5 +179,11 @@ export class NavigationHistory {
       '',
       url,
     );
+  }
+
+  /** Cancel a deferred scroll save before another history entry takes ownership. */
+  protected clearScroll(): void {
+    this.host.clearTimeout(this.scrollTimer);
+    this.scrollTimer = undefined;
   }
 }

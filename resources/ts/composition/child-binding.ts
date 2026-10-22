@@ -13,7 +13,10 @@ import type { Relation } from './types';
  */
 export class ChildBinding {
   private readonly previous = new Map<string, { parent: Json; child: Json }>();
-  private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
+  private readonly timers = new Map<
+    string,
+    { timer: ReturnType<typeof setTimeout>; value: Json }
+  >();
   private ready = false;
   private stopped = false;
   private reconciling = false;
@@ -74,6 +77,8 @@ export class ChildBinding {
           parentChanged ||
           (!previous && !equal(parent, this.parent.modelBaseline(binding.path)))
         ) {
+          clearTimeout(this.timers.get(name)?.timer);
+          this.timers.delete(name);
           if (!this.ready) initializeDraft = true;
           this.remember(name, parent, parent);
           write(this.child.bridge.state, name, this.copy(parent));
@@ -82,7 +87,7 @@ export class ChildBinding {
           this.remember(name, child, child);
           write(this.parent.bridge.state, binding.path, this.copy(child));
           this.parent.refreshModels();
-          if (this.ready && !equal(parent, child)) this.schedule(name);
+          if (this.ready && !equal(parent, child)) this.schedule(name, child);
         }
       }
       this.ready = true;
@@ -172,27 +177,38 @@ export class ChildBinding {
     return values;
   }
 
+  /** Cancel only debounced values included in the parent's actual request snapshot. */
+  flush(sent: State): void {
+    for (const [name, pending] of this.timers) {
+      const binding = this.relation.models[name];
+      if (binding && equal(read(sent, binding.path), pending.value)) {
+        clearTimeout(pending.timer);
+        this.timers.delete(name);
+      }
+    }
+  }
+
   /** Release focus listeners and unsent synchronization when either island disappears. */
   dispose(): void {
     this.stopped = true;
     this.lifetime.abort();
-    for (const timer of this.timers.values()) clearTimeout(timer);
+    for (const { timer } of this.timers.values()) clearTimeout(timer);
     this.timers.clear();
   }
 
-  private schedule(name: string): void {
+  private schedule(name: string, value: Json): void {
     const binding = this.relation.models[name];
     if (!binding || this.parent.bridge.paused) return;
     if (binding.timing === 'change') this.synchronize();
     if (binding.timing === 'live') {
-      clearTimeout(this.timers.get(name));
-      this.timers.set(
-        name,
-        setTimeout(() => {
+      clearTimeout(this.timers.get(name)?.timer);
+      this.timers.set(name, {
+        value: this.copy(value),
+        timer: setTimeout(() => {
           this.timers.delete(name);
           this.synchronize();
         }, binding.delay),
-      );
+      });
     }
   }
 

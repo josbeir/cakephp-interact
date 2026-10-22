@@ -462,6 +462,56 @@ describe('declarative controls', () => {
     await vi.runAllTimersAsync();
     expect(fetcher).toHaveBeenCalledTimes(4);
   });
+  it.each(['compositionstart', 'composing input'])(
+    'cancels an earlier live edit on %s and waits for committed IME text',
+    async (start) => {
+      vi.useFakeTimers();
+      const root = element(
+        '<input x-interact:model.live.debounce.30ms="title">',
+      );
+      const fetcher = vi
+        .fn<Fetcher>()
+        .mockImplementation(async () => result(payload(root)));
+      const value = client(root, fetcher);
+      const input = control(root, 'input', HTMLInputElement);
+      input.value = 'before';
+      input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+      await vi.advanceTimersByTimeAsync(10);
+      if (start === 'compositionstart')
+        input.dispatchEvent(
+          new CompositionEvent('compositionstart', { bubbles: true }),
+        );
+      else {
+        input.value = 'intermediate';
+        input.dispatchEvent(
+          new InputEvent('input', { bubbles: true, isComposing: true }),
+        );
+      }
+      await vi.advanceTimersByTimeAsync(30);
+      expect(fetcher).not.toHaveBeenCalled();
+      input.value = '編集中';
+      input.dispatchEvent(
+        new InputEvent('input', { bubbles: true, isComposing: true }),
+      );
+      expect(value.bridge.state.title).toBe('編集中');
+      await vi.advanceTimersByTimeAsync(50);
+      expect(fetcher).not.toHaveBeenCalled();
+      input.value = '編集済み';
+      input.dispatchEvent(
+        new CompositionEvent('compositionend', { bubbles: true }),
+      );
+      // Browsers may also emit a final non-composing input after compositionend.
+      input.dispatchEvent(new InputEvent('input', { bubbles: true }));
+      await vi.advanceTimersByTimeAsync(29);
+      expect(fetcher).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(fetcher).toHaveBeenCalledOnce();
+      expect(requestBody(fetcher.mock.calls[0]?.[1])).toMatchObject({
+        updates: { title: '編集済み' },
+      });
+    },
+  );
+
   it('supports checkboxes, radio groups, selections, numeric values, and nested state', async () => {
     const root = element(
       '<input type="checkbox" name="enabled" x-interact:model="enabled"><input type="checkbox" value="one" x-interact:model="tags"><input type="radio" value="b" x-interact:model="choice"><select multiple x-interact:model="tags"><option value="one">One</option><option value="two">Two</option></select><input name="count" x-interact:model="count"><input name="amount" x-interact:model="amount"><textarea x-interact:model="form.name"></textarea>',

@@ -28,6 +28,7 @@ interface RegisteredModel {
 export class Controls {
   private readonly lifetime = new AbortController();
   private readonly models = new Map<HTMLElement, RegisteredModel>();
+  private readonly composing = new WeakSet<HTMLElement>();
   private readonly submissions: FormSubmissions;
   private readonly timers = new Map<
     string,
@@ -45,7 +46,13 @@ export class Controls {
     private readonly onFailure: (cause: unknown) => void,
   ) {
     this.submissions = new FormSubmissions(root, onFailure);
-    for (const event of ['input', 'change', 'focusout'])
+    for (const event of [
+      'input',
+      'change',
+      'focusout',
+      'compositionstart',
+      'compositionend',
+    ])
       root.addEventListener(event, (event) => this.handle(event), {
         signal: this.lifetime.signal,
       });
@@ -309,6 +316,8 @@ export class Controls {
       return;
     const model = this.models.get(control);
     if (!model || model.custom) return;
+    if (event.type === 'compositionstart') this.composing.add(control);
+    if (event.type === 'compositionend') this.composing.delete(control);
     try {
       model.capture();
     } catch (cause: unknown) {
@@ -318,8 +327,9 @@ export class Controls {
     this.schedule(
       control,
       model.binding,
-      event.type,
-      event instanceof InputEvent && event.isComposing,
+      event.type === 'compositionend' ? 'input' : event.type,
+      this.composing.has(control) ||
+        (event instanceof InputEvent && event.isComposing),
     );
   }
 
@@ -338,8 +348,13 @@ export class Controls {
       (binding.timing === 'change' && event === 'change')
     )
       void this.bridge.sync();
-    if (binding.timing === 'live' && event === 'input' && !composing) {
+    if (
+      binding.timing === 'live' &&
+      (event === 'input' || event === 'compositionstart')
+    ) {
       clearTimeout(this.timers.get(binding.path)?.timer);
+      this.timers.delete(binding.path);
+      if (composing) return;
       this.timers.set(binding.path, {
         source: element,
         timer: setTimeout(() => {
