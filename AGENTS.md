@@ -91,6 +91,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - `InteractHelper::render()` has an approved, method-local exception to the five-parameter lint limit: its six named mount options keep ordinary template usage readable. Keep the limit unchanged elsewhere.
 - No baselines, coverage-ignore annotations, disabled rules, or suppressions without explicit user authorization.
 - PHPUnit fails on warnings, risky tests, and deprecations.
+- Fix PHP and PHPUnit notices when they appear; do not suppress or ignore them.
 - Require at least 95% unrounded line coverage across all production PHP under `src/`, including unexecuted files. Report branch coverage when available.
 - Generate Clover with Xdebug/PCOV. An explicit gate rejects missing/invalid reports, missing executable-source data, and coverage below 95%. A scaffold without executable source does not pass.
 - Never exclude production code, weaken assertions, or add meaningless tests to satisfy coverage.
@@ -124,6 +125,7 @@ Required Composer scripts:
 
 ## Distribution, documentation, and completion
 
+- Create pull requests only with the GitHub CLI (`gh`) or a dedicated GitHub MCP server. Never create pull requests through the Codex connector, including `mcp__codex_apps__github_create_pull_request`.
 - Supply a Composer-ready browser bundle and an npm integration for application-owned Alpine. Verify both distributions, deduplication, and CSP.
 - Treat release assets as intentional reproducible artifacts. Exclude installed dependencies, temporary output, caches, credentials, and reports from commits.
 - Commit dependency lockfiles. Keep Node tooling separate from PHP runtime dependencies.
