@@ -61,9 +61,11 @@ export class Relationships {
           link.received(client, epoch, action, sent);
         for (const link of this.links)
           if (link.child === client) link.reconcile();
-        if (replacement) this.inputs(client, replacement);
+        const inputs = replacement
+          ? this.inputs(client, replacement)
+          : new Map<IslandClient, string>();
         for (const link of this.links)
-          if (link.parent === client) link.accepted();
+          if (link.parent === client) link.accepted(inputs.get(link.child));
       },
       dispose: () => {
         disposed = true;
@@ -118,7 +120,11 @@ export class Relationships {
     return cleanup;
   }
 
-  private inputs(parent: IslandClient, replacement: HTMLElement): void {
+  private inputs(
+    parent: IslandClient,
+    replacement: HTMLElement,
+  ): Map<IslandClient, string> {
+    const inputs = new Map<IslandClient, string>();
     for (const marker of replacement.querySelectorAll<HTMLElement>(
       '[data-interact-parent-inputs]',
     )) {
@@ -135,7 +141,8 @@ export class Relationships {
         ticket &&
         child.root.parentElement?.closest('[data-interact-id]') === parent.root
       )
-        child.receiveParentInputs(ticket);
+        inputs.set(child, ticket);
     }
+    return inputs;
   }
 }

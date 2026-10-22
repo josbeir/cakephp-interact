@@ -101,8 +101,12 @@ export class ChildBinding {
   }
 
   /** A parent acceptance refreshes changed PHP input views without remounting the child. */
-  accepted(): void {
+  accepted(ticket?: string): void {
     this.reconcile();
+    if (ticket !== undefined) {
+      this.child.receiveParentInputs(ticket);
+      return;
+    }
     if (!this.child.isMounted() || this.child.bridge.paused) return;
     if (
       Object.keys(this.relation.models).some(

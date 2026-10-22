@@ -31,6 +31,8 @@ function participant(
   element: HTMLElement,
   relationships: Relationships,
   handler?: Server,
+  content?: string,
+  renderless = false,
 ) {
   const metadata = readMetadata(element);
   let accepted = clone(metadata.state);
@@ -47,11 +49,15 @@ function participant(
       accepted = { ...accepted, ...request.updates };
       const next = handler ? await handler(request, clone(accepted)) : accepted;
       accepted = clone(next);
+      const replacement = element.cloneNode(false);
+      if (!(replacement instanceof HTMLElement))
+        throw new Error('Missing replacement root.');
+      replacement.innerHTML = content ?? element.innerHTML;
       return new Response(
         JSON.stringify({
           version: 1,
           id: element.dataset.interactId,
-          html: element.outerHTML,
+          html: renderless ? null : replacement.outerHTML,
           snapshot: 'next',
           state: next,
           writable: metadata.writable,
@@ -74,6 +80,9 @@ async function fixture(
     timing?: string;
     delay?: number;
     parentServer?: Server;
+    parentContent?: string;
+    parentRenderless?: boolean;
+    childRenderless?: boolean;
     childServer?: Server;
     models?: unknown;
   } = {},
@@ -93,7 +102,13 @@ async function fixture(
     },
   );
   document.body.append(parentRoot);
-  const parent = participant(parentRoot, relationships, options.parentServer);
+  const parent = participant(
+    parentRoot,
+    relationships,
+    options.parentServer,
+    options.parentContent,
+    options.parentRenderless,
+  );
   const childRoot = root(
     'child',
     { value: '', end: '', notes: '' },
@@ -117,7 +132,13 @@ async function fixture(
   childRoot.innerHTML =
     '<input aria-label="Value" x-interact:model="value"><input aria-label="End" x-interact:model="end"><input aria-label="Notes" x-interact:model="notes">';
   parentRoot.append(childRoot);
-  const child = participant(childRoot, relationships, options.childServer);
+  const child = participant(
+    childRoot,
+    relationships,
+    options.childServer,
+    undefined,
+    options.childRenderless,
+  );
   await Promise.resolve();
   const input = childRoot.querySelector('input');
   if (!input) throw new Error('Missing child input.');
@@ -175,6 +196,7 @@ it('captures edits before blur or an input event when the parent action submits'
 
 it('propagates PHP-normalized child values and retains unrelated drafts', async () => {
   const { parent, child, input } = await fixture({
+    childRenderless: true,
     childServer: async (_request, current) => {
       if (typeof current.value !== 'string')
         throw new Error('Expected a string value.');
@@ -214,12 +236,104 @@ it('retains newer child edits across a held parent response', async () => {
   expect(child.client.bridge.state.value).toBe('newer');
 });
 
+it('keeps a later accepted child action when an older parent response arrives', async () => {
+  let release: () => void = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const { parent, child } = await fixture({
+    parentServer: async (_request, current) => {
+      await held;
+      return { ...current, data: { value: 'old parent value', end: '' } };
+    },
+    childServer: async (_request, current) => ({
+      ...current,
+      value: 'accepted child value',
+    }),
+  });
+  const saving = parent.client.bridge.call('save');
+  await vi.waitFor(() => expect(parent.requests).toHaveLength(1));
+  await child.client.bridge.call('choose');
+  release();
+  await saving;
+  expect(parent.client.bridge.state.data).toMatchObject({
+    value: 'accepted child value',
+  });
+  expect(child.client.bridge.state.value).toBe('accepted child value');
+  expect(
+    child.requests.filter((request) => request.action === 'choose'),
+  ).toHaveLength(1);
+});
+
+it('preserves nullable model values independently of zero', async () => {
+  const relationships = new Relationships(Alpine, (element) =>
+    roots.get(element),
+  );
+  const parentRoot = root(
+    'parent',
+    { data: { value: null } },
+    { data: { type: 'array', nullable: false } },
+  );
+  const childRoot = root(
+    'child',
+    { value: null },
+    { value: { type: 'int', nullable: true } },
+  );
+  childRoot.dataset.interactRelation = JSON.stringify({
+    parentId: 'parent',
+    models: { value: { path: 'data.value', timing: 'defer', delay: 250 } },
+  });
+  document.body.append(parentRoot);
+  const parent = participant(parentRoot, relationships);
+  parentRoot.append(childRoot);
+  const child = participant(childRoot, relationships);
+  await Promise.resolve();
+  child.client.bridge.state.value = 0;
+  await vi.waitFor(() =>
+    expect(parent.client.bridge.state.data).toEqual({ value: 0 }),
+  );
+  parent.client.bridge.state.data = { value: null };
+  await vi.waitFor(() => expect(child.client.bridge.state.value).toBeNull());
+  expect(parent.requests).toHaveLength(0);
+  expect(child.requests).toHaveLength(0);
+});
+
+it('isolates sibling tickets while keeping their shared parent draft consistent', async () => {
+  const { parent, child, parentRoot, input, relationships } = await fixture();
+  const siblingRoot = root(
+    'sibling',
+    { value: '' },
+    { value: { type: 'string', nullable: false } },
+  );
+  siblingRoot.dataset.interactRelation = JSON.stringify({
+    parentId: 'parent',
+    models: { value: { path: 'data.value', timing: 'defer', delay: 250 } },
+  });
+  parentRoot.append(siblingRoot);
+  const sibling = participant(siblingRoot, relationships);
+  await Promise.resolve();
+  edit(input, 'shared selection');
+  await vi.waitFor(() =>
+    expect(sibling.client.bridge.state.value).toBe('shared selection'),
+  );
+  child.client.receiveParentInputs('first-child-only');
+  await vi.waitFor(() => expect(child.requests).toHaveLength(1));
+  await vi.waitFor(() => expect(child.client.bridge.busy).toBe(false));
+  expect(child.requests[0]).toMatchObject({
+    parentInputs: 'first-child-only',
+    updates: { value: 'shared selection' },
+  });
+  expect(sibling.requests).toHaveLength(0);
+  expect(parent.requests).toHaveLength(0);
+});
+
 it('protects a later parent reset even when it matches the child request’s initial value', async () => {
   let release: () => void = () => {};
   const held = new Promise<void>((resolve) => {
     release = resolve;
   });
   const { parent, child } = await fixture({
+    parentRenderless: true,
     childServer: async (request, current) => {
       if (request.action === 'preset') {
         await held;
@@ -303,6 +417,57 @@ it('waits until focus leaves the child for blur timing', async () => {
   await vi.waitFor(() => expect(parent.requests).toHaveLength(1));
 });
 
+it('leaves deferred models unsent when focus exits the child', async () => {
+  const { parent, input } = await fixture();
+  edit(input, 'deferred selection');
+  await vi.waitFor(() =>
+    expect(parent.client.bridge.state.data).toMatchObject({
+      value: 'deferred selection',
+    }),
+  );
+  input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+  expect(parent.requests).toHaveLength(0);
+});
+
+it('does not resume a paused parent when focus leaves a blur-bound child', async () => {
+  const { parent, childRoot, input } = await fixture({
+    timing: 'blur',
+    parentServer: async () => {
+      throw new Error('Offline');
+    },
+  });
+  await parent.client.bridge.sync();
+  edit(input, 'unsent selection');
+  await vi.waitFor(() =>
+    expect(parent.client.bridge.state.data).toMatchObject({
+      value: 'unsent selection',
+    }),
+  );
+  input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+  expect(parent.client.bridge.paused).toBe(true);
+  expect(parent.requests).toHaveLength(1);
+  expect(childRoot.isConnected).toBe(true);
+});
+
+it('keeps local parent changes without automatically retrying a failed child', async () => {
+  const { parent, child } = await fixture({
+    parentServer: async (_request, current) => ({
+      ...current,
+      data: { value: 'parent replacement', end: '' },
+    }),
+    childServer: async () => {
+      throw new Error('Offline');
+    },
+  });
+  await child.client.bridge.sync();
+  await parent.client.bridge.call('replace');
+  await vi.waitFor(() =>
+    expect(child.client.bridge.state.value).toBe('parent replacement'),
+  );
+  expect(child.client.bridge.paused).toBe(true);
+  expect(child.requests).toHaveLength(1);
+});
+
 it('sends generated input tickets only to the preserved direct child after parent acceptance', async () => {
   const { parent, child, parentRoot } = await fixture();
   const incoming = parentRoot.cloneNode(false);
@@ -316,6 +481,34 @@ it('sends generated input tickets only to the preserved direct child after paren
     parentInputs: 'signed-new',
     updates: { value: '', end: '' },
   });
+});
+
+it('sends accepted parent models with the input ticket in one coherent child update', async () => {
+  const { parent, child } = await fixture({
+    parentContent:
+      '<div data-interact-preserve="child" data-interact-parent-inputs="signed-new"></div>',
+    parentServer: async (_request, current) => ({
+      ...current,
+      data: { value: 'accepted selection', end: 'accepted end' },
+    }),
+  });
+  await parent.client.bridge.call('replace');
+  await vi.waitFor(() => expect(child.requests).toHaveLength(1));
+  await vi.waitFor(() => expect(child.client.bridge.busy).toBe(false));
+  expect(child.requests[0]).toMatchObject({
+    parentInputs: 'signed-new',
+    updates: { value: 'accepted selection', end: 'accepted end' },
+  });
+  expect(child.client.bridge.state).toMatchObject({
+    value: 'accepted selection',
+    end: 'accepted end',
+  });
+  expect(parent.client.bridge.state.data).toEqual({
+    value: 'accepted selection',
+    end: 'accepted end',
+  });
+  expect(parent.requests).toHaveLength(1);
+  expect(child.requests).toHaveLength(1);
 });
 
 it('keeps the newest parent ticket while an older child request is executing', async () => {
@@ -343,10 +536,64 @@ it('ignores missing targets, nested markers, and disposed children', async () =>
   if (!(incoming instanceof HTMLElement))
     throw new Error('Missing replacement.');
   incoming.innerHTML =
-    '<div data-interact-preserve="absent" data-interact-parent-inputs="missing"></div><div data-interact-id="nested"><div data-interact-preserve="child" data-interact-parent-inputs="nested"></div></div>';
+    '<div data-interact-preserve="absent" data-interact-parent-inputs="missing"></div><div data-interact-id="nested"><div data-interact-preserve="child" data-interact-parent-inputs="nested"></div></div><div data-interact-preserve="unregistered" data-interact-parent-inputs="orphan"></div><div data-interact-preserve="child" data-interact-parent-inputs=""></div>';
+  parentRoot.append(root('unregistered', {}, {}));
   parent.client.composition?.accepted(incoming);
   child.client.dispose();
   child.client.receiveParentInputs('ignored');
+  expect(child.requests).toHaveLength(0);
+});
+
+it.each(['identity', 'endpoint'])(
+  'rejects a direct-parent %s mismatch',
+  async (mismatch) => {
+    const { parent, child, childRoot, relationships } = await fixture();
+    child.client.dispose();
+    if (mismatch === 'identity')
+      parent.client.root.dataset.interactId = 'different';
+    else childRoot.dataset.interactEndpoint = '/other/update';
+    const replacement = participant(childRoot, relationships);
+    await Promise.resolve();
+    expect(replacement.client.bridge.error?.code).toBe('client_error');
+    expect(replacement.requests).toHaveLength(0);
+  },
+);
+
+it('does not connect a child disposed before its initialization microtask', async () => {
+  const relationships = new Relationships(Alpine, (element) =>
+    roots.get(element),
+  );
+  const element = root('removed', {}, {});
+  document.body.append(element);
+  const child = participant(element, relationships);
+  child.client.dispose();
+  await Promise.resolve();
+  expect(child.client.bridge.error).toBeNull();
+  expect(child.requests).toHaveLength(0);
+});
+
+it('reports a missing parent value while leaving a manual child uninitialized', async () => {
+  const relationships = new Relationships(Alpine, (element) =>
+    roots.get(element),
+  );
+  const parentRoot = root(
+    'parent',
+    { data: {} },
+    { data: { type: 'array', nullable: false } },
+  );
+  document.body.append(parentRoot);
+  participant(parentRoot, relationships);
+  const childRoot = root('pending', {}, {});
+  childRoot.dataset.interactLoading = 'manual';
+  childRoot.dataset.interactRelation = JSON.stringify({
+    parentId: 'parent',
+    models: { value: { path: 'data.missing', timing: 'defer', delay: 250 } },
+  });
+  parentRoot.append(childRoot);
+  const child = participant(childRoot, relationships);
+  await Promise.resolve();
+  expect(child.client.bridge.error?.code).toBe('client_error');
+  expect(child.client.isMounted()).toBe(false);
   expect(child.requests).toHaveLength(0);
 });
 
@@ -407,6 +654,19 @@ it('reports invalid parent ownership and bootstrap JSON without starting request
   relationships.register(orphan.client);
   await Promise.resolve();
   expect(orphan.client.bridge.error?.code).toBe('client_error');
+});
+
+it('reports structurally invalid relationship JSON through client feedback', async () => {
+  const relationships = new Relationships(Alpine, (element) =>
+    roots.get(element),
+  );
+  const element = root('invalid', {}, {});
+  element.dataset.interactRelation = '{}';
+  document.body.append(element);
+  const child = participant(element, relationships);
+  await Promise.resolve();
+  expect(child.client.bridge.error?.code).toBe('client_error');
+  expect(child.requests).toHaveLength(0);
 });
 
 it.each([false, true])(
@@ -528,4 +788,5 @@ it('rejects a missing bound value and does not resume a failed parent automatica
   await vi.waitFor(() =>
     expect(child.client.bridge.error?.code).toBe('client_error'),
   );
+  expect(child.client.composition?.updates()).toEqual({ end: '' });
 });
