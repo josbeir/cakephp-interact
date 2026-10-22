@@ -30,9 +30,11 @@ use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotCodec;
 use Interact\Test\Fixture\CounterIsland;
 use Interact\Test\Fixture\Pagination\ListingIsland;
+use Interact\Test\Fixture\Pagination\NullablePageIsland;
 use Interact\Test\Fixture\Pagination\PageIsland;
 use Interact\Test\Fixture\Pagination\PrivatePageIsland;
 use Interact\Test\Fixture\Pagination\SortOnlyIsland;
+use Interact\Test\Fixture\Pagination\StateOnlyIsland;
 use Interact\View\TemplateView;
 use InvalidArgumentException;
 use LogicException;
@@ -68,6 +70,8 @@ class PaginationTest extends TestCase
         $registry = new Registry();
         $registry->register(PageIsland::class, 'Paging');
         $registry->register(ListingIsland::class, 'Listing');
+        $registry->register(PrivatePageIsland::class, 'PrivatePaging');
+        $registry->register(StateOnlyIsland::class, 'StateOnly');
 
         $this->codec = new SnapshotCodec(str_repeat('p', 32));
         $this->view = new TemplateView($request);
@@ -291,10 +295,61 @@ class PaginationTest extends TestCase
         new Configuration(new Definition(CounterIsland::class))->fields();
     }
 
-    public function testRejectsPageStateWithoutUrlOwnership(): void
+    public function testPrivatePagingIsWritableWithoutOwningAnyPagingQueryParameter(): void
+    {
+        $fields = new Configuration(new Definition(PrivatePageIsland::class))->fields();
+        static::assertNull($fields['page']->url);
+        $mount = $this->runtime->mount('PrivatePaging', [], null, $this->context);
+        static::assertArrayNotHasKey('page', $mount->url);
+        $updated = $this->runtime->update([
+            'snapshot' => $mount->snapshot,
+            'updates' => ['page' => 2, 'search' => 'CakePHP'],
+            'pageQuery' => '?utm=mail',
+        ], $this->context);
+        static::assertSame(2, $updated->state['page']);
+        static::assertStringContainsString('6–10 of 150', $updated->html);
+        static::assertStringContainsString('/catalog/7?utm=mail&amp;q=CakePHP#interact-pagination-', $updated->html);
+        static::assertStringNotContainsString('&amp;p=', $updated->html);
+    }
+
+    public function testOmittingUrlKeepsAllPagingStateInTheSnapshot(): void
+    {
+        $mount = $this->runtime->mount('StateOnly', [], null, $this->context);
+        static::assertSame([], $mount->url);
+        $updated = $this->runtime->update([
+            'snapshot' => $mount->snapshot,
+            'updates' => ['page' => 3, 'limit' => 7, 'sort' => 'title', 'direction' => 'desc'],
+            'pageQuery' => '?utm=mail',
+        ], $this->context);
+        static::assertSame([], $updated->url);
+        static::assertSame(3, $updated->state['page']);
+        static::assertSame(7, $updated->state['limit']);
+        static::assertSame('desc', $updated->state['direction']);
+        static::assertStringContainsString('15–21 of 150', $updated->html);
+        static::assertStringNotContainsString('order=title', $updated->html);
+        static::assertStringNotContainsString('dir=desc', $updated->html);
+        static::assertStringContainsString('/catalog/7?utm=mail#interact-pagination-', $updated->html);
+        $fresh = $this->runtime->mount('StateOnly', [], null, $this->context);
+        static::assertSame(1, $fresh->state['page']);
+        static::assertSame(5, $fresh->state['limit']);
+        static::assertSame('', $fresh->state['sort']);
+    }
+
+    public function testPrivatePageRejectsIntegersOutsideBrowserPrecision(): void
+    {
+        $mount = $this->runtime->mount('StateOnly', [], null, $this->context);
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Pagination page must be a browser-safe integer.');
+        $this->runtime->update([
+            'snapshot' => $mount->snapshot,
+            'updates' => ['page' => PHP_INT_MAX],
+        ], $this->context);
+    }
+
+    public function testPrivatePagingStillRejectsNullableDeclarations(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new Configuration(new Definition(PrivatePageIsland::class))->fields();
+        new Configuration(new Definition(NullablePageIsland::class))->fields();
     }
 
     public function testRejectsOrphanedSortDeclarations(): void

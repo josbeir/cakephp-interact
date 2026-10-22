@@ -1,7 +1,6 @@
 import { linkDestination } from '../navigation/links';
 import { record } from '../state/values';
 import type { State, Writable } from '../types';
-import type { UrlFields } from '../url/types';
 
 /**
  * Enhance only helper-generated links owned by this island, independently of template markup.
@@ -9,7 +8,6 @@ import type { UrlFields } from '../url/types';
  */
 export function paginationLinks(
   root: HTMLElement,
-  fields: UrlFields,
   writable: () => Writable,
   apply: (changes: State) => void,
   failed: (cause: unknown) => void,
@@ -25,12 +23,13 @@ export function paginationLinks(
       )
     )
       return;
-    const destination = linkDestination(link, event);
+    const destination = linkDestination(link, event, { fragments: true });
     if (
       !destination ||
       destination.origin !== window.location.origin ||
       destination.pathname !== window.location.pathname ||
-      destination.hash
+      (destination.hash &&
+        !destination.hash.startsWith('#interact-pagination-'))
     )
       return;
     try {
@@ -42,9 +41,10 @@ export function paginationLinks(
           marker.getAttribute('data-interact-pagination') ?? '{}',
         );
         if (!record(targets)) throw new Error('Invalid pagination targets.');
-        const changes = targets[destination.pathname + destination.search];
+        const changes =
+          targets[destination.pathname + destination.search + destination.hash];
         if (changes === undefined) continue;
-        if (!pagingChanges(changes, fields, writable()))
+        if (!pagingChanges(changes, writable()))
           throw new Error('Invalid pagination state.');
         event.preventDefault();
         apply(changes);
@@ -59,12 +59,8 @@ export function paginationLinks(
   return () => root.removeEventListener('click', click);
 }
 
-/** Validate generated edits against the same explicit URL and writable declarations as models. */
-function pagingChanges(
-  value: unknown,
-  fields: UrlFields,
-  writable: Writable,
-): value is State {
+/** Validate paging edits against explicit writable declarations without requiring URL ownership. */
+function pagingChanges(value: unknown, writable: Writable): value is State {
   return (
     record(value) &&
     typeof value.page === 'number' &&
@@ -72,7 +68,6 @@ function pagingChanges(
       const type = key === 'page' || key === 'limit' ? 'int' : 'string';
       return (
         ['page', 'sort', 'direction', 'limit'].includes(key) &&
-        fields[key]?.type === type &&
         writable[key]?.type === type &&
         (type === 'int'
           ? typeof item === 'number' && Number.isSafeInteger(item) && item > 0

@@ -6,12 +6,12 @@ description: Paginate application queries with native CakePHP results and automa
 # Pagination
 
 `Island::paginate()` paginates an application-owned query using CakePHP's numeric
-paginator. Ordinary `PaginatorHelper` links update the owning island, retain native
-GET destinations, and work with custom pagination templates.
+paginator. Ordinary `PaginatorHelper` links update the owning island and work with
+custom pagination templates. URL bindings are optional.
 
 ## Minimal pagination
 
-Declare writable, URL-bound `page` state. Configure `$paginate` and return the native
+Declare writable `page` state. Configure `$paginate` and return the native
 result from `viewData()`:
 
 ```php
@@ -31,7 +31,7 @@ class ResourcesIsland extends Island
 {
     use LocatorAwareTrait;
 
-    #[State(writable: true, url: true, history: true)]
+    #[State(writable: true)]
     public int $page = 1;
 
     /**
@@ -96,10 +96,9 @@ Per-call settings override protected `$paginate` defaults, as in controller pagi
 | `direction: string` | With `sort`             | Native sort direction; normally defaults to `'asc'`.       |
 | `limit: int`        | For editable page sizes | Overrides the configured page size; bounded by `maxLimit`. |
 
-Every declared paging field must be writable and URL-bound. Their PHP names are
-conventional; `State(url: 'p')` can change a query name without changing `$page`.
+Every declared paging field must be writable and non-nullable. Their PHP names are
+conventional. Omitting `url` is equivalent to `url: false`.
 Without a `limit` property, `$paginate['limit']` determines the page size.
-`history: true` opts into Back/Forward entries through the existing [URL state](/guide/url-state) system.
 
 Native `limit`, `maxLimit`, `order`, `finder`, per-repository settings, and
 `sortableFields` are supported. `className` may select `Numeric` or a compatible
@@ -111,15 +110,39 @@ Keep filtering, association access, and stable domain ordering in named Table
 finders. Queries, entities, counts, and paginated results stay request-local.
 Pagination never persists application data.
 
+## Optional URL bindings
+
+With `#[State(writable: true)]`, paging stays in the signed snapshot. Links update
+the island without changing the address bar. Reloading starts from application
+defaults. This applies to `page`, `sort`, `direction`, and `limit` independently.
+
+Opt into shareable paging URLs and Back/Forward entries explicitly:
+
+```php
+#[State(writable: true, url: true, history: true)]
+public int $page = 1;
+```
+
+Use `url: 'p'` to change the query name without changing `$page`. `history: true`
+requires a URL binding. See [URL state](/guide/url-state) for history behavior.
+
+URL-bound and non-URL fields can coexist. Only URL-bound fields appear in generated
+query strings or browser history. When any paging field lacks a URL binding,
+generated links use opaque fragment targets and require JavaScript to apply their
+complete paging state. These internal targets never encode the non-URL values.
+Opening such a link in a new tab uses the application defaults for non-URL fields.
+Bind every paging field to the URL when links must restore the listing through a
+normal GET request, including without JavaScript.
+
 ## Sorting
 
 Declare `sort` and `direction` together and configure an explicit allowlist:
 
 ```php
-#[State(writable: true, url: true, history: true)]
+#[State(writable: true)]
 public string $sort = '';
 
-#[State(writable: true, url: true, history: true)]
+#[State(writable: true)]
 public string $direction = 'asc';
 
 /**
@@ -155,7 +178,7 @@ public function updated(array $paths): void
 
 Respect an explicitly supplied page so history can restore filters and paging
 together. Pagination bounds negative or stale page numbers and keeps empty results
-on page one. The corrected values reach the template, signed snapshot, and URL.
+on page one. The corrected values reach the template, signed snapshot, and any URL bindings.
 An out-of-bounds read is rerun once at the calculated last page; actions are never
 replayed. Renderless actions skip pagination queries until the next rendered update.
 
@@ -181,9 +204,14 @@ clicks, new tabs, downloads, explicit `x-interact:navigate` links, and explicit
 alternate destinations retain their normal behavior. Runtime-generated metadata
 is internal; applications should not author it.
 
+Explicit native destination overrides (`url` or `routePlaceholders` helper options,
+or the URL argument to `generateUrl()`) require every paging field to be URL-bound.
+Interact rejects these overrides for non-URL paging state instead of exposing it
+in a query string.
+
 ## Independent listings
 
-Mount separate listing islands with explicit prefixes:
+For URL-bound `page` declarations, mount separate listing islands with explicit prefixes:
 
 ```php
 <?= $this->Interact->render('Resources', key: 'articles', urlPrefix: 'articles') ?>

@@ -195,6 +195,58 @@ class PaginatorHelperTest extends TestCase
         static::assertSame('retained', $this->view->get('outside'));
     }
 
+    public function testStateOnlyTargetsPreserveCustomMarkupWithoutExposingPagingValues(): void
+    {
+        $native = $this->paginatedFixture();
+        $links = new Links('/catalog', '?external=keep', [], ['page' => 2, 'sort' => 'title', 'direction' => 'desc']);
+        $result = new Paginated($native, $links, ['page', 'sort', 'direction']);
+        $restore = $this->helper->islandScope($result);
+        $this->helper->setTemplates(['nextActive' => '<a class="custom" href="{{url}}"><strong>{{text}}</strong></a>']);
+        $html = $this->helper->next('Next');
+        static::assertStringContainsString('class="custom"', $html);
+        static::assertStringContainsString('<strong>Next</strong>', $html);
+        static::assertMatchesRegularExpression(
+            '/href="\/catalog\?external=keep#interact-pagination-[0-9a-f]{24}"/',
+            $html,
+        );
+        static::assertStringNotContainsString('sort=', $html);
+        static::assertStringNotContainsString('page=', $html);
+        static::assertNotSame($this->helper->generateUrl(['page' => 3]), $this->helper->generateUrl(['page' => 3]));
+        static::assertStringContainsString('&quot;page&quot;:3', $links->markup());
+        $restore();
+    }
+
+    public function testNativeRouteOverridesCannotExposeStateOnlyParameters(): void
+    {
+        $native = $this->paginatedFixture();
+        $links = new Links('/catalog', '', [], ['page' => 2, 'sort' => 'title', 'direction' => 'desc']);
+        $this->helper->islandScope(new Paginated($native, $links, ['page', 'sort', 'direction']));
+        $this->expectException(InvalidArgumentException::class);
+        $this->helper->generateUrl(['page' => 3], ['controller' => 'Resources', 'action' => 'index']);
+    }
+
+    public function testUrlBoundSortingCanCoexistWithStateOnlyPageNumbers(): void
+    {
+        $fields = [
+            'sort' => ['name' => 'order', 'type' => 'string', 'default' => '', 'history' => true],
+            'direction' => ['name' => 'dir', 'type' => 'string', 'default' => 'asc', 'history' => true],
+        ];
+        $links = new Links('/catalog', '?external=keep', $fields, [
+            'page' => 2,
+            'sort' => 'title',
+            'direction' => 'desc',
+        ]);
+        $this->helper->islandScope(new Paginated($this->paginatedFixture(), $links, ['page', 'sort', 'direction']));
+        $next = $this->helper->next('Next');
+        static::assertStringContainsString('?external=keep&amp;order=title&amp;dir=desc#interact-pagination-', $next);
+        static::assertStringNotContainsString('page=', $next);
+        static::assertStringContainsString('&quot;page&quot;:3', $links->markup());
+        $sort = $this->helper->sort('title');
+        static::assertStringContainsString('?external=keep&amp;order=title#interact-pagination-', $sort);
+        static::assertStringContainsString('&quot;page&quot;:1', $links->markup());
+        static::assertStringContainsString('&quot;direction&quot;:&quot;asc&quot;', $links->markup());
+    }
+
     public function testUrlEncodingPreservesEmptyListsFalseAndUnrelatedRepeatedParameters(): void
     {
         $fields = [

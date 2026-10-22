@@ -49,9 +49,9 @@ class Configuration
     }
 
     /**
-     * Require a URL-bound integer page and validate optional conventional paging declarations.
+     * Require writable, non-nullable paging state independently of optional URL bindings.
      *
-     * @return array<string, \Interact\Discovery\Property> Explicit writable URL capabilities only.
+     * @return array<string, \Interact\Discovery\Property> Explicit writable paging capabilities only.
      */
     public function fields(): array
     {
@@ -62,9 +62,9 @@ class Configuration
                 continue;
             }
 
-            if ($field === null || !$field->writable || $field->url === null || $field->type !== $type) {
+            if ($field === null || !$field->writable || $field->nullable || $field->type !== $type) {
                 throw new InvalidArgumentException(sprintf(
-                    'Pagination requires writable URL-bound %s state "%s".',
+                    'Pagination requires writable, non-nullable %s state "%s".',
                     $type,
                     $name,
                 ));

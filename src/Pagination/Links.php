@@ -4,12 +4,14 @@ declare(strict_types=1);
 namespace Interact\Pagination;
 
 use Interact\Action\RouteContext;
+use InvalidArgumentException;
 
 /**
  * Maps native paginator parameters to explicitly owned query names and records enhanced links.
  *
  * The original page path comes from signed identity. Unrelated query parameters and
  * application URL state are retained; only declared paging fields become browser edits.
+ * Paging fields without URL bindings use opaque fragment targets, requiring JavaScript.
  */
 class Links
 {
@@ -34,7 +36,7 @@ class Links
     }
 
     /**
-     * Build a native GET destination and remember only its declared paging changes.
+     * Build a paging target and remember only its declared paging changes.
      *
      * @param array<string, mixed> $paging Native page, sort, direction, and limit values.
      * @param list<string> $names Conventional declared paging fields.
@@ -44,9 +46,8 @@ class Links
         $values = $this->values;
         $changes = [];
         foreach ($names as $name) {
-            $field = $this->fields[$name];
             /** @var mixed $value */
-            $value = $paging[$name] ?? $field['default'];
+            $value = $paging[$name] ?? $this->values[$name];
             $changes[$name] = $name === 'page' || $name === 'limit' ? (int)$value : (string)$value;
             $values[$name] = $changes[$name];
         }
@@ -77,6 +78,10 @@ class Links
         }
 
         $url = $this->path . ($pairs === [] ? '' : '?' . implode('&', $pairs));
+        if (array_diff($names, array_keys($this->fields)) !== []) {
+            $url .= '#interact-pagination-' . bin2hex(random_bytes(12));
+        }
+
         $this->targets[$url] = $changes;
 
         return $url;
@@ -100,5 +105,18 @@ class Links
                 )
                 . '"></template>'
         );
+    }
+
+    /**
+     * Require reloadable paging state before generating an alternate native route destination.
+     *
+     * @param list<string> $names Conventional paging fields used by the result.
+     * @throws InvalidArgumentException When a native destination would expose state-only parameters.
+     */
+    public function assertUrlBound(array $names): void
+    {
+        if (array_diff($names, array_keys($this->fields)) !== []) {
+            throw new InvalidArgumentException('Native paginator URL overrides require URL-bound paging state.');
+        }
     }
 }

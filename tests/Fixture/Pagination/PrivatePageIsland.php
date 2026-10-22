@@ -7,11 +7,11 @@ use Interact\Attribute\Render;
 use Interact\Attribute\State;
 
 /**
- * Intentionally omits URL ownership to verify pagination rejects non-reloadable page declarations.
+ * Keeps paging out of URLs while retaining the search field’s explicit URL binding.
  */
 #[Render(template: 'island/pagination')]
 class PrivatePageIsland extends PageIsland
 {
-    #[State(writable: true)]
+    #[State(writable: true, url: false)]
     public int $page = 1;
 }
