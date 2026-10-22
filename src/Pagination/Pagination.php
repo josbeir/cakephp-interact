@@ -44,6 +44,7 @@ class Pagination
      *
      * @param array<string, mixed> $settings Native numeric paginator configuration.
      * @return \Cake\Datasource\Paging\PaginatedInterface<int, mixed>
+     * @throws \Interact\Security\InvalidSnapshotException When the signed identity requires a remount.
      * @throws InvalidArgumentException When paging declarations or settings are invalid.
      * @throws LogicException When the island attempts to paginate more than one dataset.
      */
@@ -52,6 +53,7 @@ class Pagination
         RepositoryInterface|QueryInterface $object,
         array $settings,
     ): PaginatedInterface {
+        $path = PagePath::required($this->identity->pagePath);
         if ($this->used) {
             throw new LogicException('An island can paginate one dataset per request.');
         }
@@ -81,7 +83,7 @@ class Pagination
         $accepted = $this->accept($island, $fields, $result, $params);
 
         $links = new Links(
-            $this->identity->pagePath ?? $this->context->request->getUri()->getPath(),
+            $path,
             $this->query ?? $this->context->request->getUri()->getQuery(),
             new UrlState()->metadata($this->definition, $this->identity->urlPrefix),
             new State()->export($island, $this->definition),

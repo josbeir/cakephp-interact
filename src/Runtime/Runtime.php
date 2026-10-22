@@ -137,6 +137,8 @@ class Runtime
     {
         $input = new UpdateRequest($request);
         $verified = $this->snapshots->open($input->snapshot, $context->binding(), $context->scope);
+        $verified += ['pagePath' => null];
+        PagePath::required($verified['pagePath']);
         if ($input->initialize) {
             return $this->initialize(new PendingMount($verified), $input, $context);
         }

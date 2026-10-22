@@ -59,6 +59,7 @@ abstract class Island
      * @return \Cake\Datasource\Paging\PaginatedInterface<int, mixed>
      * @throws LogicException When called outside an island request or more than once per request.
      * @throws InvalidArgumentException When paging state or native settings are invalid.
+     * @throws \Interact\Security\InvalidSnapshotException When the signed identity requires a remount.
      */
     public function paginate(RepositoryInterface|QueryInterface $object, array $settings = []): PaginatedInterface
     {

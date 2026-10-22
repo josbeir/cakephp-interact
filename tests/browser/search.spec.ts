@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { expect, test } from './fixtures';
 
 test('searches the full resource library and combines filters while preserving focus', async ({
@@ -202,3 +203,70 @@ test('native paginator links restore the same listing without JavaScript', async
     await context.close();
   }
 });
+
+test('pre-upgrade snapshots require an explicit reload and retain the local draft', async ({
+  page,
+}) => {
+  let replaced = false;
+  await page.route('**/_interact/update', async (route) => {
+    if (replaced) {
+      await route.continue();
+      return;
+    }
+    replaced = true;
+    const input: unknown = route.request().postDataJSON();
+    if (!record(input) || typeof input.snapshot !== 'string')
+      throw new Error('Missing signed snapshot.');
+    const envelope: unknown = JSON.parse(
+      Buffer.from(input.snapshot.split('.')[0] ?? '', 'base64url').toString(),
+    );
+    if (!record(envelope) || !record(envelope.data))
+      throw new Error('Invalid signed envelope.');
+    delete envelope.data.pagePath;
+    const payload = Buffer.from(JSON.stringify(envelope)).toString('base64url');
+    const key = createHmac(
+      'sha256',
+      'interact-demo-fixture-only-do-not-use-in-production',
+    )
+      .update('interact.snapshot.v1')
+      .digest();
+    const signature = createHmac('sha256', key).update(payload).digest('hex');
+    await route.continue({
+      postData: JSON.stringify({
+        ...input,
+        snapshot: payload + '.' + signature,
+      }),
+    });
+  });
+  await page.goto('/search');
+  const library = page.getByRole('region', { name: 'Resource library' });
+  await library.locator('summary').filter({ hasText: 'Reading notes' }).click();
+  await library
+    .getByLabel('Reading notes')
+    .fill('Preserve this draft before reloading');
+  const failure = page.waitForResponse((reply) =>
+    reply.url().endsWith('/_interact/update'),
+  );
+  await library.getByRole('link', { name: 'Next', exact: true }).click();
+  expect((await failure).status()).toBe(409);
+  await expect(library.getByRole('alert')).toContainText(
+    'Preserve your draft, then reload',
+  );
+  await expect(library.getByLabel('Reading notes')).toHaveValue(
+    'Preserve this draft before reloading',
+  );
+  await expect(library.getByRole('status')).toHaveText(
+    'Showing 1–20 of 1,200 results',
+  );
+  await expect(page).toHaveURL('/search');
+  await page.reload();
+  await library.getByRole('link', { name: 'Next', exact: true }).click();
+  await expect(library.getByRole('status')).toHaveText(
+    'Showing 21–40 of 1,200 results',
+  );
+  await expect(page).toHaveURL('/search?page=2');
+});
+
+function record(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}

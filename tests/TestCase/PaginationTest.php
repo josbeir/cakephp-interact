@@ -7,13 +7,17 @@ use Cake\Core\Configure;
 use Cake\Database\Connection;
 use Cake\Datasource\ConnectionManager;
 use Cake\Datasource\Paging\NumericPaginator;
+use Cake\Datasource\RepositoryInterface;
 use Cake\Http\Exception\ForbiddenException;
+use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\Http\Session;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
 use Interact\Discovery\Definition;
 use Interact\Discovery\Registry;
+use Interact\Http\FailureResponder;
+use Interact\Http\UpdateHandler;
 use Interact\IslandContext;
 use Interact\Loading\Options;
 use Interact\Pagination\Configuration;
@@ -22,6 +26,7 @@ use Interact\Pagination\Pagination;
 use Interact\Runtime\Factory;
 use Interact\Runtime\Runtime;
 use Interact\Runtime\SnapshotData;
+use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotCodec;
 use Interact\Test\Fixture\CounterIsland;
 use Interact\Test\Fixture\Pagination\ListingIsland;
@@ -31,6 +36,7 @@ use Interact\Test\Fixture\Pagination\SortOnlyIsland;
 use Interact\View\TemplateView;
 use InvalidArgumentException;
 use LogicException;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Verifies native pagination through real SQLite queries, isolated templates, and signed updates.
@@ -110,6 +116,63 @@ class PaginationTest extends TestCase
             'updates' => ['page' => -5],
         ], $this->context);
         static::assertSame(1, $negative->state['page']);
+    }
+
+    /**
+     * Check every update path rejects an old signed identity before constructing application code.
+     *
+     * @param array<string, mixed> $input Valid operation paired with a pre-upgrade snapshot.
+     */
+    #[DataProvider('legacyOperations')]
+    public function testLegacySnapshotsRequireReloadBeforeApplicationCodeRuns(array $input): void
+    {
+        $mount = $this->runtime->mount(
+            'Paging',
+            [],
+            null,
+            $this->context,
+            new Options(isset($input['initialize']) ? 'manual' : 'eager'),
+        );
+        $data = $this->codec->open($mount->snapshot, $this->context->binding(), $this->context->scope);
+        unset($data['pagePath']);
+        $legacy = $this->codec->seal($data, $this->context->binding(), $this->context->scope);
+        $registry = $this->createMock(Registry::class);
+        $registry->expects(static::never())->method('definition');
+        $registry->expects(static::never())->method('create');
+        $handler = new UpdateHandler(new Factory($registry, $this->codec), new FailureResponder());
+        $request = $this->context
+            ->request
+            ->withMethod('POST')
+            ->withUri($this->context->request->getUri()->withPath('/_interact/update'))
+            ->withParsedBody(['version' => 1, 'snapshot' => $legacy] + $input);
+        $response = $handler->handle($request, new Response());
+        static::assertSame(409, $response->getStatusCode());
+        static::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
+        static::assertSame('application/json', $response->getHeaderLine('Content-Type'));
+        static::assertJsonStringEqualsJsonString(
+            '{"version":1,"error":{"code":"invalid_snapshot","message":"This page can no longer update. Preserve your draft, then reload."}}',
+            (string)$response->getBody(),
+        );
+        $fresh = $this->runtime->mount('Paging', [], null, $this->context);
+        $updated = $this->runtime->update(
+            ['snapshot' => $fresh->snapshot, 'updates' => ['page' => 2]],
+            new IslandContext($request, 'default', '/_interact/update'),
+        );
+        static::assertStringContainsString('/catalog/7?', $updated->html);
+        static::assertStringNotContainsString('href="/_interact/update', $updated->html);
+    }
+
+    /**
+     * Supply ordinary, renderless, history, and deferred-initialization update envelopes.
+     *
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function legacyOperations(): iterable
+    {
+        yield 'synchronization' => [['updates' => ['page' => 2]]];
+        yield 'renderless action' => [['action' => 'changePage', 'args' => [2]]];
+        yield 'history restoration' => [['urlRestore' => true, 'updates' => ['page' => 2, 'search' => '']]];
+        yield 'deferred initialization' => [['initialize' => true]];
     }
 
     public function testExplicitLimitAndSortStateOverrideConfigurationAndStayAllowlisted(): void
@@ -248,6 +311,7 @@ class PaginationTest extends TestCase
             'alias' => 'Paging',
             'id' => 'repository',
             'key' => 'repository',
+            'pagePath' => '/catalog/7',
             'state' => [],
             'children' => [],
         ]);
@@ -278,6 +342,33 @@ class PaginationTest extends TestCase
     {
         $this->expectException(LogicException::class);
         new PageIsland()->paginate(TableRegistry::getTableLocator()->get('Resources'));
+    }
+
+    public function testDirectPaginationNeverSubstitutesTheUpdateEndpointForAMissingPagePath(): void
+    {
+        $island = new PageIsland();
+        $identity = new SnapshotData([
+            'alias' => 'Paging',
+            'id' => 'legacy',
+            'key' => 'legacy',
+            'state' => [],
+            'children' => [],
+        ]);
+        $request = $this->context
+            ->request
+            ->withMethod('POST')
+            ->withUri($this->context->request->getUri()->withPath('/_interact/update'));
+        $island->attachPagination(
+            new Pagination(
+                new Definition(PageIsland::class),
+                $identity,
+                new IslandContext($request, 'default', '/_interact/update'),
+            ),
+        );
+        $repository = $this->createMock(RepositoryInterface::class);
+        $repository->expects(static::never())->method('find');
+        $this->expectException(InvalidSnapshotException::class);
+        $island->paginate($repository);
     }
 
     public function testSignedPathsAcceptLocalPathsAndRejectNavigationOrigins(): void

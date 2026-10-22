@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Pagination;
 
 use Cake\Http\ServerRequest;
+use Interact\Security\InvalidSnapshotException;
 use InvalidArgumentException;
 
 /**
@@ -26,6 +27,19 @@ class PagePath
         }
 
         return $path;
+    }
+
+    /**
+     * Require a remount for legacy identities before application hooks or actions can run.
+     *
+     * @throws InvalidSnapshotException When the signed identity predates mounting page paths.
+     * @throws InvalidArgumentException When the signed path is malformed or non-local.
+     */
+    public static function required(mixed $path): string
+    {
+        return (
+            static::read($path) ?? throw new InvalidSnapshotException('Reload the page to restore its mounting path.')
+        );
     }
 
     /**
