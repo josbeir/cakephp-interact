@@ -4,6 +4,10 @@ declare(strict_types=1);
 namespace Interact\Runtime;
 
 use Interact\Action\RouteContext;
+use Interact\Composition\BoundValues;
+use Interact\Composition\InputTickets;
+use Interact\Composition\ModelBindings;
+use Interact\Composition\ParentValues;
 use Interact\Discovery\Definition;
 use Interact\Discovery\Registry;
 use Interact\Island;
@@ -45,6 +49,10 @@ class Runtime
 
     protected MountRenderer $mounts;
 
+    protected InputTickets $inputs;
+
+    protected ParentValues $parentValues;
+
     /**
      * Fixed collaborators; mutable state is limited to the current render stack.
      */
@@ -55,7 +63,9 @@ class Runtime
         protected readonly State $state = new State(),
         protected readonly UploadManager $uploads = new UploadManager(),
     ) {
-        $this->stack = new RenderStack();
+        $this->inputs = new InputTickets($snapshots);
+        $this->parentValues = new ParentValues();
+        $this->stack = new RenderStack($this->inputs);
         $this->html = new HtmlRenderer(
             $renderer,
             $snapshots,
@@ -71,7 +81,7 @@ class Runtime
     /**
      * Construct, authorize, and render an island, or preserve an existing keyed child.
      *
-     * @param array<string, mixed> $props Server-owned mount parameters; changing them requires a new child key.
+     * @param array<string, mixed> $props Declared mount props; only reactive inputs may change without a new child key.
      * @param string|null $key Stable child key; null uses the resolved island name.
      * @param string|Options|null $urlPrefix Existing URL prefix or complete mount loading options.
      */
@@ -88,13 +98,17 @@ class Runtime
         $definition = $this->registry->resolve($alias);
         $alias = $definition->declaration->name;
         $key ??= $alias;
-        $preserved = $this->stack->preserve($definition->declaration, $props, $key, $urlPrefix);
+        $binding = new ModelBindings()->prepare($props, $loading->model, $definition, $parent);
+        $props = $binding->props;
+        $relation = $binding->relation;
+        $preserved = $this->stack->preserve($definition, $props, $key, $urlPrefix, $relation);
         if ($preserved instanceof Result) {
             return $preserved;
         }
 
         $island = $this->registry->create($definition);
         $this->hydrator->mount($island, $definition, $props);
+        $binding->assign($island, $definition);
         $this->state->initializeUrl(
             $island,
             $definition,
@@ -112,6 +126,7 @@ class Runtime
             'urlPrefix' => $urlPrefix,
             'routing' => ($this->pageRouting ?? RouteContext::fromRequest($context->request))->defaults,
             'pagePath' => PagePath::resolve($this->pagePath, $context->request),
+            ...$binding->identity(),
         ]);
         $island->attachPagination(new Pagination($definition, $identity, $context, $this->pageQuery));
         $result = $this->mounts->render($island, $definition, $identity, $context, $loading);
@@ -121,6 +136,7 @@ class Runtime
                 'id' => $id,
                 'alias' => $alias,
                 'props' => $props,
+                ...$binding->child(),
                 ...($urlPrefix === null ? [] : ['urlPrefix' => $urlPrefix]),
             ];
         }
@@ -145,6 +161,7 @@ class Runtime
 
         $data = new SnapshotData($verified);
         $definition = $this->registry->definition($data->alias);
+        $parentValues = $this->inputs->read($input->parentInputs, $data, $definition, $context);
         $this->actions->validate($definition, $input->action, $input->arguments);
         $island = $this->registry->create($definition);
         $this->hydrator->restore($island, $definition, $data->state);
@@ -154,6 +171,8 @@ class Runtime
         $previousRouting = $this->pageRouting;
         $this->pageRouting = $data->routing;
         $previous = $this->pageQuery;
+        $previousInputs = $this->parentValues;
+        $this->parentValues = $parentValues;
         $this->pageQuery = $input->pageQuery;
         try {
             return $this->updateIsland($island, $definition, $data, $input, $context);
@@ -161,6 +180,7 @@ class Runtime
             $this->pageQuery = $previous;
             $this->pageRouting = $previousRouting;
             $this->pagePath = $previousPath;
+            $this->parentValues = $previousInputs;
         }
     }
 
@@ -173,8 +193,11 @@ class Runtime
 
         $data = $pending->identity;
         $definition = $this->registry->definition($data->alias);
+        $parentValues = $this->inputs->read($input->parentInputs, $data, $definition, $context);
+        new BoundValues()->validateModels($pending->bound, $data, $definition);
         $island = $this->registry->create($definition);
         $this->hydrator->mount($island, $definition, $pending->props);
+        $pending->apply($island, $definition, $parentValues);
         $this->state->initializeUrl($island, $definition, $input->pageQuery, $data->urlPrefix);
         $island->authorize($context);
         $previousPath = $this->pagePath;
@@ -206,14 +229,15 @@ class Runtime
         IslandContext $context,
     ): Result {
         $restored = $input->urlRestore ? $this->state->restorationPaths($definition, $input->updates) : null;
-        $paths = $this->state->apply($island, $definition, $input->updates);
+        $propPaths = $this->parentValues->apply($island, $definition);
+        $paths = $this->state->apply($island, $definition, array_replace($this->parentValues->models, $input->updates));
         $island->attachPagination(new Pagination($definition, $data, $context, $input->pageQuery));
         $uploadPaths = $this->authorizeUploads($island, $definition, $data, $input, $context);
         if ($uploadPaths === null) {
             return $this->html->render($island, $definition, $data, $context);
         }
 
-        $paths = [...($restored ?? $paths), ...$uploadPaths];
+        $paths = array_values(array_unique([...$propPaths, ...($restored ?? []), ...$paths, ...$uploadPaths]));
         if ($paths !== []) {
             $island->updated($paths);
         }

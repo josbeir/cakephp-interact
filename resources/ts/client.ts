@@ -25,6 +25,8 @@ import { changedWritable } from './state/drafts';
 import { clone, equal } from './state/values';
 import { readMetadata } from './transport/metadata';
 import type { MountMetadata } from './transport/metadata';
+import type { CompositionHooks } from './composition/types';
+import { read } from './state/paths';
 import { postUpdate, readResponse } from './transport/request';
 import { IslandRequestError, requestError } from './transport/failure';
 import type {
@@ -48,6 +50,9 @@ import type {
  * and exposes the reactive bridge used by Alpine's `$server` magic.
  */
 export class IslandClient {
+  /** @internal Parent/child lifecycle integration, installed with the Alpine plugin. */
+  composition: CompositionHooks | undefined;
+  private parentTicket: string | undefined;
   readonly bridge: IslandBridge;
   private readonly metadata: MountMetadata;
   private readonly controls: Controls;
@@ -68,6 +73,46 @@ export class IslandClient {
   private uploads: UploadFields;
   private readonly url: UrlRegistration | undefined;
   private urlTarget: UrlRestoration | undefined;
+
+  /** @internal Read loading status without exposing initialization controls on the public bridge. */
+  isMounted(): boolean {
+    return this.mounted;
+  }
+
+  /** @internal Check explicit writable ownership before connecting a model source or target. */
+  canModel(path: string): boolean {
+    const separator = path.indexOf('.');
+    const owner = separator < 0 ? path : path.slice(0, separator);
+    return this.writable[owner] !== undefined;
+  }
+
+  /** @internal Read the last accepted value for cross-island draft reconciliation. */
+  modelBaseline(path: string): Json | undefined {
+    return read(this.baseline, path);
+  }
+
+  /** @internal Capture bound controls synchronously before an owning parent's submission. */
+  captureModels(): void {
+    this.controls.captureAll();
+    this.composition?.capture();
+  }
+
+  /** @internal Refresh native controls after a shared draft changes. */
+  refreshModels(): void {
+    this.controls.refresh();
+  }
+
+  /** @internal Retain the latest capability until a child request accepts that exact ticket. */
+  receiveParentInputs(ticket: string): void {
+    if (this.disposed || this.leaving) return;
+    this.parentTicket = ticket;
+    if (this.mounted && !this.bridge.paused) void this.bridge.sync();
+  }
+
+  /** @internal Route malformed relationships through ordinary client feedback. */
+  compositionFailed(cause: unknown): void {
+    this.failed(requestError('client_error', null, cause));
+  }
 
   /** Refresh request context after a compatible layout region survives a page visit. */
   refreshContext(incoming: HTMLElement): void {
@@ -266,6 +311,7 @@ export class IslandClient {
    * Aborting fetch does not establish whether the server executed an action.
    */
   dispose(): void {
+    this.composition?.dispose();
     this.disposed = true;
     this.lifetime.abort();
     this.disposePagination();
@@ -383,6 +429,7 @@ export class IslandClient {
     try {
       args = copyArguments(args);
       this.controls.captureAll();
+      this.composition?.capture();
       if (!upload) this.uploads.captureAll();
     } catch (cause: unknown) {
       const error = requestError('client_error', null, cause);
@@ -439,16 +486,24 @@ export class IslandClient {
     this.root.setAttribute('aria-busy', 'true');
     try {
       const restoration = invocation.urlRestore;
+      const parentTicket = this.parentTicket;
       const sent = restoration
         ? { ...clone(this.baseline), ...clone(restoration.values) }
         : clone(this.bridge.state);
+      this.composition?.begin(invocation.action, sent);
       const payload = {
         version: 1 as const,
         ...(!this.mounted ? { initialize: true } : {}),
         snapshot: this.snapshot,
         updates: restoration
           ? restoration.values
-          : changedWritable(sent, this.baseline, this.writable),
+          : {
+              ...changedWritable(sent, this.baseline, this.writable),
+              ...(parentTicket && this.mounted
+                ? this.composition?.updates()
+                : {}),
+            },
+        ...(parentTicket ? { parentInputs: parentTicket } : {}),
         ...(window.location.search
           ? { pageQuery: window.location.search }
           : {}),
@@ -532,7 +587,11 @@ export class IslandClient {
         }
       }
       try {
+        const mounting = !this.mounted;
         this.apply(accepted, sent, replacement, upload, invocation);
+        if (this.parentTicket === parentTicket) this.parentTicket = undefined;
+        else if (mounting && this.parentTicket && !this.bridge.paused)
+          void this.bridge.sync();
       } catch (cause: unknown) {
         throw requestError('client_error', result.status, cause);
       }
@@ -556,7 +615,11 @@ export class IslandClient {
     invocation?: Invocation,
   ): void {
     this.controls.captureCustom();
-    const newer = changedWritable(this.bridge.state, sent, this.writable);
+    this.composition?.capture();
+    const newer = {
+      ...this.composition?.preserve(payload.state),
+      ...changedWritable(this.bridge.state, sent, this.writable),
+    };
     if (this.urlTarget && invocation?.urlRestore?.epoch !== this.url?.epoch())
       Object.assign(newer, this.urlTarget.values);
     const restoreSelection = preserveSelection(this.root);
@@ -626,6 +689,7 @@ export class IslandClient {
       this.urlTarget = undefined;
       this.restoreUrl(target);
     }
+    this.composition?.accepted(replacement);
     if (payload.download) this.effects.download(payload.download);
     for (const effect of payload.events)
       this.root.dispatchEvent(

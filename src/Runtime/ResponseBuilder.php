@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Runtime;
 
 use Closure;
+use Interact\Composition\Relation;
 use Interact\Discovery\Definition;
 use Interact\Island;
 use Interact\IslandContext;
@@ -52,6 +53,7 @@ class ResponseBuilder
                 'key' => $identity->key,
                 'state' => $state,
                 'routing' => $identity->routing->defaults,
+                ...($identity->relation instanceof Relation ? ['relation' => $identity->relation->data()] : []),
                 ...($identity->pagePath === null ? [] : ['pagePath' => $identity->pagePath]),
                 ...($identity->urlPrefix === null ? [] : ['urlPrefix' => $identity->urlPrefix]),
                 'children' => $children,

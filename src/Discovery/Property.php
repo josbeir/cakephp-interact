@@ -3,11 +3,13 @@ declare(strict_types=1);
 
 namespace Interact\Discovery;
 
+use Interact\Attribute\Prop;
 use Interact\Attribute\State;
 use Interact\Island;
 use Interact\Runtime\Values;
 use Interact\Url\Binding;
 use InvalidArgumentException;
+use ReflectionAttribute;
 use ReflectionNamedType;
 use ReflectionProperty;
 
@@ -27,6 +29,20 @@ readonly class Property
 
     public ?Binding $url;
 
+    public bool $modelable;
+
+    public bool $reactive;
+
+    /**
+     * Instantiate the exact prop marker without adding declaration logic to the compiler.
+     *
+     * @param list<ReflectionAttribute<Prop>> $attributes Exact declaration markers.
+     */
+    public static function propDeclaration(array $attributes): ?Prop
+    {
+        return $attributes === [] ? null : $attributes[0]->newInstance();
+    }
+
     /**
      * Reject declarations that cannot be safely reconstructed from JSON.
      */
@@ -35,6 +51,7 @@ readonly class Property
         public bool $prop,
         public bool $writable,
         ?State $state = null,
+        ?Prop $declaration = null,
     ) {
         $type = $reflection->getType();
         if (
@@ -54,12 +71,23 @@ readonly class Property
         $this->type = $type->getName();
         $this->nullable = $type->allowsNull();
         $this->url = $state instanceof State && $state->url !== false ? new Binding($reflection, $state) : null;
+        $this->modelable = $state->modelable ?? false;
+        $this->reactive = $declaration->reactive ?? false;
     }
 
     /**
      * Assign a validated value without PHP scalar coercion.
      */
     public function assign(Island $island, mixed $value): void
+    {
+        $this->validate($value);
+        $this->reflection->setValue($island, $value);
+    }
+
+    /**
+     * Check a transported value before constructing or changing application state.
+     */
+    public function validate(mixed $value): void
     {
         Values::validate($value);
         $this->url?->validate($value);
@@ -78,7 +106,5 @@ readonly class Property
                 $this->type,
             ));
         }
-
-        $this->reflection->setValue($island, $value);
     }
 }

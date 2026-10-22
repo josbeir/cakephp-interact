@@ -22,9 +22,14 @@ final readonly class State
         public bool $writable = false,
         public bool|string $url = false,
         public bool $history = false,
+        public bool $modelable = false,
     ) {
         if ($history && $url === false) {
             throw new InvalidArgumentException('History requires URL-bound state.');
+        }
+
+        if ($modelable && !$writable) {
+            throw new InvalidArgumentException('Modelable state must be writable.');
         }
     }
 }

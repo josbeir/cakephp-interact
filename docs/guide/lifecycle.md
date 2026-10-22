@@ -21,7 +21,7 @@ to the current instance.
 
 1. Verify the signed snapshot, session, scope, and expiry.
 2. Construct a fresh island and restore its declared properties.
-3. Validate and apply browser edits and validate action argument types.
+3. Verify any parent-input capability, apply declared reactive inputs and browser edits, and validate action argument types.
 4. Call `authorize()`.
 5. Call `updated()` for changed fields, then the requested action.
 6. Return a requested redirect, or return accepted state, errors, events, and any download request. Call `viewData()` and render unless a successful action skips rendering.
@@ -57,11 +57,13 @@ the first render only, so it does not replace a draft on later updates.
 public function updated(array $paths): void
 ```
 
-Receives accepted writable paths after authorization and before the action.
+Receives accepted writable paths and changed reactive prop names after authorization and before the action.
 Ordinary updates report changed paths.
 Use it to clear dependent fields or reset pagination. History restoration supplies
 the complete URL-property set, including unchanged values; see [URL state](/guide/url-state). Successful file staging
 also invokes it for the affected top-level field.
+Parent-input changes use the same hook; `mount()` is not repeated. See
+[nested islands](/guide/nesting#reactive-props).
 
 ```php
 /**

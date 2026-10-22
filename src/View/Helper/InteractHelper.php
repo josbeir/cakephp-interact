@@ -64,7 +64,7 @@ class InteractHelper extends Helper
      * Mount a named island using explicit props and a stable sibling key.
      *
      * Loading accepts eager (default), lazy, defer, or manual; placeholder names a native element.
-     * Repeated children need distinct keys; changing their props requires a new key.
+     * Repeated children need distinct keys; ordinary props and binding configuration define identity.
      *
      * ```php
      * echo $this->Interact->render('Article/Editor', props: ['articleId' => 7], key: 'article-7');
@@ -72,6 +72,7 @@ class InteractHelper extends Helper
      *
      * @param string $alias CakePHP-style application/plugin name or an island class reference.
      * @param array<string, mixed> $props Server-owned parameters declared with Prop.
+     * @param array<string, mixed>|string|null $model Explicit parent draft paths for modelable child state.
      */
     public function render(
         string $alias,
@@ -80,13 +81,14 @@ class InteractHelper extends Helper
         ?string $urlPrefix = null,
         string $loading = 'eager',
         ?string $placeholder = null,
+        string|array|null $model = null,
     ): string {
         return $this->runtime()->mount(
             $alias,
             $props,
             $key,
             $this->context(),
-            new Options($loading, $placeholder, $urlPrefix),
+            new Options($loading, $placeholder, $urlPrefix, $model),
         )->html;
     }
 

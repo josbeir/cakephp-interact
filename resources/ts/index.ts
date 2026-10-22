@@ -3,6 +3,7 @@ import type { Alpine } from 'alpinejs';
 import { NavigationController } from './navigation/controller';
 import { navigationBinding } from './navigation/alpine';
 import { IslandClient } from './client';
+import { Relationships } from './composition/relationships';
 import { registerBindings } from './bindings/alpine';
 import { morphRoot } from './dom/morph';
 export type {
@@ -42,6 +43,7 @@ export default function install(Alpine: Alpine): void {
   Alpine.plugin(morph);
   Alpine.data('interact', () => ({}));
   const clients = new WeakMap<HTMLElement, IslandClient>();
+  const relationships = new Relationships(Alpine, (root) => clients.get(root));
   // Morph clones evaluate presentation bindings using the existing owner, without registering a second client.
   Alpine.interceptClone((from, to) => {
     const client = from instanceof HTMLElement ? clients.get(from) : undefined;
@@ -61,6 +63,7 @@ export default function install(Alpine: Alpine): void {
         Alpine.reactive,
       );
       clients.set(element, client);
+      relationships.register(client);
       Alpine.onElRemoved(element, () => client.dispose());
     }),
   );

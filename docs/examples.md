@@ -57,6 +57,7 @@ session identity; applications supply their own authentication.
 | `/uploads`           | Stage documents, manage attachments, and validate before saving         | [File uploads](/guide/uploads)                                                                                           |
 | `/search`            | Filter 1,200 resources; sort, change page size, and paginate            | [Search and pagination](/examples/search)                                                                                |
 | `/search/state-only` | Filter, sort, and paginate without changing the address bar             | [Optional URL bindings](/guide/pagination#optional-url-bindings)                                                         |
+| `/composition`       | Change a picker category, select a resource, and bind a date range      | [Reusable child inputs](/examples/child-inputs)                                                                          |
 | `/page`              | Update a whole-page listing while its layout stays in place             | [Page islands](/guide/page-islands)                                                                                      |
 
 The `/playground` **Failure recovery** card demonstrates the

@@ -86,8 +86,10 @@ and browser runtime. [Quickstart](/getting-started) contains a complete counter.
 | `urlPrefix`   | `null`        | Prefix for this instance's URL parameters                             |
 | `loading`     | `'eager'`     | Eager rendering, lazy visibility, deferred startup, or manual loading |
 | `placeholder` | `null`        | Custom placeholder element for a deferred mount                       |
+| `model`       | `null`        | Parent writable path or named mappings for modelable child values     |
 
 See [lazy loading](/guide/lazy-loading) for loading modes and placeholders.
+See [nested islands](/guide/nesting#modelable-child-inputs) for child model bindings.
 
 ### Helper options
 

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Runtime;
 
+use Interact\Composition\Relation;
 use Interact\Discovery\Definition;
 use Interact\Island;
 use Interact\IslandContext;
@@ -47,7 +48,7 @@ class HtmlRenderer
         SnapshotData $identity,
         IslandContext $context,
     ): Result {
-        $this->stack->push($identity->children);
+        $this->stack->push($identity->children, $island, $definition, $identity, $context);
         try {
             $data = $island->viewData();
             $result = $this->responses->build(
@@ -66,6 +67,11 @@ class HtmlRenderer
 
             return $this->wrap($definition, $result, $context, [
                 'data-interact-mount' => new Identity()->fingerprint($island, $definition, $identity, $context),
+                ...(
+                    $identity->relation instanceof Relation
+                        ? ['data-interact-relation' => json_encode($identity->relation->data(), JSON_THROW_ON_ERROR)]
+                        : []
+                ),
             ]);
         } finally {
             $this->stack->pop();

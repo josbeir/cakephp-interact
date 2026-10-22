@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Loading;
 
+use Interact\Composition\Relation;
 use Interact\Discovery\Definition;
 use Interact\Island;
 use Interact\IslandContext;
@@ -50,6 +51,11 @@ class MountRenderer
         }
 
         $props = $this->hydrator->props($island, $definition);
+        $bound = [];
+        foreach (array_keys($identity->relation->models ?? []) as $name) {
+            $bound[$name] = $definition->properties[$name]->reflection->getValue($island);
+        }
+
         $snapshot = $this->snapshots->seal(
             [
                 'pending' => true,
@@ -57,6 +63,8 @@ class MountRenderer
                 'id' => $identity->id,
                 'key' => $identity->key,
                 'props' => $props,
+                'bound' => $bound,
+                ...($identity->relation instanceof Relation ? ['relation' => $identity->relation->data()] : []),
                 'state' => [],
                 'children' => [],
                 'urlPrefix' => $identity->urlPrefix,
@@ -74,6 +82,11 @@ class MountRenderer
         return $this->html->wrap($definition, $result, $context, [
             'data-interact-loading' => $loading->mode,
             'data-interact-mount' => new Identity()->fingerprint($island, $definition, $identity, $context),
+            ...(
+                $identity->relation instanceof Relation
+                    ? ['data-interact-relation' => json_encode($identity->relation->data(), JSON_THROW_ON_ERROR)]
+                    : []
+            ),
         ]);
     }
 }
