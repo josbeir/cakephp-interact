@@ -87,6 +87,7 @@ export default defineConfig({
             { text: 'Save and redirect', link: '/examples/redirect' },
             { text: 'Invoice download', link: '/examples/download' },
             { text: 'Search and pagination', link: '/examples/search' },
+            { text: 'Reusable child inputs', link: '/examples/child-inputs' },
             { text: 'Dependent fields', link: '/examples/dependent-fields' },
             { text: 'Single document upload', link: '/examples/upload' },
             { text: 'Job polling', link: '/examples/polling' },

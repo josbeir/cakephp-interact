@@ -41,7 +41,7 @@ test('replace redirects omit the form page from Back history', async ({
 
 test('downloads use native attachment headers and retain page drafts and focus', async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto('/outcomes');
   const title = page.getByLabel('Title', { exact: true });
   await title.fill('Unsent invoice notes');
@@ -51,8 +51,8 @@ test('downloads use native attachment headers and retain page drafts and focus',
     .click();
   const file = await download;
   expect(file.suggestedFilename()).toBe('invoice.csv');
-  const path = await file.path();
-  if (!path) throw new Error('Missing native download file.');
+  const path = testInfo.outputPath('invoice.csv');
+  await file.saveAs(path);
   expect(await readFile(path, 'utf8')).toBe('Item,Amount\nWorkshop,125.00\n');
   await expect(page.getByRole('status')).toHaveText('Requested 1 downloads.');
   await expect(title).toHaveValue('Unsent invoice notes');

@@ -36,6 +36,10 @@ public string $title = '';
 [`x-interact:model`](/directives/model) to bind a control to the property.
 Synchronization updates the island; your application decides when to save.
 
+Add `modelable: true` to writable state when a child island exposes that value as
+a reusable input. See [modelable child inputs](/guide/nesting#modelable-child-inputs)
+for single and multiple parent bindings.
+
 Use `url: true` or a query-name alias to make writable state reloadable through
 the query string. See [URL state](/guide/url-state) for types, defaults, and history.
 
@@ -57,6 +61,10 @@ Supply required props when mounting:
 Props initialize the island and remain available on subsequent requests. They
 cannot be changed through model bindings. Props are browser-visible; use current
 application authorization to control access to the referenced record.
+
+`#[Prop(reactive: true)]` opts into updates from accepted parent renders while
+preserving child identity and unrelated state. Ordinary props remain mount-only.
+See [reactive props](/guide/nesting#reactive-props).
 
 ### Initial editable values
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Runtime;
 
 use Interact\Action\RouteContext;
+use Interact\Composition\Relation;
 use Interact\Loading\Initialization;
 use Interact\Pagination\PagePath;
 use Interact\Upload\UploadReferences;
@@ -30,13 +31,15 @@ readonly class SnapshotData
 
     public ?string $pagePath;
 
+    public ?Relation $relation;
+
     /**
      * @var array<string, mixed> Declared state and mount props.
      */
     public array $state;
 
     /**
-     * @var array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string}> Verified direct children.
+     * @var array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay: int}>}, values?: array<string, mixed>}> Verified direct children.
      */
     public array $children;
 
@@ -62,28 +65,13 @@ readonly class SnapshotData
         $data += ['state' => null, 'children' => null, 'uploads' => [], 'routing' => [], 'pagePath' => null];
         $this->routing = new RouteContext($data['routing']);
         $this->pagePath = PagePath::read($data['pagePath']);
+        $this->relation = Relation::read($data['relation'] ?? null);
         $this->alias = $data['alias'];
         $this->id = $data['id'];
         $this->key = $data['key'];
         $this->urlPrefix = Names::optional($data['urlPrefix'] ?? null);
         $this->state = Values::map($data['state']);
-        $children = [];
-
-        /** @var mixed $child */
-        foreach (Values::map($data['children']) as $key => $child) {
-            if (!is_array($child) || !is_string($child['id'] ?? null) || !is_string($child['alias'] ?? null)) {
-                throw new InvalidArgumentException('Invalid signed child identity.');
-            }
-
-            $children[$key] = [
-                'id' => $child['id'],
-                'alias' => $child['alias'],
-                'props' => Values::map($child['props'] ?? null),
-                ...(isset($child['urlPrefix']) ? ['urlPrefix' => Names::require($child['urlPrefix'])] : []),
-            ];
-        }
-
-        $this->children = $children;
+        $this->children = new SnapshotChildren()->read($data['children']);
         $this->uploads = UploadReferences::read($data['uploads']);
     }
 }

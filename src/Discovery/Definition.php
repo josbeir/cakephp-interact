@@ -89,6 +89,7 @@ readonly class Definition
                     $prop !== [],
                     $state !== [] && $state[0]->newInstance()->writable,
                     $state === [] ? null : $state[0]->newInstance(),
+                    Property::propDeclaration($prop),
                 );
             }
         }

@@ -14,6 +14,7 @@ export type UpdatePayload = Pick<Invocation, 'action' | 'args'> & {
   updates: State;
   pageQuery?: string;
   urlRestore?: boolean;
+  parentInputs?: string;
 };
 
 /**

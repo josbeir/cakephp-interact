@@ -22,11 +22,14 @@ readonly class Options
 
     /**
      * Select eager rendering or an explicit trigger and optional placeholder element.
+     *
+     * @param array<string, mixed>|string|null $model Explicit child model bindings.
      */
     public function __construct(
         public string $mode = 'eager',
         public ?string $placeholder = null,
         public ?string $urlPrefix = null,
+        public string|array|null $model = null,
     ) {
         if (!in_array($mode, ['eager', 'lazy', 'defer', 'manual'], true)) {
             throw new InvalidArgumentException('Use eager, lazy, defer, or manual island loading.');

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Runtime;
 
+use Interact\Composition\InputTickets;
 use Interact\Loading\Initialization;
 use Interact\Upload\UploadOperation;
 use Interact\Url\RequestContext;
@@ -20,6 +21,8 @@ readonly class UpdateRequest
     public bool $urlRestore;
 
     public bool $initialize;
+
+    public ?string $parentInputs;
 
     /**
      * @var array<string, mixed> Browser edits, still subject to property-level authorization.
@@ -67,6 +70,7 @@ readonly class UpdateRequest
         }
 
         $this->initialize = Initialization::read($request);
+        $this->parentInputs = InputTickets::token($request);
         $url = new RequestContext($request);
         $this->pageQuery = $url->query;
         $this->urlRestore = $url->restoring;

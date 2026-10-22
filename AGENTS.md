@@ -88,7 +88,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 
 - Use the CakePHP Mago preset, discover project source and vendor dependencies, and keep method/property limits at 30.
 - Preserve Rector's prepared sets and approved skips for CakePHP assertion style, explicit casts, mixed annotations, fluent return contracts, and normalized template paths.
-- `InteractHelper::render()` has an approved, method-local exception to the five-parameter lint limit: its six named mount options keep ordinary template usage readable. Keep the limit unchanged elsewhere.
+- `InteractHelper::render()` has an approved, method-local exception to the five-parameter lint limit: its seven named mount options, including child model bindings, keep ordinary template usage readable. Keep the limit unchanged elsewhere.
 - No baselines, coverage-ignore annotations, disabled rules, or suppressions without explicit user authorization.
 - PHPUnit fails on warnings, risky tests, and deprecations.
 - Fix PHP and PHPUnit notices when they appear; do not suppress or ignore them.

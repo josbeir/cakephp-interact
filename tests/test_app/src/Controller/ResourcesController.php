@@ -11,6 +11,17 @@ use Cake\Routing\Attribute\Get;
 class ResourcesController extends AppController
 {
     /**
+     * Demonstrate reusable PHP inputs with a selected loading variation.
+     */
+    #[Get('/composition', name: 'demo:composition')]
+    public function composition(): void
+    {
+        /** @var mixed $mode */
+        $mode = $this->getRequest()->getQuery('loading', 'eager');
+        $this->set('pickerLoading', is_string($mode) ? $mode : 'eager');
+    }
+
+    /**
      * Render a normal CakePHP page containing the resource-search island.
      */
     #[Get('/search', name: 'demo:search')]

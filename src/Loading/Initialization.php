@@ -59,7 +59,7 @@ class Initialization
      */
     public static function assertMounted(array $data): void
     {
-        if (array_intersect_key($data, ['pending' => true, 'props' => true]) !== []) {
+        if (array_intersect_key($data, ['pending' => true, 'props' => true, 'kind' => true, 'bound' => true]) !== []) {
             throw new InvalidArgumentException('Pending mount tickets are not mounted snapshots.');
         }
     }

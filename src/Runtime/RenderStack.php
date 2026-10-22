@@ -4,7 +4,13 @@ declare(strict_types=1);
 namespace Interact\Runtime;
 
 use Closure;
+use Interact\Composition\InputTickets;
+use Interact\Composition\PreservedChild;
+use Interact\Composition\Relation;
 use Interact\Discovery\Declaration;
+use Interact\Discovery\Definition;
+use Interact\Island;
+use Interact\IslandContext;
 use InvalidArgumentException;
 
 /**
@@ -23,6 +29,13 @@ class RenderStack
     protected bool $placeholder = false;
 
     /**
+     * Receive request-local signing for parent updates while retaining standalone stack use.
+     */
+    public function __construct(protected readonly ?InputTickets $inputs = null)
+    {
+    }
+
+    /**
      * Return the current owner when mounting a nested island.
      */
     public function parent(): ?RenderFrame
@@ -35,8 +48,13 @@ class RenderStack
      *
      * @param array<string, mixed> $props Explicit server-owned mount parameters.
      */
-    public function preserve(Declaration $declaration, array $props, string $key, ?string $urlPrefix = null): ?Result
-    {
+    public function preserve(
+        Declaration|Definition $declaration,
+        array $props,
+        string $key,
+        ?string $urlPrefix = null,
+        ?Relation $relation = null,
+    ): ?Result {
         if ($this->placeholder) {
             throw new InvalidArgumentException('Loading placeholders cannot mount nested islands.');
         }
@@ -57,27 +75,14 @@ class RenderStack
             return null;
         }
 
-        if (
-            $previous['alias'] !== $declaration->name
-            || $previous['props'] !== $props
-            || ($previous['urlPrefix'] ?? null) !== $urlPrefix
-        ) {
-            throw new InvalidArgumentException('Changing a child alias, props, or URL prefix requires a new key.');
+        if (($previous['urlPrefix'] ?? null) !== $urlPrefix) {
+            throw new InvalidArgumentException('Changing a child URL prefix requires a new key.');
         }
 
-        $parent->children[$childKey] = $previous;
+        $preserved = new PreservedChild($this->inputs)->render($declaration, $props, $previous, $parent, $relation);
+        $parent->children[$childKey] = $preserved['child'];
 
-        return new Result(
-            $previous['id'],
-            '<'
-                . $declaration->tag
-                . ' data-interact-preserve="'
-                . htmlspecialchars($previous['id'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
-                . '"></'
-                . $declaration->tag
-                . '>',
-            '',
-        );
+        return $preserved['result'];
     }
 
     /**
@@ -98,15 +103,20 @@ class RenderStack
     /**
      * Enter a native render scope, rejecting excessive recursive nesting.
      *
-     * @param array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string}> $previous Verified direct children.
+     * @param array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay: int}>}, values?: array<string, mixed>}> $previous Verified direct children.
      */
-    public function push(array $previous): RenderFrame
-    {
+    public function push(
+        array $previous,
+        ?Island $island = null,
+        ?Definition $definition = null,
+        ?SnapshotData $identity = null,
+        ?IslandContext $context = null,
+    ): RenderFrame {
         if (count($this->frames) >= 32) {
             throw new InvalidArgumentException('Island nesting exceeds 32 levels.');
         }
 
-        $frame = new RenderFrame($previous);
+        $frame = new RenderFrame($previous, $island, $definition, $identity, $context);
         $this->frames[] = $frame;
 
         return $frame;

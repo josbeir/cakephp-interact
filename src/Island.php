@@ -129,9 +129,9 @@ abstract class Island
     }
 
     /**
-     * React to accepted browser edits before an exposed action is invoked.
+     * React to accepted writable edits and reactive parent props before an exposed action is invoked.
      *
-     * @param list<string> $paths Accepted browser paths, before any action executes.
+     * @param list<string> $paths Changed writable paths and reactive prop names, before any action executes.
      */
     public function updated(array $paths): void
     {
