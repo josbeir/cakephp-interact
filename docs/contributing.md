@@ -9,6 +9,9 @@ Read the root [contributor guidelines](https://github.com/josbeir/cakephp-intera
 before changing code. Use PHP 8.5, CakePHP 6 development builds, and Node 24.11+ or Node 26+.
 For installation and fixture setup, start with [the demo](/examples).
 
+For testing islands in an application, see [Testing islands](/guide/testing).
+The commands below verify the Interact repository itself.
+
 ## PHP checks
 
 ```sh
