@@ -39,7 +39,8 @@ handles browser interactions; Interact connects them to your application's PHP.
 Available on [Packagist](https://packagist.org/packages/josbeir/cakephp-interact)
 as `dev-main` only, with an experimental API and no stable release yet. Requires
 PHP 8.5, CakePHP 6 development builds, and modern browsers. See the installation
-guide for the required browser asset build and compatibility requirements.
+guide for setup and compatibility requirements. The standard Composer package
+includes the browser runtime; Node and npm are not required.
 
 Contributor commands, quality gates, and documentation-site setup are in the
 [contributing guide](https://josbeir.github.io/cakephp-interact/contributing.html).

@@ -13,9 +13,10 @@ failure.
 ## The page renders but buttons do nothing
 
 1. Confirm the plugin and `Interact` helper are loaded.
-2. Run `npm ci` and `npm run build` in `vendor/josbeir/cakephp-interact`
-   (or your local plugin checkout). The Packagist development archive needs this
-   build too; repeat it after Composer updates the package.
+2. Confirm `vendor/josbeir/cakephp-interact/webroot/js/runtime.js` exists.
+   The standard Composer package includes it. If deployment omitted the file,
+   restore the package's `webroot/` assets. For a modified local checkout, rebuild
+   with `npm ci` and `npm run build`.
 3. Ensure the layout outputs `$this->fetch('script')`.
 4. Open `/interact/js/runtime.js` under your app's base URL. It must return
    JavaScript, not an HTML error page. Check your plugin asset symlink or asset middleware.

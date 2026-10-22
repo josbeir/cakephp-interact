@@ -9,6 +9,8 @@
 /docs/.vitepress/dist/
 /tests/test_app/tmp/
 /tests/test_app/logs/
-/webroot/js/
+/webroot/js/*
+!/webroot/js/runtime.js
+!/webroot/js/THIRD-PARTY-LICENSES.txt
 /tests/test_app/webroot/js/
 .vitest/

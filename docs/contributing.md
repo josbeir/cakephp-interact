@@ -130,14 +130,23 @@ environment; pull requests build without deployment permissions. Manual workflow
 runs can publish `main`. Pages settings must use **GitHub Actions** as the source.
 
 Package builds supply an npm module with declarations and a standalone
-`webroot/js/runtime.js`. `package:composer` creates a reproducible archive under
+`webroot/js/runtime.js`. Commit the standalone bundle and
+`webroot/js/THIRD-PARTY-LICENSES.txt` whenever runtime sources or bundled
+dependencies change. The Quality workflow rebuilds and checks both files against
+the committed versions, rejecting missing or stale assets. Node is contributor
+tooling; standard Composer consumers do not need it.
+
+Packagist's default GitHub source archives include these committed assets for
+`dev-main` and future tagged releases. Build and commit the assets before tagging
+a release. There is no stable release yet.
+
+`package:composer` creates a reproducible archive under
 `build/releases/` with PHP source, docs, the standalone bundle, and third-party
-licenses. Source checkouts need a browser build. A default GitHub source archive
-does not include generated assets. The current Packagist `dev-main` distribution
-uses that source archive, so consumers must [build the browser runtime](/installation#build-the-browser-runtime)
-after installation. There is no stable release yet. Composer release distributions
-must include generated assets. The Quality workflow validates packages but does
-not publish them.
+licenses. This archive is an additional build artifact; attaching it to a GitHub
+release does not replace Packagist's default source archive. The Quality workflow
+validates packages but does not publish them. The npm module under `build/js/`
+remains generated and untracked for the optional application-owned Alpine
+integration.
 
 Quality checks run on pull requests and pushes to `main`. Feature-branch pushes
 are checked through their pull request, avoiding duplicate PHP and browser jobs.
