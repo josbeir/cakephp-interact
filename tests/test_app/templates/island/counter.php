@@ -8,7 +8,7 @@ use function Cake\Core\h;
  * @var int $initial
  */
 ?>
-<section class="Counter" aria-label="<?= (string)h($label) ?>">
+<section class="counter" aria-label="<?= (string)h($label) ?>">
     <div class="counter-heading"><h3><?= (string)h($label) ?></h3><span class="quiet">Starts at <?= (string)$initial ?></span></div>
     <p class="counter-value" aria-live="polite" aria-atomic="true"><span class="sr-only">Count: </span><?= (string)$count ?></p>
     <div class="button-row">

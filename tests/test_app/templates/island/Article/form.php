@@ -35,7 +35,7 @@ $this->Form->setTemplates([
     </fieldset>
     <div class="article-rows">
         <?php foreach (array_keys($data['comments']) as $index): ?>
-            <fieldset class="Article/Editor">
+            <fieldset class="article-editor">
                 <legend class="row-id">Comment <?= (int)$index + 1 ?></legend>
                 <?= $this->Form->control('comments.' . $index . '.body', [
                     'label' => 'Comment ' . ($index + 1) . ' text',

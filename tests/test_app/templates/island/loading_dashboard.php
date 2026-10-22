@@ -6,7 +6,7 @@ declare(strict_types=1);
  * @var bool $showManual
  */
 ?>
-<section aria-label="Loading dashboard" class="LoadingDashboard">
+<section aria-label="Loading dashboard" class="loading-dashboard">
     <div class="demo-card loading-controls">
         <div>
             <p class="eyebrow">Parent island</p>

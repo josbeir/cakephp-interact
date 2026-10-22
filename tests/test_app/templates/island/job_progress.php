@@ -30,7 +30,7 @@ declare(strict_types=1);
     </p>
 
     <progress
-        class="JobProgress"
+        class="job-progress"
         aria-label="Simulated job completion"
         max="100"
         value="<?= (string)$progress ?>"

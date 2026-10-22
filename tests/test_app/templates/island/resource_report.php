@@ -10,7 +10,7 @@ use function Cake\Core\h;
  * @var int $mounts
  */
 ?>
-<section aria-label="<?= (string)h($heading) ?>" class="ResourceReport"
+<section aria-label="<?= (string)h($heading) ?>" class="resource-report"
     x-data="{ automatic: false }"
     x-interact:poll.5s="automatic && $server.sync()"
 >
