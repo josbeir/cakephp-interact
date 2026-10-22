@@ -1,5 +1,6 @@
 :root {
   color-scheme: light;
+  --sidebar-width: 16rem;
   --ink: #172f35;
   --muted: #627579;
   --accent: #156b59;
@@ -21,6 +22,7 @@
 }
 body {
   margin: 0;
+  padding-left: var(--sidebar-width);
   font-size: 0.9375rem;
   line-height: 1.6;
 }
@@ -109,14 +111,23 @@ h3 {
   font-size: 1rem;
   font-weight: 600;
 }
-.site-header {
-  border-bottom: 1px solid var(--line);
+.site-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 30;
+  width: var(--sidebar-width);
+  height: 100dvh;
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
   background: var(--paper);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.75rem 1.5rem;
-  padding: 1.25rem max(1.5rem, calc((100vw - 1200px) / 2));
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2rem;
+  padding: 1.5rem 1rem;
+}
+.menu-toggle {
+  display: none;
 }
 
 .brand {
@@ -141,20 +152,28 @@ h3 {
   font-size: 1.6rem;
 }
 .brand-context {
+  display: block;
   color: var(--muted);
   font-size: 0.8rem;
   letter-spacing: 0;
   font-weight: 450;
-  margin-left: 0.1rem;
+  margin: 0;
 }
 nav {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  grid-column: 1 / -1;
-  grid-row: 2;
   flex-wrap: wrap;
   min-width: 0;
+}
+.site-navigation {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+}
+.site-navigation a {
+  padding: 0.65rem 0.85rem;
+  white-space: normal;
 }
 nav a {
   color: var(--muted);
@@ -174,9 +193,8 @@ nav a[aria-current='page'] {
   background: var(--soft);
 }
 .version-tag {
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: end;
+  align-self: flex-start;
+  margin-top: auto;
   color: #8b6023;
   border: 1px solid #ead9b8;
   background: #fff9ec;
@@ -702,7 +720,7 @@ progress::-moz-progress-bar {
   position: absolute;
   top: -5rem;
   left: 1rem;
-  z-index: 10;
+  z-index: 50;
   background: var(--paper);
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
@@ -715,8 +733,32 @@ progress::-moz-progress-bar {
 }
 
 @media (max-width: 1050px) {
-  .version-tag,
-  .brand-context {
+  body {
+    padding-left: 0;
+  }
+  .site-sidebar {
+    position: sticky;
+    inset: 0 0 auto;
+    width: auto;
+    height: auto;
+    max-height: 100dvh;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 1rem 1.5rem;
+  }
+  .menu-toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
+  .site-navigation {
+    flex-basis: 100%;
+  }
+  .site-navigation.is-collapsed,
+  .version-tag {
     display: none;
   }
   .demo-columns {
@@ -732,8 +774,7 @@ progress::-moz-progress-bar {
 }
 
 @media (max-width: 760px) {
-  .site-header {
-    gap: 0.8rem;
+  .site-sidebar {
     padding: 1rem;
   }
   nav {

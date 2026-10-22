@@ -28,9 +28,33 @@ $currentPath = $this->getRequest()->getUri()->getPath();
         aria-label="Loading page"
     ></div>
     <a class="skip-link" href="#main">Skip to examples</a>
-    <header class="site-header" x-interact:persist="site-header">
-        <a class="brand" href="/" aria-label="Interact home"><span class="brand-mark" aria-hidden="true">i.</span>interact<span class="brand-context">/ CakePHP</span></a>
-        <nav aria-label="Demo pages">
+    <header
+        class="site-sidebar"
+        x-interact:persist="site-navigation"
+        x-data="{ menuOpen: false }"
+        @keydown.escape="menuOpen = false"
+    >
+        <a class="brand" href="/" aria-label="Interact home">
+            <span class="brand-mark" aria-hidden="true">i.</span>
+            <span>interact<span class="brand-context">CakePHP demo</span></span>
+        </a>
+        <button
+            type="button"
+            class="menu-toggle"
+            x-ref="menuToggle"
+            @click="menuOpen = !menuOpen"
+            :aria-expanded="menuOpen"
+            aria-controls="demo-navigation"
+            x-cloak
+        >Menu</button>
+        <nav
+            id="demo-navigation"
+            class="site-navigation"
+            aria-label="Demo pages"
+            :class="{ 'is-collapsed': !menuOpen }"
+            @click="menuOpen = false"
+            @keydown.escape="$refs.menuToggle.focus()"
+        >
             <?php foreach (['/' => 'Embedded islands', '/playground' => 'Playground', '/forms' => 'Article form', '/search' => 'Search library', '/uploads' => 'Uploads', '/outcomes' => 'Action outcomes', '/loading' => 'Lazy loading', '/page' => 'Whole-page island', '/navigation' => 'Navigation', '/renderless' => 'Renderless actions'] as $path => $label): ?>
                 <a href="<?= (string)h($path) ?>" x-interact:navigate <?= $currentPath === $path ? 'aria-current="page"' : '' ?>><?= (string)h($label) ?></a>
             <?php endforeach; ?>
