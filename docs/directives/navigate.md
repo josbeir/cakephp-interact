@@ -61,6 +61,46 @@ nav a[aria-current='page'] {
 
 Classes and styling remain application-owned. No additional active-link directive is required.
 
+### Active trails
+
+Add `.trail` to mark a section link on its own page and descendant paths:
+
+::: code-group
+
+```html [HTML]
+<a href="/articles" x-interact:navigate.trail>Articles</a>
+```
+
+```php [FormHelper]
+<?= $this->Html->link('Articles', '/articles', ['x-interact:navigate.trail' => true]) ?>
+```
+
+:::
+
+Interact manages the boolean `data-interact-active-trail` attribute; do not set it yourself. Links without `.trail` keep exact-page matching and receive no trail attribute. `aria-current="page"` continues to identify only exact matches.
+
+For the link above:
+
+| Current path        | `aria-current="page"` | `data-interact-active-trail` |
+| ------------------- | --------------------- | ---------------------------- |
+| `/articles`         | Present               | Present                      |
+| `/articles/42/edit` | Absent                | Present                      |
+| `/articles-archive` | Absent                | Absent                       |
+
+```css
+nav a[data-interact-active-trail] {
+  font-weight: bold;
+}
+
+nav a[aria-current='page'] {
+  text-decoration: underline;
+}
+```
+
+Trail matching requires the same origin and complete, case-sensitive path segments. It ignores query strings and fragments and normalizes trailing slashes. A link to `/` matches only the root page. Matching follows URL ancestry, independently of CakePHP route names.
+
+Both attributes update when links initialize, destinations change, or the current URL changes, including Back/Forward and links inside persistent regions. Combine `.trail` with `.hover` and `.preserve-scroll` in any order.
+
 ## Loading feedback
 
 The Alpine store `$store.interactNavigation` describes page visits independently of any island's `$server` request activity. Interact ships no indicator markup, CSS file, or injected styles.
@@ -125,9 +165,10 @@ Set `Configure::write('Interact.navigationVersion', 'your-asset-build-id')` when
 
 ## Options
 
-| Modifier           | Behavior                                 |
-| ------------------ | ---------------------------------------- |
-| `.hover`           | Prefetch after 60 ms of hover or focus   |
-| `.preserve-scroll` | Retain current page scroll for the visit |
+| Modifier           | Behavior                                                                  |
+| ------------------ | ------------------------------------------------------------------------- |
+| `.hover`           | Prefetch after 60 ms of hover or focus                                    |
+| `.preserve-scroll` | Retain current page scroll for the visit                                  |
+| `.trail`           | Mark the current page and URL ancestors with `data-interact-active-trail` |
 
 The directive accepts no expression. Combine modifiers when needed.

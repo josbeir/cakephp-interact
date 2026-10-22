@@ -188,7 +188,8 @@ nav a:hover {
   color: var(--ink);
   background: var(--wash);
 }
-nav a[aria-current='page'] {
+nav a[aria-current='page'],
+nav a[data-interact-active-trail] {
   color: var(--accent);
   background: var(--soft);
 }

@@ -23,6 +23,8 @@ The notebook draft is writable state. Its action counts interactions without sav
 
 The example's wrapper is outside its embedded islands. The shared demo layout separately persists its navigation header and renders a delayed indicator using `$store.interactNavigation.loading()`. No plugin CSS is required.
 
+The layout's Navigation link uses `x-interact:navigate.trail` to stay highlighted on `/navigation/details`. The Overview and Details tabs keep exact-page matching. See [active trails](/directives/navigate#active-trails) for matching rules and application-owned styling.
+
 Changing the notebook's `edition` prop intentionally replaces its client. The Overview and Details tabs preserve page scroll; Details also prefetches on hover or focus. The page counter mounts fresh on every visit. The notebook filter demonstrates URL-state ownership; the notebook draft survives without implicit synchronization or persistence.
 
 See [x-interact:navigate](/directives/navigate) for events, head assets, history, scroll, and feedback. See [x-interact:persist](/directives/persist) for compatible mount requirements and authorization boundaries.

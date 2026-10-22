@@ -30,14 +30,21 @@ export function linkDestination(
   return url;
 }
 
-/** Current-page status follows paths, independently of filtering queries and fragments. */
-export function updateCurrent(link: HTMLAnchorElement): void {
+/** Mark the exact page and optional URL ancestors independently of queries and fragments. */
+export function updateCurrent(link: HTMLAnchorElement, trail = false): void {
   const url = new URL(link.href, window.location.href);
   const path = (value: string) => value.replace(/\/+$/, '') || '/';
-  const current =
-    url.origin === window.location.origin &&
-    path(url.pathname) === path(window.location.pathname);
+  const linkPath = path(url.pathname);
+  const currentPath = path(window.location.pathname);
+  const sameOrigin = url.origin === window.location.origin;
+  const current = sameOrigin && linkPath === currentPath;
   if (current) link.setAttribute('aria-current', 'page');
   else if (link.getAttribute('aria-current') === 'page')
     link.removeAttribute('aria-current');
+  link.toggleAttribute(
+    'data-interact-active-trail',
+    trail &&
+      sameOrigin &&
+      (current || (linkPath !== '/' && currentPath.startsWith(`${linkPath}/`))),
+  );
 }

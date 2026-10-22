@@ -20,13 +20,13 @@ export function navigationBinding(
     !(element instanceof HTMLAnchorElement) ||
     expression.trim() ||
     modifiers.some(
-      (modifier) => !['hover', 'preserve-scroll'].includes(modifier),
+      (modifier) => !['hover', 'preserve-scroll', 'trail'].includes(modifier),
     )
   )
     throw new Error(
-      'x-interact:navigate requires a link, no expression, and only hover or preserve-scroll modifiers.',
+      'x-interact:navigate requires a link, no expression, and only hover, preserve-scroll, or trail modifiers.',
     );
-  const current = () => updateCurrent(element);
+  const current = () => updateCurrent(element, modifiers.includes('trail'));
   current();
   const observer = new MutationObserver(current);
   observer.observe(element, { attributes: true, attributeFilter: ['href'] });
