@@ -57,16 +57,15 @@ names such as `order` and `page`; the search demo deliberately uses `sort` as it
 custom finder parameter. Keep finder inputs and returned template keys explicit.
 See [state and input binding](/guide/state).
 
-## An island alias cannot be found
+<span id="an-island-alias-cannot-be-found"></span>
 
-Put the class under the application's `src/Island/`, declare `AsIsland`, and use
-that declared alias in `render()`. The class name, filename, and element path do
-not substitute for the alias.
+## An island name cannot be resolved
 
-The plugin configures CakePHP's `interact` attribute collection unless the
-application already provides it. Check custom collection paths and refresh
-attribute metadata caches through your normal CakePHP deployment process after
-adding or renaming declarations.
+`render('Article/Editor')` expects `App\Island\Article\EditorIsland` in
+`src/Island/Article/EditorIsland.php`. Check `App.namespace`, namespace and filename
+casing, the `Island` suffix, and Composer's autoload configuration. For
+`Commerce.Article/Editor`, load the Commerce plugin first. No island attribute
+collection or discovery cache is required. See [Conventions](/guide/conventions).
 
 ## A helper works on the page but not inside an island
 

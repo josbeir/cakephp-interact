@@ -21,7 +21,7 @@ use InvalidArgumentException;
 /**
  * Coordinates initial mounts and verified updates through fresh island instances.
  *
- * Discovery, state assignment, action validation, and rendering remain separate services.
+ * Class resolution, state assignment, action validation, and rendering remain separate services.
  * Authorization runs before application hooks and actions; the runtime owns no persistent
  * application records or browser component store.
  */
@@ -68,19 +68,22 @@ class Runtime
      * Construct, authorize, and render an island, or preserve an existing keyed child.
      *
      * @param array<string, mixed> $props Server-owned mount parameters; changing them requires a new child key.
+     * @param string|null $key Stable child key; null uses the resolved island name.
      * @param string|Options|null $urlPrefix Existing URL prefix or complete mount loading options.
      */
     public function mount(
         string $alias,
         array $props,
-        string $key,
+        ?string $key,
         IslandContext $context,
         string|Options|null $urlPrefix = null,
     ): Result {
         $loading = Options::resolve($urlPrefix);
         $urlPrefix = $loading->urlPrefix;
         $parent = $this->stack->parent();
-        $definition = $this->registry->definition($alias);
+        $definition = $this->registry->resolve($alias);
+        $alias = $definition->declaration->name;
+        $key ??= $alias;
         $preserved = $this->stack->preserve($definition->declaration, $props, $key, $urlPrefix);
         if ($preserved instanceof Result) {
             return $preserved;

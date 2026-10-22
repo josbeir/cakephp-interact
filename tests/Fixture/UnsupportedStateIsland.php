@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Test\Fixture;
 
-use Interact\Attribute\AsIsland;
+use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Island;
 use stdClass;
@@ -11,7 +11,7 @@ use stdClass;
 /**
  * Declares object-valued state to verify that transport excludes arbitrary PHP objects.
  */
-#[AsIsland('unsupported-state', template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class UnsupportedStateIsland extends Island
 {
     #[State]

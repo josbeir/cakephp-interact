@@ -3,11 +3,9 @@ declare(strict_types=1);
 
 namespace Interact;
 
-use Cake\AttributeResolver\AttributeResolver;
 use Cake\Container\ContainerInterface;
 use Cake\Controller\Controller;
 use Cake\Core\BasePlugin;
-use Cake\Core\Configure;
 use Cake\Core\ContainerApplicationInterface;
 use Cake\Core\PluginApplicationInterface;
 use Cake\Event\EventInterface;
@@ -25,7 +23,7 @@ use Interact\Upload\UploadManager;
 use Interact\Upload\UploadServices;
 
 /**
- * Connects island discovery, dependency construction, routing, and view integration.
+ * Connects island class resolution, dependency construction, routing, and view integration.
  *
  * Application-provided service definitions take precedence. The update endpoint runs
  * through normal CakePHP middleware; page controllers receive the rendering factory
@@ -38,17 +36,10 @@ class InteractPlugin extends BasePlugin
     protected ?Factory $factory = null;
 
     /**
-     * Configure application/plugin island discovery without overwriting application settings.
+     * Attach application rendering services without scanning island classes.
      */
     public function bootstrap(PluginApplicationInterface $app): void
     {
-        if (AttributeResolver::getConfig('interact') === null) {
-            AttributeResolver::setConfig('interact', [
-                'paths' => ['src/Island/*.php', 'src/Island/**/*.php'],
-                'cache' => Configure::read('debug') ? false : '_cake_attributes_',
-            ]);
-        }
-
         if ($this->isEnabled('events') && $app instanceof ContainerApplicationInterface) {
             $factory = $app->getContainer()->get(Factory::class);
             assert($factory instanceof Factory, 'The configured collaborator must satisfy its declared contract.');

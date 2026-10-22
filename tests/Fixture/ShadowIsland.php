@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace Interact\Test\Fixture;
 
-use Interact\Attribute\AsIsland;
+use Interact\Attribute\Render;
 
 /**
  * Attempts to shadow authoritative state from view data, exercising the renderer's consistency
  * guard.
  */
-#[AsIsland('shadow', template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class ShadowIsland extends CounterIsland
 {
     /**

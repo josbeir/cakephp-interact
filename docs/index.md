@@ -21,7 +21,9 @@ hero:
       link: /examples
 ---
 
-## A PHP class, an element, one mount call
+<span id="a-php-class-an-element-one-mount-call"></span>
+
+## A PHP class, a template, one mount call
 
 An island owns a region of your page. A button calls its PHP action, and Interact
 updates that region with freshly rendered HTML.
@@ -37,17 +39,15 @@ declare(strict_types=1);
 namespace App\Island;
 
 use Interact\Attribute\Action;
-use Interact\Attribute\AsIsland;
 use Interact\Attribute\State;
 use Interact\Island;
 
 /**
  * Keeps a count for one region and changes it through a server action.
  *
- * Save as src/Island/Counter.php.
+ * Save as src/Island/CounterIsland.php.
  */
-#[AsIsland('counter', element: 'Interact/counter')]
-class Counter extends Island
+class CounterIsland extends Island
 {
     #[State]
     public int $count = 0;
@@ -63,12 +63,12 @@ class Counter extends Island
 }
 ```
 
-```php [Element]
+```php [Template]
 <?php
 declare(strict_types=1);
 
 /**
- * templates/element/Interact/counter.php
+ * templates/island/counter.php
  *
  * @var int $count
  */
@@ -95,7 +95,7 @@ declare(strict_types=1);
  */
 ?>
 <h1>Articles</h1>
-<?= $this->Interact->render('counter') ?>
+<?= $this->Interact->render('Counter') ?>
 ```
 
 :::

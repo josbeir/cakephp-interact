@@ -5,7 +5,7 @@ namespace Interact\Test\Fixture;
 
 use Cake\Http\Exception\ForbiddenException;
 use Interact\Attribute\Action;
-use Interact\Attribute\AsIsland;
+use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Island;
 use Interact\IslandContext;
@@ -14,7 +14,7 @@ use Interact\IslandContext;
  * Exercises query initialization, strict scalar types, history hooks, and action isolation.
  * Authorization intentionally observes the initialized query before mount executes.
  */
-#[AsIsland('url-island', element: 'url')]
+#[Render(element: 'url')]
 class UrlIsland extends Island
 {
     #[State(writable: true, url: 'q')]

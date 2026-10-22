@@ -17,7 +17,7 @@ declare(strict_types=1);
             <span class="capability">FormHelper</span>
         </div>
         <p class="card-description">Keep article fields and comments in one draft. Add rows as you write, then save when you're ready.</p>
-        <?= $this->Interact->render('article-form') ?>
+        <?= $this->Interact->render('Article/Form') ?>
     </section>
     <aside class="note-card">
         <p class="eyebrow">Try the form</p>

@@ -42,21 +42,21 @@ session identity; applications supply their own authentication.
 
 ## Demo catalog
 
-| Open          | Try                                                                     | Follow the implementation                                                                                          |
-| ------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `/renderless` | Save a draft, render validation feedback, and conditionally refresh     | [Renderless draft saves](/examples/renderless-actions)                                                             |
-| `/forms`      | Article and comment drafts with FormHelper                              | [Article form](/examples/article-form), [form binding](/directives/model#whole-forms)                              |
-| `/`           | Search articles, edit two titles, save one, and keep the other draft    | [Article form](/examples/article-form), [nested islands](/guide/nesting)                                           |
-| `/`           | Change country, choose a city, and confirm the selection                | [Dependent fields](/examples/dependent-fields)                                                                     |
-| `/playground` | Adjust independent counters with typed action arguments                 | [Actions and feedback](/guide/actions)                                                                             |
-| `/playground` | Change seats and extras; reveal business fields and validate            | [Conditional fields](/guide/forms#dependent-and-conditional-fields)                                                |
-| `/playground` | Add, toggle, and remove tasks while other local state survives          | [Task board source](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/TaskBoard.php) |
-| `/playground` | Refresh the server clock; pause it or watch a simulated job complete    | [Polling](/directives/poll)                                                                                        |
-| `/playground` | Update two colored panels; recreate the one whose DOM is protected      | [Morph protection](/directives/ignore)                                                                             |
-| `/playground` | Search countries in a JavaScript widget; validate, reset, and remove it | [JavaScript widgets](/examples/enhanced-select)                                                                    |
-| `/uploads`    | Stage documents, manage attachments, and validate before saving         | [File uploads](/guide/uploads)                                                                                     |
-| `/search`     | Filter 1,200 resources; sort, change page size, and paginate            | [Search and pagination](/examples/search)                                                                          |
-| `/page`       | Update a whole-page listing while its layout stays in place             | [Page islands](/guide/page-islands)                                                                                |
+| Open          | Try                                                                     | Follow the implementation                                                                                                |
+| ------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `/renderless` | Save a draft, render validation feedback, and conditionally refresh     | [Renderless draft saves](/examples/renderless-actions)                                                                   |
+| `/forms`      | Article and comment drafts with FormHelper                              | [Article form](/examples/article-form), [form binding](/directives/model#whole-forms)                                    |
+| `/`           | Search articles, edit two titles, save one, and keep the other draft    | [Article form](/examples/article-form), [nested islands](/guide/nesting)                                                 |
+| `/`           | Change country, choose a city, and confirm the selection                | [Dependent fields](/examples/dependent-fields)                                                                           |
+| `/playground` | Adjust independent counters with typed action arguments                 | [Actions and feedback](/guide/actions)                                                                                   |
+| `/playground` | Change seats and extras; reveal business fields and validate            | [Conditional fields](/guide/forms#dependent-and-conditional-fields)                                                      |
+| `/playground` | Add, toggle, and remove tasks while other local state survives          | [Task board source](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/TaskBoardIsland.php) |
+| `/playground` | Refresh the server clock; pause it or watch a simulated job complete    | [Polling](/directives/poll)                                                                                              |
+| `/playground` | Update two colored panels; recreate the one whose DOM is protected      | [Morph protection](/directives/ignore)                                                                                   |
+| `/playground` | Search countries in a JavaScript widget; validate, reset, and remove it | [JavaScript widgets](/examples/enhanced-select)                                                                          |
+| `/uploads`    | Stage documents, manage attachments, and validate before saving         | [File uploads](/guide/uploads)                                                                                           |
+| `/search`     | Filter 1,200 resources; sort, change page size, and paginate            | [Search and pagination](/examples/search)                                                                                |
+| `/page`       | Update a whole-page listing while its layout stays in place             | [Page islands](/guide/page-islands)                                                                                      |
 
 The `/playground` **Failure recovery** card demonstrates the
 [failure and recovery workflow](/guide/failures).

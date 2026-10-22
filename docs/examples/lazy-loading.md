@@ -14,12 +14,12 @@ their docblocks.
 
 ::: code-group
 
-<<< @/../tests/docs/app/src/Island/ResourceCount.php [Island]
+<<< @/../tests/docs/app/src/Island/ResourceCountIsland.php [Island]
 
-<<< @/../tests/docs/app/templates/element/Interact/resource_count.php [Element]
+<<< @/../tests/docs/app/templates/island/resource_count.php [Template]
 
 ```php [Mount]
-<?= $this->Interact->render('resource-count', loading: 'lazy') ?>
+<?= $this->Interact->render('ResourceCount', loading: 'lazy') ?>
 ```
 
 :::
@@ -30,21 +30,21 @@ For a custom placeholder with a load button, use `manual`:
 
 ::: code-group
 
-<<< @/../tests/docs/app/templates/element/Interact/resource_count_placeholder.php [Placeholder]
+<<< @/../tests/docs/app/templates/element/Loading/resource_count.php [Placeholder]
 
 ```php [Mount]
 <?= $this->Interact->render(
-    'resource-count',
+    'ResourceCount',
     props: ['search' => 'Resource 01'],
     loading: 'manual',
-    placeholder: 'Interact/resource_count_placeholder',
+    placeholder: 'Loading/resource_count',
 ) ?>
 ```
 
 :::
 
 The placeholder receives `$search` from the declared prop. Its button initializes
-the island; the loaded element's button refreshes the count normally.
+the island; the loaded template's button refreshes the count normally.
 See [lazy loading](/guide/lazy-loading) for modes, authorization, and recovery.
 The larger demo at `/loading` also demonstrates independent reports, hidden
 panels, parent refreshes, and removal while loading.

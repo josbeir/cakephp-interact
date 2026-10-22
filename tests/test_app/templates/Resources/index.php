@@ -9,4 +9,4 @@ declare(strict_types=1);
     <p class="intro-copy">Explore a sample library of guides on CakePHP, forms, testing, and more. Search as you type, narrow the topic, and find a read that fits your time.</p>
     <p class="quiet">Try “validation”, “CakePHP pagination”, or “keyboard”. Every word helps narrow the results.</p>
 </header>
-<?= $this->Interact->render('resource-search') ?>
+<?= $this->Interact->render('ResourceSearch') ?>

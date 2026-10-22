@@ -35,7 +35,7 @@ class RenderlessTest extends TestCase
     protected SnapshotCodec $codec;
 
     /**
-     * Assemble real signing and discovery with observable nested application rendering.
+     * Assemble real signing and class resolution with observable nested application rendering.
      */
     protected function setUp(): void
     {
@@ -48,7 +48,7 @@ class RenderlessTest extends TestCase
             'default',
             '/_interact/update',
         );
-        $registry = new Registry(collection: 'explicit');
+        $registry = new Registry();
         $registry->register(RenderlessIsland::class);
         $registry->register(CounterIsland::class);
 
@@ -57,8 +57,8 @@ class RenderlessTest extends TestCase
         $this->runtime = new Runtime($registry, $this->codec, new CallbackRenderer(function ($definition) use (
             $reference,
         ): string {
-            if ($definition->declaration->name === 'renderless') {
-                return $reference->runtime->mount('counter', ['recordId' => 7], 'child', $this->context)->html;
+            if ($definition->declaration->name === 'Renderless') {
+                return $reference->runtime->mount('Counter', ['recordId' => 7], 'child', $this->context)->html;
             }
 
             return '<p>Child</p>';
@@ -76,7 +76,7 @@ class RenderlessTest extends TestCase
 
     public function testStateEventsChildrenAndUploadsSurviveWithoutRendering(): void
     {
-        $initial = $this->runtime->mount('renderless', [], 'parent', $this->context);
+        $initial = $this->runtime->mount('Renderless', [], 'parent', $this->context);
         $first = $this->codec->open($initial->snapshot, $this->context->binding(), $this->context->scope);
         $result = $this->runtime->update([
             'snapshot' => $initial->snapshot,
@@ -100,7 +100,7 @@ class RenderlessTest extends TestCase
 
     public function testOwnedUploadsRemainRestorableAcrossRenderlessSaves(): void
     {
-        $initial = $this->runtime->mount('renderless', [], 'parent', $this->context);
+        $initial = $this->runtime->mount('Renderless', [], 'parent', $this->context);
         $stream = new Stream('php://temp', 'w+');
         $stream->write('draft');
 
@@ -131,7 +131,7 @@ class RenderlessTest extends TestCase
 
     public function testConditionalChoiceResetsBetweenRequests(): void
     {
-        $initial = $this->runtime->mount('renderless', [], 'parent', $this->context);
+        $initial = $this->runtime->mount('Renderless', [], 'parent', $this->context);
         $skipped = $this->runtime->update([
             'snapshot' => $initial->snapshot,
             'action' => 'conditional',
@@ -150,7 +150,7 @@ class RenderlessTest extends TestCase
 
     public function testValidationRendersAndClearsFeedbackBeforeSkippingAgain(): void
     {
-        $initial = $this->runtime->mount('renderless', [], 'parent', $this->context);
+        $initial = $this->runtime->mount('Renderless', [], 'parent', $this->context);
         $failed = $this->runtime->update(['snapshot' => $initial->snapshot, 'action' => 'invalid'], $this->context);
         static::assertIsString($failed->payload()['html']);
         static::assertSame([], $failed->events);
@@ -166,7 +166,7 @@ class RenderlessTest extends TestCase
 
     public function testDownloadsAndRedirectsKeepTheirOutcomeContracts(): void
     {
-        $initial = $this->runtime->mount('renderless', [], 'parent', $this->context);
+        $initial = $this->runtime->mount('Renderless', [], 'parent', $this->context);
         $download = $this->runtime->update(['snapshot' => $initial->snapshot, 'action' => 'download'], $this->context);
         static::assertSame('/report', $download->download);
         static::assertNull($download->payload()['html']);
@@ -179,7 +179,7 @@ class RenderlessTest extends TestCase
 
     public function testReadOnlyStateStillRejectsUpdates(): void
     {
-        $initial = $this->runtime->mount('renderless', [], 'parent', $this->context);
+        $initial = $this->runtime->mount('Renderless', [], 'parent', $this->context);
         $this->expectException(InvalidArgumentException::class);
         $this->runtime->update([
             'snapshot' => $initial->snapshot,
@@ -190,7 +190,7 @@ class RenderlessTest extends TestCase
 
     public function testCurrentPermissionStillRunsBeforeActions(): void
     {
-        $initial = $this->runtime->mount('renderless', [], 'parent', $this->context);
+        $initial = $this->runtime->mount('Renderless', [], 'parent', $this->context);
         RenderlessIsland::$allowed = false;
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Permission revoked.');

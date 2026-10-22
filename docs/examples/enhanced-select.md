@@ -27,7 +27,7 @@ In your layout's `<head>`, before Interact's script block:
 ```php
 <?= $this->Html->css('/vendor/tom-select/tom-select.default.css') ?>
 <?= $this->Html->script('/vendor/tom-select/tom-select.base.min.js', ['defer' => true]) ?>
-<?= $this->Html->script('country-picker', ['defer' => true]) ?>
+<?= $this->Html->script('CountryPicker', ['defer' => true]) ?>
 <?= $this->fetch('script') ?>
 ```
 
@@ -38,14 +38,14 @@ Keep Interact's automatic script enabled. The registration uses its existing
 
 ::: code-group
 
-<<< @/../tests/docs/app/src/Island/CountryPicker.php [Island]
+<<< @/../tests/docs/app/src/Island/CountryPickerIsland.php [Island]
 
-<<< @/../tests/docs/app/templates/element/Interact/country_picker.php [Element]
+<<< @/../tests/docs/app/templates/island/country_picker.php [Template]
 
 <<< @/../tests/docs/app/webroot/js/country-picker.js [JavaScript]
 
 ```php [Mount]
-<?= $this->Interact->render('country-picker') ?>
+<?= $this->Interact->render('CountryPicker') ?>
 ```
 
 :::

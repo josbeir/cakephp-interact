@@ -3,20 +3,19 @@ declare(strict_types=1);
 
 namespace Interact\Discovery;
 
-use Cake\AttributeResolver\AttributeResolver;
-use Cake\AttributeResolver\Enum\AttributeTargetType;
 use Cake\Container\ContainerInterface;
-use Interact\Attribute\AsIsland;
+use Cake\Core\App;
+use Cake\Core\Plugin;
 use Interact\Island;
 use InvalidArgumentException;
 use ReflectionClass;
+use function Cake\Core\pluginSplit;
 
 /**
- * Discovers island aliases and constructs independent application instances.
+ * Resolves conventional application and plugin island names on demand.
  *
- * Only compiled declarations are retained. CakePHP owns the attribute metadata cache;
- * the optional application container supplies fresh instances and their dependencies.
- * Browser requests resolve registered aliases rather than arbitrary class names.
+ * Only compiled declarations are retained. Every mount and update receives a fresh
+ * container-created instance; signed updates cannot choose arbitrary PHP class names.
  */
 class Registry
 {
@@ -25,45 +24,98 @@ class Registry
      */
     protected array $definitions = [];
 
-    protected bool $discovered = false;
-
     /**
      * The container may be omitted for dependency-free islands in standalone views.
      */
-    public function __construct(
-        protected readonly ?ContainerInterface $container = null,
-        protected readonly string $collection = 'interact',
-    ) {
+    public function __construct(protected readonly ?ContainerInterface $container = null)
+    {
     }
 
     /**
-     * Validate a discovered or explicitly registered class at the construction boundary.
+     * Register a nonstandard class or explicit name without replacing another island.
+     *
+     * @param string $class Island class, checked before metadata compilation.
+     * @param string|null $name Optional public selector for an explicitly registered class.
+     * @throws \InvalidArgumentException When the class, selector, or name registration is invalid.
      */
-    public function register(string $class): void
+    public function register(string $class, ?string $name = null): void
     {
         if (!is_subclass_of($class, Island::class)) {
             throw new InvalidArgumentException('Registered islands must extend Island.');
         }
 
-        $definition = new Definition($class);
-        $alias = $definition->declaration->name;
-        if (isset($this->definitions[$alias]) && $this->definitions[$alias]->class !== $class) {
-            throw new InvalidArgumentException(sprintf('Duplicate island alias "%s".', $alias));
+        $definition = new Definition($class, $name);
+        $name = Name::normalize($definition->declaration->name);
+        if (isset($this->definitions[$name]) && $this->definitions[$name]->class !== $class) {
+            throw new InvalidArgumentException(sprintf('Duplicate island name "%s".', $name));
         }
 
-        $this->definitions[$alias] = $definition;
+        $this->definitions[$name] = $definition;
     }
 
     /**
-     * Resolve aliases only; browser callers cannot select arbitrary PHP classes.
+     * Resolve a server-owned mount selector, including an island class reference.
+     *
+     * Conventional classes must resolve back through their public name. Nonstandard
+     * classes require explicit registration on initial and subsequent requests.
+     * Browser updates use definition() instead, which accepts names only.
+     *
+     * @throws \InvalidArgumentException When the class is invalid or requires registration.
+     */
+    public function resolve(string $selector): Definition
+    {
+        if (!str_contains($selector, '\\')) {
+            return $this->definition($selector);
+        }
+
+        foreach ($this->definitions as $definition) {
+            if ($definition->class === $selector) {
+                return $definition;
+            }
+        }
+
+        if (!is_subclass_of($selector, Island::class)) {
+            throw new InvalidArgumentException('Island class references must extend Island.');
+        }
+
+        $definition = new Definition($selector);
+        $name = Name::normalize($definition->declaration->name);
+        if (App::className($name, 'Island', 'Island') !== $selector) {
+            throw new InvalidArgumentException('Use a conventional island class or an explicitly registered name.');
+        }
+
+        if (isset($this->definitions[$name])) {
+            throw new InvalidArgumentException(sprintf('Duplicate island name "%s".', $name));
+        }
+
+        $this->definitions[$name] = $definition;
+
+        return $definition;
+    }
+
+    /**
+     * Resolve bounded CakePHP names beneath Island namespaces, never arbitrary FQCNs.
+     *
+     * @throws \InvalidArgumentException When the name is invalid or no concrete island can be resolved.
      */
     public function definition(string $alias): Definition
     {
-        $this->discover();
+        $name = Name::normalize($alias);
+        if (!isset($this->definitions[$name])) {
+            [$plugin] = pluginSplit($name);
+            if ($plugin !== null && !Plugin::isLoaded($plugin)) {
+                throw new InvalidArgumentException(sprintf('Unknown island plugin "%s".', $plugin));
+            }
 
-        return (
-            $this->definitions[$alias] ?? throw new InvalidArgumentException(sprintf('Unknown island "%s".', $alias))
-        );
+            $class = App::className($name, 'Island', 'Island');
+            if ($class === null) {
+                throw new InvalidArgumentException(sprintf('Unknown island "%s".', $alias));
+            }
+
+            $this->register($class, $name);
+        }
+
+        return $this->definitions[$name];
     }
 
     /**
@@ -80,26 +132,5 @@ class Registry
         }
 
         return $instance;
-    }
-
-    /**
-     * Discover each request's metadata once; CakePHP owns the persistent attribute cache.
-     */
-    protected function discover(): void
-    {
-        if ($this->discovered) {
-            return;
-        }
-
-        $this->discovered = true;
-        if (AttributeResolver::getConfig($this->collection) === null) {
-            return;
-        }
-
-        foreach (AttributeResolver::collection($this->collection)
-            ->withTargetType(AttributeTargetType::CLASS_)
-            ->withAttribute(AsIsland::class) as $info) {
-            $this->register($info->className);
-        }
     }
 }

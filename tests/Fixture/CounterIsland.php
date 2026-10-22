@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace Interact\Test\Fixture;
 
 use Interact\Attribute\Action;
-use Interact\Attribute\AsIsland;
 use Interact\Attribute\Prop;
+use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Island;
 
@@ -13,7 +13,7 @@ use Interact\Island;
  * Exercises declared props, writable/locked state, native arguments, validation, and browser
  * effects.
  */
-#[AsIsland('counter', template: 'Islands/counter', tag: 'section')]
+#[Render(template: 'unused', tag: 'section')]
 class CounterIsland extends Island
 {
     #[Prop]

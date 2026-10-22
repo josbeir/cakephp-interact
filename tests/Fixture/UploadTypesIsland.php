@@ -9,7 +9,7 @@ use Psr\Http\Message\UploadedFileInterface;
 /**
  * Supplies real PHP property shapes for upload declaration and value-boundary tests.
  *
- * Invalid members are intentional fixtures; runtime discovery must reject their
+ * Invalid members are intentional fixtures; metadata compilation must reject their
  * declaration before they can receive files or participate in snapshot transport.
  */
 class UploadTypesIsland extends Island

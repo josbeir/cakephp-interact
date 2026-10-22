@@ -8,7 +8,7 @@ use Attribute;
 /**
  * Explicitly exposes one public application method to island requests.
  *
- * Discovery recognizes this exact marker class, so subclasses would not be discovered.
+ * Metadata compilation recognizes this exact marker class, so subclasses would not be recognized.
  * It remains final to make that declaration boundary explicit.
  */
 #[Attribute(Attribute::TARGET_METHOD)]

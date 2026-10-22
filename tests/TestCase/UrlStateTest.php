@@ -48,7 +48,7 @@ class UrlStateTest extends TestCase
 
     protected function runtime(): Runtime
     {
-        $registry = new Registry(collection: 'url-tests');
+        $registry = new Registry();
         $registry->register(UrlIsland::class);
 
         return new Runtime(
@@ -62,7 +62,7 @@ class UrlStateTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context('articles_q=cake&articles_page=3&articles_tags[]=one&articles_tags[]=two');
-        $mount = $runtime->mount('url-island', [], 'first', $context, 'articles');
+        $mount = $runtime->mount('Url', [], 'first', $context, 'articles');
         static::assertSame(['cake', '3'], $mount->state['observed']);
         static::assertSame(['one', 'two'], $mount->state['tags']);
         static::assertSame('articles_q', $mount->url['search']['name']);
@@ -82,7 +82,7 @@ class UrlStateTest extends TestCase
     public function testMalformedQueryEncodingFallsBackBeforeSigningAndRendering(): void
     {
         $result = $this->runtime()->mount(
-            'url-island',
+            'Url',
             [],
             'first',
             $this->context('q=%FF&tags[]=valid&tags[]=%C3&page=3'),
@@ -98,7 +98,7 @@ class UrlStateTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $mount = $runtime->mount('url-island', [], 'first', $context);
+        $mount = $runtime->mount('Url', [], 'first', $context);
         $saved = $runtime->update([
             'snapshot' => $mount->snapshot,
             'updates' => ['draft' => 'keep', 'page' => 3],
@@ -119,14 +119,14 @@ class UrlStateTest extends TestCase
     public function testQueryValuesAreAuthorizedOnMount(): void
     {
         $this->expectException(ForbiddenException::class);
-        $this->runtime()->mount('url-island', [], 'first', $this->context('q=denied'));
+        $this->runtime()->mount('Url', [], 'first', $this->context('q=denied'));
     }
 
     public function testHistoryValuesAreAuthorizedBeforeHooks(): void
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $mount = $runtime->mount('url-island', [], 'first', $context);
+        $mount = $runtime->mount('Url', [], 'first', $context);
         $this->expectException(ForbiddenException::class);
         $runtime->update([
             'snapshot' => $mount->snapshot,
@@ -253,7 +253,7 @@ class UrlStateTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         new SnapshotData([
-            'alias' => 'url-island',
+            'alias' => 'Url',
             'id' => 'id',
             'key' => 'key',
             'state' => [],
@@ -262,7 +262,7 @@ class UrlStateTest extends TestCase
         ]);
     }
 
-    public function testDuplicateAliasesAreRejectedDuringDiscovery(): void
+    public function testDuplicateQueryAliasesAreRejectedDuringMetadataCompilation(): void
     {
         $this->expectException(InvalidArgumentException::class);
         new Definition(UrlCollisionIsland::class);
@@ -280,20 +280,20 @@ class UrlStateTest extends TestCase
     {
         $reference = new RuntimeReference();
         $context = $this->context();
-        $registry = new Registry(collection: 'nested-url-tests');
+        $registry = new Registry();
         $registry->register(UrlIsland::class);
         $registry->register(UrlParentIsland::class);
 
         $renderer = new CallbackRenderer(static function ($definition, array $data) use ($reference, $context): string {
-            if ($definition->declaration->name === 'url-parent' && is_int($data['calls']) && $data['calls'] > 0) {
-                return $reference->runtime->mount('url-island', [], 'child', $context, 'child')->html;
+            if ($definition->declaration->name === 'UrlParent' && is_int($data['calls']) && $data['calls'] > 0) {
+                return $reference->runtime->mount('Url', [], 'child', $context, 'child')->html;
             }
 
             return '<p>Child</p>';
         });
         $runtime = new Runtime($registry, new SnapshotCodec(str_repeat('u', 32)), $renderer);
         $reference->runtime = $runtime;
-        $mount = $runtime->mount('url-parent', [], 'parent', $context, 'parent');
+        $mount = $runtime->mount('UrlParent', [], 'parent', $context, 'parent');
         $shown = $runtime->update([
             'snapshot' => $mount->snapshot,
             'action' => 'increment',
@@ -309,11 +309,11 @@ class UrlStateTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         new SnapshotData([
-            'alias' => 'url-parent',
+            'alias' => 'UrlParent',
             'id' => 'id',
             'key' => 'key',
             'state' => [],
-            'children' => ['key:child' => ['alias' => 'url-island', 'id' => 'child', 'props' => [], 'urlPrefix' => []]],
+            'children' => ['key:child' => ['alias' => 'Url', 'id' => 'child', 'props' => [], 'urlPrefix' => []]],
         ]);
     }
 }

@@ -7,4 +7,4 @@ declare(strict_types=1);
     <h1>Whole-page listing</h1>
     <p class="intro-copy">The same article listing, rendered through the controller action's template. Search and pagination update the content while the surrounding layout stays in place.</p>
 </header>
-<?= $this->element('Interact/article_list') ?>
+<?= $this->element('Article/listing') ?>

@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use TestApp\Island\CounterIsland;
+
 /** @var \Interact\View\TemplateView $this */
 ?>
 <header class="page-intro">
@@ -13,20 +15,20 @@ declare(strict_types=1);
     <div class="card-heading"><div><p class="eyebrow">01 / Isolated state</p><h2>Two islands. Their own pace.</h2></div><span class="capability">Typed actions</span></div>
     <p class="card-description">Both counters use the same PHP class with different starting values. Change one; its neighbor stays put.</p>
     <div class="counter-grid">
-        <?= $this->Interact->render('counter', props: ['label' => 'First counter', 'initial' => 0], key: 'first-counter') ?>
-        <?= $this->Interact->render('counter', props: ['label' => 'Second counter', 'initial' => 5], key: 'second-counter') ?>
+        <?= $this->Interact->render(CounterIsland::class, props: ['label' => 'First counter', 'initial' => 0], key: 'first-counter') ?>
+        <?= $this->Interact->render('Counter', props: ['label' => 'Second counter', 'initial' => 5], key: 'second-counter') ?>
     </div>
 </section>
 <div class="playground-grid">
-    <?= $this->Interact->render('workshop-planner') ?>
-    <?= $this->Interact->render('task-board') ?>
+    <?= $this->Interact->render('WorkshopPlanner') ?>
+    <?= $this->Interact->render('TaskBoard') ?>
 </div>
-<?= $this->Interact->render('recovery') ?>
+<?= $this->Interact->render('Recovery') ?>
 <div class="playground-grid polling-examples">
-    <?= $this->Interact->render('server-clock') ?>
-    <?= $this->Interact->render('job-progress') ?>
+    <?= $this->Interact->render('ServerClock') ?>
+    <?= $this->Interact->render('JobProgress') ?>
 </div>
 <div class="widget-examples">
-    <?= $this->Interact->render('morph-protection') ?>
-    <?= $this->Interact->render('enhanced-select') ?>
+    <?= $this->Interact->render('MorphProtection') ?>
+    <?= $this->Interact->render('EnhancedSelect') ?>
 </div>

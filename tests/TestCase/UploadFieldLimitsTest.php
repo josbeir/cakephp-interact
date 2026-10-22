@@ -18,7 +18,7 @@ use ReflectionProperty;
 /**
  * Verifies field-specific staging ceilings without weakening application-wide quotas.
  *
- * Declaration checks fail during discovery. Real streams and storage records verify
+ * Declaration checks fail during metadata compilation. Real streams and storage records verify
  * enforcement independently of browser metadata and previously acknowledged selections.
  */
 class UploadFieldLimitsTest extends UploadStorageTestCase

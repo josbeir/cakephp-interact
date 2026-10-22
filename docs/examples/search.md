@@ -19,16 +19,16 @@ database or an existing application finder.
 
 ::: code-group
 
-<<< @/../tests/docs/app/src/Island/ResourceSearch.php [Island]
+<<< @/../tests/docs/app/src/Island/ResourceSearchIsland.php [Island]
 
-<<< @/../tests/docs/app/templates/element/Interact/resource_search.php [Element]
+<<< @/../tests/docs/app/templates/island/resource_search.php [Template]
 
 <<< @/../tests/docs/app/src/Model/Table/ResourcesTable.php [Table]
 
 <<< @/../tests/docs/app/schema/resources.sql [Schema]
 
 ```php [Mount]
-<?= $this->Interact->render('resource-search') ?>
+<?= $this->Interact->render('ResourceSearch') ?>
 ```
 
 :::

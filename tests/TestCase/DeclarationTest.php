@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase;
 
-use Interact\Attribute\AsIsland;
+use Interact\Attribute\Render;
 use Interact\Discovery\Registry;
 use Interact\Test\Fixture\ConflictingStateIsland;
 use Interact\Test\Fixture\CounterIsland;
@@ -13,7 +13,7 @@ use Interact\Test\Fixture\HiddenStateIsland;
 use Interact\Test\Fixture\LifecycleActionIsland;
 use Interact\Test\Fixture\StaticActionIsland;
 use Interact\Test\Fixture\StaticStateIsland;
-use Interact\Test\Fixture\UndeclaredIsland;
+use Interact\Test\Fixture\UnlocatedIsland;
 use Interact\Test\Fixture\UnsupportedStateIsland;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -39,7 +39,7 @@ class DeclarationTest extends TestCase
             StaticActionIsland::class,
             HiddenActionIsland::class,
             LifecycleActionIsland::class,
-            UndeclaredIsland::class,
+            UnlocatedIsland::class,
         ] as $class) {
             yield $class => [$class];
         }
@@ -49,44 +49,57 @@ class DeclarationTest extends TestCase
     public function testRejectsInvalidDeclarations(string $class): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new Registry(collection: 'explicit')->register($class);
+        new Registry()->register($class);
     }
 
     public function testRejectsDuplicateAliases(): void
     {
-        $registry = new Registry(collection: 'explicit');
+        $registry = new Registry();
         $registry->register(CounterIsland::class);
         $this->expectException(InvalidArgumentException::class);
-        $registry->register(DuplicateIsland::class);
+        $registry->register(DuplicateIsland::class, 'Counter');
     }
 
     public function testRejectsUnknownAlias(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new Registry(collection: 'explicit')->definition(CounterIsland::class);
+        new Registry()->definition(CounterIsland::class);
     }
 
     public function testRejectsUnrelatedClasses(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new Registry(collection: 'explicit')->register(self::class);
+        new Registry()->register(self::class);
     }
 
-    public function testRejectsInvalidAliasAndAmbiguousTemplates(): void
+    public function testRejectsInvalidAliases(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new AsIsland('bad name', template: 'file', element: 'file');
+        new Registry()->definition('bad name');
+    }
+
+    public function testRejectsAmbiguousTemplates(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new Render(template: 'file', element: 'file');
+    }
+
+    public function testAcceptsInferredTemplates(): void
+    {
+        $declaration = new Render();
+        static::assertNull($declaration->template);
+        static::assertNull($declaration->element);
     }
 
     public function testAcceptsNativeElementDeclarations(): void
     {
-        $declaration = new AsIsland('element', element: 'Interact/sample');
-        static::assertSame('Interact/sample', $declaration->element);
+        $declaration = new Render(element: 'sample');
+        static::assertSame('sample', $declaration->element);
     }
 
     public function testRejectsUnsafeRootTags(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new AsIsland('unsafe', element: 'Interact/sample', tag: 'script');
+        new Render(element: 'sample', tag: 'script');
     }
 }

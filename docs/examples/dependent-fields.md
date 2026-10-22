@@ -18,16 +18,16 @@ normal migrations and data.
 
 ::: code-group
 
-<<< @/../tests/docs/app/src/Island/DependentSelects.php [Island]
+<<< @/../tests/docs/app/src/Island/DependentSelectsIsland.php [Island]
 
-<<< @/../tests/docs/app/templates/element/Interact/dependent_selects.php [Element]
+<<< @/../tests/docs/app/templates/island/dependent_selects.php [Template]
 
 <<< @/../tests/docs/app/src/Model/Table/CitiesTable.php [Table]
 
 <<< @/../tests/docs/app/schema/cities.sql [Schema]
 
 ```php [Mount]
-<?= $this->Interact->render('dependent-selects') ?>
+<?= $this->Interact->render('DependentSelects') ?>
 ```
 
 :::

@@ -23,9 +23,9 @@ at `/forms` to use the FormHelper example.
 
 ::: code-group
 
-<<< @/../tests/test_app/src/Island/ArticleForm.php [Island]
+<<< @/../tests/test_app/src/Island/Article/FormIsland.php [Island]
 
-<<< @/../tests/test_app/templates/element/Interact/article_form.php [Element]
+<<< @/../tests/test_app/templates/island/Article/form.php [Template]
 
 <<< @/../tests/test_app/src/Model/Table/FormArticlesTable.php [Articles]
 
@@ -34,7 +34,7 @@ at `/forms` to use the FormHelper example.
 <<< @/../tests/test_app/config/schema/form_articles.sql [Schema]
 
 ```php [Mount]
-<?= $this->Interact->render('article-form') ?>
+<?= $this->Interact->render('Article/Form') ?>
 ```
 
 :::

@@ -4,14 +4,14 @@ declare(strict_types=1);
 namespace Interact\Test\Fixture;
 
 use Cake\Http\Exception\ForbiddenException;
-use Interact\Attribute\AsIsland;
+use Interact\Attribute\Render;
 use Interact\IslandContext;
 
 /**
  * Rechecks current request permissions on mount and resume, independently from signed resource
  * identity.
  */
-#[AsIsland('protected-counter', template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class ProtectedIsland extends CounterIsland
 {
     /**

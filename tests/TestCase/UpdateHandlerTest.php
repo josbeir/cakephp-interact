@@ -15,7 +15,6 @@ use Interact\Security\SnapshotCodec;
 use Interact\View\TemplateView;
 use Laminas\Diactoros\Stream;
 use PHPUnit\Framework\TestCase;
-use TestApp\Island\Counter;
 
 /**
  * Verifies the shared HTTP service's response preservation and strict envelope boundaries.
@@ -24,8 +23,7 @@ class UpdateHandlerTest extends TestCase
 {
     public function testCustomResponseHeadersSurviveSuccessfulAndRejectedRequests(): void
     {
-        $registry = new Registry(collection: 'explicit');
-        $registry->register(Counter::class);
+        $registry = new Registry();
 
         $factory = new Factory($registry, new SnapshotCodec(str_repeat('k', 32)));
         $handler = new UpdateHandler($factory, new FailureResponder());
@@ -35,7 +33,7 @@ class UpdateHandlerTest extends TestCase
         $mount = $factory->create(
             new TemplateView($request),
             new IslandContext($request, 'admin', '/custom/update'),
-        )->mount('counter', [], 'counter', new IslandContext($request, 'admin', '/custom/update'));
+        )->mount('Counter', [], 'Counter', new IslandContext($request, 'admin', '/custom/update'));
         $response = new Response()->withHeader('X-Application', 'kept')
             ->withHeader('Content-Type', 'text/html')
             ->withHeader('Cache-Control', 'public');
@@ -59,7 +57,7 @@ class UpdateHandlerTest extends TestCase
     public function testDiscardedOversizedMultipartBodiesReceiveSpecificFeedback(): void
     {
         $handler = new UpdateHandler(
-            new Factory(new Registry(collection: 'explicit'), new SnapshotCodec(str_repeat('k', 32))),
+            new Factory(new Registry(), new SnapshotCodec(str_repeat('k', 32))),
             new FailureResponder(),
         );
         $limit = Text::parseFileSize((string)ini_get('post_max_size'));
@@ -81,7 +79,7 @@ class UpdateHandlerTest extends TestCase
     public function testMalformedMultipartAndOversizedJsonFailWithoutRenderingHtml(): void
     {
         $handler = new UpdateHandler(
-            new Factory(new Registry(collection: 'explicit'), new SnapshotCodec(str_repeat('k', 32))),
+            new Factory(new Registry(), new SnapshotCodec(str_repeat('k', 32))),
             new FailureResponder(),
         );
         $request = new ServerRequest(['environment' => ['REQUEST_METHOD' => 'POST']]);

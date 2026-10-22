@@ -10,8 +10,8 @@ use InvalidArgumentException;
 /**
  * Declares a request-local uploaded-file property backed by private temporary storage.
  *
- * Objects never enter snapshots. Discovery recognizes this exact marker class, so
- * the attribute remains final rather than allowing undiscovered subclasses.
+ * Objects never enter snapshots. Metadata compilation recognizes this exact marker class, so
+ * the attribute remains final rather than allowing unrecognized subclasses.
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
 final readonly class Upload

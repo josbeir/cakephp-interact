@@ -55,7 +55,7 @@ class ActionOutcomeTest extends TestCase
 
     protected function runtime(): Runtime
     {
-        $registry = new Registry(collection: 'outcome-test');
+        $registry = new Registry();
         $registry->register(OutcomeIsland::class);
 
         return new Runtime(
@@ -69,7 +69,7 @@ class ActionOutcomeTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $mount = $runtime->mount('outcome', [], 'outcome', $context);
+        $mount = $runtime->mount('Outcome', [], 'Outcome', $context);
         $result = $runtime->update([
             'snapshot' => $mount->snapshot,
             'action' => 'leave',
@@ -92,7 +92,7 @@ class ActionOutcomeTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $mount = $runtime->mount('outcome', [], 'outcome', $context);
+        $mount = $runtime->mount('Outcome', [], 'Outcome', $context);
         $result = $runtime->update([
             'snapshot' => $mount->snapshot,
             'action' => 'download',
@@ -113,7 +113,7 @@ class ActionOutcomeTest extends TestCase
         foreach (['redirect', 'download'] as $download) {
             $runtime = $this->runtime();
             $context = $this->context();
-            $mount = $runtime->mount('outcome', [], 'outcome', $context);
+            $mount = $runtime->mount('Outcome', [], 'Outcome', $context);
             $result = $runtime->update([
                 'snapshot' => $mount->snapshot,
                 'action' => 'invalid',
@@ -129,7 +129,7 @@ class ActionOutcomeTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $mount = $runtime->mount('outcome', ['hook' => 'render-error'], 'outcome', $context);
+        $mount = $runtime->mount('Outcome', ['hook' => 'render-error'], 'Outcome', $context);
         $result = $runtime->update([
             'snapshot' => $mount->snapshot,
             'action' => 'download',
@@ -143,7 +143,7 @@ class ActionOutcomeTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $mount = $runtime->mount('outcome', [], 'outcome', $context);
+        $mount = $runtime->mount('Outcome', [], 'Outcome', $context);
         $this->expectException(LogicException::class);
         $runtime->update(['snapshot' => $mount->snapshot, 'action' => 'twice'], $context);
     }
@@ -164,7 +164,7 @@ class ActionOutcomeTest extends TestCase
         $runtime = $this->runtime();
         $context = $this->context();
         $this->expectException(LogicException::class);
-        $mount = $runtime->mount('outcome', ['hook' => $hook], 'outcome', $context);
+        $mount = $runtime->mount('Outcome', ['hook' => $hook], 'Outcome', $context);
         $runtime->update(['snapshot' => $mount->snapshot, 'updates' => ['draft' => 'changed']], $context);
     }
 
@@ -217,7 +217,7 @@ class ActionOutcomeTest extends TestCase
         $context = $this->context();
         $renderContext = $context;
         $child = null;
-        $registry = new Registry(collection: 'outcome-child');
+        $registry = new Registry();
         $registry->register(OutcomeIsland::class);
         $registry->register(OutcomeParentIsland::class);
 
@@ -226,8 +226,8 @@ class ActionOutcomeTest extends TestCase
             &$renderContext,
             &$child,
         ): string {
-            if ($definition->declaration->name === 'outcome-parent' && $data['exports'] === 1) {
-                $child = $reference->runtime->mount('outcome', [], 'child', $renderContext);
+            if ($definition->declaration->name === 'OutcomeParent' && $data['exports'] === 1) {
+                $child = $reference->runtime->mount('Outcome', [], 'child', $renderContext);
 
                 return $child->html;
             }
@@ -235,7 +235,7 @@ class ActionOutcomeTest extends TestCase
             return '<p>Child</p>';
         });
         $reference->runtime = new Runtime($registry, new SnapshotCodec(str_repeat('o', 32)), $renderer);
-        $mount = $reference->runtime->mount('outcome-parent', [], 'parent', $context);
+        $mount = $reference->runtime->mount('OutcomeParent', [], 'parent', $context);
         $updateContext = new IslandContext(
             $context->request->withAttribute('params', [
                 'plugin' => 'Interact',
@@ -338,7 +338,7 @@ class ActionOutcomeTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
         new SnapshotData([
-            'alias' => 'outcome',
+            'alias' => 'Outcome',
             'id' => 'id',
             'key' => 'key',
             'state' => [],

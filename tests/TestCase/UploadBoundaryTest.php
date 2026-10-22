@@ -18,7 +18,7 @@ use Interact\Upload\UploadRejected;
 use Interact\Upload\UploadRestorer;
 use InvalidArgumentException;
 use Laminas\Diactoros\UploadedFile;
-use TestApp\Island\DocumentUpload;
+use TestApp\Island\DocumentUploadIsland as DocumentUpload;
 
 /**
  * Verifies signed selection ownership and safe discovery of damaged or linked upload records.
@@ -36,7 +36,7 @@ class UploadBoundaryTest extends UploadStorageTestCase
         $session = new Session(['defaults' => 'php', 'ini' => ['session.use_cookies' => 0]]);
         $context = new IslandContext(new ServerRequest(['session' => $session]), 'default', '/update');
         $snapshot = new SnapshotData([
-            'alias' => 'document-upload',
+            'alias' => 'DocumentUpload',
             'id' => 'island',
             'key' => 'file',
             'state' => [],

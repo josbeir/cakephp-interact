@@ -9,7 +9,7 @@ use InvalidArgumentException;
 /**
  * Declares snapshot state; accepting browser edits is a separate, explicit capability.
  *
- * Discovery recognizes this exact marker class, so subclasses would not be discovered.
+ * Metadata compilation recognizes this exact marker class, so subclasses would not be recognized.
  * It remains final to make that declaration boundary explicit.
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]

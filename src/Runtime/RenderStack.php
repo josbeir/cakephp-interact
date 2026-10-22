@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Interact\Runtime;
 
 use Closure;
-use Interact\Attribute\AsIsland;
+use Interact\Discovery\Declaration;
 use InvalidArgumentException;
 
 /**
@@ -35,7 +35,7 @@ class RenderStack
      *
      * @param array<string, mixed> $props Explicit server-owned mount parameters.
      */
-    public function preserve(AsIsland $declaration, array $props, string $key, ?string $urlPrefix = null): ?Result
+    public function preserve(Declaration $declaration, array $props, string $key, ?string $urlPrefix = null): ?Result
     {
         if ($this->placeholder) {
             throw new InvalidArgumentException('Loading placeholders cannot mount nested islands.');

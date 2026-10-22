@@ -6,8 +6,8 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 
 - Build CakePHP Interact: reactive, server-rendered PHP islands, independent of Livewire and htmx.
 - Target PHP 8.5 and CakePHP 6. Declare supported versions and test them in CI.
-- Use `Island`, `AsIsland`, and `IslandContext`. CakePHP controller components retain their existing meaning.
-- Separate discovery, state transport, authorization, actions, rendering, and browser synchronization.
+- Use `Island`, optional `Render` attributes, and `IslandContext`. Resolve conventional `Island`-suffixed classes on demand using CakePHP-style application/plugin names; keep matching templates under `templates/island/`. CakePHP controller components retain their existing meaning.
+- Separate class resolution, metadata compilation, state transport, authorization, actions, rendering, and browser synchronization.
 - Construct fresh islands per request through CakePHP's container. Cache declarations only.
 - Require explicit declarations for mount props, transported state, writable state, and callable actions.
 - Keep services, entities, and queries out of snapshots. Never deserialize arbitrary PHP objects.
@@ -42,7 +42,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Prefer cohesive objects and composition. Use interfaces at real extension boundaries.
 - Keep PHP plugin classes extensible by default: consumers may subclass services, helpers, views, context objects, and metadata. Use protected methods and properties instead of private implementation members; retain constructor injection for behavior services.
 - Do not use final classes or methods merely because a class is small, immutable, or a utility. Readonly classes can remain inheritable. Use late static binding in overridable static workflows so recursive calls honor subclass behavior.
-- Use final or private only when a concrete invariant requires closing that extension point, and explain that reason in the declaration's docblock. The built-in declaration attributes remain final because discovery recognizes their exact marker classes; subclassed attributes are not discovered. Preserve intentional invalid-declaration fixtures in tests.
+- Use final or private only when a concrete invariant requires closing that extension point, and explain that reason in the declaration's docblock. The built-in declaration attributes remain final because metadata compilation recognizes their exact marker classes; subclassed attributes are not recognized. Preserve intentional invalid-declaration fixtures in tests.
 - Every class must have a docblock immediately above its declaration (and before declaration attributes). In a few informative sentences, explain its responsibility and place in the workflow; describe important ownership or security boundaries when relevant. Avoid restating the class name, lengthy implementation inventories, or boilerplate. This applies to PHP and TypeScript classes, including test and demo classes.
 - Use multiline declaration docblocks with `*` prefixes and the closing `*/` on its own line. Start with a responsibility summary, separate explanatory paragraphs and tags with blank lines, and give methods meaningful behavior summaries rather than tag-only comments. Use concise examples for public extension points where useful. Keep local PHP `@var` type assertions compact.
 - Document public contracts, array shapes, generics, and exceptions. Keep inline comments focused on unclear intent.
@@ -138,7 +138,7 @@ Required Composer scripts:
 - Start feature and API pages with a direct definition of what the feature does, then minimal syntax, behavior, variations, and options. Use concrete API names and headings; avoid motivational introductions, narrative filler, repeated setup, and text that only restates code. Keep one canonical page per topic and link to it from related pages.
 - Keep the homepage short and show cooperating PHP classes, elements, and mount calls in labeled code tabs. Use short role-based tab labels such as Island, Element, Table, and Mount instead of file paths; identify example file paths in PHP docblocks where needed. Identify imports, prerequisites, and application-supplied data.
 - Give new users a complete path from installation to a working interaction. Keep development-package and browser-asset requirements visible rather than hiding them in optional details.
-- Use declared aliases consistently in discovery and rendering examples. Make the ownership of props, writable drafts, computed data, authorization, and persistence explicit where relevant.
+- Use conventional application/plugin island names consistently in rendering examples. Make the ownership of props, writable drafts, computed data, authorization, and persistence explicit where relevant.
 - Prefer VitePress navigation, local search, code groups, callouts, and optional details over custom components. Reserve callouts for actionable caveats; omit line numbers unless useful.
 - Put complete applications in the separate Examples section, with prerequisites, imports, data setup, paths, and mount calls. Keep them focused and copyable; import tested source when it fits, or maintain minimal tested documentation fixtures. Link to shared setup instead of repeating it.
 - For small control and form examples, use a code group with HTML first and FormHelper second, demonstrating equivalent behavior. Use the labels HTML and FormHelper; HTML is the default tab. Use a single HTML snippet for containers or Alpine presentation when a helper alternative adds nothing. Complete CakePHP examples continue to use FormHelper.

@@ -13,10 +13,22 @@ configuration and replace rendering services.
 
 ## TemplateView
 
-`Interact\View\TemplateView` renders the declared native template or element.
+`Interact\View\TemplateView` renders the compiled native template or element.
+Metadata compilation infers omitted targets from the island class and retains its owning
+plugin. See [template conventions and plugin overrides](/guide/conventions).
 It supplies exactly the island's props, state, errors, and `viewData()`, restoring
-the previous view scope afterwards. Both initial mounts and updates use this
-same variable contract.
+the previous view scope and plugin context afterwards, including when rendering
+throws. Both initial mounts and updates use this same variable contract.
+
+Explicit unqualified targets are relative to the island's owning application or
+plugin. Qualified references select another loaded plugin. CakePHP owns template
+lookup and application/theme overrides; the hosting route's plugin and prefix do
+not select the island's view.
+
+`Definition::declaration` contains the compiled island name, view target, and root
+tag. `Definition::plugin` identifies the class's owner. `TemplateView::island()` requires a resolved target; use the
+compiled declaration when calling it directly. Manual `Registry::register()`
+calls identify plugin ownership from loaded plugins' source directories.
 
 Its default FormHelper keeps native HTML validation constraints and disables
 `autoSetCustomValidity`, which would generate inline JavaScript handlers blocked
@@ -64,7 +76,7 @@ use Interact\View\TemplateView;
 class IslandTemplateView extends TemplateView
 {
     /**
-     * Make the application's normal formatting helpers available to island elements.
+     * Make the application's normal formatting helpers available to island views.
      */
     public function initialize(): void
     {
@@ -130,12 +142,12 @@ factory on initial and update requests.
 
 ## Dependency boundaries
 
-| Contract                      | Responsibility                                                    |
-| ----------------------------- | ----------------------------------------------------------------- |
-| `Discovery\Registry`          | Discover aliases, compile declarations, construct fresh instances |
-| `Security\SnapshotCodec`      | Sign and verify session/scope-bound state with expiry             |
-| `Runtime\Factory`             | Assemble the request runtime and choose its native view           |
-| `Rendering\RendererInterface` | Render a declaration with explicit data into HTML                 |
+| Contract                      | Responsibility                                                       |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `Discovery\Registry`          | Resolve class names, compile declarations, construct fresh instances |
+| `Security\SnapshotCodec`      | Sign and verify session/scope-bound state with expiry                |
+| `Runtime\Factory`             | Assemble the request runtime and choose its native view              |
+| `Rendering\RendererInterface` | Render a declaration with explicit data into HTML                    |
 
 Island constructors may receive application services through CakePHP's container.
 Register those dependencies normally and never transport them as state. In the

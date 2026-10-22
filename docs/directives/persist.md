@@ -29,7 +29,7 @@ The actual nodes are reused, preserving local Alpine state, media, listeners, fo
 
 This assumes an application-declared `notebook` island and authorized `$workspaceId`. Put the wrapper inside the layout's body, outside any page-owned island. The document's `html`, `head`, and `body` elements cannot themselves be persistent regions. Keys must be unique, nonempty, and literal. Regions cannot nest and the directive accepts no modifiers.
 
-Every incoming island mounts and authorizes independently on the server. Reuse requires matching mount alias, key, declared prop values, endpoint, scope, URL prefix, and session binding. Changing props or keys, or removing the region, disposes the old region and initializes fresh destination markup.
+Every incoming island mounts and authorizes independently on the server. Reuse requires matching island name, key, declared prop values, endpoint, scope, URL prefix, and session binding. Changing props or keys, or removing the region, disposes the old region and initializes fresh destination markup.
 
 ## State and ownership
 

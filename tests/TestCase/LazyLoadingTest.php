@@ -6,7 +6,7 @@ namespace Interact\Test\TestCase;
 use Cake\Http\Exception\ForbiddenException;
 use Cake\Http\ServerRequest;
 use Cake\Http\Session;
-use Interact\Attribute\AsIsland;
+use Interact\Discovery\Declaration;
 use Interact\Discovery\Registry;
 use Interact\IslandContext;
 use Interact\Loading\Options;
@@ -41,7 +41,7 @@ class LazyLoadingTest extends TestCase
 
     protected function runtime(?SnapshotCodec $codec = null): Runtime
     {
-        $registry = new Registry(collection: 'lazy-fixtures');
+        $registry = new Registry();
         $registry->register(LazyIsland::class);
 
         return new Runtime(
@@ -60,7 +60,7 @@ class LazyLoadingTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $initial = $runtime->mount('lazy-fixture', ['recordId' => 4], 'report', $context, new Options('manual'));
+        $initial = $runtime->mount('Lazy', ['recordId' => 4], 'report', $context, new Options('manual'));
         static::assertSame(['authorize:'], LazyIsland::$trace);
         static::assertSame([], $initial->state);
         static::assertSame([], $initial->writable);
@@ -91,7 +91,7 @@ class LazyLoadingTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $pending = $runtime->mount('lazy-fixture', ['recordId' => 1], 'report', $context, new Options('lazy'));
+        $pending = $runtime->mount('Lazy', ['recordId' => 1], 'report', $context, new Options('lazy'));
         try {
             $runtime->update(
                 ['snapshot' => $pending->snapshot, 'initialize' => true],
@@ -108,7 +108,7 @@ class LazyLoadingTest extends TestCase
         $context = $this->context();
         $this->expectException(ForbiddenException::class);
         $this->runtime()->mount(
-            'lazy-fixture',
+            'Lazy',
             ['recordId' => 1],
             'report',
             new IslandContext($context->request->withAttribute('denied', true), 'lazy', '/updates'),
@@ -143,7 +143,7 @@ class LazyLoadingTest extends TestCase
     {
         $context = $this->context();
         $runtime = $this->runtime();
-        $pending = $runtime->mount('lazy-fixture', ['recordId' => 1], 'report', $context, new Options('lazy'));
+        $pending = $runtime->mount('Lazy', ['recordId' => 1], 'report', $context, new Options('lazy'));
         try {
             $runtime->update(['snapshot' => $pending->snapshot] + $input, $context);
             static::fail('Pending ticket misuse must be rejected.');
@@ -156,7 +156,7 @@ class LazyLoadingTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $mounted = $runtime->mount('lazy-fixture', ['recordId' => 1], 'report', $context);
+        $mounted = $runtime->mount('Lazy', ['recordId' => 1], 'report', $context);
         $this->expectException(InvalidArgumentException::class);
         $runtime->update(['snapshot' => $mounted->snapshot, 'initialize' => true], $context);
     }
@@ -169,7 +169,7 @@ class LazyLoadingTest extends TestCase
         });
         $runtime = $this->runtime($codec);
         $context = $this->context();
-        $pending = $runtime->mount('lazy-fixture', ['recordId' => 1], 'report', $context, new Options('defer'));
+        $pending = $runtime->mount('Lazy', ['recordId' => 1], 'report', $context, new Options('defer'));
         $time = 20;
         $this->expectException(InvalidSnapshotException::class);
         $runtime->update(['snapshot' => $pending->snapshot, 'initialize' => true], $context);
@@ -178,7 +178,7 @@ class LazyLoadingTest extends TestCase
     public function testMissingPropsStillFailBeforePlaceholder(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->runtime()->mount('lazy-fixture', [], 'report', $this->context(), new Options('lazy'));
+        $this->runtime()->mount('Lazy', [], 'report', $this->context(), new Options('lazy'));
     }
 
     /**
@@ -213,7 +213,7 @@ class LazyLoadingTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $pending = $runtime->mount('lazy-fixture', ['recordId' => 1], 'report', $context, new Options('lazy'));
+        $pending = $runtime->mount('Lazy', ['recordId' => 1], 'report', $context, new Options('lazy'));
         $file = new UploadedFile('php://temp', 0, UPLOAD_ERR_OK, 'file.txt');
         try {
             $runtime->update(
@@ -235,7 +235,7 @@ class LazyLoadingTest extends TestCase
     public function testPlaceholderCannotMountChildrenAndFailureReleasesTheScope(): void
     {
         $stack = new RenderStack();
-        $declaration = new AsIsland('child', element: 'child');
+        $declaration = new Declaration('child', element: 'child');
         try {
             $stack->placeholder(static fn(): string => $stack->preserve($declaration, [], 'child')->html ?? '');
             static::fail('Placeholder children must not escape into parent ownership.');
@@ -259,7 +259,7 @@ class LazyLoadingTest extends TestCase
         );
         $runtime = $this->runtime();
         $pending = $runtime->mount(
-            'lazy-fixture',
+            'Lazy',
             ['recordId' => 0, 'label' => null],
             'report',
             $context,

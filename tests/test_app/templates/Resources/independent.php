@@ -7,5 +7,5 @@ declare(strict_types=1);
     <h1>Independent searches</h1>
     <p>Each list owns its query parameters. Reading notes stay local during Back and Forward.</p>
 </header>
-<?= $this->Interact->render('resource-search', props: ['controlPrefix' => 'articles'], key: 'articles', urlPrefix: 'articles') ?>
-<?= $this->Interact->render('resource-search', props: ['controlPrefix' => 'products'], key: 'products', urlPrefix: 'products') ?>
+<?= $this->Interact->render('ResourceSearch', props: ['controlPrefix' => 'articles'], key: 'articles', urlPrefix: 'articles') ?>
+<?= $this->Interact->render('ResourceSearch', props: ['controlPrefix' => 'products'], key: 'products', urlPrefix: 'products') ?>

@@ -48,7 +48,7 @@ async function example(
 test('the article example preserves entity errors and saves corrected input', async ({
   page,
 }) => {
-  const errors = await example(page, 'article-form');
+  const errors = await example(page, 'Article/Form');
   await page
     .getByLabel('Comment 1 text', { exact: true })
     .fill('First comment');
@@ -69,7 +69,7 @@ test('the article example preserves entity errors and saves corrected input', as
 test('the search example filters and resets pagination while preserving focus', async ({
   page,
 }) => {
-  const errors = await example(page, 'resource-search');
+  const errors = await example(page, 'ResourceSearch');
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Page 2');
   await page.getByLabel('Search resources').fill('resource 01');
@@ -110,7 +110,7 @@ test('the select example keeps its real widget through PHP updates and resets', 
   });
   const errors = await example(
     page,
-    'country-picker',
+    'CountryPicker',
     ['/docs-tom-select.js', '/docs-country-picker.js'],
     ['/docs-tom-select.css'],
   );
@@ -173,7 +173,7 @@ test('the chart example updates and disposes its library instance under CSP', as
       body: await readFile('tests/docs/app/webroot/js/sales-chart.js', 'utf8'),
     });
   });
-  const errors = await example(page, 'sales-chart', [
+  const errors = await example(page, 'SalesChart', [
     '/docs-chart-library.js',
     '/docs-sales-chart.js',
   ]);
@@ -200,7 +200,7 @@ test('the chart example updates and disposes its library instance under CSP', as
 test('loads the resource-count documentation example through the standard bridge', async ({
   page,
 }) => {
-  const errors = await example(page, 'resource-count', [], [], 'manual');
+  const errors = await example(page, 'ResourceCount', [], [], 'manual');
   await expect(page.getByText('25 matching resources')).toHaveCount(0);
   await page.getByRole('button', { name: 'Load content', exact: true }).click();
   await expect(

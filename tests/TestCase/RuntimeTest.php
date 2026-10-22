@@ -34,11 +34,11 @@ class RuntimeTest extends TestCase
     }
 
     /**
-     * Assemble a counter runtime with real discovery, signing, and a replaceable renderer.
+     * Assemble a counter runtime with real class resolution, signing, and a replaceable renderer.
      */
     protected function runtime(?CallbackRenderer $renderer = null): Runtime
     {
-        $registry = new Registry(collection: 'explicit');
+        $registry = new Registry();
         $registry->register(CounterIsland::class);
 
         return new Runtime(
@@ -54,7 +54,7 @@ class RuntimeTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $initial = $runtime->mount('counter', ['recordId' => 7], 'first', $context);
+        $initial = $runtime->mount('Counter', ['recordId' => 7], 'first', $context);
         static::assertSame('mounted', $initial->state['locked']);
         static::assertStringStartsWith('<section ', $initial->html);
         static::assertStringContainsString('data-interact-csrf="csrf-test"', $initial->html);
@@ -71,7 +71,7 @@ class RuntimeTest extends TestCase
         static::assertSame($initial->id, $updated->id);
         static::assertSame([['name' => 'counter-saved', 'detail' => ['count' => 6]]], $updated->events);
         static::assertSame(1, $updated->payload()['version']);
-        $other = $runtime->mount('counter', ['recordId' => 8], 'other', $context);
+        $other = $runtime->mount('Counter', ['recordId' => 8], 'other', $context);
         static::assertNotSame($initial->id, $other->id);
         static::assertSame(0, $other->state['count']);
     }
@@ -80,7 +80,7 @@ class RuntimeTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $initial = $runtime->mount('counter', ['recordId' => 7], 'first', $context);
+        $initial = $runtime->mount('Counter', ['recordId' => 7], 'first', $context);
         $updated = $runtime->update([
             'snapshot' => $initial->snapshot,
             'updates' => ['form.title' => '', 'form.tags.0' => 'a', 'amount' => 0, 'enabled' => true],
@@ -100,7 +100,7 @@ class RuntimeTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $initial = $runtime->mount('counter', ['recordId' => 1], 'first', $context);
+        $initial = $runtime->mount('Counter', ['recordId' => 1], 'first', $context);
         $result = $runtime->update(['snapshot' => $initial->snapshot, 'action' => 'invalid'], $context);
         static::assertSame(['count' => ['Invalid count.']], $result->errors);
         static::assertSame([], $result->events);
@@ -110,7 +110,7 @@ class RuntimeTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $initial = $runtime->mount('counter', ['recordId' => 1], 'first', $context);
+        $initial = $runtime->mount('Counter', ['recordId' => 1], 'first', $context);
         $this->expectException(InvalidArgumentException::class);
         $runtime->update(['snapshot' => $initial->snapshot, 'action' => 'mount'], $context);
     }
@@ -119,7 +119,7 @@ class RuntimeTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $initial = $runtime->mount('counter', ['recordId' => 1], 'first', $context);
+        $initial = $runtime->mount('Counter', ['recordId' => 1], 'first', $context);
         $this->expectException(InvalidArgumentException::class);
         $runtime->update(['snapshot' => $initial->snapshot, 'updates' => ['locked' => 'forged']], $context);
     }
@@ -127,7 +127,7 @@ class RuntimeTest extends TestCase
     public function testMissingRequiredPropIsRejected(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->runtime()->mount('counter', [], 'first', $this->context());
+        $this->runtime()->mount('Counter', [], 'first', $this->context());
     }
 
     /**
@@ -165,7 +165,7 @@ class RuntimeTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $initial = $runtime->mount('counter', ['recordId' => 1], 'first', $context);
+        $initial = $runtime->mount('Counter', ['recordId' => 1], 'first', $context);
         $this->expectException(InvalidArgumentException::class);
         $runtime->update([
             'snapshot' => $initial->snapshot,
@@ -179,7 +179,7 @@ class RuntimeTest extends TestCase
     {
         $runtime = $this->runtime();
         $context = $this->context();
-        $initial = $runtime->mount('counter', ['recordId' => 1], 'first', $context);
+        $initial = $runtime->mount('Counter', ['recordId' => 1], 'first', $context);
         $result = $runtime->update([
             'snapshot' => $initial->snapshot,
             'action' => 'accept',
@@ -197,13 +197,13 @@ class RuntimeTest extends TestCase
     public function testMountRejectsStateAsProps(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->runtime()->mount('counter', ['recordId' => 1, 'count' => 4], 'first', $this->context());
+        $this->runtime()->mount('Counter', ['recordId' => 1, 'count' => 4], 'first', $this->context());
     }
 
     public function testMountRejectsEmptyKey(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->runtime()->mount('counter', ['recordId' => 1], '', $this->context());
+        $this->runtime()->mount('Counter', ['recordId' => 1], '', $this->context());
     }
 
     public function testRejectsNonArrayEnvelope(): void
@@ -221,14 +221,14 @@ class RuntimeTest extends TestCase
                 $runtime = $reference->runtime;
                 assert(is_int($data['count']), 'The configured collaborator must satisfy its declared contract.');
 
-                return $runtime->mount('counter', ['recordId' => 2 + $data['count']], 'child', $context)->html;
+                return $runtime->mount('Counter', ['recordId' => 2 + $data['count']], 'child', $context)->html;
             }
 
             return '<p>Child</p>';
         });
         $runtime = $this->runtime($renderer);
         $reference->runtime = $runtime;
-        $mount = $runtime->mount('counter', ['recordId' => 1], 'parent', $context);
+        $mount = $runtime->mount('Counter', ['recordId' => 1], 'parent', $context);
         $this->expectException(InvalidArgumentException::class);
         $runtime->update(['snapshot' => $mount->snapshot, 'updates' => ['count' => 1]], $context);
     }
@@ -241,8 +241,8 @@ class RuntimeTest extends TestCase
             if ($data['recordId'] === 1) {
                 $runtime = $reference->runtime;
                 assert(is_int($data['count']), 'The configured collaborator must satisfy its declared contract.');
-                $runtime->mount('counter', ['recordId' => 2], 'same-key', $context);
-                $runtime->mount('counter', ['recordId' => 3], 'same-key', $context);
+                $runtime->mount('Counter', ['recordId' => 2], 'same-key', $context);
+                $runtime->mount('Counter', ['recordId' => 3], 'same-key', $context);
             }
 
             return '<p>Child</p>';
@@ -250,7 +250,7 @@ class RuntimeTest extends TestCase
         $runtime = $this->runtime($renderer);
         $reference->runtime = $runtime;
         try {
-            $runtime->mount('counter', ['recordId' => 1], 'parent', $context);
+            $runtime->mount('Counter', ['recordId' => 1], 'parent', $context);
             static::fail('Duplicate keys must fail.');
         } catch (InvalidArgumentException $invalidArgumentException) {
             static::assertStringContainsString('Duplicate', $invalidArgumentException->getMessage());
@@ -258,7 +258,7 @@ class RuntimeTest extends TestCase
 
         static::assertStringContainsString(
             'Child',
-            $runtime->mount('counter', ['recordId' => 2], 'parent', $context)->html,
+            $runtime->mount('Counter', ['recordId' => 2], 'parent', $context)->html,
         );
     }
 }

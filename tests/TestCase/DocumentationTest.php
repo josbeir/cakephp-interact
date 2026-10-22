@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Interact\Test\TestCase;
 
 use App\Controller\InvoicesController;
-use App\Island\ResourceCount;
 use Cake\Core\Configure;
 use Cake\Http\ServerRequest;
 use Cake\ORM\Locator\LocatorInterface;
@@ -34,6 +33,8 @@ class DocumentationTest extends TestCase
      */
     protected mixed $previousPaths;
 
+    protected string $previousNamespace;
+
     protected DocumentationRuntime $examples;
 
     protected function setUp(): void
@@ -41,6 +42,7 @@ class DocumentationTest extends TestCase
         parent::setUp();
         $this->previousLocator = TableRegistry::getTableLocator();
         $this->previousPaths = Configure::read('App.paths.templates');
+        $this->previousNamespace = (string)Configure::read('App.namespace');
         $this->examples = new DocumentationRuntime();
     }
 
@@ -48,6 +50,7 @@ class DocumentationTest extends TestCase
     {
         TableRegistry::setTableLocator($this->previousLocator);
         Configure::write('App.paths.templates', $this->previousPaths);
+        Configure::write('App.namespace', $this->previousNamespace);
         parent::tearDown();
     }
 
@@ -56,11 +59,11 @@ class DocumentationTest extends TestCase
         $runtime = $this->examples->runtime;
         $context = $this->examples->context;
         $pending = $runtime->mount(
-            'resource-count',
+            'ResourceCount',
             ['search' => 'Resource 01'],
             'count',
             $context,
-            new Options('manual', 'Interact/resource_count_placeholder'),
+            new Options('manual', 'Loading/resource_count'),
         );
         static::assertSame([], $pending->state);
         static::assertStringContainsString('Resource 01', $pending->html);
@@ -76,19 +79,18 @@ class DocumentationTest extends TestCase
         $view = new TemplateView($this->examples->context->request);
         $view->set('search', 'host-only');
 
-        $registry = new Registry(collection: 'isolated-placeholder');
-        $registry->register(ResourceCount::class);
+        $registry = new Registry();
 
         $runtime = new Factory($registry, new SnapshotCodec(str_repeat('d', 32)))->create(
             $view,
             $this->examples->context,
         );
         $pending = $runtime->mount(
-            'resource-count',
+            'ResourceCount',
             [],
             'default-count',
             $this->examples->context,
-            new Options('manual', 'Interact/resource_count_placeholder'),
+            new Options('manual', 'Loading/resource_count'),
         );
         static::assertStringNotContainsString('host-only', $pending->html);
         static::assertSame('host-only', $view->get('search'));
@@ -98,7 +100,7 @@ class DocumentationTest extends TestCase
 
     public function testArticleValidationPreservesEntityErrorsAndSuccessfulSaveDispatches(): void
     {
-        $mount = $this->examples->runtime->mount('article-form', [], 'form', $this->examples->context);
+        $mount = $this->examples->runtime->mount('Article/Form', [], 'form', $this->examples->context);
         $invalid = $this->examples->runtime->update([
             'snapshot' => $mount->snapshot,
             'action' => 'save',
@@ -130,7 +132,7 @@ class DocumentationTest extends TestCase
     {
         $runtime = $this->examples->runtime;
         $context = $this->examples->context;
-        $mount = $runtime->mount('article-form', [], 'form', $context);
+        $mount = $runtime->mount('Article/Form', [], 'form', $context);
         $draft = [
             'title' => 'Nested article',
             'body' => '<script>draft</script>',
@@ -194,7 +196,7 @@ class DocumentationTest extends TestCase
     {
         $runtime = $this->examples->runtime;
         $context = $this->examples->context;
-        $mount = $runtime->mount('article-form', [], 'form', $context);
+        $mount = $runtime->mount('Article/Form', [], 'form', $context);
         $draft = [
             'title' => 'Current title',
             'body' => 'Body <with> markup',
@@ -236,7 +238,7 @@ class DocumentationTest extends TestCase
     {
         $runtime = $this->examples->runtime;
         $context = $this->examples->context;
-        $mount = $runtime->mount('article-form', [], 'form', $context);
+        $mount = $runtime->mount('Article/Form', [], 'form', $context);
         $forged = $runtime->update([
             'snapshot' => $mount->snapshot,
             'action' => 'save',
@@ -269,7 +271,7 @@ class DocumentationTest extends TestCase
     {
         $runtime = $this->examples->runtime;
         $context = $this->examples->context;
-        $mount = $runtime->mount('article-redirect', [], 'form', $context);
+        $mount = $runtime->mount('ArticleRedirect', [], 'form', $context);
         $invalid = $runtime->update(['snapshot' => $mount->snapshot, 'action' => 'save'], $context);
         static::assertNotEmpty($invalid->errors);
         static::assertStringContainsString('Enter a title.', $invalid->html);
@@ -280,7 +282,7 @@ class DocumentationTest extends TestCase
         ], $context);
         static::assertInstanceOf(RedirectResult::class, $saved);
         static::assertSame('/articles/1', $saved->destination);
-        $invoice = $runtime->mount('invoice-download', [], 'invoice', $context);
+        $invoice = $runtime->mount('InvoiceDownload', [], 'invoice', $context);
         $exported = $runtime->update(['snapshot' => $invoice->snapshot, 'action' => 'download'], $context);
         static::assertSame('/invoices/sample', $exported->download);
         static::assertStringContainsString('Requested 1 downloads.', $exported->html);
@@ -291,7 +293,7 @@ class DocumentationTest extends TestCase
 
     public function testSearchFinderPaginationEmptyResultsAndLiteralWildcards(): void
     {
-        $mount = $this->examples->runtime->mount('resource-search', [], 'search', $this->examples->context);
+        $mount = $this->examples->runtime->mount('ResourceSearch', [], 'search', $this->examples->context);
         static::assertStringContainsString('25 results.', $mount->html);
         $last = $this->examples->runtime->update([
             'snapshot' => $mount->snapshot,
@@ -314,7 +316,7 @@ class DocumentationTest extends TestCase
 
     public function testDependentChoicesResetCityAndRejectForgedMembership(): void
     {
-        $mount = $this->examples->runtime->mount('dependent-selects', [], 'choices', $this->examples->context);
+        $mount = $this->examples->runtime->mount('DependentSelects', [], 'choices', $this->examples->context);
         static::assertStringContainsString('Brussels', $mount->html);
         $changed = $this->examples->runtime->update([
             'snapshot' => $mount->snapshot,
@@ -339,7 +341,7 @@ class DocumentationTest extends TestCase
 
     public function testPollingCompletionRestartAndChartData(): void
     {
-        $job = $this->examples->runtime->mount('job-progress', [], 'job', $this->examples->context);
+        $job = $this->examples->runtime->mount('JobProgress', [], 'job', $this->examples->context);
         for ($step = 0; $step < 4; $step++) {
             $job = $this->examples->runtime->update([
                 'snapshot' => $job->snapshot,
@@ -355,7 +357,7 @@ class DocumentationTest extends TestCase
         ], $this->examples->context);
         static::assertSame(0, $job->state['progress']);
         static::assertTrue($job->state['running']);
-        $chart = $this->examples->runtime->mount('sales-chart', [], 'chart', $this->examples->context);
+        $chart = $this->examples->runtime->mount('SalesChart', [], 'chart', $this->examples->context);
         $chart = $this->examples->runtime->update([
             'snapshot' => $chart->snapshot,
             'action' => 'refreshChart',
@@ -369,7 +371,7 @@ class DocumentationTest extends TestCase
 
     public function testCountryWidgetValidationAndReset(): void
     {
-        $widget = $this->examples->runtime->mount('country-picker', [], 'widget', $this->examples->context);
+        $widget = $this->examples->runtime->mount('CountryPicker', [], 'widget', $this->examples->context);
         $invalid = $this->examples->runtime->update([
             'snapshot' => $widget->snapshot,
             'updates' => ['country' => 'forged'],
@@ -401,7 +403,7 @@ class DocumentationTest extends TestCase
             mkdir($directory, 0o700, true);
         }
 
-        $mount = $this->examples->runtime->mount('document-upload', [], 'upload', $this->examples->context);
+        $mount = $this->examples->runtime->mount('DocumentUpload', [], 'upload', $this->examples->context);
         $invalid = $this->examples->runtime->update([
             'snapshot' => $mount->snapshot,
             'action' => 'save',

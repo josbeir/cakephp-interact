@@ -14,14 +14,14 @@ real invoice endpoints must authorize access to the requested record independent
 
 ::: code-group
 
-<<< @/../tests/docs/app/src/Island/InvoiceDownload.php [Island]
+<<< @/../tests/docs/app/src/Island/InvoiceDownloadIsland.php [Island]
 
-<<< @/../tests/docs/app/templates/element/Interact/invoice_download.php [Element]
+<<< @/../tests/docs/app/templates/island/invoice_download.php [Template]
 
 <<< @/../tests/docs/app/src/Controller/InvoicesController.php [Controller]
 
 ```php [Mount]
-<?= $this->Interact->render('invoice-download') ?>
+<?= $this->Interact->render('InvoiceDownload') ?>
 ```
 
 :::

@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace Interact\Test\Fixture;
 
-use Interact\Attribute\AsIsland;
+use Interact\Attribute\Render;
 
 /**
- * Declares another class under an existing alias so collision handling can be tested.
+ * Supplies a distinct class for explicit registration-name collision checks.
  */
-#[AsIsland('counter', template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class DuplicateIsland extends CounterIsland
 {
 }
