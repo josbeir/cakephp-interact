@@ -73,6 +73,17 @@ export default function install(Alpine: Alpine): void {
     '.preserve-scroll',
     '.hover.preserve-scroll',
     '.preserve-scroll.hover',
+    '.trail',
+    '.trail.hover',
+    '.hover.trail',
+    '.trail.preserve-scroll',
+    '.preserve-scroll.trail',
+    '.trail.hover.preserve-scroll',
+    '.trail.preserve-scroll.hover',
+    '.hover.trail.preserve-scroll',
+    '.hover.preserve-scroll.trail',
+    '.preserve-scroll.trail.hover',
+    '.preserve-scroll.hover.trail',
   ]) {
     Alpine.addInitSelector(
       () =>

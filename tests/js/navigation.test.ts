@@ -249,6 +249,75 @@ describe('navigation feedback and links', () => {
     expect(link.getAttribute('aria-current')).toBe('page');
   });
 
+  it.each([
+    ['/item', '/item', true, true],
+    ['/item', '/item/subpage', false, true],
+    ['/item', '/item/subpage/edit', false, true],
+    ['/item', '/items', false, false],
+    ['/item', '/item-other', false, false],
+    ['/item', '/Item/subpage', false, false],
+    ['/item/subpage', '/item', false, false],
+    ['/item/?from=menu#top', '/item?filter=active#content', true, true],
+    ['/item///?from=menu#top', '/item/subpage/?filter=active', false, true],
+    ['/', '/', true, true],
+    ['/?from=menu#top', '/item', false, false],
+    ['https://external.example/item', '/item', false, false],
+    ['https://external.example/item', '/item/subpage', false, false],
+    ['https://localhost/item', '/item/subpage', false, false],
+    ['http://localhost:8080/item', '/item/subpage', false, false],
+  ])(
+    'matches %s on %s with exact=%s and trail=%s',
+    (href, location, exact, trail) => {
+      window.history.replaceState(null, '', location);
+      const link = document.createElement('a');
+      link.href = href;
+      updateCurrent(link, true);
+      expect(link.getAttribute('aria-current')).toBe(exact ? 'page' : null);
+      expect(link.hasAttribute('data-interact-active-trail')).toBe(trail);
+      updateCurrent(link);
+      expect(link.hasAttribute('data-interact-active-trail')).toBe(false);
+      expect(link.getAttribute('aria-current')).toBe(exact ? 'page' : null);
+    },
+  );
+
+  it('refreshes opted-in trails on URL and destination changes until disposed', async () => {
+    const { controller } = setup();
+    const link = document.createElement('a');
+    link.href = '/first';
+    document.body.append(link);
+    const dispose = navigationBinding(
+      controller,
+      link,
+      'navigate',
+      ['trail'],
+      '',
+    );
+    expect(link.getAttribute('aria-current')).toBe('page');
+    expect(link.hasAttribute('data-interact-active-trail')).toBe(true);
+    window.history.replaceState(null, '', '/first/child');
+    document.dispatchEvent(new Event('interact:url'));
+    expect(link.hasAttribute('aria-current')).toBe(false);
+    expect(link.hasAttribute('data-interact-active-trail')).toBe(true);
+    window.history.replaceState(null, '', '/elsewhere');
+    document.dispatchEvent(new Event('interact:url'));
+    expect(link.hasAttribute('data-interact-active-trail')).toBe(false);
+    link.href = '/elsewhere';
+    await Promise.resolve();
+    expect(link.getAttribute('aria-current')).toBe('page');
+    expect(link.hasAttribute('data-interact-active-trail')).toBe(true);
+    link.setAttribute('aria-current', 'step');
+    link.href = '/first';
+    await Promise.resolve();
+    expect(link.getAttribute('aria-current')).toBe('step');
+    expect(link.hasAttribute('data-interact-active-trail')).toBe(false);
+    dispose();
+    link.href = '/elsewhere';
+    await Promise.resolve();
+    document.dispatchEvent(new Event('interact:url'));
+    expect(link.getAttribute('aria-current')).toBe('step');
+    expect(link.hasAttribute('data-interact-active-trail')).toBe(false);
+  });
+
   it('binds links outside islands, handles prefetch focus and disposes every listener', async () => {
     vi.useFakeTimers();
     const { controller } = setup();

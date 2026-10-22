@@ -1,5 +1,94 @@
 import { test, expect } from './fixtures';
 
+test('discovers every navigation modifier order outside x-data', async ({
+  page,
+}) => {
+  const combinations: string[][] = [[]];
+  const modifiers = ['trail', 'hover', 'preserve-scroll'];
+  for (const first of modifiers) {
+    combinations.push([first]);
+    for (const second of modifiers.filter((modifier) => modifier !== first)) {
+      combinations.push([first, second]);
+      for (const third of modifiers.filter(
+        (modifier) => modifier !== first && modifier !== second,
+      ))
+        combinations.push([first, second, third]);
+    }
+  }
+  const links = combinations
+    .map((combination, index) => {
+      const suffix = combination.map((modifier) => `.${modifier}`).join('');
+      return `<a href="/navigation" x-interact:navigate${suffix}>Link ${index}</a>`;
+    })
+    .join('');
+  await page.route('**/navigation/details', async (route) => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace(
+      '<body>',
+      `<body><nav aria-label="Modifier discovery">${links}</nav>`,
+    );
+    await route.fulfill({ response, body });
+  });
+  await page.goto('/navigation/details');
+  const menu = page.getByRole('navigation', { name: 'Modifier discovery' });
+  await expect(menu.getByRole('link')).toHaveCount(16);
+  for (const [index, combination] of combinations.entries()) {
+    const link = menu.getByRole('link', { name: `Link ${index}`, exact: true });
+    if (combination.includes('trail'))
+      await expect(link).toHaveAttribute('data-interact-active-trail', '');
+    else await expect(link).not.toHaveAttribute('data-interact-active-trail');
+    await expect(link).not.toHaveAttribute('aria-current');
+  }
+});
+
+test('tracks opted-in trails through persisted navigation and Back/Forward', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/navigation/details');
+  const menu = page.getByRole('navigation', { name: 'Demo pages' });
+  const section = menu.getByRole('link', { name: 'Navigation', exact: true });
+  const home = menu.getByRole('link', {
+    name: 'Embedded islands',
+    exact: true,
+  });
+  const tabs = page.getByRole('navigation', { name: 'Navigation example' });
+  const overview = tabs.getByRole('link', { name: 'Overview', exact: true });
+  const details = tabs.getByRole('link', { name: 'Details', exact: true });
+  const retained = await section.elementHandle();
+  if (!retained) throw new Error('Missing navigation section link.');
+  await expect(section).toHaveAttribute('data-interact-active-trail', '');
+  await expect(section).not.toHaveAttribute('aria-current');
+  await expect(overview).not.toHaveAttribute('data-interact-active-trail');
+  await expect(overview).not.toHaveAttribute('aria-current');
+  await expect(details).toHaveAttribute('aria-current', 'page');
+  await expect(home).not.toHaveAttribute('data-interact-active-trail');
+
+  await overview.click();
+  await expect(section).toHaveAttribute('aria-current', 'page');
+  await expect(section).toHaveAttribute('data-interact-active-trail', '');
+  await expect(overview).toHaveAttribute('aria-current', 'page');
+  await expect(overview).not.toHaveAttribute('data-interact-active-trail');
+  await details.click();
+  await expect(details).toHaveAttribute('aria-current', 'page');
+  await expect(section).toHaveAttribute('data-interact-active-trail', '');
+  await expect(section).not.toHaveAttribute('aria-current');
+
+  await home.click();
+  await expect(home).toHaveAttribute('aria-current', 'page');
+  await expect(section).not.toHaveAttribute('data-interact-active-trail');
+  await page.goBack();
+  await expect(details).toHaveAttribute('aria-current', 'page');
+  await expect(section).toHaveAttribute('data-interact-active-trail', '');
+  await expect(section).not.toHaveAttribute('aria-current');
+  await page.goForward();
+  await expect(home).toHaveAttribute('aria-current', 'page');
+  await expect(section).not.toHaveAttribute('data-interact-active-trail');
+  expect(await retained.evaluate((link) => link.isConnected)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
 test('visits ordinary CakePHP pages, retains layout islands, and mounts fresh page content', async ({
   page,
 }) => {
