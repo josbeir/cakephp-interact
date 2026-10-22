@@ -184,6 +184,15 @@ it('mirrors multiple local values in both directions without sending requests by
   expect(child.requests).toHaveLength(0);
 });
 
+it('checks the exact writable owner of scalar and nested model paths', async () => {
+  const { parent, child } = await fixture();
+  expect(child.client.canModel('value')).toBe(true);
+  expect(parent.client.canModel('data.value')).toBe(true);
+  expect(child.client.canModel('values')).toBe(false);
+  expect(parent.client.canModel('database.value')).toBe(false);
+  expect(child.client.canModel('')).toBe(false);
+});
+
 it('captures edits before blur or an input event when the parent action submits', async () => {
   const { parent, input } = await fixture();
   input.value = 'not yet dispatched';
@@ -263,6 +272,71 @@ it('keeps a later accepted child action when an older parent response arrives', 
   expect(
     child.requests.filter((request) => request.action === 'choose'),
   ).toHaveLength(1);
+});
+
+it('reports a removed parent model path instead of copying undefined into a late child response', async () => {
+  let release: () => void = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const { parent, child } = await fixture({
+    parentRenderless: true,
+    parentServer: async (_request, current) => ({
+      ...current,
+      data: { end: '' },
+    }),
+    childServer: async (_request, current) => {
+      await held;
+      return { ...current, value: 'late selection' };
+    },
+  });
+  const choosing = child.client.bridge.call('choose');
+  await vi.waitFor(() => expect(child.requests).toHaveLength(1));
+  const removed = await parent.client.bridge.call('removePath');
+  expect(removed).toMatchObject({ ok: false, error: { code: 'client_error' } });
+  release();
+  expect(await choosing).toMatchObject({
+    ok: false,
+    error: { code: 'client_error' },
+  });
+  expect(parent.client.bridge.state.data).toEqual({ end: '' });
+  expect(child.client.bridge.state.value).toBe('late selection');
+  expect(child.requests).toHaveLength(1);
+});
+
+it('omits an unavailable child model from preservation and recovers its native control value', async () => {
+  let release: () => void = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const { parent, child } = await fixture({
+    parentServer: async (_request, current) => {
+      await held;
+      return current;
+    },
+    childServer: async (_request, current) => ({
+      ...current,
+      value: 'accepted selection',
+    }),
+  });
+  const saving = parent.client.bridge.call('save');
+  await vi.waitFor(() => expect(parent.requests).toHaveLength(1));
+  await child.client.bridge.call('choose');
+  delete child.client.bridge.state.value;
+  await vi.waitFor(() =>
+    expect(child.client.bridge.error?.code).toBe('client_error'),
+  );
+  expect(
+    parent.client.composition?.preserve({ data: { value: '', end: '' } }),
+  ).toEqual({});
+  release();
+  expect(await saving).toEqual({ ok: true });
+  expect(parent.client.bridge.state.data).toMatchObject({
+    value: 'accepted selection',
+  });
+  expect(child.client.bridge.state.value).toBe('accepted selection');
+  expect(child.client.bridge.paused).toBe(true);
+  expect(child.requests).toHaveLength(1);
 });
 
 it('preserves nullable model values independently of zero', async () => {

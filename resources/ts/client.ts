@@ -81,7 +81,9 @@ export class IslandClient {
 
   /** @internal Check explicit writable ownership before connecting a model source or target. */
   canModel(path: string): boolean {
-    return this.writable[path.split('.')[0] ?? ''] !== undefined;
+    const separator = path.indexOf('.');
+    const owner = separator < 0 ? path : path.slice(0, separator);
+    return this.writable[owner] !== undefined;
   }
 
   /** @internal Read the last accepted value for cross-island draft reconciliation. */
