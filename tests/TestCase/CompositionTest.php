@@ -28,6 +28,7 @@ use Interact\Runtime\SnapshotData;
 use Interact\Runtime\Values;
 use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotCodec;
+use Interact\Test\Fixture\Composition\HistoryProbeIsland;
 use Interact\Test\Fixture\Composition\ParentIsland;
 use Interact\Test\Fixture\Composition\ProbeIsland;
 use Interact\Test\Fixture\Composition\RequiredIsland;
@@ -172,6 +173,73 @@ class CompositionTest extends TestCase
         $child = $this->runtime->mount('CompositionProbe', [], null, $this->context);
         $this->expectException(InvalidArgumentException::class);
         $this->runtime->update(['snapshot' => $child->snapshot, 'updates' => ['scope' => 'changed']], $this->context);
+    }
+
+    /**
+     * Report verified parent changes together with the complete URL restoration set in one hook.
+     *
+     * @param array{'data.value'?: string, 'data.count'?: int} $parentUpdates New accepted parent model values.
+     * @param array{paths: list<string>, value: string, count: int} $expected Expected hook observations and normalized state.
+     */
+    #[DataProvider('historyInputs')]
+    public function testHistoryRestorationIncludesChangedParentModels(
+        array $parentUpdates,
+        array $expected,
+        int $page,
+    ): void {
+        $registry = new Registry();
+        $registry->register(ParentIsland::class, 'CompositionParent');
+        $registry->register(HistoryProbeIsland::class, 'CompositionProbe');
+
+        $runtime = new Factory($registry, $this->codec)->create(
+            new TemplateView($this->context->request),
+            $this->context,
+        );
+        $parent = $runtime->mount('CompositionParent', [], null, $this->context);
+        $snapshots = [];
+        preg_match_all('/data-interact-snapshot="([^"]+)"/', $parent->html, $snapshots);
+        $child = $runtime->update([
+            'snapshot' => $snapshots[1][1],
+            'updates' => ['notes' => 'Keep this draft'],
+        ], $this->context);
+        $parent = $runtime->update([
+            'snapshot' => $parent->snapshot,
+            'updates' => ['scope' => 'changed', ...$parentUpdates],
+        ], $this->context);
+        $next = $runtime->update([
+            'snapshot' => $child->snapshot,
+            'parentInputs' => static::metadataValue($parent, 'data-interact-parent-inputs'),
+            'urlRestore' => true,
+            'updates' => ['page' => $page, 'filter' => ''],
+        ], $this->context);
+        static::assertSame($expected['paths'], $next->state['changed']);
+        static::assertSame($expected['value'], $next->state['value']);
+        static::assertSame($expected['count'], $next->state['count']);
+        static::assertSame($page, $next->state['page']);
+        static::assertSame('', $next->state['filter']);
+        static::assertSame('Keep this draft', $next->state['notes']);
+        static::assertSame('changed', $next->state['scope']);
+        static::assertSame(1, $next->state['mounts']);
+        static::assertSame(0, $next->state['calls']);
+    }
+
+    /**
+     * Cover changed and unchanged URL values with changed and unchanged bound models.
+     *
+     * @return iterable<string, array{array{'data.value'?: string, 'data.count'?: int}, array{paths: list<string>, value: string, count: int}, int}>
+     */
+    public static function historyInputs(): iterable
+    {
+        $updates = ['data.value' => ' from parent ', 'data.count' => 2];
+        $expected = ['paths' => ['scope', 'page', 'filter', 'value', 'count'], 'value' => 'FROM PARENT', 'count' => 2];
+
+        yield 'changed URL and changed models' => [$updates, $expected, 2];
+        yield 'unchanged URL and changed models' => [$updates, $expected, 1];
+        yield 'changed URL and unchanged models' => [
+            [],
+            ['paths' => ['scope', 'page', 'filter'], 'value' => '', 'count' => 0],
+            2,
+        ];
     }
 
     public function testChangedPropsAreAuthorizedBeforeHooksOrActions(): void

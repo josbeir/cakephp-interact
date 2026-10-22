@@ -237,7 +237,7 @@ class Runtime
             return $this->html->render($island, $definition, $data, $context);
         }
 
-        $paths = array_values(array_unique([...$propPaths, ...($restored ?? $paths), ...$uploadPaths]));
+        $paths = array_values(array_unique([...$propPaths, ...($restored ?? []), ...$paths, ...$uploadPaths]));
         if ($paths !== []) {
             $island->updated($paths);
         }
