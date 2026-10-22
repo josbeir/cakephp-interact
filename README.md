@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://packagist.org/packages/josbeir/cakephp-interact"><img src="https://img.shields.io/packagist/v/josbeir/cakephp-interact?label=Packagist" alt="Packagist" /></a>
+  <a href="https://packagist.org/packages/josbeir/cakephp-interact"><img src="https://img.shields.io/packagist/dt/josbeir/cakephp-interact?label=Packagist%20downloads" alt="Packagist total downloads" /></a>
   <a href="https://github.com/josbeir/cakephp-interact/actions/workflows/quality.yml"><img src="https://github.com/josbeir/cakephp-interact/actions/workflows/quality.yml/badge.svg?branch=main" alt="CI" /></a>
   <a href="https://mago.carthage.software/"><img src="https://img.shields.io/badge/checked_with-Mago-f97316" alt="Checked with Mago" /></a>
   <a href="https://app.codecov.io/gh/josbeir/cakephp-interact"><img src="https://codecov.io/gh/josbeir/cakephp-interact/branch/main/graph/badge.svg" alt="Coverage" /></a>
