@@ -71,8 +71,9 @@ collection or discovery cache is required. See [Conventions](/guide/conventions)
 ## A helper works on the page but not inside an island
 
 The default island renderer uses an isolated `TemplateView`, not the hosting
-`AppView`'s helper configuration. Configure an application `TemplateView` through
-the rendering factory. See [rendering and services](/reference/rendering#add-application-helpers).
+`AppView`'s helper configuration. Application island views are not discovered
+by class name. Follow the complete [custom island view setup](/reference/rendering#add-application-helpers)
+to select your view and helpers on both initial renders and update requests.
 
 ## An old page stops accepting updates
 
