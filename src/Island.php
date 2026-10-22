@@ -3,10 +3,15 @@ declare(strict_types=1);
 
 namespace Interact;
 
+use Cake\Datasource\Paging\PaginatedInterface;
+use Cake\Datasource\QueryInterface;
+use Cake\Datasource\RepositoryInterface;
 use Interact\Action\ActionEffects;
 use Interact\Action\Outcome;
+use Interact\Pagination\Pagination;
 use Interact\Validation\ErrorNormalizer;
 use InvalidArgumentException;
+use LogicException;
 use Psr\Http\Message\UriInterface;
 
 /**
@@ -29,6 +34,38 @@ abstract class Island
     protected array $events = [];
 
     protected ?ActionEffects $actionEffects = null;
+
+    /**
+     * @var array<string, mixed> Native CakePHP numeric paginator defaults.
+     */
+    protected array $paginate = [];
+
+    protected ?Pagination $pagination = null;
+
+    /**
+     * Attach the runtime's request-local pagination capability, never transported to the browser.
+     *
+     * @internal
+     */
+    public function attachPagination(Pagination $pagination): void
+    {
+        $this->pagination = $pagination;
+    }
+
+    /**
+     * Paginate an application-owned query using declared URL state and native CakePHP settings.
+     *
+     * @param array<string, mixed> $settings Per-call overrides for $paginate.
+     * @return \Cake\Datasource\Paging\PaginatedInterface<int, mixed>
+     * @throws LogicException When called outside an island request or more than once per request.
+     * @throws InvalidArgumentException When paging state or native settings are invalid.
+     */
+    public function paginate(RepositoryInterface|QueryInterface $object, array $settings = []): PaginatedInterface
+    {
+        $pagination = $this->pagination ?? throw new LogicException('Pagination requires an island runtime.');
+
+        return $pagination->paginate($this, $object, $settings + $this->paginate);
+    }
 
     /**
      * Provide the runtime's request-local outcome capability, excluded from transported state.

@@ -5,6 +5,7 @@ namespace Interact\Runtime;
 
 use Interact\Action\RouteContext;
 use Interact\Loading\Initialization;
+use Interact\Pagination\PagePath;
 use Interact\Upload\UploadReferences;
 use Interact\Url\Names;
 use InvalidArgumentException;
@@ -26,6 +27,8 @@ readonly class SnapshotData
     public ?string $urlPrefix;
 
     public RouteContext $routing;
+
+    public ?string $pagePath;
 
     /**
      * @var array<string, mixed> Declared state and mount props.
@@ -56,8 +59,9 @@ readonly class SnapshotData
         }
 
         $this->renderedErrors = RenderPolicy::renderedErrors($data);
-        $data += ['state' => null, 'children' => null, 'uploads' => [], 'routing' => []];
+        $data += ['state' => null, 'children' => null, 'uploads' => [], 'routing' => [], 'pagePath' => null];
         $this->routing = new RouteContext($data['routing']);
+        $this->pagePath = PagePath::read($data['pagePath']);
         $this->alias = $data['alias'];
         $this->id = $data['id'];
         $this->key = $data['key'];

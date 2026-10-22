@@ -28,7 +28,7 @@ class HttpTest extends HttpTestCase
         $root = $xpath->query('//*[@data-interact-state]')->item(0);
         static::assertInstanceOf(Element::class, $root);
         static::assertJsonStringEqualsJsonString(
-            '{"controlPrefix":"ResourceSearch","notes":"","search":"","category":"","level":"","sort":"title","pageSize":20,"page":1}',
+            '{"controlPrefix":"ResourceSearch","notes":"","search":"","category":"","level":"","sort":"title","direction":"asc","limit":20,"page":1}',
             (string)$root->getAttribute('data-interact-state'),
         );
         $options = $xpath->query('//html:select[@*[name()="x-interact:model.change" and .="sort"]]/html:option');
@@ -50,7 +50,7 @@ class HttpTest extends HttpTestCase
     public function testResourceSearchCombinesFiltersAndResetsPaginationAfterEdits(): void
     {
         $mount = $this->mounted(url: '/search');
-        $this->update(['snapshot' => $mount['snapshot'], 'action' => 'goTo', 'args' => [999]]);
+        $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['page' => 999]]);
         $this->assertResponseOk();
         $this->assertResponseContains('"page":60');
         $this->assertResponseContains('Showing 1,181\u20131,200');
@@ -70,7 +70,7 @@ class HttpTest extends HttpTestCase
         $this->assertResponseNotContains('Input validation');
         $this->assertResponseNotContains('Undefined variable');
         $this->assertResponseContains('value=\"shortest\" selected');
-        $this->update(['snapshot' => $this->nextSnapshot(), 'action' => 'goTo', 'args' => [-10]]);
+        $this->update(['snapshot' => $this->nextSnapshot(), 'updates' => ['page' => -10]]);
         $this->assertResponseOk();
         $this->assertResponseContains('"page":1');
     }
@@ -78,10 +78,10 @@ class HttpTest extends HttpTestCase
     public function testResourceSearchChangesPageSizeAndRestoresTheFullLibrary(): void
     {
         $mount = $this->mounted(url: '/search');
-        $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['pageSize' => 50]]);
+        $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['limit' => 50]]);
         $this->assertResponseOk();
         $this->assertResponseContains('Showing 1\u201350 of');
-        $this->update(['snapshot' => $this->nextSnapshot(), 'action' => 'goTo', 'args' => [999]]);
+        $this->update(['snapshot' => $this->nextSnapshot(), 'updates' => ['page' => 999]]);
         $this->assertResponseOk();
         $this->assertResponseContains('"page":24');
         $this->update(['snapshot' => $this->nextSnapshot(), 'updates' => ['search' => '%']]);
@@ -92,7 +92,7 @@ class HttpTest extends HttpTestCase
         $this->assertResponseOk();
         $this->assertResponseContains('Showing 1\u201320 of');
         $this->assertResponseContains('"search":""');
-        $this->assertResponseContains('"pageSize":20');
+        $this->assertResponseContains('"limit":20');
         $this->assertResponseNotContains('No resources found');
     }
 
@@ -103,7 +103,7 @@ class HttpTest extends HttpTestCase
             ['category' => 'unknown'],
             ['level' => 'unknown'],
             ['sort' => 'Resources.id'],
-            ['pageSize' => 0],
+            ['limit' => 0],
             ['search' => str_repeat('x', 201)],
         ] as $updates) {
             $this->update(['snapshot' => $mount['snapshot'], 'updates' => $updates]);

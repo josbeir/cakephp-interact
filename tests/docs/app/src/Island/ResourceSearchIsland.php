@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\Island;
 
 use Cake\ORM\Locator\LocatorAwareTrait;
-use Interact\Attribute\Action;
 use Interact\Attribute\State;
 use Interact\Island;
 
@@ -24,12 +23,9 @@ class ResourceSearchIsland extends Island
     public int $page = 1;
 
     /**
-     * Bound an initial page supplied by the URL before rendering results.
+     * @var array<string, mixed> Native page size and stable ordering.
      */
-    public function mount(): void
-    {
-        $this->normalizePage();
-    }
+    protected array $paginate = ['limit' => 10, 'order' => ['Resources.id' => 'asc']];
 
     /**
      * Restart pagination when the search changes.
@@ -41,18 +37,6 @@ class ResourceSearchIsland extends Island
         if (in_array('search', $paths, true) && !in_array('page', $paths, true)) {
             $this->page = 1;
         }
-
-        $this->normalizePage();
-    }
-
-    /**
-     * Bound navigation against the current filtered result count.
-     */
-    #[Action]
-    public function goTo(int $page): void
-    {
-        $this->page = $page;
-        $this->normalizePage();
     }
 
     /**
@@ -63,21 +47,7 @@ class ResourceSearchIsland extends Island
     public function viewData(): array
     {
         $query = $this->fetchTable('Resources')->find('matching', search: $this->search);
-        $total = $query->count();
 
-        return [
-            'resources' => $query->limit(10)->page($this->page)->all(),
-            'total' => $total,
-            'pages' => max(1, (int)ceil($total / 10)),
-        ];
-    }
-
-    /**
-     * Normalize page input from direct links, writable edits, and history restoration.
-     */
-    protected function normalizePage(): void
-    {
-        $total = $this->fetchTable('Resources')->find('matching', search: $this->search)->count();
-        $this->page = max(1, min($this->page, max(1, (int)ceil($total / 10))));
+        return ['resources' => $this->paginate($query)];
     }
 }

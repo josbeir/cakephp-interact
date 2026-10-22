@@ -31,6 +31,10 @@ PHP contracts are documented with their related features.
 
 [Initial render, updates, and hooks](/guide/lifecycle).
 
+## Pagination
+
+[`paginate()`, `$paginate`, state declarations, and native helper templates](/guide/pagination).
+
 ## Upload properties
 
 [Declaration, multiple files, and field limits](/guide/uploads#upload).

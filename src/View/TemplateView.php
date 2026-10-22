@@ -5,6 +5,8 @@ namespace Interact\View;
 
 use Cake\View\View;
 use Interact\Discovery\Declaration;
+use Interact\Pagination\Paginated;
+use Interact\View\Helper\PaginatorHelper;
 use LogicException;
 
 /**
@@ -14,6 +16,7 @@ use LogicException;
  * Controller variables are not inherited; the previous view scope is restored on failure.
  *
  * @property \Interact\View\Helper\InteractHelper $Interact
+ * @property \Interact\View\Helper\PaginatorHelper $Paginator
  */
 class TemplateView extends View
 {
@@ -24,6 +27,7 @@ class TemplateView extends View
     {
         parent::initialize();
         $this->addHelper('Form', ['autoSetCustomValidity' => false]);
+        $this->addHelper('Paginator', ['className' => PaginatorHelper::class]);
     }
 
     /**
@@ -37,6 +41,11 @@ class TemplateView extends View
             $declaration->element
                 ?? $declaration->template
                 ?? throw new LogicException('Compile the island declaration before rendering an inferred template.');
+        $helper = $this->loadHelper('Paginator');
+        if (!$helper instanceof PaginatorHelper) {
+            throw new LogicException('Island Paginator helpers must extend Interact\\View\\Helper\\PaginatorHelper.');
+        }
+
         $previous = [
             $this->viewVars,
             $this->templatePath,
@@ -50,13 +59,28 @@ class TemplateView extends View
         $this->subDir = '';
         $this->currentType = static::TYPE_TEMPLATE;
         $this->viewVars = $data;
-        try {
-            if ($declaration->element !== null) {
-                return $this->element($declaration->element, $data);
+        $result = null;
+        /** @var mixed $value */
+        foreach ($data as $value) {
+            if (!$value instanceof Paginated) {
+                continue;
             }
 
-            return $this->renderFile($this->getTemplateFileName($declaration->template), $data);
+            $result = $value;
+        }
+
+        $restore = $helper->islandScope($result);
+        try {
+            if ($declaration->element !== null) {
+                return $this->element($declaration->element, $data) . ($result?->links->markup() ?? '');
+            }
+
+            return (
+                $this->renderFile($this->getTemplateFileName($declaration->template), $data)
+                    . ($result?->links->markup() ?? '')
+            );
         } finally {
+            $restore();
             [$this->viewVars, $this->templatePath, $this->subDir, $this->plugin, $this->current, $this->currentType] =
                 $previous;
         }

@@ -12,6 +12,8 @@ use Interact\Loading\Initialization;
 use Interact\Loading\MountRenderer;
 use Interact\Loading\Options;
 use Interact\Loading\PendingMount;
+use Interact\Pagination\PagePath;
+use Interact\Pagination\Pagination;
 use Interact\Rendering\RendererInterface;
 use Interact\Security\SnapshotCodec;
 use Interact\Upload\UploadManager;
@@ -32,6 +34,8 @@ class Runtime
     protected ?string $pageQuery = null;
 
     protected ?RouteContext $pageRouting = null;
+
+    protected ?string $pagePath = null;
 
     protected HtmlRenderer $html;
 
@@ -107,7 +111,9 @@ class Runtime
             'children' => [],
             'urlPrefix' => $urlPrefix,
             'routing' => ($this->pageRouting ?? RouteContext::fromRequest($context->request))->defaults,
+            'pagePath' => PagePath::resolve($this->pagePath, $context->request),
         ]);
+        $island->attachPagination(new Pagination($definition, $identity, $context, $this->pageQuery));
         $result = $this->mounts->render($island, $definition, $identity, $context, $loading);
         $childKey = 'key:' . $key;
         if ($parent instanceof RenderFrame) {
@@ -141,6 +147,8 @@ class Runtime
         $island = $this->registry->create($definition);
         $this->hydrator->restore($island, $definition, $data->state);
 
+        $previousPath = $this->pagePath;
+        $this->pagePath = $data->pagePath;
         $previousRouting = $this->pageRouting;
         $this->pageRouting = $data->routing;
         $previous = $this->pageQuery;
@@ -150,6 +158,7 @@ class Runtime
         } finally {
             $this->pageQuery = $previous;
             $this->pageRouting = $previousRouting;
+            $this->pagePath = $previousPath;
         }
     }
 
@@ -166,16 +175,20 @@ class Runtime
         $this->hydrator->mount($island, $definition, $pending->props);
         $this->state->initializeUrl($island, $definition, $input->pageQuery, $data->urlPrefix);
         $island->authorize($context);
+        $previousPath = $this->pagePath;
+        $this->pagePath = $data->pagePath;
         $previousRouting = $this->pageRouting;
         $previousQuery = $this->pageQuery;
         $this->pageRouting = $data->routing;
         $this->pageQuery = $input->pageQuery;
         try {
+            $island->attachPagination(new Pagination($definition, $data, $context, $input->pageQuery));
             $island->mount();
 
             return $this->html->render($island, $definition, $data, $context);
         } finally {
             $this->pageRouting = $previousRouting;
+            $this->pagePath = $previousPath;
             $this->pageQuery = $previousQuery;
         }
     }
@@ -192,6 +205,7 @@ class Runtime
     ): Result {
         $restored = $input->urlRestore ? $this->state->restorationPaths($definition, $input->updates) : null;
         $paths = $this->state->apply($island, $definition, $input->updates);
+        $island->attachPagination(new Pagination($definition, $data, $context, $input->pageQuery));
         $uploadPaths = $this->authorizeUploads($island, $definition, $data, $input, $context);
         if ($uploadPaths === null) {
             return $this->html->render($island, $definition, $data, $context);

@@ -37,7 +37,7 @@ test('Back and Forward restore pagination and filters while preserving unrelated
   await page.goto('/search?q=keyboard');
   const library = page.getByRole('region', { name: 'Resource library' });
   const status = library.getByRole('status');
-  await library.getByRole('button', { name: 'Next', exact: true }).click();
+  await library.getByRole('link', { name: 'Next', exact: true }).click();
   await expect(status).toHaveText('Showing 21–30 of 30 results');
   await expect.poll(() => selected(page.url(), 'page')).toBe('2');
   await library.getByText('Reading notes', { exact: true }).first().click();
@@ -79,7 +79,7 @@ test('independent instances merge their owned parameters and retain stable uniqu
   );
   await listings
     .nth(0)
-    .getByRole('button', { name: 'Next', exact: true })
+    .getByRole('link', { name: 'Next', exact: true })
     .click();
   await expect.poll(() => selected(page.url(), 'articles_page')).toBe('2');
   await listings.nth(1).getByLabel('Search resources').fill('CakePHP');
@@ -98,7 +98,7 @@ test('an older response cannot rewrite the URL selected by Back', async ({
 }) => {
   await page.goto('/search?q=keyboard');
   const library = page.getByRole('region', { name: 'Resource library' });
-  await library.getByRole('button', { name: 'Next', exact: true }).click();
+  await library.getByRole('link', { name: 'Next', exact: true }).click();
   await expect.poll(() => selected(page.url(), 'page')).toBe('2');
   let release: () => void = () => {};
   const held = new Promise<void>((resolve) => {

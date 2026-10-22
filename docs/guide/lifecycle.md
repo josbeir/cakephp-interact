@@ -100,3 +100,7 @@ A successful action redirect skips view data and rendering. [Renderless actions]
 ## Deferred initialization
 
 [Lazy loading](/guide/lazy-loading) authorizes the initial placeholder without running `mount()` or rendering island content. Initialization constructs a fresh instance and authorizes again before mounting. Normal updates then follow the lifecycle above.
+
+Pagination can normalize declared state during `viewData()`. Rendered responses
+export state afterward so computed results, template variables, and snapshots agree.
+See [pagination](/guide/pagination).

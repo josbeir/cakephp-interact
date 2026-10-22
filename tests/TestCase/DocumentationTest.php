@@ -297,8 +297,7 @@ class DocumentationTest extends TestCase
         static::assertStringContainsString('25 results.', $mount->html);
         $last = $this->examples->runtime->update([
             'snapshot' => $mount->snapshot,
-            'action' => 'goTo',
-            'args' => [999],
+            'updates' => ['page' => 999],
         ], $this->examples->context);
         static::assertSame(3, $last->state['page']);
         $search = $this->examples->runtime->update([
