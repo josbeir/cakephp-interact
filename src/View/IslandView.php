@@ -16,7 +16,7 @@ use InvalidArgumentException;
 class IslandView extends TemplateView
 {
     /**
-     * Select the alias and props using the ViewBuilder's interact option.
+     * Select the island name and props using the ViewBuilder's interact option.
      */
     public function render(?string $template = null, string|false|null $layout = null): string
     {

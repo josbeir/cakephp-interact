@@ -10,7 +10,7 @@ use Interact\Island;
 /**
  * Marks a static method as callable to verify that actions belong to a fresh island instance.
  */
-#[Render(template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class StaticActionIsland extends Island
 {
     #[Action]

@@ -3,15 +3,6 @@ declare(strict_types=1);
 
 namespace Interact\Test\Fixture;
 
-use App\Island\ArticleRedirectIsland as ArticleRedirect;
-use App\Island\CountryPickerIsland as CountryPicker;
-use App\Island\DependentSelectsIsland as DependentSelects;
-use App\Island\DocumentUploadIsland as DocumentUpload;
-use App\Island\InvoiceDownloadIsland as InvoiceDownload;
-use App\Island\JobProgressIsland as JobProgress;
-use App\Island\ResourceCountIsland as ResourceCount;
-use App\Island\ResourceSearchIsland as ResourceSearch;
-use App\Island\SalesChartIsland as SalesChart;
 use App\Model\Table\ArticlesTable;
 use App\Model\Table\CitiesTable;
 use App\Model\Table\DocumentsTable;
@@ -87,21 +78,10 @@ class DocumentationRuntime
             dirname(__DIR__) . '/docs/app/templates/',
             dirname(__DIR__) . '/test_app/templates/',
         ]);
+        Configure::write('App.namespace', 'App');
         $registry = new Registry();
-        foreach ([
-            ArticleForm::class,
-            ArticleRedirect::class,
-            InvoiceDownload::class,
-            CountryPicker::class,
-            DependentSelects::class,
-            DocumentUpload::class,
-            JobProgress::class,
-            ResourceSearch::class,
-            ResourceCount::class,
-            SalesChart::class,
-        ] as $class) {
-            $registry->register($class);
-        }
+        // This reused demo class belongs to TestApp; the other examples resolve from App on demand.
+        $registry->register(ArticleForm::class);
 
         if (!isset(Router::getRouteCollection()->named()['articles:view'])) {
             Router::createRouteBuilder('/')->connect(

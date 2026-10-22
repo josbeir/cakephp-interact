@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Interact\Test\TestCase;
 
 use App\Controller\InvoicesController;
-use App\Island\ResourceCountIsland as ResourceCount;
 use Cake\Core\Configure;
 use Cake\Http\ServerRequest;
 use Cake\ORM\Locator\LocatorInterface;
@@ -34,6 +33,8 @@ class DocumentationTest extends TestCase
      */
     protected mixed $previousPaths;
 
+    protected string $previousNamespace;
+
     protected DocumentationRuntime $examples;
 
     protected function setUp(): void
@@ -41,6 +42,7 @@ class DocumentationTest extends TestCase
         parent::setUp();
         $this->previousLocator = TableRegistry::getTableLocator();
         $this->previousPaths = Configure::read('App.paths.templates');
+        $this->previousNamespace = (string)Configure::read('App.namespace');
         $this->examples = new DocumentationRuntime();
     }
 
@@ -48,6 +50,7 @@ class DocumentationTest extends TestCase
     {
         TableRegistry::setTableLocator($this->previousLocator);
         Configure::write('App.paths.templates', $this->previousPaths);
+        Configure::write('App.namespace', $this->previousNamespace);
         parent::tearDown();
     }
 
@@ -77,7 +80,6 @@ class DocumentationTest extends TestCase
         $view->set('search', 'host-only');
 
         $registry = new Registry();
-        $registry->register(ResourceCount::class);
 
         $runtime = new Factory($registry, new SnapshotCodec(str_repeat('d', 32)))->create(
             $view,

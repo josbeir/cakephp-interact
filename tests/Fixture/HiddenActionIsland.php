@@ -11,7 +11,7 @@ use Interact\Island;
  * Marks a protected method as callable to verify that browser actions must be public application
  * methods.
  */
-#[Render(template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class HiddenActionIsland extends Island
 {
     #[Action]

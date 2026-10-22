@@ -34,7 +34,7 @@ class RuntimeTest extends TestCase
     }
 
     /**
-     * Assemble a counter runtime with real discovery, signing, and a replaceable renderer.
+     * Assemble a counter runtime with real class resolution, signing, and a replaceable renderer.
      */
     protected function runtime(?CallbackRenderer $renderer = null): Runtime
     {

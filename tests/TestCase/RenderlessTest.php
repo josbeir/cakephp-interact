@@ -35,7 +35,7 @@ class RenderlessTest extends TestCase
     protected SnapshotCodec $codec;
 
     /**
-     * Assemble real signing and discovery with observable nested application rendering.
+     * Assemble real signing and class resolution with observable nested application rendering.
      */
     protected function setUp(): void
     {

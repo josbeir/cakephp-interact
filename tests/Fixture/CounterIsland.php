@@ -13,7 +13,7 @@ use Interact\Island;
  * Exercises declared props, writable/locked state, native arguments, validation, and browser
  * effects.
  */
-#[Render(template: 'Islands/counter', tag: 'section')]
+#[Render(template: 'unused', tag: 'section')]
 class CounterIsland extends Island
 {
     #[Prop]

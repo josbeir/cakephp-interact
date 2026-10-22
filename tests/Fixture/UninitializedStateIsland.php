@@ -11,7 +11,7 @@ use Interact\Island;
  * Leaves declared state uninitialized to verify that rendering fails before emitting an incomplete
  * snapshot.
  */
-#[Render(template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class UninitializedStateIsland extends Island
 {
     #[State]

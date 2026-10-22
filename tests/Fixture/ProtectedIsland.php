@@ -11,7 +11,7 @@ use Interact\IslandContext;
  * Rechecks current request permissions on mount and resume, independently from signed resource
  * identity.
  */
-#[Render(template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class ProtectedIsland extends CounterIsland
 {
     /**

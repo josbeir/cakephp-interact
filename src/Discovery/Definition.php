@@ -55,10 +55,9 @@ readonly class Definition
      *
      * @param class-string<\Interact\Island> $class Concrete application island.
      * @param string|null $name Resolved public name, or inferred for explicit registration.
-     * @param string|null $plugin Owner supplied by resolution, or inferred from loaded plugin source paths.
      * @throws \InvalidArgumentException When declarations conflict or no conventional template can be inferred.
      */
-    public function __construct(public string $class, ?string $name = null, ?string $plugin = null)
+    public function __construct(public string $class, ?string $name = null)
     {
         $reflection = new ReflectionClass($class);
         $attributes = $reflection->getAttributes(Render::class);
@@ -67,7 +66,7 @@ readonly class Definition
         }
 
         $render = isset($attributes[0]) ? $attributes[0]->newInstance() : new Render();
-        $rendering = new Template($reflection, $render, $plugin, $name);
+        $rendering = new Template($reflection, $render, $name);
         $this->plugin = $rendering->plugin;
         $this->declaration = $rendering->declaration;
         $properties = [];

@@ -11,7 +11,7 @@ use Dom\XPath;
 use Interact\Test\TestSuite\HttpTestCase;
 
 /**
- * Exercises real CakePHP controllers, DI, middleware, discovery, templates, and protected AJAX updates.
+ * Exercises real CakePHP controllers, DI, middleware, class resolution, templates, and protected AJAX updates.
  */
 class HttpTest extends HttpTestCase
 {

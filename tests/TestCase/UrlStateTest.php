@@ -262,7 +262,7 @@ class UrlStateTest extends TestCase
         ]);
     }
 
-    public function testDuplicateAliasesAreRejectedDuringDiscovery(): void
+    public function testDuplicateQueryAliasesAreRejectedDuringMetadataCompilation(): void
     {
         $this->expectException(InvalidArgumentException::class);
         new Definition(UrlCollisionIsland::class);

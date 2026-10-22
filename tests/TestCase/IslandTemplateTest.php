@@ -72,7 +72,7 @@ class IslandTemplateTest extends TestCase
     }
 
     /**
-     * Supply aliases, class structures, and explicit paths without coupling their identities.
+     * Supply class structures and explicit native rendering targets.
      *
      * @return iterable<string, array{class-string<\Interact\Island>, string, string|null}> Native rendering targets.
      */
@@ -90,7 +90,7 @@ class IslandTemplateTest extends TestCase
     }
 
     /**
-     * Verify the compiled target independently of the island's declared alias.
+     * Verify each class's compiled native rendering target.
      *
      * @param class-string<\Interact\Island> $class Island declaration under test.
      */
@@ -313,8 +313,6 @@ class IslandTemplateTest extends TestCase
         ]);
         $context = new IslandContext($request, 'default', '/_interact/update');
         $registry = new Registry();
-        $registry->register(Editor::class);
-
         $factory = new Factory($registry, new SnapshotCodec(str_repeat('v', 32)));
         $runtime = $factory->create($this->hostView(), $context);
         $initial = $runtime->mount('Commerce.Article/Editor', [], 'editor', $context);

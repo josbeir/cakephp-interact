@@ -9,7 +9,7 @@ use Interact\Attribute\Render;
  * Attempts to shadow authoritative state from view data, exercising the renderer's consistency
  * guard.
  */
-#[Render(template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class ShadowIsland extends CounterIsland
 {
     /**

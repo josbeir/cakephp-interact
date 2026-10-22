@@ -13,7 +13,7 @@ use Psr\Http\Message\UploadedFileInterface;
 use RuntimeException;
 
 /**
- * Exercises render policy through actual discovery, authorization, and fresh request instances.
+ * Exercises render policy through actual metadata compilation, authorization, and fresh request instances.
  * Static counters observe view evaluation only and never enter signed application state.
  */
 #[Render(element: 'unused')]

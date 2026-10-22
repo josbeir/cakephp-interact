@@ -11,7 +11,7 @@ use Interact\Island;
  * Marks protected state for transport to verify that internal application fields cannot enter
  * snapshots.
  */
-#[Render(template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class HiddenStateIsland extends Island
 {
     #[State]

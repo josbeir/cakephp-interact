@@ -11,7 +11,7 @@ use Interact\Island;
  * Marks shared static state for transport to verify that snapshots contain instance-owned values
  * only.
  */
-#[Render(template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class StaticStateIsland extends Island
 {
     #[State]

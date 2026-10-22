@@ -7,7 +7,7 @@ use Interact\Attribute\Render;
 use Interact\Attribute\State;
 
 /**
- * Intentionally declares overlapping URL capabilities to verify discovery rejects ambiguity.
+ * Intentionally declares overlapping URL capabilities to verify metadata compilation rejects ambiguity.
  */
 #[Render(element: 'url')]
 class UrlCollisionIsland extends UrlIsland

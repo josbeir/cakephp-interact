@@ -11,11 +11,11 @@ to the current instance.
 
 ## Initial render
 
-1. Resolve the alias and construct the island through CakePHP's container.
+1. Resolve the island name and construct the island through CakePHP's container.
 2. Assign mount props and decode declared URL-bound state.
 3. Call `authorize(IslandContext $context)`.
 4. Call `mount()`.
-5. Call `viewData()` and render the declared element or template.
+5. Call `viewData()` and render its native element or template.
 
 ## Update
 

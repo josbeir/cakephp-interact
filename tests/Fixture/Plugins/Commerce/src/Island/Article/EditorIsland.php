@@ -8,7 +8,7 @@ use Interact\Attribute\State;
 use Interact\Island;
 
 /**
- * Supplies a nested plugin island whose alias intentionally differs from its template path.
+ * Supplies a nested plugin island with conventional native template resolution.
  * Updates exercise the same native view lookup as the initial mount.
  */
 class EditorIsland extends Island

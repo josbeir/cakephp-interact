@@ -35,7 +35,7 @@ Keys must be unique among siblings and stable between renders. Use record IDs,
 rather than positions in a result list. A matching child keeps its draft and
 browser instance when the parent refreshes.
 
-Changing a child's alias or props requires a new key. Include a revision when
+Changing a child's island name or props requires a new key. Include a revision when
 you intentionally want a fresh mount. Removing a child disposes it; showing it
 again creates a new instance.
 

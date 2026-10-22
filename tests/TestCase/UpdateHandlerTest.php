@@ -15,7 +15,6 @@ use Interact\Security\SnapshotCodec;
 use Interact\View\TemplateView;
 use Laminas\Diactoros\Stream;
 use PHPUnit\Framework\TestCase;
-use TestApp\Island\CounterIsland as Counter;
 
 /**
  * Verifies the shared HTTP service's response preservation and strict envelope boundaries.
@@ -25,7 +24,6 @@ class UpdateHandlerTest extends TestCase
     public function testCustomResponseHeadersSurviveSuccessfulAndRejectedRequests(): void
     {
         $registry = new Registry();
-        $registry->register(Counter::class);
 
         $factory = new Factory($registry, new SnapshotCodec(str_repeat('k', 32)));
         $handler = new UpdateHandler($factory, new FailureResponder());

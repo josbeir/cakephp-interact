@@ -6,9 +6,9 @@ namespace Interact\Test\Fixture;
 use Interact\Attribute\Render;
 
 /**
- * Declares another class under an existing alias so collision handling can be tested.
+ * Supplies a distinct class for explicit registration-name collision checks.
  */
-#[Render(template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class DuplicateIsland extends CounterIsland
 {
 }

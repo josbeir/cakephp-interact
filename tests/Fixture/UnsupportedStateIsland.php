@@ -11,7 +11,7 @@ use stdClass;
 /**
  * Declares object-valued state to verify that transport excludes arbitrary PHP objects.
  */
-#[Render(template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class UnsupportedStateIsland extends Island
 {
     #[State]

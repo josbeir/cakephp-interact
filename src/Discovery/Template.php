@@ -27,17 +27,15 @@ readonly class Template
      *
      * @param \ReflectionClass<\Interact\Island> $reflection Declared island class.
      * @param \Interact\Attribute\Render $declaration Optional native rendering configuration.
-     * @param string|null $plugin Plugin owner supplied by class resolution when available.
      * @param string|null $name Resolved public name, or inferred from the class structure.
      * @throws \InvalidArgumentException When no conventional template can be inferred.
      */
     public function __construct(
         ReflectionClass $reflection,
         Render $declaration,
-        ?string $plugin = null,
         ?string $name = null,
     ) {
-        $this->plugin = $plugin ?? $this->owningPlugin($reflection);
+        $this->plugin = $this->owningPlugin($reflection);
         $this->declaration = $this->resolve($reflection, $declaration, $name);
     }
 

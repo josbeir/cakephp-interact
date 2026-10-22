@@ -12,7 +12,7 @@ use Interact\Island;
  * Marks one property as both prop and state to verify that ambiguous transport declarations are
  * rejected.
  */
-#[Render(template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class ConflictingStateIsland extends Island
 {
     #[Prop]

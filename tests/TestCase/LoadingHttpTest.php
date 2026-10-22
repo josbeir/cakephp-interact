@@ -6,7 +6,7 @@ namespace Interact\Test\TestCase;
 use Interact\Test\TestSuite\HttpTestCase;
 
 /**
- * Exercises real pending mounts through native rendering, discovery, and CSRF middleware.
+ * Exercises real pending mounts through native rendering, class resolution, and CSRF middleware.
  * Authorization is reevaluated after the initial page rather than frozen in the ticket.
  */
 class LoadingHttpTest extends HttpTestCase

@@ -15,7 +15,7 @@ use Interact\IslandContext;
  * Records mount boundaries while requiring initialization to create its transported state.
  * Authorization uses the current request rather than trusting the pending mount ticket.
  */
-#[Render(element: 'Interact/lazy_fixture')]
+#[Render(element: 'unused')]
 class LazyIsland extends Island
 {
     /**

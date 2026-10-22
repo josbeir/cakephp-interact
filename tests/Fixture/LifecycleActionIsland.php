@@ -11,7 +11,7 @@ use Interact\Island;
  * Marks the mount hook as callable to verify that lifecycle methods cannot be exposed as browser
  * actions.
  */
-#[Render(template: 'Islands/counter')]
+#[Render(template: 'unused')]
 class LifecycleActionIsland extends Island
 {
     #[Action]

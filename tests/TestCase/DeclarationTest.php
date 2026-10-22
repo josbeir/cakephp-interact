@@ -13,7 +13,7 @@ use Interact\Test\Fixture\HiddenStateIsland;
 use Interact\Test\Fixture\LifecycleActionIsland;
 use Interact\Test\Fixture\StaticActionIsland;
 use Interact\Test\Fixture\StaticStateIsland;
-use Interact\Test\Fixture\UndeclaredIsland;
+use Interact\Test\Fixture\UnlocatedIsland;
 use Interact\Test\Fixture\UnsupportedStateIsland;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -39,7 +39,7 @@ class DeclarationTest extends TestCase
             StaticActionIsland::class,
             HiddenActionIsland::class,
             LifecycleActionIsland::class,
-            UndeclaredIsland::class,
+            UnlocatedIsland::class,
         ] as $class) {
             yield $class => [$class];
         }
