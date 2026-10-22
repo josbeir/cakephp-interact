@@ -79,7 +79,7 @@ $this->downloadUrl(['_name' => 'invoices:download']);
 
 :::
 
-After an accepted render, Interact applies state and URL changes, requests the
+After an accepted response, Interact applies state and URL changes, requests the
 download, and then dispatches application events. The page stays open.
 See the complete [invoice download example](/examples/download).
 

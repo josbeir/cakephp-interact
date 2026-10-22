@@ -206,7 +206,7 @@ class Runtime
             $outcome,
             $data,
             $context,
-            fn(): Result => $this->html->render($island, $definition, $data, $context),
+            fn(): Result => $this->html->update($island, $definition, $data, $input, $context),
         );
     }
 

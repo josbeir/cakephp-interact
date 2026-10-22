@@ -31,6 +31,7 @@ import type {
   Invocation,
   IslandBridge,
   IslandResponse,
+  RenderlessResponse,
   Json,
   Patcher,
   RequestResult,
@@ -502,11 +503,18 @@ export class IslandClient {
         throw requestError('invalid_response', result.status);
       if (!sameFields(accepted.url ?? {}, this.metadata.url))
         throw requestError('invalid_response', result.status);
-      let replacement: HTMLElement;
-      try {
-        replacement = readRoot(accepted.html, this.metadata.id);
-      } catch (cause: unknown) {
-        throw requestError('invalid_response', result.status, cause);
+      if (
+        accepted.html === null &&
+        (!this.mounted || invocation.action === null)
+      )
+        throw requestError('invalid_response', result.status);
+      let replacement: HTMLElement | undefined;
+      if (accepted.html !== null) {
+        try {
+          replacement = readRoot(accepted.html, this.metadata.id);
+        } catch (cause: unknown) {
+          throw requestError('invalid_response', result.status, cause);
+        }
       }
       try {
         this.apply(accepted, sent, replacement, upload, invocation);
@@ -526,9 +534,9 @@ export class IslandClient {
    * Morph accepted markup, restore newer drafts and selection, then dispatch response effects.
    */
   private apply(
-    payload: IslandResponse,
+    payload: IslandResponse | RenderlessResponse,
     sent: State,
-    replacement: HTMLElement,
+    replacement: HTMLElement | undefined,
     upload?: UploadJob,
     invocation?: Invocation,
   ): void {
@@ -547,7 +555,7 @@ export class IslandClient {
       writable: this.writable,
     };
     try {
-      this.controls.beforeMorph();
+      if (replacement) this.controls.beforeMorph();
       if (!this.mounted) {
         this.mounted = true;
         this.writable = payload.writable;
@@ -556,7 +564,7 @@ export class IslandClient {
         this.uploads = this.createUploads(payload.uploads ?? {});
         this.bridge.uploads = this.uploads.fields;
       }
-      this.patch(this.root, replacement);
+      if (replacement) this.patch(this.root, replacement);
       this.snapshot = payload.snapshot;
       this.baseline = clone(payload.state);
       this.writable = payload.writable;
@@ -564,6 +572,13 @@ export class IslandClient {
       this.bridge.errors = payload.errors;
       this.uploads.accept(payload.uploads ?? {}, upload);
       this.controls.refresh();
+      if (!replacement) {
+        this.root.dataset.interactSnapshot = payload.snapshot;
+        this.root.dataset.interactState = JSON.stringify(payload.state);
+        this.root.dataset.interactWritable = JSON.stringify(payload.writable);
+        if (payload.uploads)
+          this.root.dataset.interactUploads = JSON.stringify(payload.uploads);
+      }
       restoreSelection();
     } catch (cause: unknown) {
       if (!previous.mounted) {

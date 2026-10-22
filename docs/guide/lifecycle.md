@@ -24,7 +24,7 @@ to the current instance.
 3. Validate and apply browser edits and validate action argument types.
 4. Call `authorize()`.
 5. Call `updated()` for changed fields, then the requested action.
-6. Return a requested redirect, or call `viewData()`, render, and return state, errors, events, and any download request.
+6. Return a requested redirect, or return accepted state, errors, events, and any download request. Call `viewData()` and render unless a successful action skips rendering.
 
 The original controller action, layout, and `mount()` do not run again.
 Authorization can observe accepted edits and runs before application update hooks,
@@ -95,7 +95,7 @@ The browser applies returned HTML while preserving newer drafts, focus, local
 Alpine state, and matching nested islands. Removing an island releases its
 browser resources. See [Requests and DOM updates](/reference/browser).
 
-A successful action redirect skips view data and rendering. Downloads accompany an accepted render. Both helpers are restricted to declared actions; see [redirects and downloads](/guide/redirects-and-downloads#action-lifecycle).
+A successful action redirect skips view data and rendering. [Renderless actions](/guide/actions#renderless-actions) also skip view data and rendering while returning accepted state and events. Validation errors force a render, and the next successful action renders again to clear that feedback. Downloads accompany an accepted rendered or renderless response. Both helpers are restricted to declared actions; see [redirects and downloads](/guide/redirects-and-downloads#action-lifecycle).
 
 ## Deferred initialization
 

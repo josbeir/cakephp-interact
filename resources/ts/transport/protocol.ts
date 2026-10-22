@@ -38,7 +38,7 @@ export function response(value: unknown): value is UpdateResponse {
     (value.url === undefined || urlFields(value.url)) &&
     (value.uploads === undefined || uploadMetadata(value.uploads)) &&
     typeof value.id === 'string' &&
-    typeof value.html === 'string' &&
+    (typeof value.html === 'string' || value.html === null) &&
     typeof value.snapshot === 'string' &&
     value.snapshot.length > 0 &&
     state(value.state) &&
@@ -54,6 +54,7 @@ export function response(value: unknown): value is UpdateResponse {
         Array.isArray(entry) &&
         entry.every((message: unknown) => typeof message === 'string'),
     ) &&
+    (value.html !== null || Object.keys(value.errors).length === 0) &&
     Array.isArray(value.events) &&
     value.events.every(
       (event: unknown) =>

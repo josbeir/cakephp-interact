@@ -41,6 +41,11 @@ readonly class Definition
     public array $actions;
 
     /**
+     * @var array<string, bool> Cached rendering policy for explicitly declared actions.
+     */
+    public array $renderlessActions;
+
+    /**
      * Compile one concrete island class into validated declaration metadata.
      *
      * @param class-string<\Interact\Island> $class Concrete application island.
@@ -79,6 +84,7 @@ readonly class Definition
         }
 
         $actions = [];
+        $renderless = [];
         foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC
             | ReflectionMethod::IS_PROTECTED
             | ReflectionMethod::IS_PRIVATE) as $method) {
@@ -95,11 +101,13 @@ readonly class Definition
             }
 
             $actions[$method->getName()] = $method;
+            $renderless[$method->getName()] = !$method->getAttributes(Action::class)[0]->newInstance()->render;
         }
 
         $this->properties = $properties;
         $this->uploads = $uploads;
         $this->actions = $actions;
+        $this->renderlessActions = $renderless;
         new UrlState()->metadata($this, null);
     }
 }

@@ -8,7 +8,7 @@ description: Request queueing, draft preservation, nested ownership, and browser
 # Requests and DOM updates
 
 Interact queues requests per island and applies accepted responses as HTML
-updates. These rules are shared by actions, models, forms, polling, and uploads.
+updates or renderless state updates. These rules are shared by actions, models, forms, polling, and uploads.
 
 <span id="native-attributes"></span>
 <span id="alpine-directives"></span>
@@ -36,6 +36,12 @@ response application, including their queueing time.
 Accepted state refreshes surviving controls. Newer local drafts, focus, selection,
 and retained Alpine state survive an older response. The server renders current
 PHP values; browser drafts can be newer than that markup.
+
+[Renderless actions](/guide/actions#renderless-actions) return a fresh signed
+snapshot, state, and events with `html: null`. The browser accepts that variant
+only for successful actions on mounted islands. It reconciles controls and newer
+drafts without morphing or reinitializing Alpine. Validation responses and
+synchronization still require rendered HTML.
 
 Use [`x-interact:ignore`](/directives/ignore) when a library manages its own markup,
 and [`x-interact:model`](/directives/model#custom-alpine-inputs) for modelable values.

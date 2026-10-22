@@ -41,6 +41,18 @@ abstract class Island
     }
 
     /**
+     * Skip HTML rendering for the current action while preserving accepted state and effects.
+     *
+     * Validation feedback may still require rendering. This does not terminate the action.
+     *
+     * @throws \LogicException When called outside a declared action.
+     */
+    public function skipRender(): void
+    {
+        $this->actionEffects()->skipRender();
+    }
+
+    /**
      * Request full-page navigation after a successful action without terminating PHP execution.
      *
      * @param array<array-key, mixed>|string|UriInterface $url CakePHP route or HTTP(S) URL.

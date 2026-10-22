@@ -79,6 +79,10 @@ export default defineConfig({
           items: [
             { text: 'Overview and demo', link: '/examples' },
             { text: 'Article form', link: '/examples/article-form' },
+            {
+              text: 'Renderless draft saves',
+              link: '/examples/renderless-actions',
+            },
             { text: 'Navigation', link: '/examples/navigation' },
             { text: 'Save and redirect', link: '/examples/redirect' },
             { text: 'Invoice download', link: '/examples/download' },

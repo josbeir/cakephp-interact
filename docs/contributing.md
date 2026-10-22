@@ -149,3 +149,13 @@ and credentials out of commits.
 Navigation lives in focused `resources/ts/navigation` modules installed by Interact's existing Alpine installer. Keep page visits separate from island request queues, and coordinate page history with URL-bound state. Persist only explicitly marked, compatible layout regions; incoming mounts and later updates must still authorize.
 
 The page-level `interactNavigation` Alpine store reuses request feedback timing. Applications own indicators and styles, and choose delays in Alpine expressions. Keep document policy/version checks, external asset loading, cancellation, stale responses, scroll, and focus covered by real browser tests. Use the `/navigation` demo for both page-owned and retained island behavior.
+
+## Renderless actions
+
+`#[Action(render: false)]` and action-only `skipRender()` share the ordinary
+request lifecycle and state response builder. Test signed state, child identities,
+upload references, events, URL updates, submission protection, and newer drafts
+without a morph. Validation must render, and the next successful action must
+render again to clear feedback. Initialization, synchronization, transfers, and
+history restoration always require HTML. Exercise the standalone FormHelper
+editor at `/renderless` through SQLite integration tests and all three browsers.

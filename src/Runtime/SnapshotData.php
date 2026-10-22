@@ -21,6 +21,8 @@ readonly class SnapshotData
 
     public string $key;
 
+    public bool $renderedErrors;
+
     public ?string $urlPrefix;
 
     public RouteContext $routing;
@@ -53,6 +55,7 @@ readonly class SnapshotData
             throw new InvalidArgumentException('Invalid signed island identity.');
         }
 
+        $this->renderedErrors = RenderPolicy::renderedErrors($data);
         $data += ['state' => null, 'children' => null, 'uploads' => [], 'routing' => []];
         $this->routing = new RouteContext($data['routing']);
         $this->alias = $data['alias'];

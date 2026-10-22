@@ -88,11 +88,16 @@ test('demo pages keep their navigation and forms within a narrow viewport', asyn
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of ['/', '/playground', '/search', '/page']) {
+  for (const path of ['/', '/playground', '/search', '/page', '/renderless']) {
     await page.goto(path);
+    const menu = page.getByRole('button', { name: 'Menu', exact: true });
+    await expect(menu).toHaveAttribute('aria-expanded', 'false');
+    await menu.click();
     await expect(
       page.getByRole('navigation', { name: 'Demo pages' }),
     ).toBeVisible();
+    await menu.press('Escape');
+    await expect(menu).toHaveAttribute('aria-expanded', 'false');
     await expect(page.locator('main h1')).toBeVisible();
     await expect(
       page.locator('link[rel="stylesheet"][href="/demo.css"]'),

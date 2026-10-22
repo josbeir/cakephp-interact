@@ -7,6 +7,7 @@ use Closure;
 use Interact\Island;
 use Interact\IslandContext;
 use Interact\Runtime\RedirectResult;
+use Interact\Runtime\RenderlessResult;
 use Interact\Runtime\Result;
 use Interact\Runtime\SnapshotData;
 
@@ -49,7 +50,7 @@ class OutcomeResponder
             return $result;
         }
 
-        return new Result($result->id, $result->html, $result->snapshot, [
+        $values = [
             'download' => $destination,
             'state' => $result->state,
             'url' => $result->url,
@@ -57,6 +58,10 @@ class OutcomeResponder
             'writable' => $result->writable,
             'errors' => $result->errors,
             'events' => $result->events,
-        ]);
+        ];
+
+        return $result instanceof RenderlessResult
+            ? new RenderlessResult($result->id, '', $result->snapshot, $values)
+            : new Result($result->id, $result->html, $result->snapshot, $values);
     }
 }
