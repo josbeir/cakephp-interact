@@ -59,3 +59,7 @@ and [actions](/guide/actions).
 
 [Rendering and container services](/reference/rendering) and
 [custom update endpoints](/security#custom-endpoints).
+
+## Testing
+
+[`IslandTestTrait`, fluent interactions, and assertions](/guide/testing).

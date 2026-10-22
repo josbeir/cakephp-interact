@@ -156,6 +156,7 @@ export default defineConfig({
           text: 'Advanced',
           collapsed: true,
           items: [
+            { text: 'Testing islands', link: '/guide/testing' },
             { text: 'Rendering and helpers', link: '/reference/rendering' },
             { text: 'Requests and DOM updates', link: '/reference/browser' },
             { text: 'Security and deployment', link: '/security' },
