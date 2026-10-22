@@ -7,10 +7,7 @@ use function Cake\Core\h;
  *
  * @var \Interact\View\TemplateView $this
  * @var string $search
- * @var int $page
- * @var int $pages
- * @var int $total
- * @var iterable<\Cake\Datasource\EntityInterface> $resources
+ * @var \Cake\Datasource\Paging\PaginatedInterface<int, \Cake\Datasource\EntityInterface> $resources
  */
 ?>
 <?= $this->Form->create(null, ['url' => false, 'x-interact:submit' => '$server.sync()']) ?>
@@ -22,24 +19,17 @@ use function Cake\Core\h;
         'x-interact:model.live.debounce.300ms' => 'search',
     ]) ?>
 <?= $this->Form->end() ?>
-<p role="status"><?= $total ?> results. Page <?= $page ?> of <?= $pages ?>.</p>
+<p role="status"><?= $this->Paginator->counter('{{count}} results. Page {{page}} of {{pages}}.') ?></p>
 <ul>
     <?php foreach ($resources as $resource): ?>
         <li><?=(string)h($resource->get('title')) ?></li>
     <?php endforeach; ?>
 </ul>
-<button
-    type="button"
-    @click="$server.call('goTo', <?= $page - 1 ?>)"
-    <?= $page <= 1 ? 'disabled' : '' ?>
->
-    Previous
-</button>
-<button
-    type="button"
-    @click="$server.call('goTo', <?= $page + 1 ?>)"
-    <?= $page >= $pages ? 'disabled' : '' ?>
->
-    Next
-</button>
+<nav aria-label="Resource pages">
+    <ul>
+        <?= $this->Paginator->prev('Previous') ?>
+        <?= $this->Paginator->numbers() ?>
+        <?= $this->Paginator->next('Next') ?>
+    </ul>
+</nav>
 <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>

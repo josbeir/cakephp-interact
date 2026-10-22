@@ -70,7 +70,7 @@ test('the search example filters and resets pagination while preserving focus', 
   page,
 }) => {
   const errors = await example(page, 'ResourceSearch');
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await page.getByRole('link', { name: 'Next', exact: true }).click();
   await expect(page.getByRole('status')).toContainText('Page 2');
   await page.getByLabel('Search resources').fill('resource 01');
   await expect(page.getByRole('status')).toHaveText('1 results. Page 1 of 1.');

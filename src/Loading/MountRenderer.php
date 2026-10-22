@@ -61,6 +61,7 @@ class MountRenderer
                 'children' => [],
                 'urlPrefix' => $identity->urlPrefix,
                 'routing' => $identity->routing->defaults,
+                ...($identity->pagePath === null ? [] : ['pagePath' => $identity->pagePath]),
             ],
             $context->binding(),
             $context->scope,

@@ -52,6 +52,7 @@ class ResponseBuilder
                 'key' => $identity->key,
                 'state' => $state,
                 'routing' => $identity->routing->defaults,
+                ...($identity->pagePath === null ? [] : ['pagePath' => $identity->pagePath]),
                 ...($identity->urlPrefix === null ? [] : ['urlPrefix' => $identity->urlPrefix]),
                 'children' => $children,
                 ...($uploads['references'] === [] ? [] : ['uploads' => $uploads['references']]),

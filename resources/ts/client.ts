@@ -1,3 +1,4 @@
+import { paginationLinks } from './pagination/links';
 import { navigation, enhancedRedirect } from './navigation/registry';
 import { LoadTrigger } from './loading/trigger';
 import { BrowserEffects } from './effects/browser';
@@ -53,6 +54,7 @@ export class IslandClient {
   private readonly queue: RequestQueue;
   private readonly requests: RequestActivity;
   private readonly lifetime = new AbortController();
+  private readonly disposePagination: () => void;
   private snapshot: string;
   private mounted: boolean;
   private initializing: Promise<RequestResult> | undefined;
@@ -148,6 +150,19 @@ export class IslandClient {
           root,
         )
       : undefined;
+    this.disposePagination = paginationLinks(
+      root,
+      this.metadata.url,
+      () => this.writable,
+      (changes) => {
+        this.controls.captureAll();
+        this.controls.clearPending();
+        Object.assign(this.bridge.state, changes);
+        this.controls.refresh();
+        void this.bridge.sync();
+      },
+      (cause) => this.failed(requestError('client_error', null, cause)),
+    );
     if (this.metadata.loading !== undefined)
       this.trigger = new LoadTrigger(root, this.metadata.loading, () =>
         this.request(null, []),
@@ -254,6 +269,7 @@ export class IslandClient {
   dispose(): void {
     this.disposed = true;
     this.lifetime.abort();
+    this.disposePagination();
     this.trigger?.dispose();
     this.poller?.dispose();
     this.uploads.dispose();

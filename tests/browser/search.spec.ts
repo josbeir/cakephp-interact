@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { expect, test } from './fixtures';
 
 test('searches the full resource library and combines filters while preserving focus', async ({
@@ -47,16 +48,16 @@ test('paginates, changes page size, and sorts the server results', async ({
   ]);
   await expect(sort).toHaveValue('title');
   await expect(
-    library.getByRole('button', { name: 'Previous', exact: true }),
-  ).toBeDisabled();
-  await library.getByRole('button', { name: 'Next', exact: true }).click();
+    library.locator('[aria-disabled="true"]', { hasText: 'Previous' }),
+  ).toBeVisible();
+  await library.getByRole('link', { name: 'Next', exact: true }).click();
   await expect(results).toHaveText('Showing 21–40 of 1,200 results');
   await expect(rows.first()).not.toHaveAttribute('id', firstId ?? '');
-  await library.getByRole('button', { name: 'Last', exact: true }).click();
+  await library.getByRole('link', { name: 'Last', exact: true }).click();
   await expect(results).toHaveText('Showing 1,181–1,200 of 1,200 results');
   await expect(
-    library.getByRole('button', { name: 'Next', exact: true }),
-  ).toBeDisabled();
+    library.locator('[aria-disabled="true"]', { hasText: 'Next' }),
+  ).toBeVisible();
   await library.getByLabel('Per page').selectOption('50');
   await expect(results).toHaveText('Showing 1–50 of 1,200 results');
   await expect(rows).toHaveCount(50);
@@ -110,3 +111,162 @@ test('keeps the latest search during an in-flight response and handles literal w
   await expect(library.getByRole('alert', { includeHidden: true })).toBeEmpty();
   await expect(page).toHaveURL('/search?q=keyboard');
 });
+
+test('native sort links update only the island and reset the page', async ({
+  page,
+}) => {
+  const updates: unknown[] = [];
+  let documents = 0;
+  page.on('request', (request) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame())
+      documents++;
+    if (request.url().endsWith('/_interact/update'))
+      updates.push(request.postDataJSON());
+  });
+  await page.goto('/search?external=keep');
+  const library = page.getByRole('region', { name: 'Resource library' });
+  await library.getByRole('link', { name: 'Next', exact: true }).click();
+  await expect(library.getByRole('status')).toHaveText(
+    'Showing 21–40 of 1,200 results',
+  );
+  await library.getByRole('link', { name: 'Resource', exact: true }).click();
+  await expect(library.getByRole('status')).toHaveText(
+    'Showing 1–20 of 1,200 results',
+  );
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('direction'))
+    .toBe('desc');
+  expect(new URL(page.url()).searchParams.get('page')).toBeNull();
+  expect(new URL(page.url()).searchParams.get('external')).toBe('keep');
+  expect(documents).toBe(1);
+  expect(updates).toHaveLength(2);
+  for (const update of updates)
+    expect(update).toMatchObject({ action: null, args: [] });
+});
+
+test('pagination captures a pending search and retains another listing’s accepted page', async ({
+  page,
+}) => {
+  await page.goto('/search/independent?external=keep');
+  const listings = page.getByRole('region', { name: 'Resource library' });
+  await listings.nth(0).getByLabel('Search resources').fill('keyboard');
+  await listings
+    .nth(0)
+    .getByRole('link', { name: 'Next', exact: true })
+    .click();
+  await expect(listings.nth(0).getByRole('status')).toHaveText(
+    'Showing 21–30 of 30 results',
+  );
+  await listings
+    .nth(1)
+    .getByRole('link', { name: 'Next', exact: true })
+    .click();
+  await expect(listings.nth(1).getByRole('status')).toHaveText(
+    'Showing 21–40 of 1,200 results',
+  );
+  await expect(listings.nth(0).getByRole('status')).toHaveText(
+    'Showing 21–30 of 30 results',
+  );
+  expect(new URL(page.url()).searchParams.get('articles_page')).toBe('2');
+  expect(new URL(page.url()).searchParams.get('products_page')).toBe('2');
+  expect(new URL(page.url()).searchParams.get('external')).toBe('keep');
+});
+
+test('native paginator links restore the same listing without JavaScript', async ({
+  browser,
+  appURL,
+}) => {
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    baseURL: appURL,
+  });
+  try {
+    const page = await context.newPage();
+    await page.goto('/search?q=keyboard&external=keep');
+    const library = page.getByRole('region', { name: 'Resource library' });
+    await library.getByRole('link', { name: 'Next', exact: true }).click();
+    await expect(library.getByRole('status')).toHaveText(
+      'Showing 21–30 of 30 results',
+    );
+    expect(new URL(page.url()).searchParams.get('q')).toBe('keyboard');
+    expect(new URL(page.url()).searchParams.get('external')).toBe('keep');
+    await page.reload();
+    await expect(library.getByRole('status')).toHaveText(
+      'Showing 21–30 of 30 results',
+    );
+    await library.getByRole('link', { name: 'Resource', exact: true }).click();
+    await expect(library.getByRole('status')).toHaveText(
+      'Showing 1–20 of 30 results',
+    );
+    expect(new URL(page.url()).searchParams.get('direction')).toBe('desc');
+  } finally {
+    await context.close();
+  }
+});
+
+test('pre-upgrade snapshots require an explicit reload and retain the local draft', async ({
+  page,
+}) => {
+  let replaced = false;
+  await page.route('**/_interact/update', async (route) => {
+    if (replaced) {
+      await route.continue();
+      return;
+    }
+    replaced = true;
+    const input: unknown = route.request().postDataJSON();
+    if (!record(input) || typeof input.snapshot !== 'string')
+      throw new Error('Missing signed snapshot.');
+    const envelope: unknown = JSON.parse(
+      Buffer.from(input.snapshot.split('.')[0] ?? '', 'base64url').toString(),
+    );
+    if (!record(envelope) || !record(envelope.data))
+      throw new Error('Invalid signed envelope.');
+    delete envelope.data.pagePath;
+    const payload = Buffer.from(JSON.stringify(envelope)).toString('base64url');
+    const key = createHmac(
+      'sha256',
+      'interact-demo-fixture-only-do-not-use-in-production',
+    )
+      .update('interact.snapshot.v1')
+      .digest();
+    const signature = createHmac('sha256', key).update(payload).digest('hex');
+    await route.continue({
+      postData: JSON.stringify({
+        ...input,
+        snapshot: payload + '.' + signature,
+      }),
+    });
+  });
+  await page.goto('/search');
+  const library = page.getByRole('region', { name: 'Resource library' });
+  await library.locator('summary').filter({ hasText: 'Reading notes' }).click();
+  await library
+    .getByLabel('Reading notes')
+    .fill('Preserve this draft before reloading');
+  const failure = page.waitForResponse((reply) =>
+    reply.url().endsWith('/_interact/update'),
+  );
+  await library.getByRole('link', { name: 'Next', exact: true }).click();
+  expect((await failure).status()).toBe(409);
+  await expect(library.getByRole('alert')).toContainText(
+    'Preserve your draft, then reload',
+  );
+  await expect(library.getByLabel('Reading notes')).toHaveValue(
+    'Preserve this draft before reloading',
+  );
+  await expect(library.getByRole('status')).toHaveText(
+    'Showing 1–20 of 1,200 results',
+  );
+  await expect(page).toHaveURL('/search');
+  await page.reload();
+  await library.getByRole('link', { name: 'Next', exact: true }).click();
+  await expect(library.getByRole('status')).toHaveText(
+    'Showing 21–40 of 1,200 results',
+  );
+  await expect(page).toHaveURL('/search?page=2');
+});
+
+function record(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}

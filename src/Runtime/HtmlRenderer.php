@@ -49,13 +49,13 @@ class HtmlRenderer
     ): Result {
         $this->stack->push($identity->children);
         try {
+            $data = $island->viewData();
             $result = $this->responses->build(
                 $island,
                 $definition,
                 $identity,
                 $context,
-                function (array $values) use ($island, $definition): string {
-                    $data = $island->viewData();
+                function (array $values) use ($island, $definition, $data): string {
                     if (array_intersect_key($data, $values + ['errors' => true]) !== []) {
                         throw new InvalidArgumentException('View data cannot shadow declared state, props, or errors.');
                     }

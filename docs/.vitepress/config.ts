@@ -123,6 +123,7 @@ export default defineConfig({
           items: [
             { text: 'Navigation', link: '/directives/navigate' },
             { text: 'URL state', link: '/guide/url-state' },
+            { text: 'Pagination', link: '/guide/pagination' },
             { text: 'Lazy loading', link: '/guide/lazy-loading' },
             {
               text: 'Redirects and downloads',

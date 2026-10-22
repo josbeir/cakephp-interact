@@ -35,12 +35,16 @@ database or an existing application finder.
 
 ## Behavior
 
-Typing sends the search after 300 ms and resets the page to one. `goTo()` bounds
-the requested page against the filtered count. Empty results remain on page one.
-Back and Forward restore the search and page together. `updated()` respects an
-explicitly supplied page, and the shared normalization method bounds initial
-links and updates. Rows and counts come from `viewData()`; only the search and page are transported.
+Typing sends the search after 300 ms and resets the page to one. Native
+`paginate()` bounds the requested page against the filtered count; empty results
+remain on page one. Ordinary `PaginatorHelper` links update the owning island and
+retain GET URLs that work on reload and without JavaScript.
 
-The Table returns a composable query; the island chooses counting and pagination.
-The larger [demo listing](/examples#demo-catalog) adds filters, allowlisted sorting,
-and page-size controls. See [URL state](/guide/url-state) for defaults, aliases, and history behavior.
+Back and Forward restore the search and page together. `updated()` respects an
+explicitly supplied page. Rows and counts remain in the native paginated result;
+only the search and page are transported.
+
+The Table returns a composable query; the island chooses pagination. See
+[pagination](/guide/pagination) for configuration, sorting, page sizes, and custom
+helper templates. The larger [demo listing](/examples#demo-catalog) adds filters,
+allowlisted sorting, and page-size controls.

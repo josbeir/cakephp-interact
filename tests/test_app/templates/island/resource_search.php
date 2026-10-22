@@ -11,16 +11,21 @@ use function Cake\Core\h;
  * @var string $level
  * @var string $sort
  * @var int $page
- * @var int $pageSize
- * @var \Cake\ORM\ResultSet<int, \Cake\ORM\Entity> $resources
+ * @var int $limit
+ * @var \Cake\Datasource\Paging\PaginatedInterface<int, \Cake\ORM\Entity> $resources
  * @var int $total
  * @var int $librarySize
- * @var int $totalPages
- * @var int $first
- * @var int $last
  * @var array<string, string> $categories
  * @var array<string, string> $levels
  */
+$this->Paginator->setTemplates([
+    'first' => '<a class="button" href="{{url}}">{{text}}</a>',
+    'last' => '<a class="button" href="{{url}}">{{text}}</a>',
+    'prevActive' => '<a class="button" rel="prev" href="{{url}}">{{text}}</a>',
+    'nextActive' => '<a class="button" rel="next" href="{{url}}">{{text}}</a>',
+    'prevDisabled' => '<span class="button" aria-disabled="true">{{text}}</span>',
+    'nextDisabled' => '<span class="button" aria-disabled="true">{{text}}</span>',
+]);
 ?>
 <section class="demo-card resource-library" aria-label="Resource library">
     <div class="card-heading"><div><p class="eyebrow">Live search / <?= number_format($librarySize) ?> sample resources</p><h2>A library worth exploring</h2></div><span class="capability">Search + filter + sort</span></div>
@@ -60,11 +65,11 @@ use function Cake\Core\h;
                 'value' => $sort,
                 'x-interact:model.change' => 'sort',
             ]) ?>
-            <?= $this->Form->control('pageSize', [
+            <?= $this->Form->control('limit', [
                 'label' => 'Per page',
                 'options' => [10 => '10 results', 20 => '20 results', 50 => '50 results'],
-                'value' => $pageSize,
-                'x-interact:model.change' => 'pageSize',
+                'value' => $limit,
+                'x-interact:model.change' => 'limit',
             ]) ?>
         </div>
         <details>
@@ -77,14 +82,14 @@ use function Cake\Core\h;
             ]) ?>
         </details>
     <?= $this->Form->end() ?>
-    <div class="library-summary"><p role="status" aria-live="polite" aria-atomic="true">Showing <?= number_format($first) ?>–<?= number_format($last) ?> of <strong><?= number_format($total) ?></strong> results</p><span class="quiet" x-show="$server.loading(null)" x-cloak>Searching…</span><button class="button-text" type="button" @click="$server.call('clear')" :disabled="$server.busy">Clear filters</button></div>
+    <div class="library-summary"><p role="status" aria-live="polite" aria-atomic="true">Showing <?= number_format((int)$this->Paginator->param('start')) ?>–<?= number_format((int)$this->Paginator->param('end')) ?> of <strong><?= number_format($total) ?></strong> results</p><span class="quiet" x-show="$server.loading(null)" x-cloak>Searching…</span><button class="button-text" type="button" @click="$server.call('clear')" :disabled="$server.busy">Clear filters</button></div>
     <?php if ($total === 0): ?>
         <div class="empty-state library-empty"><h3>No resources found</h3><p>Try fewer words, choose another topic, or clear the filters to explore the full library.</p><button type="button" @click="$server.call('clear')" :disabled="$server.busy">Show all resources</button></div>
     <?php else: ?>
         <div class="search-results">
             <table class="resource-table">
                 <caption class="sr-only">Resource search results</caption>
-                <thead><tr><th scope="col">Resource</th><th scope="col">Topic</th><th scope="col">Difficulty</th><th scope="col" class="reading-time">Read time</th></tr></thead>
+                <thead><tr><th scope="col"><?= $this->Paginator->sort('title', 'Resource') ?></th><th scope="col">Topic</th><th scope="col">Difficulty</th><th scope="col" class="reading-time">Read time</th></tr></thead>
                 <tbody>
                 <?php foreach ($resources as $resource): ?>
                     <tr id="<?= (string)h($controlPrefix) ?>-resource-<?= (string)h((string)$resource->get('id')) ?>">
@@ -98,11 +103,14 @@ use function Cake\Core\h;
             </table>
         </div>
     <?php endif; ?>
-    <div class="library-pagination"><p class="quiet">Page <?= number_format($page) ?> of <?= number_format($totalPages) ?></p><div class="button-row">
-        <button type="button" @click="$server.call('goTo', 1)" :disabled="$server.busy || <?= $page <= 1 ? 'true' : 'false' ?>">First</button>
-        <button type="button" @click="$server.call('goTo', <?= (string)($page - 1) ?>)" :disabled="$server.busy || <?= $page <= 1 ? 'true' : 'false' ?>">Previous</button>
-        <button type="button" @click="$server.call('goTo', <?= (string)($page + 1) ?>)" :disabled="$server.busy || <?= $page >= $totalPages ? 'true' : 'false' ?>">Next <span aria-hidden="true">→</span></button>
-        <button type="button" @click="$server.call('goTo', <?= (string)$totalPages ?>)" :disabled="$server.busy || <?= $page >= $totalPages ? 'true' : 'false' ?>">Last</button>
-    </div></div>
+    <div class="library-pagination">
+        <p class="quiet"><?= $this->Paginator->counter('Page {{page}} of {{pages}}') ?></p>
+        <nav class="button-row" aria-label="Resource pages">
+            <?= $this->Paginator->first('First') ?>
+            <?= $this->Paginator->prev('Previous') ?>
+            <?= $this->Paginator->next('Next') ?>
+            <?= $this->Paginator->last('Last') ?>
+        </nav>
+    </div>
     <p class="request-error" role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 </section>

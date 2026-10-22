@@ -97,7 +97,7 @@ class DocumentationRuntime
         }
 
         $session = new Session(['defaults' => 'php', 'ini' => ['session.use_cookies' => 0]]);
-        $request = new ServerRequest(['session' => $session]);
+        $request = new ServerRequest(['session' => $session, 'url' => '/documentation-example']);
         $this->context = new IslandContext($request->withAttribute('csrfToken', 'docs-csrf'), 'docs', '/docs-update');
         $config = new UploadConfig(['directory' => TMP . 'documentation-uploads']);
         $uploads = new UploadManager(new LocalUploadStorage($config), $config);

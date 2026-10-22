@@ -87,6 +87,11 @@ attempt. Removed islands do not emit new failure UI.
 
 ## Server integration
 
+Updates and deferred initialization require the mounting page path in signed
+identity. Snapshots issued before that field was introduced return
+`invalid_snapshot` (409) before application hooks or actions run. Preserve local
+drafts, then reload the page to obtain a fresh snapshot and correct page links.
+
 The plugin subscribes to CakePHP's `Exception.beforeRender` event and returns
 safe versioned JSON for update exceptions after normal logging. Other routes and
 application-handled responses retain their handling. Custom error documents get
