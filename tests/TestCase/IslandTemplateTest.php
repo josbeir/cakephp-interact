@@ -11,6 +11,7 @@ use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\Http\Session;
 use Cake\View\Exception\MissingTemplateException;
+use Commerce\Island\AbstractIsland;
 use Commerce\Island\Article\EditorIsland as Editor;
 use Commerce\Island\CrossPluginIsland as CrossPlugin;
 use Commerce\Island\ExplicitElementIsland as ExplicitElement;
@@ -29,6 +30,7 @@ use Interact\Security\SnapshotCodec;
 use Interact\Test\Fixture\Island\Article\EditorIsland as LocalEditor;
 use Interact\Test\Fixture\Island\CounterIsland;
 use Interact\Test\Fixture\UnlocatedIsland;
+use Interact\View\Helper\InteractHelper;
 use Interact\View\TemplateView;
 use InvalidArgumentException;
 use LogicException;
@@ -134,6 +136,88 @@ class IslandTemplateTest extends TestCase
         static::assertNotSame($registry->create($editor), $registry->create($editor));
         static::assertSame(ProductCard::class, $registry->definition('Acme/Catalog.product_card')->class);
         static::assertSame('Commerce.island/Article/editor', $editor->declaration->template);
+    }
+
+    public function testClassReferencesResolveToTheSameCachedNames(): void
+    {
+        foreach ([
+            Counter::class => 'Counter',
+            Editor::class => 'Commerce.Article/Editor',
+            ProductCard::class => 'Acme/Catalog.ProductCard',
+        ] as $class => $name) {
+            $registry = new Registry();
+            $definition = $registry->resolve($class);
+            static::assertSame($name, $definition->declaration->name);
+            static::assertSame($definition, $registry->definition($name));
+            static::assertSame($definition, $registry->resolve($class));
+            static::assertSame($definition, $registry->resolve($name));
+
+            $namedRegistry = new Registry();
+            static::assertSame($namedRegistry->definition($name), $namedRegistry->resolve($class));
+        }
+    }
+
+    public function testRegisteredClassReferencesKeepTheirExplicitName(): void
+    {
+        $registry = new Registry();
+        $registry->register(CounterIsland::class, 'External');
+        static::assertSame($registry->definition('External'), $registry->resolve(CounterIsland::class));
+    }
+
+    /**
+     * Supply invalid class references and a conventional name already mapped to another class.
+     *
+     * @return iterable<string, array{string, string|null}> Rejected mount selectors and plugin to unload.
+     */
+    public static function invalidClassReferences(): iterable
+    {
+        yield 'missing' => ['Missing\\Island\\UnknownIsland', null];
+        yield 'unrelated' => [self::class, null];
+        yield 'abstract' => [AbstractIsland::class, null];
+        yield 'outside application' => [CounterIsland::class, null];
+        yield 'unloaded plugin' => [Editor::class, 'Commerce'];
+        yield 'collision' => [Editor::class, null];
+    }
+
+    #[DataProvider('invalidClassReferences')]
+    public function testRejectsClassReferencesThatCannotResolveOnLaterRequests(
+        string $class,
+        ?string $unloadedPlugin,
+    ): void {
+        $registry = new Registry();
+        if ($unloadedPlugin !== null) {
+            Plugin::getCollection()->remove($unloadedPlugin);
+        } elseif ($class === Editor::class) {
+            $registry->register(LocalEditor::class, 'Commerce.Article/Editor');
+        }
+
+        $this->expectException(InvalidArgumentException::class);
+        $registry->resolve($class);
+    }
+
+    public function testHelperClassReferencesUseTheCanonicalIdentityAndDefaultKey(): void
+    {
+        $this->enableOverrides();
+        $context = new IslandContext(
+            new ServerRequest([
+                'session' => new Session(['defaults' => 'php', 'ini' => ['session.use_cookies' => 0]]),
+            ]),
+            'default',
+            '/_interact/update',
+        );
+        $codec = new SnapshotCodec(str_repeat('v', 32));
+        $view = $this->hostView();
+        $helper = new InteractHelper($view, ['autoScript' => false, 'document' => false]);
+        $helper->attach(new Factory(new Registry(), $codec)->create($view, $context), $context);
+        foreach (['Commerce.article/editor', Editor::class] as $selector) {
+            $html = $helper->render($selector);
+            static::assertStringContainsString('Application override: 0', $html);
+            $matches = [];
+            static::assertSame(1, preg_match('/data-interact-snapshot="([^"]+)"/', $html, $matches));
+            $data = $codec->open(html_entity_decode($matches[1]), $context->binding(), $context->scope);
+            static::assertSame('Commerce.Article/Editor', $data['alias']);
+            static::assertSame('Commerce.Article/Editor', $data['key']);
+        }
     }
 
     /**
@@ -315,9 +399,10 @@ class IslandTemplateTest extends TestCase
         $registry = new Registry();
         $factory = new Factory($registry, new SnapshotCodec(str_repeat('v', 32)));
         $runtime = $factory->create($this->hostView(), $context);
-        $initial = $runtime->mount('Commerce.Article/Editor', [], 'editor', $context);
+        $initial = $runtime->mount(Editor::class, [], 'editor', $context);
         static::assertStringContainsString('Application override: 0', $initial->html);
-        $handler = new UpdateHandler($factory, new FailureResponder());
+        $freshFactory = new Factory(new Registry(), new SnapshotCodec(str_repeat('v', 32)));
+        $handler = new UpdateHandler($freshFactory, new FailureResponder());
         $response = $handler->handle($request->withParam('plugin', 'Interact')
             ->withParsedBody([
                 'version' => 1,
@@ -326,8 +411,11 @@ class IslandTemplateTest extends TestCase
             ]), new Response());
         static::assertSame(200, $response->getStatusCode());
         static::assertStringContainsString('Application override: 1', (string)$response->getBody());
-        $pending = $runtime->mount('Commerce.Article/Editor', [], 'deferred', $context, new Options('manual'));
-        $initialized = $runtime->update(['snapshot' => $pending->snapshot, 'initialize' => true], $context);
+        $pending = $runtime->mount(Editor::class, [], 'deferred', $context, new Options('manual'));
+        $initialized = $freshFactory->create($this->hostView(), $context)->update([
+            'snapshot' => $pending->snapshot,
+            'initialize' => true,
+        ], $context);
         static::assertStringContainsString('Application override: 0', $initialized->html);
     }
 

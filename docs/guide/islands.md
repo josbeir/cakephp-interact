@@ -74,17 +74,18 @@ Render an island from a normal CakePHP template:
 <?= $this->Interact->render('Article/Form') ?>
 ```
 
-`InteractHelper::render()` returns the island's HTML. [Installation](/installation) configures the helper
+`InteractHelper::render()` also accepts [class references](/guide/conventions#class-references),
+such as `render(EditorIsland::class)`, and returns the island's HTML. [Installation](/installation) configures the helper
 and browser runtime. [Quickstart](/getting-started) contains a complete counter.
 
-| Argument      | Default   | Description                                                           |
-| ------------- | --------- | --------------------------------------------------------------------- |
-| `alias`       | Required  | CakePHP-style island name                                             |
-| `props`       | `[]`      | Values declared with `#[Prop]`                                        |
-| `key`         | Alias     | Stable identity among siblings                                        |
-| `urlPrefix`   | `null`    | Prefix for this instance's URL parameters                             |
-| `loading`     | `'eager'` | Eager rendering, lazy visibility, deferred startup, or manual loading |
-| `placeholder` | `null`    | Custom placeholder element for a deferred mount                       |
+| Argument      | Default       | Description                                                           |
+| ------------- | ------------- | --------------------------------------------------------------------- |
+| `alias`       | Required      | CakePHP-style island name or island class reference                   |
+| `props`       | `[]`          | Values declared with `#[Prop]`                                        |
+| `key`         | Resolved name | Stable identity among siblings                                        |
+| `urlPrefix`   | `null`        | Prefix for this instance's URL parameters                             |
+| `loading`     | `'eager'`     | Eager rendering, lazy visibility, deferred startup, or manual loading |
+| `placeholder` | `null`        | Custom placeholder element for a deferred mount                       |
 
 See [lazy loading](/guide/lazy-loading) for loading modes and placeholders.
 

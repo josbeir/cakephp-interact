@@ -44,8 +44,32 @@ uses matching article folders. Application namespaces are read from CakePHP's
 Names are normalized to class-style casing, so `Article/Editor` and `article/editor`
 select the same class. Underscores and hyphens within a segment are camelized.
 A slash selects a nested namespace; a dot separates a plugin name from its island.
-Raw PHP class names, traversal segments, and arbitrary filesystem paths are rejected.
+Traversal segments and arbitrary filesystem paths are rejected.
 Moving or renaming a class changes its conventional render name and inferred template.
+
+## Class references
+
+Mount calls also accept class references for IDE completion, navigation, and rename
+support:
+
+```php
+<?php
+use App\Island\Article\EditorIsland;
+?>
+<?= $this->Interact->render(EditorIsland::class) ?>
+```
+
+This is equivalent to `render('Article/Editor')`: both use the same template,
+canonical island name, and default child key. Props, explicit keys, and loading
+options work with either form. References to classes from loaded plugins, such as
+`Commerce\Island\Article\EditorIsland::class`, retain CakePHP's normal application
+template overrides.
+
+Automatic resolution requires the configured application or loaded plugin's
+`Island` namespace and the `Island` class suffix. Classes in other locations need
+[explicit registration](#application-subclasses-and-explicit-names) on every
+request before mounting by class or name. Browser updates use signed island names,
+never PHP class references.
 
 ## Explicit rendering
 

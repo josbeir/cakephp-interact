@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+use TestApp\Island\CounterIsland;
+
 /** @var \Interact\View\TemplateView $this */
 ?>
 <header class="page-intro">
@@ -13,7 +15,7 @@ declare(strict_types=1);
     <div class="card-heading"><div><p class="eyebrow">01 / Isolated state</p><h2>Two islands. Their own pace.</h2></div><span class="capability">Typed actions</span></div>
     <p class="card-description">Both counters use the same PHP class with different starting values. Change one; its neighbor stays put.</p>
     <div class="counter-grid">
-        <?= $this->Interact->render('Counter', props: ['label' => 'First counter', 'initial' => 0], key: 'first-counter') ?>
+        <?= $this->Interact->render(CounterIsland::class, props: ['label' => 'First counter', 'initial' => 0], key: 'first-counter') ?>
         <?= $this->Interact->render('Counter', props: ['label' => 'Second counter', 'initial' => 5], key: 'second-counter') ?>
     </div>
 </section>

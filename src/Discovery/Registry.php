@@ -54,6 +54,46 @@ class Registry
     }
 
     /**
+     * Resolve a server-owned mount selector, including an island class reference.
+     *
+     * Conventional classes must resolve back through their public name. Nonstandard
+     * classes require explicit registration on initial and subsequent requests.
+     * Browser updates use definition() instead, which accepts names only.
+     *
+     * @throws \InvalidArgumentException When the class is invalid or requires registration.
+     */
+    public function resolve(string $selector): Definition
+    {
+        if (!str_contains($selector, '\\')) {
+            return $this->definition($selector);
+        }
+
+        foreach ($this->definitions as $definition) {
+            if ($definition->class === $selector) {
+                return $definition;
+            }
+        }
+
+        if (!is_subclass_of($selector, Island::class)) {
+            throw new InvalidArgumentException('Island class references must extend Island.');
+        }
+
+        $definition = new Definition($selector);
+        $name = Name::normalize($definition->declaration->name);
+        if (App::className($name, 'Island', 'Island') !== $selector) {
+            throw new InvalidArgumentException('Use a conventional island class or an explicitly registered name.');
+        }
+
+        if (isset($this->definitions[$name])) {
+            throw new InvalidArgumentException(sprintf('Duplicate island name "%s".', $name));
+        }
+
+        $this->definitions[$name] = $definition;
+
+        return $definition;
+    }
+
+    /**
      * Resolve bounded CakePHP names beneath Island namespaces, never arbitrary FQCNs.
      *
      * @throws \InvalidArgumentException When the name is invalid or no concrete island can be resolved.

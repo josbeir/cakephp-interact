@@ -70,7 +70,7 @@ class InteractHelper extends Helper
      * echo $this->Interact->render('Article/Editor', props: ['articleId' => 7], key: 'article-7');
      * ```
      *
-     * @param string $alias CakePHP-style island name, optionally qualified by its plugin.
+     * @param string $alias CakePHP-style application/plugin name or an island class reference.
      * @param array<string, mixed> $props Server-owned parameters declared with Prop.
      */
     public function render(
@@ -84,7 +84,7 @@ class InteractHelper extends Helper
         return $this->runtime()->mount(
             $alias,
             $props,
-            $key ?? $alias,
+            $key,
             $this->context(),
             new Options($loading, $placeholder, $urlPrefix),
         )->html;
