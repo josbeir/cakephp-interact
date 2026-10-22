@@ -20,6 +20,7 @@ use Interact\Pagination\PagePath;
 use Interact\Pagination\Pagination;
 use Interact\Rendering\RendererInterface;
 use Interact\Security\SnapshotCodec;
+use Interact\UpdatedPaths;
 use Interact\Upload\UploadManager;
 use Interact\Upload\UploadOperation;
 use InvalidArgumentException;
@@ -239,7 +240,7 @@ class Runtime
 
         $paths = array_values(array_unique([...$propPaths, ...($restored ?? []), ...$paths, ...$uploadPaths]));
         if ($paths !== []) {
-            $island->updated($paths);
+            $island->updated(new UpdatedPaths($paths));
         }
 
         $outcome = $this->actions->invoke($definition, $island, $input);

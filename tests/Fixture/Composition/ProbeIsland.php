@@ -10,6 +10,7 @@ use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Island;
 use Interact\IslandContext;
+use Interact\UpdatedPaths;
 
 /**
  * Observes composition lifecycle ordering and typed model values independently of application queries.
@@ -88,11 +89,11 @@ class ProbeIsland extends Island
     /**
      * Record prop and writable changes in one authorized hook.
      *
-     * @param list<string> $paths Changed top-level names and writable paths.
+     * @param UpdatedPaths $paths Changed top-level names and writable paths.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
-        $this->changed = $paths;
+        $this->changed = $paths->toArray();
     }
 
     /**

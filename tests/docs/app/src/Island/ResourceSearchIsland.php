@@ -6,6 +6,7 @@ namespace App\Island;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\State;
 use Interact\Island;
+use Interact\UpdatedPaths;
 
 /**
  * Searches a resource Table and renders one result page without transporting the rows.
@@ -30,11 +31,11 @@ class ResourceSearchIsland extends Island
     /**
      * Restart pagination when the search changes.
      *
-     * @param list<string> $paths Changed writable paths.
+     * @param UpdatedPaths $paths Changed writable paths.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
-        if (in_array('search', $paths, true) && !in_array('page', $paths, true)) {
+        if ($paths->has('search') && !$paths->has('page')) {
             $this->page = 1;
         }
     }

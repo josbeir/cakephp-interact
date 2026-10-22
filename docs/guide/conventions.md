@@ -162,16 +162,3 @@ registration.
 Domain queries, validation, and persistence stay in their normal CakePHP layers.
 Island classes orchestrate application behavior; directory organization does not
 transport services or queries into browser state.
-
-## Migrating existing declarations
-
-Replace `#[AsIsland('alias', ...)]` with an `Island`-suffixed class and update mount
-calls to its conventional application/plugin name. Move embedded entry templates
-to their matching `templates/island/` paths. Retain an optional `#[Render]` only
-when selecting another view or root tag.
-
-`AsIsland` and the `interact` Attribute Resolver collection are removed. Remove
-custom island collection configuration and the `Registry` constructor's `collection:`
-argument. Explicit `Registry::register($class, $name)` mappings remain available
-when an application needs a custom name. This does not change CakePHP's routing
-attribute discovery.

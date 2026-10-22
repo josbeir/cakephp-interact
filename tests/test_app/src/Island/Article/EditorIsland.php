@@ -12,6 +12,7 @@ use Interact\Attribute\Prop;
 use Interact\Attribute\State;
 use Interact\Island;
 use Interact\IslandContext;
+use Interact\UpdatedPaths;
 use TestApp\Model\Table\ArticlesTable;
 
 /**
@@ -65,9 +66,9 @@ class EditorIsland extends Island
     /**
      * Clear success feedback after receiving another edit to the draft.
      *
-     * @param list<string> $paths Hide stale success feedback once the server receives another edit.
+     * @param UpdatedPaths $paths Hide stale success feedback once the server receives another edit.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
         $this->saved = false;
     }

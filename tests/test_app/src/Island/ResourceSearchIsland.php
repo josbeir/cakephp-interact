@@ -10,6 +10,7 @@ use Interact\Attribute\Action;
 use Interact\Attribute\Prop;
 use Interact\Attribute\State;
 use Interact\Island;
+use Interact\UpdatedPaths;
 use InvalidArgumentException;
 use TestApp\Model\Table\ResourcesTable;
 
@@ -61,13 +62,13 @@ class ResourceSearchIsland extends Island
     /**
      * Restart pagination when a search, filter, sort order, or page size changes.
      *
-     * @param list<string> $paths Accepted browser edits.
+     * @param UpdatedPaths $paths Accepted browser edits.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
         if (
-            array_intersect($paths, ['search', 'category', 'level', 'sort', 'direction', 'limit']) !== []
-            && !in_array('page', $paths, true)
+            $paths->hasAny('search', 'category', 'level', 'sort', 'direction', 'limit')
+            && !$paths->has('page')
         ) {
             $this->page = 1;
         }

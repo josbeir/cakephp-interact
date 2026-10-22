@@ -8,6 +8,7 @@ use Interact\Attribute\Prop;
 use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Island;
+use Interact\UpdatedPaths;
 
 /**
  * Exercises declared props, writable/locked state, native arguments, validation, and browser
@@ -45,11 +46,11 @@ class CounterIsland extends Island
     /**
      * Record accepted edit paths so tests can verify lifecycle ordering.
      *
-     * @param list<string> $paths Confirm updates precede action execution.
+     * @param UpdatedPaths $paths Confirm updates precede action execution.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
-        $this->locked = implode(',', $paths);
+        $this->locked = implode(',', $paths->toArray());
     }
 
     /**

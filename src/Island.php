@@ -131,9 +131,9 @@ abstract class Island
     /**
      * React to accepted writable edits and reactive parent props before an exposed action is invoked.
      *
-     * @param list<string> $paths Changed writable paths and reactive prop names, before any action executes.
+     * @param UpdatedPaths $paths Reported writable paths, reactive prop names, and restored URL properties.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
     }
 

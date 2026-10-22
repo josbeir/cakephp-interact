@@ -54,10 +54,13 @@ the first render only, so it does not replace a draft on later updates.
 ## updated()
 
 ```php
-public function updated(array $paths): void
+use Interact\UpdatedPaths;
+
+public function updated(UpdatedPaths $paths): void
 ```
 
-Receives accepted writable paths and changed reactive prop names after authorization and before the action.
+Receives an immutable `Interact\UpdatedPaths` object after authorization and before the action.
+It contains accepted writable paths and changed reactive prop names.
 Ordinary updates report changed paths.
 Use it to clear dependent fields or reset pagination. History restoration supplies
 the complete URL-property set, including unchanged values; see [URL state](/guide/url-state). Successful file staging
@@ -65,15 +68,27 @@ also invokes it for the affected top-level field.
 Parent-input changes use the same hook; `mount()` is not repeated. See
 [nested islands](/guide/nesting#reactive-props).
 
+| Member                         | Behavior                                                                     |
+| ------------------------------ | ---------------------------------------------------------------------------- |
+| `has('data.country')`          | Checks for an exact reported path.                                           |
+| `hasAny('search', 'category')` | Checks whether any supplied path was reported. No arguments returns `false`. |
+| `toArray()`                    | Returns the reported paths as a `list<string>`.                              |
+| `foreach ($paths as $path)`    | Iterates over the paths in their reported order.                             |
+
+Matching is case-sensitive. `has('data')` and `has('data.*')` do not match
+`data.country`; parent paths and wildcards are not expanded.
+
 ```php
+use Interact\UpdatedPaths;
+
 /**
  * Clear a city that may no longer belong to the selected country.
  *
- * @param list<string> $paths Changed writable paths.
+ * @param UpdatedPaths $paths Changed writable paths.
  */
-public function updated(array $paths): void
+public function updated(UpdatedPaths $paths): void
 {
-    if (in_array('country', $paths, true)) {
+    if ($paths->has('country')) {
         $this->cityId = null;
     }
 }

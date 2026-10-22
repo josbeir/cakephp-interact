@@ -8,6 +8,7 @@ use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Action;
 use Interact\Attribute\State;
 use Interact\Island;
+use Interact\UpdatedPaths;
 use TestApp\Model\Table\FormArticlesTable;
 
 /**
@@ -40,9 +41,9 @@ class FormIsland extends Island
     /**
      * Clear stale save feedback when the application receives another draft edit.
      *
-     * @param list<string> $paths Accepted writable paths.
+     * @param UpdatedPaths $paths Accepted writable paths.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
         $this->saved = false;
     }

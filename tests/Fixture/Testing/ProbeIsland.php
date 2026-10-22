@@ -10,6 +10,7 @@ use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Island;
 use Interact\IslandContext;
+use Interact\UpdatedPaths;
 use RuntimeException;
 
 /**
@@ -78,11 +79,11 @@ class ProbeIsland extends Island
     /**
      * Record one batch of accepted paths for lifecycle assertions.
      *
-     * @param list<string> $paths Writable edits accepted by the normal state service.
+     * @param UpdatedPaths $paths Writable edits accepted by the normal state service.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
-        $this->paths = $paths;
+        $this->paths = $paths->toArray();
         $this->count++;
     }
 
