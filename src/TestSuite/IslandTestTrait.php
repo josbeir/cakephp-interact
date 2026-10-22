@@ -76,6 +76,9 @@ trait IslandTestTrait
         $this->islandTestRoutes = Router::getRouteCollection();
         $this->islandTestPreviousRequest = Router::getRequest();
         $this->islandTestEvents = EventManager::instance();
+        // Custom application loaders can mutate these collections before bootstrap starts.
+        Plugin::setCollection(new PluginCollection());
+        Router::setRouteCollection(new RouteCollection());
         EventManager::instance(clone $this->islandTestEvents);
         $app = $this->createApp();
         if (!$app instanceof ContainerApplicationInterface) {
