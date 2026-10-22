@@ -6,6 +6,7 @@ namespace TestApp\Island;
 use Interact\Attribute\Action;
 use Interact\Attribute\State;
 use Interact\Island;
+use Interact\UpdatedPaths;
 
 /**
  * Demonstrates an application-owned select widget using ordinary writable state and validation.
@@ -51,9 +52,9 @@ class EnhancedSelectIsland extends Island
     /**
      * Clear prior confirmation when a new selection reaches PHP.
      *
-     * @param list<string> $paths Changed writable state paths.
+     * @param UpdatedPaths $paths Changed writable state paths.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
         $this->confirmed = false;
     }

@@ -8,6 +8,7 @@ use Interact\Attribute\Action;
 use Interact\Attribute\Prop;
 use Interact\Attribute\State;
 use Interact\Island;
+use Interact\UpdatedPaths;
 
 /**
  * Exposes one modelable selection while searching through application-owned resource finders.
@@ -32,11 +33,11 @@ class PickerIsland extends Island
     /**
      * Clear a selection whose category changed without replacing unrelated child drafts.
      *
-     * @param list<string> $paths Accepted prop and state changes.
+     * @param UpdatedPaths $paths Accepted prop and state changes.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
-        if (in_array('category', $paths, true)) {
+        if ($paths->has('category')) {
             $this->value = null;
         }
     }

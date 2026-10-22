@@ -9,6 +9,7 @@ use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Island;
 use Interact\IslandContext;
+use Interact\UpdatedPaths;
 
 /**
  * Exercises query initialization, strict scalar types, history hooks, and action isolation.
@@ -59,10 +60,10 @@ class UrlIsland extends Island
         $this->observed = [$this->search, (string)$this->page];
     }
 
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
-        $this->observed = $paths;
-        if (in_array('search', $paths, true) && !in_array('page', $paths, true)) {
+        $this->observed = $paths->toArray();
+        if ($paths->has('search') && !$paths->has('page')) {
             $this->page = 1;
         }
 

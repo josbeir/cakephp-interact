@@ -9,6 +9,7 @@ use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Island;
 use Interact\IslandContext;
+use Interact\UpdatedPaths;
 use LogicException;
 
 /**
@@ -44,7 +45,7 @@ class OutcomeIsland extends Island
         }
     }
 
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
         if ($this->hook === 'updated') {
             $this->redirect('/forbidden');

@@ -5,6 +5,7 @@ namespace Interact\Test\Fixture\Composition;
 
 use Interact\Attribute\Render;
 use Interact\Attribute\State;
+use Interact\UpdatedPaths;
 
 /**
  * Combines independently owned URL state with the parent-bound values of a nested input.
@@ -22,12 +23,12 @@ class HistoryProbeIsland extends ProbeIsland
     /**
      * Normalize changed selections after authorization while retaining the observed hook paths.
      *
-     * @param list<string> $paths Accepted reactive props, writable values, and restored URL properties.
+     * @param UpdatedPaths $paths Accepted reactive props, writable values, and restored URL properties.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
         parent::updated($paths);
-        if (in_array('value', $paths, true)) {
+        if ($paths->has('value')) {
             $this->value = strtoupper(trim($this->value));
         }
     }

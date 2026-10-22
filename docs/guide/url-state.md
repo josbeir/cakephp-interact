@@ -112,14 +112,16 @@ supplies every URL-bound property to `updated()`, including unchanged values.
 This lets dependent logic respect an explicitly restored page:
 
 ```php
+use Interact\UpdatedPaths;
+
 /**
  * Reset pagination for a new search unless a page was explicitly supplied.
  *
- * @param list<string> $paths Accepted writable paths.
+ * @param UpdatedPaths $paths Accepted writable paths.
  */
-public function updated(array $paths): void
+public function updated(UpdatedPaths $paths): void
 {
-    if (in_array('search', $paths, true) && !in_array('page', $paths, true)) {
+    if ($paths->has('search') && !$paths->has('page')) {
         $this->page = 1;
     }
 

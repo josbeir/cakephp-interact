@@ -6,6 +6,7 @@ namespace TestApp\Island;
 use Interact\Attribute\Action;
 use Interact\Attribute\State;
 use Interact\Island;
+use Interact\UpdatedPaths;
 
 /**
  * Demonstrates conditional fields, checkbox groups, and a quote calculated on the server.
@@ -41,9 +42,9 @@ class WorkshopPlannerIsland extends Island
     /**
      * Clear confirmation whenever another draft reaches the server.
      *
-     * @param list<string> $paths Accepted edits to the planner.
+     * @param UpdatedPaths $paths Accepted edits to the planner.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
         $this->confirmed = false;
     }

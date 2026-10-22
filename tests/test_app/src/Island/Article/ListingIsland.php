@@ -9,6 +9,7 @@ use Interact\Attribute\Action;
 use Interact\Attribute\State;
 use Interact\Island;
 use Interact\IslandContext;
+use Interact\UpdatedPaths;
 use TestApp\Model\Table\ArticlesTable;
 
 /**
@@ -43,11 +44,11 @@ class ListingIsland extends Island
     /**
      * Return to the first page when the search draft changes.
      *
-     * @param list<string> $paths A search change resets the current page.
+     * @param UpdatedPaths $paths A search change resets the current page.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
-        if (in_array('search', $paths, true)) {
+        if ($paths->has('search')) {
             $this->page = 1;
         }
     }

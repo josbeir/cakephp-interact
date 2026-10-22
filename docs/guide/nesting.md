@@ -70,9 +70,11 @@ be written through browser model bindings.
 Use `updated()` for application decisions such as clearing an invalid selection:
 
 ```php
-public function updated(array $paths): void
+use Interact\UpdatedPaths;
+
+public function updated(UpdatedPaths $paths): void
 {
-    if (in_array('category', $paths, true)) {
+    if ($paths->has('category')) {
         $this->value = null;
     }
 }

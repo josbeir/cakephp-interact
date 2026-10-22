@@ -168,9 +168,11 @@ supported. Invalid sort keys cannot select arbitrary database columns.
 Reset the page explicitly when application filters change:
 
 ```php
-public function updated(array $paths): void
+use Interact\UpdatedPaths;
+
+public function updated(UpdatedPaths $paths): void
 {
-    if (in_array('search', $paths, true) && !in_array('page', $paths, true)) {
+    if ($paths->has('search') && !$paths->has('page')) {
         $this->page = 1;
     }
 }

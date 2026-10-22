@@ -8,6 +8,7 @@ use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Action;
 use Interact\Attribute\State;
 use Interact\Island;
+use Interact\UpdatedPaths;
 
 /**
  * Provides country-dependent city choices and validates the selected membership.
@@ -28,12 +29,12 @@ class DependentSelectsIsland extends Island
     /**
      * Clear the selected city when its owning country changes.
      *
-     * @param list<string> $paths Reset a stale city when its country changes.
+     * @param UpdatedPaths $paths Reset a stale city when its country changes.
      */
-    public function updated(array $paths): void
+    public function updated(UpdatedPaths $paths): void
     {
         $this->confirmed = false;
-        if (in_array('country', $paths, true)) {
+        if ($paths->has('country')) {
             $this->cityId = null;
         }
     }
