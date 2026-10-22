@@ -10,15 +10,16 @@ description: Complete CakePHP examples for forms, search, uploads, polling, and 
 These examples include the PHP classes, templates, data setup, and mount calls
 needed for each interaction. Complete [installation](/installation) first.
 
-| Example                                        | Demonstrates                                          |
-| ---------------------------------------------- | ----------------------------------------------------- |
-| [Article form](/examples/article-form)         | Entity validation and saving                          |
-| [Search and pagination](/examples/search)      | Table finders and bounded result pages                |
-| [Dependent fields](/examples/dependent-fields) | Server-derived choices and membership validation      |
-| [Single document upload](/examples/upload)     | File staging, validation, and private storage         |
-| [Job polling](/examples/polling)               | Pause/resume and completion controlled by PHP         |
-| [Enhanced select](/examples/enhanced-select)   | Modelable inputs, protected DOM, and PHP resets       |
-| [Chart updates](/examples/chart)               | Watching server state and updating a library instance |
+| Example                                                | Demonstrates                                          |
+| ------------------------------------------------------ | ----------------------------------------------------- |
+| [Article form](/examples/article-form)                 | Entity validation and saving                          |
+| [Renderless draft saves](/examples/renderless-actions) | Save without replacing the current view               |
+| [Search and pagination](/examples/search)              | Table finders and bounded result pages                |
+| [Dependent fields](/examples/dependent-fields)         | Server-derived choices and membership validation      |
+| [Single document upload](/examples/upload)             | File staging, validation, and private storage         |
+| [Job polling](/examples/polling)                       | Pause/resume and completion controlled by PHP         |
+| [Enhanced select](/examples/enhanced-select)           | Modelable inputs, protected DOM, and PHP resets       |
+| [Chart updates](/examples/chart)                       | Watching server state and updating a library instance |
 
 <span id="run-it-locally"></span>
 
@@ -43,6 +44,7 @@ session identity; applications supply their own authentication.
 
 | Open          | Try                                                                     | Follow the implementation                                                                                          |
 | ------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `/renderless` | Save a draft, render validation feedback, and conditionally refresh     | [Renderless draft saves](/examples/renderless-actions)                                                             |
 | `/forms`      | Article and comment drafts with FormHelper                              | [Article form](/examples/article-form), [form binding](/directives/model#whole-forms)                              |
 | `/`           | Search articles, edit two titles, save one, and keep the other draft    | [Article form](/examples/article-form), [nested islands](/guide/nesting)                                           |
 | `/`           | Change country, choose a city, and confirm the selection                | [Dependent fields](/examples/dependent-fields)                                                                     |
@@ -90,3 +92,7 @@ The larger demo combines both at `/outcomes`.
 ## Navigation
 
 Open `/navigation` in the demo for [enhanced visits and a persistent notebook](/examples/navigation), including active links, scroll, and application-owned loading feedback.
+
+## Renderless draft saves
+
+The [draft editor](/examples/renderless-actions) saves through CakePHP without rebuilding the form, with validation recovery and conditional rendering. Run it at `/renderless` in the demo.

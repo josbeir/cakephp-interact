@@ -29,8 +29,90 @@ public function increment(): void
 <button type="button" @click="$server.call('increment')">Add one</button>
 ```
 
-Only declared actions are callable. The updated state and rendered HTML return
-in the same response.
+Only declared actions are callable. By default, the updated state and rendered
+HTML return in the same response.
+
+## Renderless actions {#renderless-actions}
+
+`#[Action(render: false)]` returns accepted state and events without calling
+`viewData()`, rendering the template, or morphing the island. Use it for operations
+such as saving a draft when PHP-rendered content does not need to change:
+
+```php
+/**
+ * Persist the application draft without rebuilding the current view.
+ */
+#[Action(render: false)]
+public function saveDraft(): void
+{
+    // Marshal, validate, and explicitly save in application code.
+    $this->savedCount++;
+    $this->dispatch('draft-saved');
+}
+```
+
+The fragment assumes a declared `savedCount` state property. The
+[complete draft editor](/examples/renderless-actions) includes CakePHP persistence
+and a FormHelper form.
+
+```html
+<button type="button" @click="$server.call('saveDraft')">Save draft</button>
+<p x-text="$server.state.savedCount"></p>
+```
+
+Alpine expressions and bound controls reflect accepted state. PHP-rendered text,
+computed view data, and nested island markup retain their previous content until
+a rendering response, such as `$server.sync()`. Existing children keep their
+identities and remain interactive.
+
+### Conditional rendering
+
+Call `$this->skipRender()` inside an ordinary action to skip rendering for that
+invocation:
+
+```php
+/**
+ * Count a small signal quietly; render larger changes.
+ */
+#[Action]
+public function signal(int $count = 1): void
+{
+    $this->signals += $count;
+    if ($count === 1) {
+        $this->skipRender();
+    }
+}
+```
+
+This fragment assumes a declared `signals` state property. `skipRender()` records
+a response preference and does not stop PHP execution. Repeated calls are safe;
+the preference resets for the next request. Calling it from hooks or outside a
+declared action throws `LogicException`.
+
+### Validation and request behavior
+
+Validation errors set through `setErrors()` always render. After a validation
+render, the next successful action renders once more to clear FormHelper error
+markup. Subsequent successful renderless actions skip rendering again.
+
+| Request                                                                           | Rendering                                |
+| --------------------------------------------------------------------------------- | ---------------------------------------- |
+| Successful renderless action                                                      | Skip view data, template, and morph      |
+| Current errors or previously rendered errors                                      | Render feedback or clear it              |
+| Initial mount, lazy initialization, synchronization, uploads, history restoration | Render normally                          |
+| Successful redirect                                                               | Navigate without rendering               |
+| Successful download                                                               | Follow the action's rendering preference |
+
+Renderless actions use the same authorization, writable-state checks, signed
+snapshots, queue, URL bindings, uploads, pending/loading feedback, and form
+submission protection as other actions. Newer edits, focus, and selection survive
+the response. Calls still return the existing `Promise<RequestResult>` contract;
+there is no extra browser method or modifier.
+
+The request still waits for PHP to finish. Renderless actions do not run in the
+background, bypass validation, automatically save, or automatically retry a
+failed operation. Keep operations idempotent where your application needs safe
+explicit retries.
 
 <span id="pass-an-argument"></span>
 

@@ -59,24 +59,40 @@ export interface RedirectResponse {
   redirect: Redirect;
 }
 
-export type UpdateResponse = IslandResponse | RedirectResponse;
+export type UpdateResponse =
+  | IslandResponse
+  | RenderlessResponse
+  | RedirectResponse;
 
 /**
- * Verified server render, including validation feedback and optional download effects.
+ * Accepted server state, including validation feedback and optional download effects.
  * Browser effects never establish authorization or durable business messages.
  */
-export interface IslandResponse {
+export interface StateResponse {
   download?: string;
   uploads?: UploadMetadata;
   url?: UrlFields;
   version: 1;
   id: string;
-  html: string;
   snapshot: string;
   state: State;
   writable: Writable;
   errors: Record<string, string[]>;
   events: { name: string; detail: State }[];
+}
+
+/**
+ * A complete rendered island root.
+ */
+export interface IslandResponse extends StateResponse {
+  html: string;
+}
+
+/**
+ * An accepted action that retains the existing DOM.
+ */
+export interface RenderlessResponse extends StateResponse {
+  html: null;
 }
 
 /**

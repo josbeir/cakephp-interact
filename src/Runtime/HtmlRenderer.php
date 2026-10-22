@@ -23,6 +23,8 @@ use InvalidArgumentException;
  */
 class HtmlRenderer
 {
+    protected ResponseBuilder $responses;
+
     /**
      * Bind native rendering, signing, and nested ownership for one request.
      */
@@ -33,6 +35,7 @@ class HtmlRenderer
         protected readonly State $state = new State(),
         protected readonly UploadManager $uploads = new UploadManager(),
     ) {
+        $this->responses = new ResponseBuilder($snapshots, $state, $uploads, $stack);
     }
 
     /**
@@ -44,58 +47,58 @@ class HtmlRenderer
         SnapshotData $identity,
         IslandContext $context,
     ): Result {
-        $frame = $this->stack->push($identity->children);
+        $this->stack->push($identity->children);
         try {
-            $state = $this->state->export($island, $definition);
-            $data = $island->viewData();
-            $uploads = $this->uploads->export($island, $definition, $identity, $context);
-            if (array_intersect_key($data, $state + $uploads['values'] + ['errors' => true]) !== []) {
-                throw new InvalidArgumentException('View data cannot shadow declared state, props, or errors.');
-            }
-
-            $content = $this->renderer->render(
+            $result = $this->responses->build(
+                $island,
                 $definition,
-                $state + $uploads['values'] + ['errors' => $island->errors()] + $data,
+                $identity,
+                $context,
+                function (array $values) use ($island, $definition): string {
+                    $data = $island->viewData();
+                    if (array_intersect_key($data, $values + ['errors' => true]) !== []) {
+                        throw new InvalidArgumentException('View data cannot shadow declared state, props, or errors.');
+                    }
+
+                    return $this->renderer->render($definition, $values + ['errors' => $island->errors()] + $data);
+                },
             );
-            $snapshot = $this->snapshots->seal(
-                [
-                    'alias' => $definition->declaration->name,
-                    'id' => $identity->id,
-                    'key' => $identity->key,
-                    'state' => $state,
-                    'routing' => $identity->routing->defaults,
-                    ...($identity->urlPrefix === null ? [] : ['urlPrefix' => $identity->urlPrefix]),
-                    'children' => $frame->children,
-                    ...($uploads['references'] === [] ? [] : ['uploads' => $uploads['references']]),
-                ],
-                $context->binding(),
-                $context->scope,
-            );
-            $writable = [];
-            foreach ($definition->properties as $name => $property) {
-                if (!$property->writable) {
-                    continue;
-                }
 
-                $writable[$name] = ['type' => $property->type, 'nullable' => $property->nullable];
-            }
-
-            $values = [
-                'url' => $this->state->urlMetadata($definition, $identity->urlPrefix),
-                'state' => $state,
-                'uploads' => $uploads['metadata'],
-                'writable' => $writable,
-                'errors' => $island->errors(),
-                'events' => $island->errors() === [] ? $island->events() : [],
-            ];
-            Values::validate($values['events']);
-
-            return $this->wrap($definition, new Result($identity->id, $content, $snapshot, $values), $context, [
+            return $this->wrap($definition, $result, $context, [
                 'data-interact-mount' => new Identity()->fingerprint($island, $definition, $identity, $context),
             ]);
         } finally {
             $this->stack->pop();
         }
+    }
+
+    /**
+     * Honor action rendering policy after preserving current and previously rendered feedback.
+     */
+    public function update(
+        Island $island,
+        Definition $definition,
+        SnapshotData $data,
+        UpdateRequest $input,
+        IslandContext $context,
+    ): Result {
+        if (new RenderPolicy()->skips($island, $definition, $data, $input->action)) {
+            return $this->renderless($island, $definition, $data, $context);
+        }
+
+        return $this->render($island, $definition, $data, $context);
+    }
+
+    /**
+     * Return accepted state without evaluating view data or changing child ownership.
+     */
+    public function renderless(
+        Island $island,
+        Definition $definition,
+        SnapshotData $identity,
+        IslandContext $context,
+    ): Result {
+        return $this->responses->build($island, $definition, $identity, $context);
     }
 
     /**

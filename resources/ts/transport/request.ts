@@ -74,7 +74,7 @@ export async function readResponse(
   if (
     !response(payload) ||
     payload.id !== id ||
-    ('redirect' in payload && result.status !== 200)
+    (('redirect' in payload || payload.html === null) && result.status !== 200)
   )
     throw requestError('invalid_response', result.status);
   return payload;

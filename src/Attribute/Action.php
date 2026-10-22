@@ -14,4 +14,10 @@ use Attribute;
 #[Attribute(Attribute::TARGET_METHOD)]
 final readonly class Action
 {
+    /**
+     * Choose whether successful invocations normally render their island template.
+     */
+    public function __construct(public bool $render = true)
+    {
+    }
 }

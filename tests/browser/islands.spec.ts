@@ -88,7 +88,7 @@ test('demo pages keep their navigation and forms within a narrow viewport', asyn
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  for (const path of ['/', '/playground', '/search', '/page']) {
+  for (const path of ['/', '/playground', '/search', '/page', '/renderless']) {
     await page.goto(path);
     await expect(
       page.getByRole('navigation', { name: 'Demo pages' }),

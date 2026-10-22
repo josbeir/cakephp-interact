@@ -38,7 +38,7 @@ For `#[State] public int $count`, PHP sees `$count` and JavaScript sees
 receive browser edits. Entities and `viewData()` are not included.
 
 Use [`x-interact:model`](/directives/model) for inputs. Local edits appear in
-`state` immediately; PHP-rendered text changes on the next accepted response.
+`state` immediately; PHP-rendered text changes on the next rendering response.
 
 <span id="read-data-and-call-an-action"></span>
 <span id="call-php-actions-with-arguments"></span>
@@ -52,6 +52,8 @@ Use [`x-interact:model`](/directives/model) for inputs. Local edits appear in
 `call(action, ...args): Promise<RequestResult>` queues a declared `#[Action]`
 method with JSON-compatible arguments. PHP validates types and application rules.
 See [Actions](/guide/actions) for the corresponding `adjust()` implementation.
+[Renderless actions](/guide/actions#renderless-actions) use this same method and
+result contract; their accepted state updates do not morph the view.
 
 <span id="synchronize-or-refresh"></span>
 

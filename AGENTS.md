@@ -24,6 +24,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Choose embedded loading with the mount call’s `loading` option (eager, lazy, defer, manual). Pending tickets allow initialization only; authorize placeholders and loading requests, defer mount/render work, and keep manual loading on `$server.sync()`. Custom placeholders receive declared props only.
 - Use `redirect()` and `downloadUrl()` only in declared actions. Preserve CakePHP page routing defaults in signed identity; keep downloads as independently authorized native requests and enhanced navigation explicit through redirect(navigate: true).
 - Use x-interact:navigate for opt-in links and x-interact:persist for explicit layout regions outside page islands. Coordinate document and URL-state history, preserve compatible layout clients, and keep navigation feedback in the page-level interactNavigation Alpine store. Applications own indicator markup and CSS; loading delays belong in Alpine queries.
+- Use `#[Action(render: false)]` and action-only `skipRender()` for state and events without view work. Preserve authorization, validation rendering and its subsequent cleanup, signed state, child identities, draft reconciliation, and normal rendering for synchronization, initialization, uploads, and history restoration. Keep persistence explicit and retain the existing `$server.call()` contract.
 - Use Alpine shorthand consistently in code and documentation: `@event` for event listeners and `:attribute` for bindings.
 
 ## Usability and cognitive load

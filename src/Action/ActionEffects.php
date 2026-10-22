@@ -14,6 +14,8 @@ class ActionEffects
 {
     protected bool $active = false;
 
+    protected bool $skipRender = false;
+
     protected ?Outcome $outcome = null;
 
     /**
@@ -22,6 +24,7 @@ class ActionEffects
     public function capture(Closure $action): ?Outcome
     {
         $this->outcome = null;
+        $this->skipRender = false;
         $this->active = true;
         try {
             $action();
@@ -30,6 +33,26 @@ class ActionEffects
         } finally {
             $this->active = false;
         }
+    }
+
+    /**
+     * Suppress template rendering for this action, without suppressing validation feedback.
+     */
+    public function skipRender(): void
+    {
+        if (!$this->active) {
+            throw new LogicException('Rendering may only be skipped inside declared actions.');
+        }
+
+        $this->skipRender = true;
+    }
+
+    /**
+     * Read the rendering choice after action capture has completed.
+     */
+    public function skipsRender(): bool
+    {
+        return $this->skipRender;
     }
 
     /**
