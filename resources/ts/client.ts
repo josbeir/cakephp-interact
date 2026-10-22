@@ -431,6 +431,7 @@ export class IslandClient {
       this.controls.captureAll();
       this.composition?.capture();
       if (!upload) this.uploads.captureAll();
+      this.composition?.flush(this.bridge.state);
     } catch (cause: unknown) {
       const error = requestError('client_error', null, cause);
       this.failed(error);

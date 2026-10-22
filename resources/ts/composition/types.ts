@@ -5,6 +5,7 @@ export interface CompositionHooks {
   begin(action: string | null, sent: State): void;
   preserve(incoming: State): State;
   capture(): void;
+  flush(sent: State): void;
   accepted(replacement?: HTMLElement): void;
   updates(): State;
   dispose(): void;

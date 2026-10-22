@@ -51,11 +51,14 @@ export class PageAssets {
     )
       throw new Error('Executable inline scripts require native navigation.');
     const staged: { link: HTMLLinkElement; media: string }[] = [];
+    const loading = new AbortController();
     const discard = () => {
+      loading.abort();
       for (const { link } of staged) link.remove();
     };
     signal.addEventListener('abort', discard, { once: true });
     try {
+      signal.throwIfAborted();
       for (const link of next.head.querySelectorAll<HTMLLinkElement>(
         'link[rel="stylesheet"]',
       )) {
@@ -78,8 +81,11 @@ export class PageAssets {
         const media = link.media;
         clone.media = 'not all';
         staged.push({ link: clone, media });
-        await this.load(clone, signal);
       }
+      // Append in document order, while independent styles download together.
+      await Promise.all(
+        staged.map(({ link }) => this.load(link, loading.signal)),
+      );
       for (const script of scripts) {
         if (!script.hasAttribute('src') || script.noModule) continue;
         const identity = key(script, url);
@@ -91,7 +97,7 @@ export class PageAssets {
         if (!destination(clone.src))
           throw new Error('Invalid script destination.');
         clone.async = false;
-        await this.load(clone, signal);
+        await this.load(clone, loading.signal);
         this.scripts.add(identity);
       }
       signal.throwIfAborted();

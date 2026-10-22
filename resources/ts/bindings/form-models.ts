@@ -3,6 +3,7 @@ import type { Control } from './control-values';
 import type { ModelBinding } from './model';
 
 type Registration = { path: string; list: boolean; release: () => void };
+type Candidate = { path: string; list: boolean };
 
 /**
  * Discovers native controls owned by one form and registers inferred models.
@@ -14,6 +15,8 @@ type Registration = { path: string; list: boolean; release: () => void };
 export class FormModels {
   private readonly observer: MutationObserver;
   private readonly registrations = new Map<Control, Registration>();
+  private candidates: Map<Control, Candidate> | undefined;
+  private pending = true;
 
   constructor(
     private readonly root: HTMLElement,
@@ -28,7 +31,10 @@ export class FormModels {
     onChange: () => void,
   ) {
     this.observer = new MutationObserver((records) => {
-      if (this.changed(records)) onChange();
+      if (this.changed(records)) {
+        this.candidates = undefined;
+        onChange();
+      }
     });
     try {
       this.refresh();
@@ -47,7 +53,40 @@ export class FormModels {
    * Reconcile names, form associations, explicit overrides, and island boundaries.
    */
   refresh(releaseOnly = false): void {
-    const candidates = new Map<Control, { path: string; list: boolean }>();
+    if (this.changed(this.observer.takeRecords())) this.candidates = undefined;
+    if (this.candidates === undefined) {
+      this.candidates = this.discover();
+      this.pending = true;
+    }
+    if (!this.pending) return;
+    for (const [control, registration] of this.registrations) {
+      const candidate = this.candidates.get(control);
+      if (
+        candidate?.path === registration.path &&
+        candidate.list === registration.list
+      )
+        continue;
+      registration.release();
+      this.registrations.delete(control);
+    }
+    if (releaseOnly) return;
+    for (const [control, name] of this.candidates) {
+      if (this.registrations.has(control)) continue;
+      this.registrations.set(control, {
+        ...name,
+        release: this.bind(
+          control,
+          { ...this.binding, path: name.path },
+          name.list,
+        ),
+      });
+    }
+    this.pending = false;
+  }
+
+  /** Cache ownership discovery across both refresh passes until relevant DOM mutations arrive. */
+  private discover(): Map<Control, Candidate> {
+    const candidates = new Map<Control, Candidate>();
     const grouped = new Set<string>();
     if (this.owns(this.form)) {
       for (const element of this.form.elements) {
@@ -78,28 +117,7 @@ export class FormModels {
       )
         candidates.delete(control);
     }
-    for (const [control, registration] of this.registrations) {
-      const candidate = candidates.get(control);
-      if (
-        candidate?.path === registration.path &&
-        candidate.list === registration.list
-      )
-        continue;
-      registration.release();
-      this.registrations.delete(control);
-    }
-    if (releaseOnly) return;
-    for (const [control, name] of candidates) {
-      if (this.registrations.has(control)) continue;
-      this.registrations.set(control, {
-        ...name,
-        release: this.bind(
-          control,
-          { ...this.binding, path: name.path },
-          name.list,
-        ),
-      });
-    }
+    return candidates;
   }
 
   /**
@@ -110,6 +128,7 @@ export class FormModels {
     for (const registration of this.registrations.values())
       registration.release();
     this.registrations.clear();
+    this.candidates = undefined;
   }
 
   /**

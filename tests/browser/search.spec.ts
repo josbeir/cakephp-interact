@@ -1,6 +1,48 @@
 import { createHmac } from 'node:crypto';
 import { expect, test } from './fixtures';
 
+test('live search cancels an earlier debounce while IME composition is active', async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date('2026-10-22T12:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-10-22T12:00:01Z'));
+  const requests: unknown[] = [];
+  await page.route('**/_interact/update', async (route) => {
+    requests.push(route.request().postDataJSON());
+    await route.continue();
+  });
+  await page.goto('/search');
+  const search = page
+    .getByRole('region', { name: 'Resource library' })
+    .getByLabel('Search resources');
+  await search.fill('Cake');
+  await search.dispatchEvent('compositionstart');
+  await search.evaluate((element) => {
+    if (!(element instanceof HTMLInputElement))
+      throw new Error('Missing search input.');
+    element.value = '編集中';
+    element.dispatchEvent(
+      new InputEvent('input', { bubbles: true, isComposing: true }),
+    );
+  });
+  await page.clock.runFor(1000);
+  expect(requests).toHaveLength(0);
+  await expect(search).toHaveValue('編集中');
+  await search.evaluate((element) => {
+    if (!(element instanceof HTMLInputElement))
+      throw new Error('Missing search input.');
+    element.value = 'CakePHP';
+    element.dispatchEvent(
+      new CompositionEvent('compositionend', { bubbles: true }),
+    );
+    element.dispatchEvent(new InputEvent('input', { bubbles: true }));
+  });
+  await page.clock.runFor(300);
+  await expect.poll(() => requests.length).toBe(1);
+  expect(requests[0]).toMatchObject({ updates: { search: 'CakePHP' } });
+  await expect(search).toHaveValue('CakePHP');
+});
+
 test('searches the full resource library and combines filters while preserving focus', async ({
   page,
 }) => {
