@@ -6,7 +6,7 @@ namespace Interact\Test\Fixture;
 use Interact\Island;
 
 /**
- * Omits discovery metadata to verify that unregistered declaration formats are rejected.
+ * Omits an explicit view outside the Island namespace to verify the inference boundary.
  */
 class UndeclaredIsland extends Island
 {

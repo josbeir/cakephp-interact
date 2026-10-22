@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestSuite;
 
-use Cake\AttributeResolver\AttributeResolver;
 use Cake\Core\Configure;
 use Cake\Http\Response;
 use Cake\Routing\Router;
@@ -34,12 +33,6 @@ abstract class HttpTestCase extends TestCase
         parent::setUp();
         require_once APP . 'config/bootstrap.php';
         Configure::write('App.namespace', 'TestApp');
-        AttributeResolver::drop('interact');
-        AttributeResolver::setConfig('interact', [
-            'paths' => ['src/Island/*.php'],
-            'basePath' => APP,
-            'cache' => false,
-        ]);
         Router::reload();
         $this->configApplication(Application::class, [CONFIG]);
         $this->disableErrorHandlerMiddleware();

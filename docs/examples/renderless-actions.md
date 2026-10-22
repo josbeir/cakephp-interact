@@ -20,12 +20,12 @@ at `/renderless`.
 
 ::: code-group
 
-<<< @/../tests/test_app/src/Island/DraftEditor.php [Island]
+<<< @/../tests/test_app/src/Island/DraftEditorIsland.php [Island]
 
-<<< @/../tests/test_app/templates/element/Interact/draft_editor.php [Element]
+<<< @/../tests/test_app/templates/island/draft_editor.php [Template]
 
 ```php [Mount]
-<?= $this->Interact->render('draft-editor', key: 'renderless-draft') ?>
+<?= $this->Interact->render('DraftEditor', key: 'renderless-draft') ?>
 ```
 
 :::

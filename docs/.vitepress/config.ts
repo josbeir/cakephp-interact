@@ -109,6 +109,7 @@ export default defineConfig({
           text: 'Essentials',
           items: [
             { text: 'Islands', link: '/guide/islands' },
+            { text: 'Conventions', link: '/guide/conventions' },
             { text: 'Properties', link: '/guide/state' },
             { text: 'Actions', link: '/guide/actions' },
             { text: 'Lifecycle', link: '/guide/lifecycle' },

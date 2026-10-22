@@ -51,7 +51,7 @@ public int $articleId;
 Supply required props when mounting:
 
 ```php
-<?= $this->Interact->render('article-editor', props: ['articleId' => 7]) ?>
+<?= $this->Interact->render('Article/Editor', props: ['articleId' => 7]) ?>
 ```
 
 Props initialize the island and remain available on subsequent requests. They

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Interact\Test\Fixture;
 
 use Interact\Attribute\Action;
-use Interact\Attribute\AsIsland;
+use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Attribute\Upload;
 use Interact\Island;
@@ -16,7 +16,7 @@ use RuntimeException;
  * Exercises render policy through actual discovery, authorization, and fresh request instances.
  * Static counters observe view evaluation only and never enter signed application state.
  */
-#[AsIsland('renderless', element: 'unused')]
+#[Render(element: 'unused')]
 class RenderlessIsland extends Island
 {
     public static int $views = 0;

@@ -67,9 +67,10 @@ class InteractHelper extends Helper
      * Repeated children need distinct keys; changing their props requires a new key.
      *
      * ```php
-     * echo $this->Interact->render('article-editor', props: ['articleId' => 7], key: 'article-7');
+     * echo $this->Interact->render('Article/Editor', props: ['articleId' => 7], key: 'article-7');
      * ```
      *
+     * @param string $alias CakePHP-style island name, optionally qualified by its plugin.
      * @param array<string, mixed> $props Server-owned parameters declared with Prop.
      */
     public function render(

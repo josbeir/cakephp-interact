@@ -24,15 +24,15 @@ declare(strict_types=1);
 
 namespace App\Island;
 
-use Interact\Attribute\AsIsland;
+use Interact\Attribute\Render;
 
 /**
- * src/Island/CounterPage.php
+ * src/Island/CounterPageIsland.php
  *
  * Reuses the counter behavior as the content of a complete action template.
  */
-#[AsIsland('counter-page', template: 'Counters/index')]
-class CounterPage extends Counter
+#[Render(template: 'Counters/index')]
+class CounterPageIsland extends CounterIsland
 {
 }
 ```
@@ -61,7 +61,7 @@ class CountersController extends AppController
     {
         $this->viewBuilder()
             ->setClassName(IslandView::class)
-            ->setOption('interact', ['alias' => 'counter-page', 'props' => []]);
+            ->setOption('interact', ['alias' => 'CounterPage', 'props' => []]);
     }
 }
 ```
@@ -91,13 +91,13 @@ Open `/counter`. The layout needs to output its `script` block as described in
 
 ::: warning Avoid a recursive mount
 The page template is already the island's content. Do not put
-`$this->Interact->render('counter-page')` inside `templates/Counters/index.php`.
+`$this->Interact->render('CounterPage')` inside `templates/Counters/index.php`.
 For an embedded island, use an element or another template that does not mount itself.
 :::
 
 ## Understand which requests run the controller
 
-The initial GET runs `CountersController::index()`, mounts `counter-page`, and
+The initial GET runs `CountersController::index()`, mounts `CounterPage`, and
 renders the surrounding layout. Pressing the button sends a request to the
 update endpoint, invokes `increment()`, and replaces only the island's HTML.
 The controller action and layout do not run again.

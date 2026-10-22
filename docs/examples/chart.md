@@ -25,7 +25,7 @@ Load the library and registration before Interact's runtime:
 
 ```php
 <?= $this->Html->script('/vendor/chart/chart.umd.js', ['defer' => true]) ?>
-<?= $this->Html->script('sales-chart', ['defer' => true]) ?>
+<?= $this->Html->script('SalesChart', ['defer' => true]) ?>
 <?= $this->fetch('script') ?>
 ```
 
@@ -36,14 +36,14 @@ is required.
 
 ::: code-group
 
-<<< @/../tests/docs/app/src/Island/SalesChart.php [Island]
+<<< @/../tests/docs/app/src/Island/SalesChartIsland.php [Island]
 
-<<< @/../tests/docs/app/templates/element/Interact/sales_chart.php [Element]
+<<< @/../tests/docs/app/templates/island/sales_chart.php [Template]
 
 <<< @/../tests/docs/app/webroot/js/sales-chart.js [JavaScript]
 
 ```php [Mount]
-<?= $this->Interact->render('sales-chart') ?>
+<?= $this->Interact->render('SalesChart') ?>
 ```
 
 :::

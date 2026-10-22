@@ -9,7 +9,7 @@ Lazy loading renders a placeholder first and loads the island when it becomes
 visible. Its `mount()`, `viewData()`, and normal template wait until that request.
 
 ```php
-<?= $this->Interact->render('resource-count', loading: 'lazy') ?>
+<?= $this->Interact->render('ResourceCount', loading: 'lazy') ?>
 ```
 
 The built-in placeholder supplies loading feedback and failure recovery. Once
@@ -26,7 +26,7 @@ See the complete [resource count example](/examples/lazy-loading).
 | `manual` | When `$server.sync()` is called.                                               |
 
 ```php
-<?= $this->Interact->render('resource-count', loading: 'defer') ?>
+<?= $this->Interact->render('ResourceCount', loading: 'defer') ?>
 ```
 
 Automatic loading waits while the browser tab is hidden. Without
@@ -39,7 +39,7 @@ retained keyed children.
 Use `manual` for optional content that should load only on request:
 
 ```php
-<?= $this->Interact->render('resource-count', loading: 'manual') ?>
+<?= $this->Interact->render('ResourceCount', loading: 'manual') ?>
 ```
 
 The default placeholder includes a load button. In a custom placeholder, use:
@@ -71,14 +71,14 @@ Pass the name of a CakePHP element:
 
 ```php
 <?= $this->Interact->render(
-    'resource-count',
+    'ResourceCount',
     props: ['search' => 'CakePHP'],
     loading: 'manual',
-    placeholder: 'Interact/resource_count_placeholder',
+    placeholder: 'Loading/resource_count',
 ) ?>
 ```
 
-Save it as `templates/element/Interact/resource_count_placeholder.php`. It receives
+Save it as `templates/element/Loading/resource_count.php`. It receives
 only declared props, including their defaults, as PHP variables. Controller
 variables, transported state, and `viewData()` are unavailable. The configured
 `TemplateView` and its helpers render the element.

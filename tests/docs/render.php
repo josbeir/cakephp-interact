@@ -20,6 +20,6 @@ if ($input !== '') {
     $result = $examples->runtime->update(Values::map($payload), $examples->context);
     echo json_encode($result->payload(), JSON_THROW_ON_ERROR);
 } else {
-    $alias = $argv[1] ?? 'article-form';
+    $alias = $argv[1] ?? 'Article/Form';
     echo $examples->runtime->mount($alias, [], $alias, $examples->context, new Options($argv[2] ?? 'eager'))->html;
 }

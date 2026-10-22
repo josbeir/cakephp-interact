@@ -28,7 +28,7 @@ class UploadRuntimeTest extends TestCase
     {
         $directory = TMP . 'unauthorized-upload-' . bin2hex(random_bytes(8));
         $config = new UploadConfig(['directory' => $directory]);
-        $registry = new Registry(collection: 'explicit');
+        $registry = new Registry();
         $registry->register(ProtectedUploadIsland::class);
 
         $runtime = new Runtime(
@@ -40,7 +40,7 @@ class UploadRuntimeTest extends TestCase
         $session = new Session(['defaults' => 'php', 'ini' => ['session.use_cookies' => 0]]);
         $request = new ServerRequest(['session' => $session]);
         $mount = $runtime->mount(
-            'protected-upload',
+            'ProtectedUpload',
             [],
             'protected',
             new IslandContext($request, 'default', '/update'),

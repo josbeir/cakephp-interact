@@ -65,7 +65,7 @@ class ArticlesController extends AppController
     {
         $this->viewBuilder()
             ->setClassName(IslandView::class)
-            ->setOption('interact', ['alias' => 'article-page', 'props' => []]);
+            ->setOption('interact', ['alias' => 'Article/Page', 'props' => []]);
     }
 
     /**

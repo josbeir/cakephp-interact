@@ -25,7 +25,7 @@ readonly class UploadProperty
     public ?int $maxFiles;
 
     /**
-     * Reject ambiguous, inaccessible, or incompatible PHP declarations at discovery time.
+     * Reject ambiguous, inaccessible, or incompatible PHP declarations during metadata compilation.
      */
     public function __construct(public ReflectionProperty $reflection, Upload $attribute)
     {

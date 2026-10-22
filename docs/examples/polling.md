@@ -18,12 +18,12 @@ job by 25%; a real application would read its authorized job status instead.
 
 ::: code-group
 
-<<< @/../tests/docs/app/src/Island/JobProgress.php [Island]
+<<< @/../tests/docs/app/src/Island/JobProgressIsland.php [Island]
 
-<<< @/../tests/docs/app/templates/element/Interact/job_progress.php [Element]
+<<< @/../tests/docs/app/templates/island/job_progress.php [Template]
 
 ```php [Mount]
-<?= $this->Interact->render('job-progress') ?>
+<?= $this->Interact->render('JobProgress') ?>
 ```
 
 :::

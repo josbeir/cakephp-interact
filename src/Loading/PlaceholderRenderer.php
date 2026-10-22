@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Loading;
 
-use Interact\Attribute\AsIsland;
+use Interact\Discovery\Declaration;
 use Interact\View\TemplateView;
 use LogicException;
 use function Cake\I18n\__;
@@ -35,7 +35,7 @@ class PlaceholderRenderer
                 throw new LogicException('Configure a placeholder renderer with a TemplateView for custom elements.');
             }
 
-            return $this->view->island(new AsIsland('placeholder', element: $options->placeholder), $props);
+            return $this->view->island(new Declaration('placeholder', element: $options->placeholder), $props);
         }
 
         $label = $options->mode === 'manual' ? __('Load content') : __('Loading content…');

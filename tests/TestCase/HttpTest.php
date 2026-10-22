@@ -28,7 +28,7 @@ class HttpTest extends HttpTestCase
         $root = $xpath->query('//*[@data-interact-state]')->item(0);
         static::assertInstanceOf(Element::class, $root);
         static::assertJsonStringEqualsJsonString(
-            '{"controlPrefix":"resource-search","notes":"","search":"","category":"","level":"","sort":"title","pageSize":20,"page":1}',
+            '{"controlPrefix":"ResourceSearch","notes":"","search":"","category":"","level":"","sort":"title","pageSize":20,"page":1}',
             (string)$root->getAttribute('data-interact-state'),
         );
         $options = $xpath->query('//html:select[@*[name()="x-interact:model.change" and .="sort"]]/html:option');

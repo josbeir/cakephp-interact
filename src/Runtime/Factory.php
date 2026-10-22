@@ -21,7 +21,7 @@ use Interact\View\TemplateView;
 class Factory
 {
     /**
-     * Reuse immutable signing configuration and declaration discovery, not island instances.
+     * Reuse immutable signing configuration and compiled declaration metadata, not island instances.
      */
     public function __construct(
         protected readonly Registry $registry,

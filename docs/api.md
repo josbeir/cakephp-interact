@@ -15,12 +15,12 @@ PHP contracts are documented with their related features.
 
 ## Declarations
 
-| API                     | Documentation                  |
-| ----------------------- | ------------------------------ |
-| `Island`, `#[AsIsland]` | [Islands](/guide/islands)      |
-| `#[Prop]`, `#[State]`   | [Properties](/guide/state)     |
-| `#[Action]`             | [Actions](/guide/actions)      |
-| `#[Upload]`             | [File uploads](/guide/uploads) |
+| API                   | Documentation                  |
+| --------------------- | ------------------------------ |
+| `Island`, `#[Render]` | [Islands](/guide/islands)      |
+| `#[Prop]`, `#[State]` | [Properties](/guide/state)     |
+| `#[Action]`           | [Actions](/guide/actions)      |
+| `#[Upload]`           | [File uploads](/guide/uploads) |
 
 ## Mounting
 

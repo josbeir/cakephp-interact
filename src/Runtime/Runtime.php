@@ -21,7 +21,7 @@ use InvalidArgumentException;
 /**
  * Coordinates initial mounts and verified updates through fresh island instances.
  *
- * Discovery, state assignment, action validation, and rendering remain separate services.
+ * Class resolution, state assignment, action validation, and rendering remain separate services.
  * Authorization runs before application hooks and actions; the runtime owns no persistent
  * application records or browser component store.
  */
@@ -81,6 +81,7 @@ class Runtime
         $urlPrefix = $loading->urlPrefix;
         $parent = $this->stack->parent();
         $definition = $this->registry->definition($alias);
+        $alias = $definition->declaration->name;
         $preserved = $this->stack->preserve($definition->declaration, $props, $key, $urlPrefix);
         if ($preserved instanceof Result) {
             return $preserved;

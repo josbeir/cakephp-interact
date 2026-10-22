@@ -1,6 +1,6 @@
 ---
 title: Quickstart
-description: Build a working counter with a PHP action, a native CakePHP element, and a mount call in an existing page.
+description: Build a working counter with a PHP action, a native CakePHP template, and a mount call in an existing page.
 ---
 
 <span id="build-an-interactive-region"></span>
@@ -10,7 +10,7 @@ description: Build a working counter with a PHP action, a native CakePHP element
 # Quickstart
 
 Build a counter that updates without reloading its surrounding page. You will
-add a PHP class, an element, and one mount call to an existing controller view.
+add a PHP class, a template, and one mount call to an existing controller view.
 
 Complete [installation](/installation) first: load the plugin and helper, build
 and serve the browser runtime, output the layout's script block, and keep CSRF
@@ -18,27 +18,25 @@ middleware enabled. No database or custom JavaScript is needed for this example.
 
 ## Declare an island
 
-Create `src/Island/Counter.php`. CakePHP's Attribute Resolver discovers island
-classes in `src/Island/`; `counter` is the alias used to render this class.
+Create `src/Island/CounterIsland.php`. Interact resolves `Counter` to this class
+when the helper renders it. No registration or discovery attribute is required.
 
-```php [src/Island/Counter.php]
+```php [src/Island/CounterIsland.php]
 <?php
 declare(strict_types=1);
 
 namespace App\Island;
 
 use Interact\Attribute\Action;
-use Interact\Attribute\AsIsland;
 use Interact\Attribute\State;
 use Interact\Island;
 
 /**
  * Keeps a count for one region and changes it through a server action.
  *
- * Save as src/Island/Counter.php.
+ * Save as src/Island/CounterIsland.php.
  */
-#[AsIsland('counter', element: 'Interact/counter')]
-class Counter extends Island
+class CounterIsland extends Island
 {
     #[State]
     public int $count = 0;
@@ -58,16 +56,18 @@ class Counter extends Island
 cannot assign it directly. `Action` exposes `increment()` as an intentional way
 to change that value.
 
-## Write the element
+<span id="write-the-element"></span>
 
-The declared element receives `$count` on the initial render and every update:
+## Write the template
 
-```php [templates/element/Interact/counter.php]
+The inferred template receives `$count` on the initial render and every update:
+
+```php [templates/island/counter.php]
 <?php
 declare(strict_types=1);
 
 /**
- * templates/element/Interact/counter.php
+ * templates/island/counter.php
  *
  * @var int $count
  */
@@ -102,11 +102,12 @@ declare(strict_types=1);
  */
 ?>
 <h1>Articles</h1>
-<?= $this->Interact->render('counter') ?>
+<?= $this->Interact->render('Counter') ?>
 ```
 
-Use the `counter` alias declared by `AsIsland`. The class name and element path
-do not determine that alias.
+`Counter` resolves to `App\Island\CounterIsland`. Its default template is
+`templates/island/counter.php`; underscored names such as `article_editor` resolve
+to `ArticleEditorIsland`.
 
 Open your existing articles page. You should see **Count: 0**. Press **Add one**:
 the count becomes **1**, and the heading and surrounding layout stay in place.
@@ -118,15 +119,18 @@ on the first request; later requests go directly to Interact's update endpoint.
 
 ## Add an independent counter
 
-Render the same alias again with distinct stable keys:
+Render the same island name again with distinct stable keys:
 
 ```php
-<?= $this->Interact->render('counter', key: 'first') ?>
-<?= $this->Interact->render('counter', key: 'second') ?>
+<?= $this->Interact->render('Counter', key: 'first') ?>
+<?= $this->Interact->render('Counter', key: 'second') ?>
 ```
 
 Each starts at zero and updates independently. Reloading the page starts fresh:
 the count is interaction state, and this example does not save it to a database.
+
+See [Conventions](/guide/conventions) for organizing related islands into matching
+class and template folders.
 
 ## Choose your next step
 

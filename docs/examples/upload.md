@@ -23,16 +23,16 @@ uses a generic entity; an existing Document entity must allow the supplied field
 
 ::: code-group
 
-<<< @/../tests/docs/app/src/Island/DocumentUpload.php [Island]
+<<< @/../tests/docs/app/src/Island/DocumentUploadIsland.php [Island]
 
-<<< @/../tests/docs/app/templates/element/Interact/document_upload.php [Element]
+<<< @/../tests/docs/app/templates/island/document_upload.php [Template]
 
 <<< @/../tests/docs/app/src/Model/Table/DocumentsTable.php [Table]
 
 <<< @/../tests/docs/app/schema/documents.sql [Schema]
 
 ```php [Mount]
-<?= $this->Interact->render('document-upload') ?>
+<?= $this->Interact->render('DocumentUpload') ?>
 ```
 
 :::

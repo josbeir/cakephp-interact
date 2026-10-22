@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Test\Fixture;
 
-use Interact\Attribute\AsIsland;
+use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Island;
 
@@ -11,7 +11,7 @@ use Interact\Island;
  * Marks shared static state for transport to verify that snapshots contain instance-owned values
  * only.
  */
-#[AsIsland('static-state', template: 'Islands/counter')]
+#[Render(template: 'Islands/counter')]
 class StaticStateIsland extends Island
 {
     #[State]

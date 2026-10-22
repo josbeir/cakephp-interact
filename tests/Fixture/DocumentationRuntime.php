@@ -3,15 +3,15 @@ declare(strict_types=1);
 
 namespace Interact\Test\Fixture;
 
-use App\Island\ArticleRedirect;
-use App\Island\CountryPicker;
-use App\Island\DependentSelects;
-use App\Island\DocumentUpload;
-use App\Island\InvoiceDownload;
-use App\Island\JobProgress;
-use App\Island\ResourceCount;
-use App\Island\ResourceSearch;
-use App\Island\SalesChart;
+use App\Island\ArticleRedirectIsland as ArticleRedirect;
+use App\Island\CountryPickerIsland as CountryPicker;
+use App\Island\DependentSelectsIsland as DependentSelects;
+use App\Island\DocumentUploadIsland as DocumentUpload;
+use App\Island\InvoiceDownloadIsland as InvoiceDownload;
+use App\Island\JobProgressIsland as JobProgress;
+use App\Island\ResourceCountIsland as ResourceCount;
+use App\Island\ResourceSearchIsland as ResourceSearch;
+use App\Island\SalesChartIsland as SalesChart;
 use App\Model\Table\ArticlesTable;
 use App\Model\Table\CitiesTable;
 use App\Model\Table\DocumentsTable;
@@ -33,7 +33,7 @@ use Interact\Upload\LocalUploadStorage;
 use Interact\Upload\UploadConfig;
 use Interact\Upload\UploadManager;
 use Interact\View\TemplateView;
-use TestApp\Island\ArticleForm;
+use TestApp\Island\Article\FormIsland as ArticleForm;
 use TestApp\Model\Table\CommentsTable;
 use TestApp\Model\Table\FormArticlesTable;
 
@@ -87,7 +87,7 @@ class DocumentationRuntime
             dirname(__DIR__) . '/docs/app/templates/',
             dirname(__DIR__) . '/test_app/templates/',
         ]);
-        $registry = new Registry(collection: 'documentation-fixtures');
+        $registry = new Registry();
         foreach ([
             ArticleForm::class,
             ArticleRedirect::class,

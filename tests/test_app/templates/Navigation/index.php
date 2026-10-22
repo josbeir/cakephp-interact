@@ -19,7 +19,7 @@ $loading = $this->getRequest()->getQuery('manual') === '1' ? 'manual' : 'eager';
 </section>
 <div class="navigation-example">
     <aside class="demo-card navigation-notebook" x-interact:persist="notebook">
-        <?= $this->Interact->render('navigation-notebook', props: ['edition' => $edition], key: 'layout-notebook', loading: $loading) ?>
+        <?= $this->Interact->render('NavigationNotebook', props: ['edition' => $edition], key: 'layout-notebook', loading: $loading) ?>
         <p class="field-hint">Scroll these references, then change pages. This layout region keeps its position.</p>
         <div class="navigation-scroll" role="region" tabindex="0" aria-label="Scrollable notebook references">
             <?php for ($line = 1; $line <= 20; $line++): ?>
@@ -39,7 +39,7 @@ $loading = $this->getRequest()->getQuery('manual') === '1' ? 'manual' : 'eager';
             The counter resets to zero because it belongs to the page.
             Your notebook on the left keeps its draft and remembered count.
         </p>
-        <?= $this->Interact->render('counter', props: ['label' => 'Page counter'], key: 'page-counter') ?>
+        <?= $this->Interact->render('Counter', props: ['label' => 'Page counter'], key: 'page-counter') ?>
         <section class="navigation-tools" aria-labelledby="navigation-tools-heading">
             <p class="eyebrow">Try another behavior</p>
             <h2 id="navigation-tools-heading">Scroll, history, and mount identity</h2>
@@ -74,7 +74,7 @@ $loading = $this->getRequest()->getQuery('manual') === '1' ? 'manual' : 'eager';
     <summary>More lifecycle examples: uploads and polling</summary>
     <p class="card-description">Open this panel, select a temporary file or start polling, then switch pages above. These layout islands keep their existing clients.</p>
     <div class="navigation-example">
-        <?= $this->Interact->render('document-upload', key: 'layout-upload') ?>
-        <?= $this->Interact->render('job-progress', key: 'layout-job') ?>
+        <?= $this->Interact->render('DocumentUpload', key: 'layout-upload') ?>
+        <?= $this->Interact->render('JobProgress', key: 'layout-job') ?>
     </div>
 </details>

@@ -10,40 +10,68 @@ without a full page reload.
 
 ## Declaring an island
 
-Extend `Interact\Island` and add `#[AsIsland]`. Import declaration attributes
-from `Interact\Attribute`.
+Extend `Interact\Island` and use the `Island` class suffix. Interact resolves
+classes on demand through CakePHP's application/plugin class conventions.
 
 ```php
+<?php
+declare(strict_types=1);
+
+namespace App\Island\Article;
+
+use Interact\Island;
+
 /**
- * Renders and updates an article form.
+ * Renders the article editor through its matching island template.
  */
-#[AsIsland('article-form', element: 'Interact/article_form')]
-class ArticleForm extends Island
+class EditorIsland extends Island
 {
 }
 ```
 
-The alias identifies the island when mounting it. CakePHP's Attribute Resolver
-discovers application islands in `src/Island/`.
+Mount this class with `render('Article/Editor')`. It renders
+`templates/island/Article/editor.php` without a registration attribute.
+`render('article/editor')` selects the same class. Use names such as
+`Commerce.Article/Editor` for loaded plugins and `Acme/Commerce.Article/Editor`
+for vendor-namespaced plugins. See [Conventions](/guide/conventions).
 
-| Argument   | Default  | Description                |
-| ---------- | -------- | -------------------------- |
-| `name`     | Required | Alias passed to `render()` |
-| `element`  | `null`   | Native CakePHP element     |
-| `template` | `null`   | Native CakePHP template    |
-| `tag`      | `'div'`  | Generated root element     |
+## Template convention
 
-Declare exactly one of `element` or `template`. Aliases start with a lowercase
-letter and contain lowercase letters, digits, `_`, `.`, or `-`.
-Allowed root tags are `div`, `section`, `article`, `aside`, `main`, `nav`,
-`header`, `footer`, and `fieldset`.
+The path follows the class beneath `Island`, preserving namespace folders and
+underscoring the final class name after removing the `Island` suffix.
+See [class and template paths](/guide/conventions#island-classes-and-templates).
+
+## Plugin templates and overrides
+
+Plugin islands use their owning plugin's templates. Applications override them
+through CakePHP's `templates/plugin/PluginName/` directory. See
+[plugin templates and overrides](/guide/conventions#plugin-templates-and-overrides).
+
+## Render options
+
+Use optional `#[Render]` from `Interact\Attribute` to select another template,
+reuse an element, or change the generated root tag:
+
+```php
+#[Render(template: 'Articles/edit', tag: 'section')]
+```
+
+| Argument   | Default | Description                                             |
+| ---------- | ------- | ------------------------------------------------------- |
+| `template` | `null`  | Native template; inferred when both targets are omitted |
+| `element`  | `null`  | Native CakePHP element                                  |
+| `tag`      | `'div'` | Generated root element                                  |
+
+Declare at most one of `template` and `element`. Allowed root tags are `div`,
+`section`, `article`, `aside`, `main`, `nav`, `header`, `footer`, and `fieldset`.
+Props, state, uploads, and actions retain their explicit declaration attributes.
 
 ## Mounting
 
 Render an island from a normal CakePHP template:
 
 ```php
-<?= $this->Interact->render('article-form') ?>
+<?= $this->Interact->render('Article/Form') ?>
 ```
 
 `InteractHelper::render()` returns the island's HTML. [Installation](/installation) configures the helper
@@ -51,7 +79,7 @@ and browser runtime. [Quickstart](/getting-started) contains a complete counter.
 
 | Argument      | Default   | Description                                                           |
 | ------------- | --------- | --------------------------------------------------------------------- |
-| `alias`       | Required  | Registered island alias                                               |
+| `alias`       | Required  | CakePHP-style island name                                             |
 | `props`       | `[]`      | Values declared with `#[Prop]`                                        |
 | `key`         | Alias     | Stable identity among siblings                                        |
 | `urlPrefix`   | `null`    | Prefix for this instance's URL parameters                             |
@@ -77,7 +105,7 @@ Declare mount parameters with [`#[Prop]`](/guide/state#prop), then pass them
 explicitly:
 
 ```php
-<?= $this->Interact->render('article-editor', props: ['articleId' => 7]) ?>
+<?= $this->Interact->render('Article/Editor', props: ['articleId' => 7]) ?>
 ```
 
 Controller view variables are not automatically available inside an island.
@@ -88,18 +116,18 @@ Provide render data through properties or `viewData()`.
 Give repeated instances unique stable keys:
 
 ```php
-<?= $this->Interact->render('counter', key: 'first') ?>
-<?= $this->Interact->render('counter', key: 'second') ?>
+<?= $this->Interact->render('Counter', key: 'first') ?>
+<?= $this->Interact->render('Counter', key: 'second') ?>
 ```
 
 Use `urlPrefix` when repeated instances declare [URL state](/guide/url-state#independent-islands).
 
-Keys default to the alias. Each instance has independent state. See
+Keys default to the supplied island name. Each instance has independent state. See
 [nested islands](/guide/nesting) for child identity and preservation.
 
 ## Templates and page islands
 
-Embedded islands normally render elements. A [page island](/guide/page-islands)
+Embedded islands normally render their inferred island templates. A [page island](/guide/page-islands)
 can render an action template and retain the surrounding layout.
 
 Every update constructs a fresh PHP instance, restores its declared properties,
@@ -109,4 +137,4 @@ See [Lifecycle](/guide/lifecycle) for request order and
 
 ## Defer an embedded island
 
-Use `render('resource-count', loading: 'lazy')` to load when visible, `defer` after startup, or `manual` on request. Eager rendering remains the default. See [lazy loading](/guide/lazy-loading) for placeholders and lifecycle rules.
+Use `render('ResourceCount', loading: 'lazy')` to load when visible, `defer` after startup, or `manual` on request. Eager rendering remains the default. See [lazy loading](/guide/lazy-loading) for placeholders and lifecycle rules.

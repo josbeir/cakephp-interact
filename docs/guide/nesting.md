@@ -19,15 +19,15 @@ For a listing whose `viewData()` supplies `$articles`:
 ```php
 <?php foreach ($articles as $article): ?>
     <?= $this->Interact->render(
-        'article-editor',
+        'Article/Editor',
         props: ['articleId' => (int)$article->id],
         key: 'article-' . (string)$article->id,
     ) ?>
 <?php endforeach; ?>
 ```
 
-The child declares `articleId` with `#[Prop]`. Its alias must be registered through
-`#[AsIsland]`.
+The child declares `articleId` with `#[Prop]`. `Article/Editor` resolves to
+`App\Island\Article\EditorIsland` on demand.
 
 ## Keys
 

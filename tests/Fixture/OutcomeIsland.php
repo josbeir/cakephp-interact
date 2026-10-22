@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace Interact\Test\Fixture;
 
 use Interact\Attribute\Action;
-use Interact\Attribute\AsIsland;
 use Interact\Attribute\Prop;
+use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Island;
 use Interact\IslandContext;
@@ -15,7 +15,7 @@ use LogicException;
  * Exercises action-only outcomes and redirect paths whose records can no longer render.
  * Invalid hook modes deliberately attempt forbidden navigation outside an action.
  */
-#[AsIsland('outcome', element: 'outcome')]
+#[Render(element: 'Outcome')]
 class OutcomeIsland extends Island
 {
     #[Prop]

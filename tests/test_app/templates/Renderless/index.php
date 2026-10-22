@@ -11,5 +11,5 @@ $this->assign('title', 'Renderless actions · Interact');
     <p class="intro-copy">Save through CakePHP without rebuilding this form. Alpine feedback follows accepted state; PHP feedback updates when the view renders.</p>
 </section>
 <section class="demo-card" aria-label="Renderless draft editor">
-    <?= $this->Interact->render('draft-editor', key: 'renderless-draft') ?>
+    <?= $this->Interact->render('DraftEditor', key: 'renderless-draft') ?>
 </section>

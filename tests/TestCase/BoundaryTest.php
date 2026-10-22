@@ -66,7 +66,7 @@ class BoundaryTest extends TestCase
 
     public function testUninitializedStateCannotRender(): void
     {
-        $registry = new Registry(collection: 'explicit');
+        $registry = new Registry();
         $registry->register(UninitializedStateIsland::class);
 
         $runtime = new Runtime(
@@ -75,12 +75,12 @@ class BoundaryTest extends TestCase
             new CallbackRenderer(static fn(): string => ''),
         );
         $this->expectException(InvalidArgumentException::class);
-        $runtime->mount('uninitialized', [], 'key', new IslandContext(new ServerRequest(), 'default', '/update'));
+        $runtime->mount('UninitializedState', [], 'key', new IslandContext(new ServerRequest(), 'default', '/update'));
     }
 
     public function testViewDataCannotShadowState(): void
     {
-        $registry = new Registry(collection: 'explicit');
+        $registry = new Registry();
         $registry->register(ShadowIsland::class);
 
         $runtime = new Runtime(
@@ -90,7 +90,7 @@ class BoundaryTest extends TestCase
         );
         $this->expectException(InvalidArgumentException::class);
         $runtime->mount(
-            'shadow',
+            'Shadow',
             ['recordId' => 1],
             'key',
             new IslandContext(new ServerRequest(), 'default', '/update'),

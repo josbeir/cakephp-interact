@@ -9,9 +9,9 @@ declare(strict_types=1);
 </header>
 <section aria-label="FormHelper article">
     <h2>FormHelper</h2>
-    <?= $this->Interact->render('article-form') ?>
+    <?= $this->Interact->render('Article/Form') ?>
 </section>
 <section aria-label="HTML article">
     <h2>HTML</h2>
-    <?= $this->Interact->render('native-article-form') ?>
+    <?= $this->Interact->render('Article/NativeForm') ?>
 </section>

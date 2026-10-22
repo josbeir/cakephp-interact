@@ -4,8 +4,8 @@ declare(strict_types=1);
 namespace Interact\Discovery;
 
 use Interact\Attribute\Action;
-use Interact\Attribute\AsIsland;
 use Interact\Attribute\Prop;
+use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Attribute\Upload;
 use Interact\Island;
@@ -23,7 +23,12 @@ use ReflectionMethod;
  */
 readonly class Definition
 {
-    public AsIsland $declaration;
+    public Declaration $declaration;
+
+    /**
+     * Owning plugin of the class, independently of an explicitly selected view's plugin.
+     */
+    public ?string $plugin;
 
     /**
      * @var array<string, \Interact\Discovery\Property> Props and transported state.
@@ -49,16 +54,22 @@ readonly class Definition
      * Compile one concrete island class into validated declaration metadata.
      *
      * @param class-string<\Interact\Island> $class Concrete application island.
+     * @param string|null $name Resolved public name, or inferred for explicit registration.
+     * @param string|null $plugin Owner supplied by resolution, or inferred from loaded plugin source paths.
+     * @throws \InvalidArgumentException When declarations conflict or no conventional template can be inferred.
      */
-    public function __construct(public string $class)
+    public function __construct(public string $class, ?string $name = null, ?string $plugin = null)
     {
         $reflection = new ReflectionClass($class);
-        $attributes = $reflection->getAttributes(AsIsland::class);
-        if (!$reflection->isInstantiable() || count($attributes) !== 1) {
-            throw new InvalidArgumentException('Islands require a concrete class and one AsIsland declaration.');
+        $attributes = $reflection->getAttributes(Render::class);
+        if (!$reflection->isInstantiable() || !$reflection->isSubclassOf(Island::class)) {
+            throw new InvalidArgumentException('Islands require a concrete class extending Island.');
         }
 
-        $this->declaration = $attributes[0]->newInstance();
+        $render = isset($attributes[0]) ? $attributes[0]->newInstance() : new Render();
+        $rendering = new Template($reflection, $render, $plugin, $name);
+        $this->plugin = $rendering->plugin;
+        $this->declaration = $rendering->declaration;
         $properties = [];
         $uploads = [];
         foreach ($reflection->getProperties() as $property) {

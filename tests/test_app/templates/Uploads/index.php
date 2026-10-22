@@ -15,4 +15,4 @@ declare(strict_types=1);
     This example also demonstrates an optional application-owned endpoint at <code>/uploads/update</code>.
     Uploads work with Interact's default endpoint too; no custom controller action is required.
 </p>
-<?= $this->Interact->render('document-upload') ?>
+<?= $this->Interact->render('DocumentUpload') ?>

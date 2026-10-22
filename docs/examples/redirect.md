@@ -15,16 +15,16 @@ detail template. For protected records, authorize creation and viewing in the ap
 
 ::: code-group
 
-<<< @/../tests/docs/app/src/Island/ArticleRedirect.php [Island]
+<<< @/../tests/docs/app/src/Island/ArticleRedirectIsland.php [Island]
 
-<<< @/../tests/docs/app/templates/element/Interact/article_redirect.php [Element]
+<<< @/../tests/docs/app/templates/island/article_redirect.php [Template]
 
 <<< @/../tests/docs/app/src/Model/Table/ArticlesTable.php [Table]
 
 <<< @/../tests/docs/app/schema/articles.sql [Schema]
 
 ```php [Mount]
-<?= $this->Interact->render('article-redirect') ?>
+<?= $this->Interact->render('ArticleRedirect') ?>
 ```
 
 :::

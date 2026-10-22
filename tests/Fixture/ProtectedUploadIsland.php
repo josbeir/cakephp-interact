@@ -4,14 +4,14 @@ declare(strict_types=1);
 namespace Interact\Test\Fixture;
 
 use Cake\Http\Exception\ForbiddenException;
-use Interact\Attribute\AsIsland;
+use Interact\Attribute\Render;
 use Interact\IslandContext;
-use TestApp\Island\DocumentUpload;
+use TestApp\Island\DocumentUploadIsland as DocumentUpload;
 
 /**
  * Requires current request permission so tests can verify authorization before staging or saving.
  */
-#[AsIsland('protected-upload', element: 'Interact/document_upload')]
+#[Render(template: 'island/document_upload')]
 class ProtectedUploadIsland extends DocumentUpload
 {
     /**

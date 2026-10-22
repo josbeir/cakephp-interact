@@ -11,9 +11,9 @@ The notebook draft is writable state. Its action counts interactions without sav
 
 ::: code-group
 
-<<< ../../tests/test_app/src/Island/NavigationNotebook.php{php} [Island]
+<<< ../../tests/test_app/src/Island/NavigationNotebookIsland.php{php} [Island]
 
-<<< ../../tests/test_app/templates/element/Interact/navigation_notebook.php{php} [Element]
+<<< ../../tests/test_app/templates/island/navigation_notebook.php{php} [Template]
 
 <<< ../../tests/test_app/templates/Navigation/index.php{php} [Page]
 

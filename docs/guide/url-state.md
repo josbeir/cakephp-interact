@@ -142,8 +142,8 @@ Each query parameter has one island owner. Different classes can use aliases;
 repeated instances can supply a prefix:
 
 ```php
-<?= $this->Interact->render('resource-search', key: 'articles', urlPrefix: 'articles') ?>
-<?= $this->Interact->render('resource-search', key: 'products', urlPrefix: 'products') ?>
+<?= $this->Interact->render('ResourceSearch', key: 'articles', urlPrefix: 'articles') ?>
+<?= $this->Interact->render('ResourceSearch', key: 'products', urlPrefix: 'products') ?>
 ```
 
 Their `q` bindings become `articles_q` and `products_q`. Supply unique control IDs
