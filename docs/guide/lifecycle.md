@@ -97,12 +97,6 @@ public function updated(UpdatedPaths $paths): void
 This fragment assumes writable `country` and `cityId` properties. See the
 [dependent fields example](/examples/dependent-fields).
 
-::: warning Updating existing hooks
-Replace `updated(array $paths)` with `updated(UpdatedPaths $paths)` and import
-`Interact\UpdatedPaths`. Replace membership checks with `has()` or `hasAny()`;
-use `toArray()` where an array is required. The previous array signature is no longer supported.
-:::
-
 ## viewData()
 
 ```php
