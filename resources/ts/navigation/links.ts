@@ -4,6 +4,7 @@ import { destination } from '../effects/browser';
 export function linkDestination(
   link: HTMLAnchorElement,
   event?: MouseEvent,
+  options: { fragments?: boolean } = {},
 ): URL | undefined {
   if (
     (event &&
@@ -22,6 +23,7 @@ export function linkDestination(
     return;
   const url = new URL(link.href);
   if (
+    !options.fragments &&
     url.pathname === window.location.pathname &&
     url.search === window.location.search &&
     (url.hash || window.location.hash)

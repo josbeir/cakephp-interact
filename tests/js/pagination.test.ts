@@ -59,10 +59,10 @@ function click(element: Element, init: MouseEventInit = {}) {
   element.dispatchEvent(event);
   return event;
 }
-function listen(root: HTMLElement, declared: UrlFields = fields) {
+function listen(root: HTMLElement, declared: Writable = writable) {
   const apply = vi.fn<(changes: State) => void>();
   const failed = vi.fn();
-  cleanups.push(paginationLinks(root, declared, () => writable, apply, failed));
+  cleanups.push(paginationLinks(root, () => declared, apply, failed));
   return { apply, failed };
 }
 afterEach(() => {
@@ -115,6 +115,7 @@ it.each([
   ['href', '/other?p=2'],
   ['href', '/catalog?p=2#results'],
   ['href', '/catalog?p=9'],
+  ['href', '/catalog#interact-pagination-unregistered'],
 ])('leaves native destinations alone: %s=%s', (attribute, value) => {
   const { root, link } = fixture();
   link.setAttribute(attribute, value);
@@ -175,7 +176,7 @@ it.each([
   expect(failed).toHaveBeenCalledOnce();
 });
 
-it('rejects malformed JSON and fields without URL ownership', () => {
+it('rejects malformed JSON and fields without writable ownership', () => {
   const { root, link, marker } = fixture();
   const { failed } = listen(root, {});
   click(link);
@@ -183,6 +184,102 @@ it('rejects malformed JSON and fields without URL ownership', () => {
   marker.dataset.interactPagination = '{';
   click(link);
   expect(failed).toHaveBeenCalledTimes(2);
+});
+
+it('distinguishes state-only paging targets without URL declarations', () => {
+  const next = '/catalog#interact-pagination-next';
+  const last = '/catalog#interact-pagination-last';
+  const { root, link } = fixture({
+    [next]: { page: 2, sort: 'title', direction: 'asc', limit: 10 },
+    [last]: { page: 12, sort: 'title', direction: 'asc', limit: 10 },
+  });
+  delete root.dataset.interactUrl;
+  const { apply } = listen(root);
+  link.href = next;
+  expect(click(link).defaultPrevented).toBe(true);
+  expect(apply).toHaveBeenLastCalledWith({
+    page: 2,
+    sort: 'title',
+    direction: 'asc',
+    limit: 10,
+  });
+  link.href = last;
+  expect(click(link).defaultPrevented).toBe(true);
+  expect(apply).toHaveBeenLastCalledWith({
+    page: 12,
+    sort: 'title',
+    direction: 'asc',
+    limit: 10,
+  });
+  expect(click(link, { ctrlKey: true }).defaultPrevented).toBe(false);
+  expect(apply).toHaveBeenCalledTimes(2);
+  expect(location.href).toBe('http://localhost:3000/catalog');
+});
+
+it('synchronizes state-only paging and unsent drafts without changing the URL or history', async () => {
+  const target = '/catalog?external=keep#interact-pagination-next';
+  const { root, link } = fixture({ [target]: { page: 2 } });
+  delete root.dataset.interactUrl;
+  history.replaceState(
+    { application: 'retained' },
+    '',
+    '/catalog?external=keep#results',
+  );
+  const before = location.href;
+  const push = vi.spyOn(history, 'pushState');
+  const requests: unknown[] = [];
+  const client = mountClient(root, async (_url, options) => {
+    if (typeof options?.body !== 'string')
+      throw new Error('Expected request JSON.');
+    const request: unknown = JSON.parse(options.body);
+    if (!record(request) || !state(request.updates))
+      throw new Error('Missing edits.');
+    requests.push(request);
+    return new Response(
+      JSON.stringify({
+        version: 1,
+        id: 'pages',
+        html: root.outerHTML,
+        snapshot: 'next',
+        state: { ...initial, ...request.updates },
+        writable,
+        errors: {},
+        events: [],
+      }),
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+  });
+  clients.push(client);
+  const input = root.querySelector('input');
+  if (!input) throw new Error('Missing notes input.');
+  input.value = 'unsent draft';
+  link.href = target;
+  expect(click(link).defaultPrevented).toBe(true);
+  await vi.waitFor(() => expect(client.bridge.state.page).toBe(2));
+  await vi.waitFor(() => expect(client.bridge.busy).toBe(false));
+  expect(requests).toEqual([
+    expect.objectContaining({
+      action: null,
+      args: [],
+      pageQuery: '?external=keep',
+      updates: { page: 2, notes: 'unsent draft' },
+    }),
+  ]);
+  expect(client.bridge.state.notes).toBe('unsent draft');
+  expect(location.href).toBe(before);
+  expect(history.state).toEqual({ application: 'retained' });
+  expect(push).not.toHaveBeenCalled();
+});
+
+it('reports invalid generated targets through the client feedback', () => {
+  const { root, link, marker } = fixture();
+  const fetcher = vi.fn();
+  const client = mountClient(root, fetcher);
+  clients.push(client);
+  marker.dataset.interactPagination = '{';
+  expect(click(link).defaultPrevented).toBe(true);
+  expect(fetcher).not.toHaveBeenCalled();
+  expect(client.bridge.error).toBeTruthy();
 });
 
 it('queues native link clicks with unsent drafts and preserves newer edits across a held response', async () => {

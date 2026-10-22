@@ -79,6 +79,10 @@ class Pagination
         $settings['allowedParameters'] = array_keys($fields);
         unset($settings['className']);
         $params['page'] = max(1, (int)$params['page']);
+        if ($params['page'] > 9_007_199_254_740_991) {
+            throw new InvalidArgumentException('Pagination page must be a browser-safe integer.');
+        }
+
         $result = $this->bounded($paginator, $object, $params, $settings);
         $accepted = $this->accept($island, $fields, $result, $params);
 
@@ -99,7 +103,7 @@ class Pagination
     /**
      * Normalize only explicit client paging fields, keeping default database ordering out of sort state.
      *
-     * @param array<string, \Interact\Discovery\Property> $fields Compiled writable URL declarations.
+     * @param array<string, \Interact\Discovery\Property> $fields Compiled writable paging declarations.
      * @param \Cake\Datasource\Paging\PaginatedInterface<int, mixed> $result Native accepted results.
      * @param array<string, mixed> $params Declared incoming paging values.
      * @return array{page: int, limit: int, sort: string, direction: string} Normalized native parameters.

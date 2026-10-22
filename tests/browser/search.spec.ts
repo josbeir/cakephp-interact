@@ -204,6 +204,64 @@ test('native paginator links restore the same listing without JavaScript', async
   }
 });
 
+test('paginates and sorts without URL bindings and resets state on reload', async ({
+  page,
+}) => {
+  let documents = 0;
+  page.on('request', (request) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame())
+      documents++;
+  });
+  await page.goto('/search/state-only?external=keep#results');
+  const originalURL = page.url();
+  const library = page.getByRole('region', { name: 'Resource library' });
+  const results = library.getByRole('status');
+  const root = page.locator('[data-interact-id]');
+  await expect(root).not.toHaveAttribute('data-interact-url');
+  await expect(results).toHaveText('Showing 1–20 of 1,200 results');
+  await library.locator('summary').filter({ hasText: 'Reading notes' }).click();
+  await library.getByLabel('Reading notes').fill('Keep this draft');
+  await library.getByRole('link', { name: 'Next', exact: true }).click();
+  await expect(results).toHaveText('Showing 21–40 of 1,200 results');
+  await expect(library.getByLabel('Reading notes')).toHaveValue(
+    'Keep this draft',
+  );
+  await library.getByRole('link', { name: 'Last', exact: true }).click();
+  await expect(results).toHaveText('Showing 1,181–1,200 of 1,200 results');
+  await library.getByRole('link', { name: 'Previous', exact: true }).click();
+  await expect(results).toHaveText('Showing 1,161–1,180 of 1,200 results');
+  await library.getByRole('link', { name: 'First', exact: true }).click();
+  await expect(results).toHaveText('Showing 1–20 of 1,200 results');
+  await library.getByRole('link', { name: 'Resource', exact: true }).click();
+  await expect(root).toHaveAttribute(
+    'data-interact-state',
+    /"direction":"desc"/,
+  );
+  await library.getByLabel('Per page').selectOption('50');
+  await expect(results).toHaveText('Showing 1–50 of 1,200 results');
+  await library.getByLabel('Search resources').fill('keyboard');
+  await expect(results).toHaveText('Showing 1–30 of 30 results');
+  expect(page.url()).toBe(originalURL);
+  expect(documents).toBe(1);
+  const destinations = await library
+    .locator('a[href]')
+    .evaluateAll((links) => links.map((link) => link.getAttribute('href')));
+  for (const destination of destinations) {
+    expect(destination).toMatch(
+      /^\/search\/state-only\?external=keep#interact-pagination-/,
+    );
+  }
+  await page.reload();
+  await expect(results).toHaveText('Showing 1–20 of 1,200 results');
+  await expect(library.getByLabel('Search resources')).toHaveValue('');
+  await expect(library.getByLabel('Per page')).toHaveValue('20');
+  await expect(root).toHaveAttribute(
+    'data-interact-state',
+    /"direction":"asc"/,
+  );
+  expect(page.url()).toBe(originalURL);
+});
+
 test('pre-upgrade snapshots require an explicit reload and retain the local draft', async ({
   page,
 }) => {

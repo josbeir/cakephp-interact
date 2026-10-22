@@ -19,6 +19,14 @@ class ResourcesController extends AppController
     }
 
     /**
+     * Show the same resource listing without exposing filter or paging parameters in URLs.
+     */
+    #[Get('/search/state-only', name: 'demo:search:state-only')]
+    public function stateOnly(): void
+    {
+    }
+
+    /**
      * Render independent URL-bound listings with explicit per-instance prefixes.
      */
     #[Get('/search/independent', name: 'demo:search:independent')]

@@ -152,7 +152,6 @@ export class IslandClient {
       : undefined;
     this.disposePagination = paginationLinks(
       root,
-      this.metadata.url,
       () => this.writable,
       (changes) => {
         this.controls.captureAll();

@@ -42,7 +42,7 @@ class PaginatorHelper extends CakePaginatorHelper
     /**
      * Generate an ordinary page URL and register reactive edits independently of the string templates.
      *
-     * Explicit destination overrides retain native CakePHP navigation behavior.
+     * Explicit destination overrides retain native CakePHP navigation for URL-bound paging state.
      *
      * @param array<string, mixed> $options Native paging options.
      * @param array $url Native route overrides.
@@ -62,6 +62,8 @@ class PaginatorHelper extends CakePaginatorHelper
             || !empty($this->config['options']['routePlaceholders'])
         ) {
             if ($result instanceof Paginated) {
+                $result->links->assertUrlBound($result->fields);
+
                 return $this->Url->build(
                     $result->links->routing->complete(parent::generateUrlParams($options, $url)),
                     $urlOptions,
@@ -72,7 +74,7 @@ class PaginatorHelper extends CakePaginatorHelper
         }
 
         if (isset($options['sort']) && !in_array('sort', $result->fields, true)) {
-            throw new InvalidArgumentException('Paginator sort links require sort and direction URL state.');
+            throw new InvalidArgumentException('Paginator sort links require writable sort and direction state.');
         }
 
         /** @var string $format */
