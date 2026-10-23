@@ -1,0 +1,51 @@
+<?php
+declare(strict_types=1);
+
+namespace Interact\Test\Fixture\Composition;
+
+use Closure;
+use Interact\Composition\ModelBindings;
+use Interact\Composition\Relation;
+use Interact\Discovery\Definition;
+use Interact\Runtime\RenderFrame;
+
+/**
+ * Counts real bound-value reads to guard against repeated validation during preparation.
+ */
+class CountingBindings extends ModelBindings
+{
+    public int $resolutions = 0;
+
+    public int $relationResolutions = 0;
+
+    /**
+     * @var Closure(Relation|null): (Relation|null)|null Custom selection or nested preparation after default validation.
+     */
+    public ?Closure $afterResolve = null;
+
+    /**
+     * Observe public relationship overrides while retaining the default validation contract.
+     *
+     * @param array<string, mixed>|string|null $model Application-owned mount option.
+     */
+    public function resolve(string|array|null $model, Definition $child, ?RenderFrame $parent): ?Relation
+    {
+        $this->relationResolutions++;
+
+        $relation = parent::resolve($model, $child, $parent);
+
+        return $this->afterResolve instanceof Closure ? ($this->afterResolve)($relation) : $relation;
+    }
+
+    /**
+     * Observe the extension boundary while retaining actual capability and value validation.
+     *
+     * @return array<string, mixed> Validated parent values keyed by child property.
+     */
+    public function values(Relation $relation, Definition $child, RenderFrame $parent): array
+    {
+        $this->resolutions++;
+
+        return parent::values($relation, $child, $parent);
+    }
+}

@@ -6,6 +6,7 @@ namespace Interact\Test\TestCase;
 use Cake\Console\CommandRunner;
 use Cake\Console\ConsoleIoInterface;
 use Cake\TestSuite\TestCase;
+use Interact\Test\TestSuite\UploadFixture;
 use TestApp\Application;
 
 /**
@@ -15,11 +16,17 @@ class UploadCommandTest extends TestCase
 {
     public function testScheduledCleanupUsesTheRegisteredStorageBackend(): void
     {
-        $io = $this->createMock(ConsoleIoInterface::class);
-        $io->expects($this->once())->method('out')->with(static::stringContains('expired uploads.'));
-        static::assertSame(0, new CommandRunner(new Application(CONFIG), 'cake')->run(
-            ['cake', 'interact.cleanup_uploads'],
-            $io,
-        ));
+        $fixture = new UploadFixture();
+        $fixture->configure();
+        try {
+            $io = $this->createMock(ConsoleIoInterface::class);
+            $io->expects($this->once())->method('out')->with(static::stringContains('expired uploads.'));
+            static::assertSame(0, new CommandRunner(new Application(CONFIG), 'cake')->run(
+                ['cake', 'interact.cleanup_uploads'],
+                $io,
+            ));
+        } finally {
+            $fixture->close();
+        }
     }
 }

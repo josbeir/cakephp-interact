@@ -4,9 +4,12 @@ declare(strict_types=1);
 namespace Interact\Test\TestCase;
 
 use Cake\Core\Configure;
+use Cake\Utility\Fs\Finder;
+use Cake\Utility\Fs\Path;
 use Interact\Test\Fixture\DocumentationControls;
 use Interact\View\TemplateView;
 use PHPUnit\Framework\TestCase;
+use SplFileInfo;
 
 /**
  * Renders documentation snippets through FormHelper and compares their public bindings.
@@ -26,7 +29,18 @@ class DocumentationMarkupTest extends TestCase
         $count = 0;
         try {
             foreach (['directives', 'guide', 'reference'] as $section) {
-                foreach (glob(dirname(__DIR__, 2) . '/docs/' . $section . '/*.md') ?: [] as $source) {
+                $sources = array_map(
+                    static fn(SplFileInfo $source): string => $source->getPathname(),
+                    iterator_to_array(
+                        new Finder()->in(Path::join(dirname(__DIR__, 2), 'docs', $section))
+                            ->recursive(false)
+                            ->name('*.md')
+                            ->all(),
+                        false,
+                    ),
+                );
+                sort($sources, SORT_STRING);
+                foreach ($sources as $source) {
                     $markdown = (string)file_get_contents($source);
                     $groups = [];
                     preg_match_all(

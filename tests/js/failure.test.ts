@@ -43,6 +43,25 @@ describe('safe request failures', () => {
         message: 'Safe translated feedback',
       });
       expect(error.message).toBe(error.failure.message);
+      await expect(
+        readResponse(
+          new Response(
+            `event: interact\ndata: ${JSON.stringify({
+              version: 1,
+              id: 'id',
+              type: 'failure',
+              status,
+              payload: {
+                version: 1,
+                error: { code, message: 'Safe translated feedback' },
+              },
+            })}\n\n`,
+            { headers: { 'Content-Type': 'text/event-stream' } },
+          ),
+          'id',
+          () => {},
+        ),
+      ).rejects.toMatchObject({ failure: error.failure });
     },
   );
   it.each([

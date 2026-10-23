@@ -28,6 +28,7 @@ use Interact\Runtime\SnapshotData;
 use Interact\Runtime\Values;
 use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotCodec;
+use Interact\Test\Fixture\Composition\CountingBindings;
 use Interact\Test\Fixture\Composition\HistoryProbeIsland;
 use Interact\Test\Fixture\Composition\ParentIsland;
 use Interact\Test\Fixture\Composition\ProbeIsland;
@@ -355,6 +356,105 @@ class CompositionTest extends TestCase
         static::assertNull($bindings->resolve(null, $picker, null));
         static::assertNull(Relation::read(null));
         static::assertSame('allowed', new PropInputs()->props(new Definition(ProbeIsland::class), [])['scope']);
+    }
+
+    public function testPreparationReadsCurrentBoundValuesOnceWithoutConstructingTheChild(): void
+    {
+        $bindings = new CountingBindings();
+        $child = new Definition(ProbeIsland::class);
+        $parent = new ParentIsland();
+        $frame = $this->frame($parent);
+        $models = [
+            'selected' => 'data.selected',
+            'flag' => 'data.flag',
+            'count' => 'data.count',
+            'items' => 'data.items',
+        ];
+        $prepared = $bindings->prepare([], $models, $child, $frame);
+        static::assertSame(1, $bindings->relationResolutions);
+        static::assertSame(1, $bindings->resolutions);
+        static::assertSame(['selected' => null, 'flag' => false, 'count' => 0, 'items' => []], $prepared->bound);
+        static::assertSame(0, ProbeIsland::$constructed);
+        static::assertEquals($prepared->relation, $bindings->resolve($models, $child, $frame));
+        static::assertSame(2, $bindings->resolutions);
+        $parent->data['count'] = 4;
+        static::assertSame(4, $bindings->prepare([], $models, $child, $frame)->bound['count']);
+        static::assertSame(3, $bindings->resolutions);
+    }
+
+    public function testPreparationHonorsCustomResolutionAndRejectsInvalidReplacementValues(): void
+    {
+        $bindings = $this->createPartialMock(CountingBindings::class, ['resolve']);
+        $child = new Definition(ProbeIsland::class);
+        $parent = new ParentIsland();
+        $frame = $this->frame($parent);
+        $relation = new Relation('custom-parent', ['count' => 'data.count']);
+        $bindings->expects(static::exactly(2))
+            ->method('resolve')
+            ->with(null, $child, $frame)
+            ->willReturn($relation);
+        $prepared = $bindings->prepare([], null, $child, $frame);
+        static::assertSame($relation, $prepared->relation);
+        static::assertSame(['count' => 0], $prepared->bound);
+        static::assertSame(1, $bindings->resolutions);
+        $parent->data['count'] = 'invalid';
+        try {
+            $bindings->prepare([], null, $child, $frame);
+            static::fail('Custom relationships must validate their selected values.');
+        } catch (InvalidArgumentException $invalidArgumentException) {
+            static::assertStringContainsString('expected int', $invalidArgumentException->getMessage());
+        }
+
+        $bindings = $this->createPartialMock(ModelBindings::class, ['resolve']);
+        $bindings->expects(static::once())
+            ->method('resolve')
+            ->willThrowException(new InvalidArgumentException('Custom binding validation.'));
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Custom binding validation.');
+        $bindings->prepare([], null, new Definition(ProbeIsland::class), $this->frame());
+    }
+
+    public function testPreparationKeepsValidatedValuesScopedToTheSelectedRelation(): void
+    {
+        $bindings = new CountingBindings();
+        $child = new Definition(ProbeIsland::class);
+        $parent = new ParentIsland();
+        $frame = $this->frame($parent);
+        $invalid = new ParentIsland();
+        $invalid->data['count'] = 'invalid';
+        $nested = $this->frame($invalid);
+        $bindings->afterResolve = static function (?Relation $relation) use ($bindings, $child, $nested): ?Relation {
+            try {
+                $bindings->prepare([], ['count' => 'data.count'], $child, $nested);
+                static::fail('Nested preparation must validate its own parent values.');
+            } catch (InvalidArgumentException $invalidArgumentException) {
+                static::assertStringContainsString('expected int', $invalidArgumentException->getMessage());
+            }
+
+            return $relation;
+        };
+        $prepared = $bindings->prepare([], ['count' => 'data.count'], $child, $frame);
+        static::assertSame(['count' => 0], $prepared->bound);
+        static::assertSame(2, $bindings->resolutions);
+        static::assertSame(0, ProbeIsland::$constructed);
+        $bindings->afterResolve = null;
+        $parent->data['count'] = 4;
+        static::assertSame(4, $bindings->prepare([], ['count' => 'data.count'], $child, $frame)->bound['count']);
+        static::assertSame(3, $bindings->resolutions);
+        $bindings = new CountingBindings();
+        $bindings->afterResolve = static fn(?Relation $relation): Relation => new Relation(
+            $relation->parentId ?? 'parent',
+            ['selected' => 'data.selected'],
+        );
+        $prepared = $bindings->prepare(
+            [],
+            ['count' => 'data.count'],
+            new Definition(ProbeIsland::class),
+            $this->frame(),
+        );
+        static::assertSame(['selected' => null], $prepared->bound);
+        static::assertSame(['selected'], array_keys($prepared->relation->models ?? []));
+        static::assertSame(2, $bindings->resolutions);
     }
 
     /**

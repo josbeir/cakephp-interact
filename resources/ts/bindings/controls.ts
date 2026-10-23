@@ -1,3 +1,4 @@
+import { ownsIslandElement } from '../dom/ownership';
 import { FormSubmissions } from './form-submissions';
 import { FormModels } from './form-models';
 import { captureControl, captureValue, refreshControl } from './control-values';
@@ -379,10 +380,7 @@ export class Controls {
    * Resolve ownership from the current DOM, including controls moved between islands.
    */
   private owns(element: HTMLElement): boolean {
-    return (
-      this.root.contains(element) &&
-      element.closest('[data-interact-id]') === this.root
-    );
+    return ownsIslandElement(this.root, element);
   }
 
   /**

@@ -1,3 +1,4 @@
+import { ownsIslandElement } from '../dom/ownership';
 /**
  * A native submit control whose disabled state can be temporarily owned by a lock.
  */
@@ -170,10 +171,7 @@ export class FormSubmissions {
    * Check native DOM ownership without crossing independently managed child islands.
    */
   private owns(element: HTMLElement): boolean {
-    return (
-      this.root.contains(element) &&
-      element.closest('[data-interact-id]') === this.root
-    );
+    return ownsIslandElement(this.root, element);
   }
 
   /**

@@ -2,10 +2,11 @@ import type { UpdateResponse } from '../types';
 import { record } from '../state/values';
 import {
   requestError,
-  readFailure,
+  failureEnvelope,
+  failurePayload,
   IslandRequestError,
 } from '../transport/failure';
-import { response } from '../transport/protocol';
+import { responseMatches } from '../transport/protocol';
 import { streamMessage } from './messages';
 import { SseDecoder } from './sse';
 
@@ -32,12 +33,7 @@ export async function readStream(
     if (
       message.type === 'result' &&
       (message.status === 200 || message.status === 422) &&
-      response(message.payload) &&
-      message.payload.id === id &&
-      !(
-        ('redirect' in message.payload || message.payload.html === null) &&
-        message.status !== 200
-      )
+      responseMatches(message.payload, id, message.status)
     ) {
       terminal = message.payload;
     } else if (
@@ -46,19 +42,11 @@ export async function readStream(
       Number.isInteger(message.status) &&
       message.status >= 400 &&
       message.status <= 599 &&
-      record(message.payload) &&
-      message.payload.version === 1 &&
-      record(message.payload.error) &&
-      typeof message.payload.error.code === 'string' &&
-      typeof message.payload.error.message === 'string' &&
-      message.payload.error.message.length > 0
+      failureEnvelope(message.payload)
     ) {
-      // Resolve the shared safe failure vocabulary after the decoder has consumed the frame.
-      terminal = requestError('http_error', message.status, message.payload);
-      failure = { status: message.status, payload: message.payload };
+      terminal = failurePayload(message.payload, message.status);
     } else throw requestError('invalid_response', 200);
   });
-  let failure: { status: number; payload: unknown } | undefined;
   try {
     while (true) {
       const chunk = await reader.read();
@@ -66,15 +54,8 @@ export async function readStream(
       decoder.push(chunk.value);
     }
     decoder.finish();
-    if (failure)
-      throw await readFailure(
-        new Response(JSON.stringify(failure.payload), {
-          status: failure.status,
-          headers: { 'Content-Type': 'application/json' },
-        }),
-      );
-    if (!terminal || terminal instanceof IslandRequestError)
-      throw requestError('invalid_response', 200);
+    if (terminal instanceof IslandRequestError) throw terminal;
+    if (!terminal) throw requestError('invalid_response', 200);
     return terminal;
   } catch (cause: unknown) {
     await reader.cancel().catch(() => {});

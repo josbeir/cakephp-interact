@@ -65,3 +65,16 @@ export function response(value: unknown): value is UpdateResponse {
     )
   );
 }
+
+/** Match a validated result to its island and the status carrying its effects. */
+export function responseMatches(
+  value: unknown,
+  id: string,
+  status: number,
+): value is UpdateResponse {
+  return (
+    response(value) &&
+    value.id === id &&
+    ((!('redirect' in value) && value.html !== null) || status === 200)
+  );
+}

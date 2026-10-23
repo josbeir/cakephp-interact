@@ -238,22 +238,19 @@ class Runtime
         $pending->apply($island, $definition, $parentValues);
         $this->state->initializeUrl($island, $definition, $input->pageQuery, $data->urlPrefix);
         $island->authorize($context);
-        $previousPath = $this->pagePath;
-        $this->pagePath = $data->pagePath;
-        $previousRouting = $this->pageRouting;
-        $previousQuery = $this->pageQuery;
-        $this->pageRouting = $data->routing;
-        $this->pageQuery = $input->pageQuery;
-        try {
+
+        return $this->inContext($data, $input, $this->parentValues, function () use (
+            $island,
+            $definition,
+            $data,
+            $context,
+            $input,
+        ): Result {
             $island->attachPagination(new Pagination($definition, $data, $context, $input->pageQuery));
             $island->mount();
 
             return $this->html->render($island, $definition, $data, $context);
-        } finally {
-            $this->pageRouting = $previousRouting;
-            $this->pagePath = $previousPath;
-            $this->pageQuery = $previousQuery;
-        }
+        });
     }
 
     /**

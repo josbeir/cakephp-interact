@@ -25,6 +25,8 @@ abstract class HttpTestCase extends TestCase
 
     protected string $csrf = '';
 
+    protected UploadFixture $uploadFixture;
+
     /**
      * Boot isolated demo routes and expose unexpected exceptions to integration assertions.
      */
@@ -32,10 +34,24 @@ abstract class HttpTestCase extends TestCase
     {
         parent::setUp();
         require_once APP . 'config/bootstrap.php';
+        $this->uploadFixture = new UploadFixture();
+        $this->uploadFixture->configure();
         Configure::write('App.namespace', 'TestApp');
         Router::reload();
         $this->configApplication(Application::class, [CONFIG]);
         $this->disableErrorHandlerMiddleware();
+    }
+
+    /**
+     * Release abandoned transfers before restoring the application test environment.
+     */
+    protected function tearDown(): void
+    {
+        try {
+            $this->uploadFixture->close();
+        } finally {
+            parent::tearDown();
+        }
     }
 
     /**

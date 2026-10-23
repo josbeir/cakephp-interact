@@ -43,7 +43,7 @@ class PathEditor
             $values[$segment] = $value;
         } else {
             /** @var mixed $child */
-            $child = $values[$segment] ?? [];
+            $child = array_key_exists($segment, $values) ? $values[$segment] : [];
             if (!is_array($child)) {
                 throw new InvalidArgumentException('Cannot traverse scalar state.');
             }

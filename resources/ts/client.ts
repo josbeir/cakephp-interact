@@ -1,3 +1,4 @@
+import { ownsIslandElement } from './dom/ownership';
 import { StreamReceiver } from './streaming/receiver';
 import { paginationLinks } from './pagination/links';
 import { navigation, enhancedRedirect } from './navigation/registry';
@@ -229,9 +230,7 @@ export class IslandClient {
       metadata,
       this.reactive,
       (job) => this.request(null, [], job),
-      (element) =>
-        this.root.contains(element) &&
-        element.closest('[data-interact-id]') === this.root,
+      (element) => ownsIslandElement(this.root, element),
     );
   }
 
@@ -340,8 +339,7 @@ export class IslandClient {
     if (
       this.disposed ||
       !element.isConnected ||
-      !this.root.contains(element) ||
-      element.closest('[data-interact-id]') !== this.root ||
+      !ownsIslandElement(this.root, element) ||
       this.bridge.paused ||
       this.bridge.pending() ||
       this.controls.hasPending() ||

@@ -18,6 +18,11 @@ use InvalidArgumentException;
 class ModelBindings
 {
     /**
+     * @var array{child: Definition, parent: RenderFrame|null, relation: Relation|null, values: array<string, mixed>}|null Validated results owned only by the active preparation.
+     */
+    protected ?array $preparation = null;
+
+    /**
      * Validate native props and parent bindings before preserving or constructing a child.
      *
      * @param array<string, mixed> $props Declared application mount props.
@@ -30,12 +35,23 @@ class ModelBindings
         ?RenderFrame $parent,
     ): MountValues {
         $props = new PropInputs()->props($child, $props);
-        $relation = $this->resolve($model, $child, $parent);
-        $values = !$relation instanceof Relation || !$parent instanceof RenderFrame
-            ? []
-            : $this->values($relation, $child, $parent);
+        $previous = $this->preparation;
+        $this->preparation = ['child' => $child, 'parent' => $parent, 'relation' => null, 'values' => []];
+        try {
+            $relation = $this->resolve($model, $child, $parent);
+            $resolved = $this->preparation;
+            $values = [];
+            if ($relation instanceof Relation && $parent instanceof RenderFrame) {
+                $values =
+                    $resolved !== null && $resolved['relation'] === $relation
+                        ? $resolved['values']
+                        : $this->values($relation, $child, $parent);
+            }
 
-        return new MountValues($props, $values, $relation);
+            return new MountValues($props, $values, $relation);
+        } finally {
+            $this->preparation = $previous;
+        }
     }
 
     /**
@@ -45,9 +61,30 @@ class ModelBindings
      */
     public function resolve(string|array|null $model, Definition $child, ?RenderFrame $parent): ?Relation
     {
+        $binding = $this->resolveBinding($model, $child, $parent);
+        if (
+            $this->preparation !== null
+            && $this->preparation['child'] === $child
+            && $this->preparation['parent'] === $parent
+        ) {
+            $this->preparation['relation'] = $binding['relation'];
+            $this->preparation['values'] = $binding['values'];
+        }
+
+        return $binding['relation'];
+    }
+
+    /**
+     * Resolve ownership and validate bound values once, before constructing application islands.
+     *
+     * @param array<string, mixed>|string|null $model Application-owned mount option.
+     * @return array{relation: Relation|null, values: array<string, mixed>} Checked preparation inputs.
+     */
+    protected function resolveBinding(string|array|null $model, Definition $child, ?RenderFrame $parent): array
+    {
         $reactive = array_filter($child->properties, static fn(Property $property): bool => $property->reactive);
         if ($model === null && ($reactive === [] || !$parent?->identity instanceof SnapshotData)) {
-            return null;
+            return ['relation' => null, 'values' => []];
         }
 
         if (!$parent?->identity instanceof SnapshotData) {
@@ -64,9 +101,8 @@ class ModelBindings
         }
 
         $relation = new Relation($parent->identity->id, $model ?? []);
-        $this->values($relation, $child, $parent);
 
-        return $relation;
+        return ['relation' => $relation, 'values' => $this->values($relation, $child, $parent)];
     }
 
     /**

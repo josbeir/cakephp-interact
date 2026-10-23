@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Interact\Test\TestCase;
 
 use Cake\I18n\DateTime;
+use Cake\Utility\Fs\Finder;
+use Cake\Utility\Fs\Path;
 use Cake\Validation\Validation;
 use Interact\Test\TestSuite\UploadStorageTestCase;
 use Interact\Upload\LocalUploadStorage;
@@ -88,7 +90,13 @@ class UploadStorageTest extends UploadStorageTestCase
                 static::fail('The configured capacity must reject a second file.');
             } catch (UploadRejected) {
                 static::assertNotNull($storage->find($first->id, $owner));
-                static::assertCount(1, glob($this->directory . '/' . $owner->sessionKey() . '/*.bin') ?: []);
+                static::assertCount(
+                    1,
+                    new Finder()->in(Path::join($this->directory, $owner->sessionKey()))
+                        ->recursive(false)
+                        ->name('*.bin')
+                        ->all(),
+                );
             }
         }
     }

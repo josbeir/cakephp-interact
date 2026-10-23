@@ -35,6 +35,15 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Introduce new abstractions and mandatory configuration only when they solve a concrete need. Offer advanced control without making every application configure the advanced path.
 - Treat simplicity as a design preference, not an absolute rule. Evaluate tradeoffs for each feature; retain explicit setup or handling when it materially improves correctness, security, clarity, or application control, and explain why it is needed.
 
+## Simplicity and refactoring
+
+- Prefer the smallest clear implementation that meets current requirements. Apply DRY to shared knowledge and rules that must change together; similar syntax alone does not justify consolidation.
+- Extract a helper, class, or interface when it has a clear responsibility and reduces the total reasoning needed by callers. Keep straightforward duplication when sharing would add indirection, configuration flags, or unrelated coupling. Reconsider abstractions that accumulate caller-specific branches.
+- Follow YAGNI: require a demonstrated use for new flexibility, configuration, or extension mechanisms. Prefer deleting unnecessary code and using existing capabilities before adding another abstraction.
+- Evaluate the whole change: production code, tests, setup, public API, and navigation between files. Line count is a useful signal, not a target; explain added concepts or plumbing through a concrete correctness or maintenance benefit.
+- Keep substantial refactoring separate from behavior changes. Preserve observable behavior and security boundaries, use existing meaningful tests where sufficient, and add regression tests for demonstrated defects or uncovered contracts.
+- Cleanup reviews may conclude that no change is warranted. Distinguish defects from optional improvements and style preferences; do not create more work merely to produce a list of candidates. Explicit user requirements take precedence over these defaults.
+
 ## CakePHP and PHP
 
 - Use `declare(strict_types=1);`, PSR-4, explicit types, and CakePHP conventions.

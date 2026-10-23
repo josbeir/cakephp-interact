@@ -5,12 +5,10 @@ namespace Interact\Upload;
 
 use Cake\Container\ContainerInterface;
 use Cake\Core\Configure;
-use Interact\Http\FailureResponder;
-use Interact\Http\UpdateHandler;
-use Interact\Runtime\Factory;
+use InvalidArgumentException;
 
 /**
- * Registers upload and endpoint collaborators while respecting application replacements.
+ * Registers upload collaborators while respecting application replacements.
  */
 class UploadServices
 {
@@ -23,7 +21,9 @@ class UploadServices
             $container->addShared(UploadConfig::class, static function (): UploadConfig {
                 /** @var mixed $options */
                 $options = Configure::read('Interact.uploads', []);
-                assert(is_array($options), 'Upload configuration must be an array.');
+                if (!is_array($options)) {
+                    throw new InvalidArgumentException('Upload configuration must be an array.');
+                }
 
                 return new UploadConfig($options);
             });
@@ -37,10 +37,6 @@ class UploadServices
         if (!$container->hasDefinition(UploadManager::class)) {
             $container->addShared(UploadManager::class)
                 ->addArguments([UploadStorageInterface::class, UploadConfig::class]);
-        }
-
-        if (!$container->hasDefinition(UpdateHandler::class)) {
-            $container->addShared(UpdateHandler::class)->addArguments([Factory::class, FailureResponder::class]);
         }
     }
 }

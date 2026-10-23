@@ -330,6 +330,63 @@ it('leaves partial output visible on safe server failure and does not deliver fi
   expect(fetcher).toHaveBeenCalledOnce();
 });
 
+it.each([
+  { status: 200, payload: result().payload, accepted: true },
+  {
+    status: 200,
+    payload: result({ html: '<section>Ready</section>' }).payload,
+    accepted: true,
+  },
+  {
+    status: 422,
+    payload: result({
+      html: '<section>Invalid</section>',
+      errors: { answer: ['Invalid'] },
+    }).payload,
+    accepted: true,
+  },
+  { status: 422, payload: result().payload, accepted: false },
+  { status: 200, payload: result({ id: 'other' }).payload, accepted: false },
+  { status: 200, payload: result({ version: 2 }).payload, accepted: false },
+  {
+    status: 200,
+    payload: {
+      version: 1,
+      id: 'streaming',
+      redirect: { url: '/next', replace: false },
+    },
+    accepted: true,
+  },
+  {
+    status: 422,
+    payload: {
+      version: 1,
+      id: 'streaming',
+      redirect: { url: '/next', replace: false },
+    },
+    accepted: false,
+  },
+])(
+  'applies identical result rules to JSON and streaming responses: %#',
+  async ({ status, payload, accepted }) => {
+    const replies = [
+      new Response(JSON.stringify(payload), {
+        status,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+      response(frame({ ...result(), status, payload })),
+    ];
+    for (const reply of replies) {
+      const pending = readResponse(reply, 'streaming', () => {});
+      if (accepted) await expect(pending).resolves.toEqual(payload);
+      else
+        await expect(pending).rejects.toMatchObject({
+          failure: { code: 'invalid_response' },
+        });
+    }
+  },
+);
+
 it('accepts validation terminal markup through the normal renderer and keeps newer drafts', async () => {
   let stream: ReadableStreamDefaultController<Uint8Array> | undefined;
   const { root, client } = setup(
