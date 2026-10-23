@@ -75,15 +75,12 @@ class DocumentationRuntime
         }
 
         $locator = new TableLocator();
-        $locator->set('FormArticles', new FormArticlesTable([
-            'alias' => 'FormArticles',
-            'connection' => $this->connection,
-        ]));
-        $locator->set('Comments', new CommentsTable(['alias' => 'Comments', 'connection' => $this->connection]));
-        $locator->set('Articles', new ArticlesTable(['alias' => 'Articles', 'connection' => $this->connection]));
-        $locator->set('Cities', new CitiesTable(['alias' => 'Cities', 'connection' => $this->connection]));
-        $locator->set('Documents', new DocumentsTable(['alias' => 'Documents', 'connection' => $this->connection]));
-        $locator->set('Resources', new ResourcesTable(['alias' => 'Resources', 'connection' => $this->connection]));
+        $locator->get(FormArticlesTable::class, ['connection' => $this->connection]);
+        $locator->get('Comments', ['className' => CommentsTable::class, 'connection' => $this->connection]);
+        $locator->get(ArticlesTable::class, ['connection' => $this->connection]);
+        $locator->get(CitiesTable::class, ['connection' => $this->connection]);
+        $locator->get(DocumentsTable::class, ['connection' => $this->connection]);
+        $locator->get(ResourcesTable::class, ['connection' => $this->connection]);
         TableRegistry::setTableLocator($locator);
         Configure::write('App.paths.templates', [
             dirname(__DIR__) . '/docs/app/templates/',

@@ -24,6 +24,8 @@ class ResourceSearchIsland extends Island
 {
     use LocatorAwareTrait;
 
+    protected ResourcesTable $resources;
+
     #[Prop]
     public string $controlPrefix = 'ResourceSearch';
 
@@ -58,6 +60,14 @@ class ResourceSearchIsland extends Island
         'maxLimit' => 50,
         'order' => ['Resources.title' => 'asc', 'Resources.id' => 'asc'],
     ];
+
+    /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $this->resources = $this->fetchTable(ResourcesTable::class);
+    }
 
     /**
      * Restart pagination when a search, filter, sort order, or page size changes.
@@ -108,7 +118,7 @@ class ResourceSearchIsland extends Island
         return [
             'resources' => $resources,
             'total' => $resources->totalCount(),
-            'librarySize' => $this->resources()->find()->count(),
+            'librarySize' => $this->resources->find()->count(),
             'categories' => ResourcesTable::CATEGORIES,
             'levels' => ResourcesTable::LEVELS,
         ];
@@ -125,23 +135,12 @@ class ResourceSearchIsland extends Island
             throw new InvalidArgumentException('Choose 10, 20, or 50 results per page.');
         }
 
-        return $this->resources()->find(
+        return $this->resources->find(
             'listing',
             search: $this->search,
             category: $this->category,
             level: $this->level,
             sort: $this->sort,
         );
-    }
-
-    /**
-     * Resolve the demo's Table through CakePHP's normal locator.
-     */
-    protected function resources(): ResourcesTable
-    {
-        $table = $this->fetchTable('Resources');
-        assert($table instanceof ResourcesTable, 'The resource finder requires the demo Resources table.');
-
-        return $table;
     }
 }

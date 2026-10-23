@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Island;
 
+use App\Model\Table\ResourcesTable;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\State;
 use Interact\Island;
@@ -28,6 +29,16 @@ class ResourceSearchIsland extends Island
      */
     protected array $paginate = ['limit' => 10, 'order' => ['Resources.id' => 'asc']];
 
+    protected ResourcesTable $resources;
+
+    /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $this->resources = $this->fetchTable(ResourcesTable::class);
+    }
+
     /**
      * Restart pagination when the search changes.
      *
@@ -47,7 +58,7 @@ class ResourceSearchIsland extends Island
      */
     public function viewData(): array
     {
-        $query = $this->fetchTable('Resources')->find('matching', search: $this->search);
+        $query = $this->resources->find('matching', search: $this->search);
 
         return ['resources' => $this->paginate($query)];
     }

@@ -128,6 +128,9 @@ Island constructors may receive application services through CakePHP's container
 Register those dependencies normally and never transport them as state. In the
 demo, Table access uses `LocatorAwareTrait::fetchTable()` and named finders;
 non-Table services can remain constructor dependencies.
+Use [`initialize()`](/guide/lifecycle#initialize) to assign request-local Table
+properties before authorization. The runtime calls it after construction and
+before assigning props or restoring state.
 
 Custom renderers belong at `RendererInterface`, usually assembled by a custom
 factory. Keep signing, authorization, and state validation in the normal runtime

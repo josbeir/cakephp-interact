@@ -59,7 +59,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Use braces for PHP logic. Alternative control syntax is only for blocks crossing PHP/HTML boundaries.
 - Escape output by default. Preserve native semantics, stable IDs, accessible errors, focus, and CSP compatibility.
 - Preserve missing values, null, false, zero, and empty strings distinctly.
-- Authorize initial mounts and every update before application hooks/actions/rendering. Action arguments require resource authorization too.
+- Run `initialize()` after construction for request-local setup, before props/state assignment and authorization. Keep protected resource access and draft initialization in authorized hooks. Authorize initial mounts and every update before application behavior/actions/rendering. Action arguments require resource authorization too.
 - Preserve CSRF and application middleware scopes. Signed snapshots provide integrity, not secrecy, authorization, or exactly-once execution.
 - No hidden service lookups, automatic persistence, host-specific assumptions, unrelated dependencies, or vendor edits.
 
