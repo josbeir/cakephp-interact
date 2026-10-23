@@ -14,6 +14,11 @@ class ProbeService
     public int $renders = 0;
 
     /**
+     * @var list<int> Default state observed during request-local setup, before restoration.
+     */
+    public array $initializationCounts = [];
+
+    /**
      * @var list<\Cake\Http\ServerRequest> Request contexts observed by application authorization.
      */
     public array $requests = [];

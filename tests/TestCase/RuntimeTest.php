@@ -163,6 +163,7 @@ class RuntimeTest extends TestCase
         yield 'bad action argument count' => [[], 'increment', [1, 2]];
         yield 'missing action arguments' => [[], 'accept', []];
         yield 'sync arguments' => [[], null, [1]];
+        yield 'setup hook' => [[], 'initialize', []];
     }
 
     /**

@@ -10,7 +10,6 @@ use Interact\Test\Fixture\CounterIsland;
 use Interact\Test\Fixture\DuplicateIsland;
 use Interact\Test\Fixture\HiddenActionIsland;
 use Interact\Test\Fixture\HiddenStateIsland;
-use Interact\Test\Fixture\InitializeActionIsland;
 use Interact\Test\Fixture\LifecycleActionIsland;
 use Interact\Test\Fixture\StaticActionIsland;
 use Interact\Test\Fixture\StaticStateIsland;
@@ -40,7 +39,6 @@ class DeclarationTest extends TestCase
             StaticActionIsland::class,
             HiddenActionIsland::class,
             LifecycleActionIsland::class,
-            InitializeActionIsland::class,
             UnlocatedIsland::class,
         ] as $class) {
             yield $class => [$class];
