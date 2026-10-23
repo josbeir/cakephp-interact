@@ -11,6 +11,8 @@ use Cake\View\View;
 use Interact\Composition\ModelOptions;
 use Interact\Configuration;
 use Interact\Discovery\Registry;
+use Interact\Http\FailureResponder;
+use Interact\Http\UpdateHandler;
 use Interact\InteractPlugin;
 use Interact\IslandContext;
 use Interact\Loading\Options;
@@ -19,6 +21,7 @@ use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotCodec;
 use Interact\Test\Fixture\ConfigurationView;
 use Interact\Test\Fixture\Island\ConfigurationIsland;
+use Interact\Upload\UploadServices;
 use Interact\View\Helper\InteractHelper;
 use Interact\View\IslandView;
 use Interact\View\TemplateView;
@@ -196,6 +199,23 @@ class ConfigurationTest extends TestCase
 
         $plugin->services($replacement);
         static::assertSame($custom, $replacement->get(SnapshotCodec::class));
+    }
+
+    public function testOnlyThePluginRegistersTheEndpointAndKeepsApplicationReplacements(): void
+    {
+        $container = new Container();
+        new UploadServices()->register($container);
+        static::assertFalse($container->hasDefinition(UpdateHandler::class));
+        new InteractPlugin()->services($container);
+        static::assertNotSame($container->get(UpdateHandler::class), $container->get(UpdateHandler::class));
+        $custom = new UpdateHandler(
+            new Factory(new Registry(), new SnapshotCodec(str_repeat('h', 32))),
+            new FailureResponder(),
+        );
+        $replacement = new Container();
+        $replacement->addShared(UpdateHandler::class, $custom);
+        new InteractPlugin()->services($replacement);
+        static::assertSame($custom, $replacement->get(UpdateHandler::class));
     }
 
     public function testConfiguredViewHelpersRenderMountUpdatePlaceholderAndFallback(): void

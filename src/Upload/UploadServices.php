@@ -5,12 +5,9 @@ namespace Interact\Upload;
 
 use Cake\Container\ContainerInterface;
 use Cake\Core\Configure;
-use Interact\Http\FailureResponder;
-use Interact\Http\UpdateHandler;
-use Interact\Runtime\Factory;
 
 /**
- * Registers upload and endpoint collaborators while respecting application replacements.
+ * Registers upload collaborators while respecting application replacements.
  */
 class UploadServices
 {
@@ -37,10 +34,6 @@ class UploadServices
         if (!$container->hasDefinition(UploadManager::class)) {
             $container->addShared(UploadManager::class)
                 ->addArguments([UploadStorageInterface::class, UploadConfig::class]);
-        }
-
-        if (!$container->hasDefinition(UpdateHandler::class)) {
-            $container->addShared(UpdateHandler::class)->addArguments([Factory::class, FailureResponder::class]);
         }
     }
 }

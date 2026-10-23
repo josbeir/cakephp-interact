@@ -1,3 +1,4 @@
+import { ownsIslandElement } from '../dom/ownership';
 import { formName } from './form-names';
 import type { Control } from './control-values';
 import type { ModelBinding } from './model';
@@ -164,10 +165,7 @@ export class FormModels {
   }
 
   private owns(element: HTMLElement): boolean {
-    return (
-      this.root.contains(element) &&
-      element.closest('[data-interact-id]') === this.root
-    );
+    return ownsIslandElement(this.root, element);
   }
 
   private hasDirective(element: HTMLElement, directive: string): boolean {

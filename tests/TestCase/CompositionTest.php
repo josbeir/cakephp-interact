@@ -28,6 +28,7 @@ use Interact\Runtime\SnapshotData;
 use Interact\Runtime\Values;
 use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotCodec;
+use Interact\Test\Fixture\Composition\CountingBindings;
 use Interact\Test\Fixture\Composition\HistoryProbeIsland;
 use Interact\Test\Fixture\Composition\ParentIsland;
 use Interact\Test\Fixture\Composition\ProbeIsland;
@@ -355,6 +356,29 @@ class CompositionTest extends TestCase
         static::assertNull($bindings->resolve(null, $picker, null));
         static::assertNull(Relation::read(null));
         static::assertSame('allowed', new PropInputs()->props(new Definition(ProbeIsland::class), [])['scope']);
+    }
+
+    public function testPreparationReadsCurrentBoundValuesOnceWithoutConstructingTheChild(): void
+    {
+        $bindings = new CountingBindings();
+        $child = new Definition(ProbeIsland::class);
+        $parent = new ParentIsland();
+        $frame = $this->frame($parent);
+        $models = [
+            'selected' => 'data.selected',
+            'flag' => 'data.flag',
+            'count' => 'data.count',
+            'items' => 'data.items',
+        ];
+        $prepared = $bindings->prepare([], $models, $child, $frame);
+        static::assertSame(1, $bindings->resolutions);
+        static::assertSame(['selected' => null, 'flag' => false, 'count' => 0, 'items' => []], $prepared->bound);
+        static::assertSame(0, ProbeIsland::$constructed);
+        static::assertEquals($prepared->relation, $bindings->resolve($models, $child, $frame));
+        static::assertSame(2, $bindings->resolutions);
+        $parent->data['count'] = 4;
+        static::assertSame(4, $bindings->prepare([], $models, $child, $frame)->bound['count']);
+        static::assertSame(3, $bindings->resolutions);
     }
 
     /**

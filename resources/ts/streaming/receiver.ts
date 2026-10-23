@@ -1,3 +1,4 @@
+import { ownsIslandElement } from '../dom/ownership';
 import { identifier, streamMessage } from './messages';
 
 interface Target {
@@ -85,11 +86,7 @@ export class StreamReceiver {
     }
     const updates: { target: Target; fragment: DocumentFragment }[] = [];
     for (const [element, target] of this.targets) {
-      if (
-        target.name !== value.to ||
-        !this.root.contains(element) ||
-        element.closest('[data-interact-id]') !== this.root
-      )
+      if (target.name !== value.to || !ownsIslandElement(this.root, element))
         continue;
       this.assertAncestors(element, target.prefix);
       const mutated = target.observer.takeRecords().length > 0;

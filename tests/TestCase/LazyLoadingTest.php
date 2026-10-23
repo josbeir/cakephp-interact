@@ -6,6 +6,8 @@ namespace Interact\Test\TestCase;
 use Cake\Http\Exception\ForbiddenException;
 use Cake\Http\ServerRequest;
 use Cake\Http\Session;
+use Interact\Action\RouteContext;
+use Interact\Composition\ParentValues;
 use Interact\Discovery\Declaration;
 use Interact\Discovery\Registry;
 use Interact\IslandContext;
@@ -17,12 +19,15 @@ use Interact\Runtime\Runtime;
 use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotCodec;
 use Interact\Test\Fixture\CallbackRenderer;
+use Interact\Test\Fixture\ContextRuntime;
 use Interact\Test\Fixture\LazyIsland;
+use Interact\Test\Fixture\RuntimeReference;
 use InvalidArgumentException;
 use Laminas\Diactoros\UploadedFile;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * Verifies mount-only tickets and the authorization boundary around deferred rendering.
@@ -100,6 +105,61 @@ class LazyLoadingTest extends TestCase
             static::fail('Permission changes must reject initialization.');
         } catch (ForbiddenException) {
             static::assertSame(['authorize:', 'authorize:'], LazyIsland::$trace);
+        }
+    }
+
+    public function testInitializationRestoresOuterContextAfterNestedRenderingAndExceptions(): void
+    {
+        foreach ([false, true] as $fail) {
+            $context = $this->context();
+            $request = $context->request->withUri($context->request->getUri()->withPath('/reports'))
+                ->withParam('controller', 'Reports');
+            $context = new IslandContext($request, 'lazy', '/updates');
+            $registry = new Registry();
+            $registry->register(LazyIsland::class);
+            $parents = new ParentValues(['outer' => 'preserved']);
+            $reference = new RuntimeReference();
+            $renderer = new CallbackRenderer(static function ($definition, array $data) use (
+                $reference,
+                $context,
+                $parents,
+                $fail,
+            ): string {
+                $runtime = $reference->runtime;
+                static::assertInstanceOf(ContextRuntime::class, $runtime);
+                $active = $runtime->contextState();
+                static::assertSame('/reports', $active['path']);
+                static::assertSame('?q=current', $active['query']);
+                static::assertSame('Reports', $active['routing']?->defaults['controller']);
+                static::assertSame($parents, $active['parents']);
+                if ($data['count'] === 1) {
+                    $runtime->mount('Lazy', ['recordId' => 2], 'nested', $context);
+                    if ($fail) {
+                        throw new RuntimeException('Render failure');
+                    }
+                }
+
+                return '<p>Rendered</p>';
+            });
+            $runtime = new ContextRuntime($registry, new SnapshotCodec(str_repeat('l', 32)), $renderer);
+            $reference->runtime = $runtime;
+            $pending = $runtime->mount('Lazy', ['recordId' => 1], 'parent', $context, new Options('manual'));
+            $runtime->seedContext('/outer', new RouteContext(['controller' => 'Outer']), '?outer=true', $parents);
+            $before = $runtime->contextState();
+            try {
+                $result = $runtime->update([
+                    'snapshot' => $pending->snapshot,
+                    'initialize' => true,
+                    'pageQuery' => '?q=current',
+                ], $context);
+                static::assertFalse($fail);
+                static::assertSame('current', $result->state['query']);
+            } catch (RuntimeException $exception) {
+                static::assertTrue($fail);
+                static::assertSame('Render failure', $exception->getMessage());
+            }
+
+            static::assertSame($before, $runtime->contextState());
         }
     }
 

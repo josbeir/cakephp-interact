@@ -30,12 +30,9 @@ class ModelBindings
         ?RenderFrame $parent,
     ): MountValues {
         $props = new PropInputs()->props($child, $props);
-        $relation = $this->resolve($model, $child, $parent);
-        $values = !$relation instanceof Relation || !$parent instanceof RenderFrame
-            ? []
-            : $this->values($relation, $child, $parent);
+        $binding = $this->resolveBinding($model, $child, $parent);
 
-        return new MountValues($props, $values, $relation);
+        return new MountValues($props, $binding['values'], $binding['relation']);
     }
 
     /**
@@ -45,9 +42,20 @@ class ModelBindings
      */
     public function resolve(string|array|null $model, Definition $child, ?RenderFrame $parent): ?Relation
     {
+        return $this->resolveBinding($model, $child, $parent)['relation'];
+    }
+
+    /**
+     * Resolve ownership and validate bound values once, before constructing application islands.
+     *
+     * @param array<string, mixed>|string|null $model Application-owned mount option.
+     * @return array{relation: Relation|null, values: array<string, mixed>} Checked preparation inputs.
+     */
+    protected function resolveBinding(string|array|null $model, Definition $child, ?RenderFrame $parent): array
+    {
         $reactive = array_filter($child->properties, static fn(Property $property): bool => $property->reactive);
         if ($model === null && ($reactive === [] || !$parent?->identity instanceof SnapshotData)) {
-            return null;
+            return ['relation' => null, 'values' => []];
         }
 
         if (!$parent?->identity instanceof SnapshotData) {
@@ -64,9 +72,8 @@ class ModelBindings
         }
 
         $relation = new Relation($parent->identity->id, $model ?? []);
-        $this->values($relation, $child, $parent);
 
-        return $relation;
+        return ['relation' => $relation, 'values' => $this->values($relation, $child, $parent)];
     }
 
     /**
