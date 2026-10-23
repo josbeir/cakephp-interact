@@ -93,6 +93,7 @@ export class FormSubmissions {
   refresh(): void {
     this.readChanges(this.observer.takeRecords());
     this.observer.disconnect();
+    if (this.submissions.size === 0) return;
     const forms = Array.from(
       this.root.querySelectorAll<HTMLFormElement>('form'),
     );

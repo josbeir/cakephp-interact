@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vite-plus/test';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { FormSubmissions } from '../../resources/ts/bindings/form-submissions';
 import type { RequestResult } from '../../resources/ts/types';
 
@@ -24,9 +24,31 @@ function setup() {
 afterEach(() => {
   guards.splice(0).forEach((guard) => guard.dispose());
   document.body.innerHTML = '';
+  vi.restoreAllMocks();
 });
 
 describe('native submission protection', () => {
+  it('avoids form discovery before submission and after its last lock settles', async () => {
+    const { root, form, button, guard, pending, complete } = setup();
+    const discover = vi.spyOn(root, 'querySelectorAll');
+    guard.refresh();
+    expect(discover).not.toHaveBeenCalled();
+    guard.submit(
+      form,
+      'x-interact:submit',
+      form.getAttribute('x-interact:submit') ?? '',
+      () => pending,
+    );
+    expect(button.disabled).toBe(true);
+    discover.mockClear();
+    complete({ ok: true });
+    await pending;
+    guard.refresh();
+    expect(discover).not.toHaveBeenCalled();
+    expect(button.disabled).toBe(false);
+    expect(form.hasAttribute('aria-busy')).toBe(false);
+  });
+
   it('captures once before disabling submitters, keeping fields and child islands independent', async () => {
     const { root, form, button, input, guard, pending, complete } = setup();
     let calls = 0;

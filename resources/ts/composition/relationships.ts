@@ -40,17 +40,23 @@ export class Relationships {
       begin: (invocation, values) => {
         epoch = ++this.clock;
         action = invocation;
-        sent = clone(values);
+        sent = values;
         flush(sent);
       },
       preserve: (incoming) => {
-        const values = clone(incoming);
-        for (const link of this.links) link.preserve(client, values, epoch);
-        return changedWritable(
-          values,
-          incoming,
-          readMetadata(client.root).writable,
-        );
+        let values: State | undefined;
+        for (const link of this.links) {
+          if (link.parent !== client && link.child !== client) continue;
+          values ??= clone(incoming);
+          link.preserve(client, values, epoch);
+        }
+        return values
+          ? changedWritable(
+              values,
+              incoming,
+              readMetadata(client.root).writable,
+            )
+          : {};
       },
       capture: () => {
         for (const link of this.links)
@@ -67,11 +73,12 @@ export class Relationships {
           link.received(client, epoch, action, sent);
         for (const link of this.links)
           if (link.child === client) link.reconcile();
-        const inputs = replacement
-          ? this.inputs(client, replacement)
-          : new Map<IslandClient, string>();
+        let inputs: Map<IslandClient, string> | undefined;
         for (const link of this.links)
-          if (link.parent === client) link.accepted(inputs.get(link.child));
+          if (link.parent === client) {
+            if (replacement) inputs ??= this.inputs(client, replacement);
+            link.accepted(inputs?.get(link.child));
+          }
       },
       dispose: () => {
         disposed = true;
