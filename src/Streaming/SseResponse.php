@@ -8,6 +8,7 @@ use Cake\Http\CallbackStream;
 use Cake\Http\Response;
 use Interact\Http\FailureResponder;
 use Interact\Runtime\PreparedUpdate;
+use LengthException;
 use Throwable;
 
 /**
@@ -66,10 +67,16 @@ class SseResponse
      * Flush complete standard SSE messages, keeping JSON newlines inside the data field.
      *
      * @param array<string, mixed> $message Versioned island-scoped update or terminal result.
+     * @throws \LengthException When the encoded JSON data exceeds one MiB.
      */
     protected function write(array $message): void
     {
-        echo 'event: interact' . "\n" . 'data: ' . json_encode($message, JSON_THROW_ON_ERROR | JSON_HEX_TAG) . "\n\n";
+        $json = json_encode($message, JSON_THROW_ON_ERROR | JSON_HEX_TAG);
+        if (strlen($json) > 1_048_576) {
+            throw new LengthException('Stream message exceeds the 1 MiB JSON data limit.');
+        }
+
+        echo 'event: interact' . "\n" . 'data: ' . $json . "\n\n";
         if (ob_get_level() > 0) {
             ob_flush();
         }

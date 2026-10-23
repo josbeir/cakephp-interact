@@ -3,18 +3,26 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase;
 
+use Cake\Error\ExceptionTrap;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\Http\Session;
+use Closure;
 use Interact\Discovery\Registry;
 use Interact\Http\FailureResponder;
 use Interact\Http\UpdateHandler;
 use Interact\IslandContext;
 use Interact\Runtime\Factory;
+use Interact\Runtime\PreparedUpdate;
+use Interact\Runtime\Result;
 use Interact\Runtime\Values;
 use Interact\Security\SnapshotCodec;
+use Interact\Streaming\RequestContext;
+use Interact\Streaming\SseResponse;
 use Interact\Test\Fixture\StreamingIsland;
 use Interact\TestSuite\IslandTest;
+use LengthException;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -93,6 +101,116 @@ class StreamingEmissionTest extends TestCase
         $state = $payload['state'];
         static::assertIsArray($state);
         static::assertSame('Complete', $state['answer']);
+    }
+
+    /**
+     * Exercise ASCII, Unicode escaping, and HTML escaping at the encoded-data boundary.
+     *
+     * @return iterable<string, array{string, int}>
+     */
+    public static function dataLimits(): iterable
+    {
+        foreach (['ASCII' => 'x', 'Unicode' => '€', 'HTML' => '<'] as $name => $unit) {
+            yield $name . ' at limit' => [$unit, 0];
+            yield $name . ' over limit' => [$unit, 1];
+        }
+    }
+
+    /**
+     * Measure JSON bytes before emission and return a safe failure for oversized output.
+     *
+     * @param int<0, 1> $extra Bytes beyond the permitted data size.
+     */
+    #[DataProvider('dataLimits')]
+    public function testEncodedDataLimitIsCheckedBeforeWriting(string $unit, int $extra): void
+    {
+        $message = [
+            'version' => 1,
+            'id' => 'streaming',
+            'type' => 'target',
+            'to' => 'answer',
+            'content' => '',
+            'replace' => false,
+            'html' => false,
+        ];
+        $flags = JSON_THROW_ON_ERROR | JSON_HEX_TAG;
+        $available = 1_048_576 - strlen(json_encode($message, $flags));
+        $width = strlen(json_encode($unit, $flags)) - 2;
+        $copies = intdiv($available, $width);
+        $padding = ($available % $width) + $extra;
+        assert($copies >= 0 && $padding >= 0, 'The fixture envelope must leave room for boundary data.');
+        $message['content'] = str_repeat($unit, $copies) . str_repeat('x', $padding);
+        static::assertSame(1_048_576 + $extra, strlen(json_encode($message, $flags)));
+        $update = new PreparedUpdate(true, 'streaming', static function (Closure $send) use ($message): Result {
+            $send($message);
+
+            return new Result('streaming', '<p>Done</p>', 'signed');
+        });
+        $logger = $this->createMock(ExceptionTrap::class);
+        $logger->expects($extra === 0 ? static::never() : static::once())
+            ->method('logException')
+            ->with(static::isInstanceOf(LengthException::class), static::anything());
+        $frames = $this->emit($update, $logger);
+        static::assertCount($extra === 0 ? 2 : 1, $frames);
+        $first = $this->decodeFrame($frames[0]);
+        static::assertSame($extra === 0 ? 'target' : 'failure', $first['type']);
+        if ($extra === 0) {
+            static::assertSame("event: interact\ndata: " . json_encode($message, $flags) . "\n\n", $frames[0]);
+            static::assertSame('result', $this->decodeFrame($frames[1])['type']);
+        } else {
+            static::assertSame(500, $first['status']);
+            static::assertStringNotContainsString('1 MiB', $frames[0]);
+        }
+    }
+
+    public function testOversizedTerminalResultBecomesASafeFailure(): void
+    {
+        $update = new PreparedUpdate(true, 'streaming', static fn(): Result => new Result(
+            'streaming',
+            str_repeat('x', 1_048_576),
+            'signed',
+        ));
+        $logger = $this->createMock(ExceptionTrap::class);
+        $logger->expects(static::once())
+            ->method('logException')
+            ->with(static::isInstanceOf(LengthException::class), static::anything());
+        $frames = $this->emit($update, $logger);
+        static::assertCount(1, $frames);
+        $message = $this->decodeFrame($frames[0]);
+        static::assertSame('failure', $message['type']);
+        static::assertSame(500, $message['status']);
+    }
+
+    /**
+     * Collect actual flushed frames without leaking output into PHPUnit.
+     *
+     * @return list<string>
+     */
+    protected function emit(PreparedUpdate $update, ExceptionTrap $logger): array
+    {
+        $context = new RequestContext(
+            new ServerRequest([
+                'session' => new Session(['defaults' => 'php', 'ini' => ['session.use_cookies' => 0]]),
+            ]),
+            'default',
+            '/_interact/update',
+        );
+        $response = new SseResponse(exceptions: $logger)->create($update, $context, new Response());
+        $frames = [];
+        ob_start(static function (string $buffer) use (&$frames): string {
+            if ($buffer !== '') {
+                $frames[] = $buffer;
+            }
+
+            return '';
+        });
+        try {
+            static::assertSame('', (string)$response->getBody());
+        } finally {
+            ob_end_clean();
+        }
+
+        return $frames;
     }
 
     /**

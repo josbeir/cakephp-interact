@@ -177,9 +177,18 @@ web server, and proxies. Interact flushes each frame and sends
 `X-Accel-Buffering: no`; infrastructure can still buffer it. Middleware must pass
 through the callback body without consuming or replacing it. Long actions occupy a
 PHP worker; choose suitable worker capacity and request timeouts. This finite
-request has no heartbeat, replay, or resumable delivery guarantee. The reader limits
-each SSE line and accumulated data frame to 1,048,576 UTF-16 code units, including
-the terminal payload. Keep individual chunks and the final view within that limit.
+request has no heartbeat, replay, or resumable delivery guarantee.
+
+Each message's encoded JSON data is limited to 1,048,576 UTF-8 bytes (1 MiB), including the complete
+terminal payload. PHP checks the serialized JSON before emitting a frame; the
+browser checks the decoded SSE data before applying it. SSE field prefixes and
+line endings are outside this data limit. Keep individual messages and the final
+view, state, and snapshot within it. Oversized server output is logged and becomes
+a safe terminal failure, without emitting the oversized frame.
+
+The browser uses `eventsource-parser` for framing, with bounded buffering for
+incomplete messages. Unknown SSE fields and comments are ignored; invalid UTF-8,
+oversized message data, and a missing terminal result still fail the request.
 
 ## Custom receiving adapters
 

@@ -22,7 +22,8 @@
   },
   "dependencies": {
     "@alpinejs/morph": "^3.17.4",
-    "@types/alpinejs": "^3.13.11"
+    "@types/alpinejs": "^3.13.11",
+    "eventsource-parser": "^4.1.2"
   },
   "devDependencies": {
     "@alpinejs/csp": "^3.17.4",
