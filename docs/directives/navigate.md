@@ -122,7 +122,7 @@ The Alpine store `$store.interactNavigation` describes page visits independently
 | `loading()`               | True after 200 ms of continuous activity        |
 | `loading({ delay: 300 })` | Use an indicator-specific delay in milliseconds |
 
-Delay accepts whole milliseconds from 0 to 60,000. Activity includes fetching, required assets, replacement, and initialization. Prefetching alone does not show feedback. Completion, cancellation, and failures clear timers; older requests cannot hide feedback for a newer visit. Use your application's existing `x-cloak` rule.
+The default delay follows [JavaScript configuration](/configuration#javascript-configuration). Delay accepts whole milliseconds from 0 to 60,000. Activity includes fetching, required assets, replacement, and initialization. Prefetching alone does not show feedback. Completion, cancellation, and failures clear timers; older requests cannot hide feedback for a newer visit. Use your application's existing `x-cloak` rule.
 
 See the [tested navigation example](/examples/navigation) for an application-styled top bar.
 
@@ -161,7 +161,7 @@ Scope page-specific CSS. Executable inline scripts, `<base>`, and `http-equiv` m
 
 Interact's document middleware records compatibility after application middleware has produced the response. Keep it outside middleware that changes document security headers. If later plugin or infrastructure middleware changes those headers, place Interact's document middleware outside it too, or use native navigation for those pages. Navigation never replaces the original browser CSP or rewrites nonces.
 
-Set `Configure::write('Interact.navigationVersion', 'your-asset-build-id')` when application-owned assets change incompatibly. The built-in runtime fingerprint is tracked automatically. See [security](/security) and [redirects](/guide/redirects-and-downloads).
+Set [`Interact.navigationVersion`](/configuration#navigation-compatibility) when application-owned assets change incompatibly. The built-in runtime fingerprint is tracked automatically. See [security](/security) and [redirects](/guide/redirects-and-downloads).
 
 ## Options
 

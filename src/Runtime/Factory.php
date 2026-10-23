@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Runtime;
 
 use Cake\View\View;
+use Interact\Configuration;
 use Interact\Discovery\Registry;
 use Interact\IslandContext;
 use Interact\Rendering\PhpRenderer;
@@ -11,6 +12,7 @@ use Interact\Security\SnapshotCodec;
 use Interact\Upload\UploadManager;
 use Interact\View\Helper\InteractHelper;
 use Interact\View\TemplateView;
+use ReflectionClass;
 
 /**
  * Creates the rendering collaborators used by one request's islands.
@@ -27,6 +29,7 @@ class Factory
         protected readonly Registry $registry,
         protected readonly SnapshotCodec $snapshots,
         protected readonly UploadManager $uploads = new UploadManager(),
+        protected readonly Configuration $configuration = new Configuration(),
     ) {
     }
 
@@ -63,9 +66,9 @@ class Factory
     protected function createView(View $host): TemplateView
     {
         return (
-            $host instanceof TemplateView
+            $host instanceof $this->configuration->viewClass
                 ? $host
-                : new TemplateView(
+                : new ReflectionClass($this->configuration->viewClass)->newInstance(
                     $host->getRequest(),
                     $host->getResponse(),
                     viewOptions: ['theme' => $host->getTheme()],

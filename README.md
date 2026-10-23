@@ -30,6 +30,7 @@ handles browser interactions; Interact connects them to your application's PHP.
 
 - [Why Interact?](https://josbeir.github.io/cakephp-interact/why.html)
 - [Install the plugin](https://josbeir.github.io/cakephp-interact/installation.html)
+- [Configuration](https://josbeir.github.io/cakephp-interact/configuration.html)
 - [Build your first island](https://josbeir.github.io/cakephp-interact/getting-started.html)
 - [Island conventions](https://josbeir.github.io/cakephp-interact/guide/conventions.html)
 - [Explore the working examples](https://josbeir.github.io/cakephp-interact/examples.html)

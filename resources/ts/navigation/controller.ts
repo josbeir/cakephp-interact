@@ -1,5 +1,7 @@
 import type { Alpine } from 'alpinejs';
 import { destination } from '../effects/browser';
+import { defaultTiming } from '../configuration';
+import type { TimingDefaults } from '../configuration';
 import { pageUrl } from '../url/coordinator';
 import type { Fetcher } from '../types';
 import { NavigationActivity } from './activity';
@@ -62,9 +64,13 @@ export class NavigationController implements NavigationService {
       replace: boolean,
     ) => void = nativeVisit,
     fetcher?: Fetcher,
+    defaults: TimingDefaults = defaultTiming,
   ) {
     this.pages = new PageFetcher(fetcher);
-    this.activity = new NavigationActivity(Alpine.reactive);
+    this.activity = new NavigationActivity(
+      Alpine.reactive,
+      defaults.loadingDelay,
+    );
     Alpine.store('interactNavigation', this.activity.store);
     if (documentIdentity(document) && supportsPageHistory(window.history.state))
       this.history = new NavigationHistory(window, (entry) =>

@@ -3,6 +3,8 @@ import type { IslandClient } from '../client';
 import { modelBinding } from './model';
 import { pollBinding } from './poll';
 import { customModel } from './custom-model';
+import { defaultTiming } from '../configuration';
+import type { TimingDefaults } from '../configuration';
 
 /**
  * Register Interact's public directives and bridge on the host Alpine instance.
@@ -19,6 +21,7 @@ export function registerBindings(
     modifiers: string[],
     expression: string,
   ) => () => void,
+  defaults: TimingDefaults = defaultTiming,
 ): void {
   Alpine.magic('server', (element) => resolve(element).bridge);
   Alpine.directive(
@@ -44,7 +47,11 @@ export function registerBindings(
             throw new Error(
               'Use one model binding per control; x-model and x-interact:model cannot be combined.',
             );
-          const binding = modelBinding(expression, modifiers);
+          const binding = modelBinding(
+            expression,
+            modifiers,
+            defaults.debounce,
+          );
           const modelable = element.getAttribute(Alpine.prefixed('modelable'));
           if (modelable !== null) {
             cleanup(
@@ -122,10 +129,13 @@ export function registerBindings(
           );
         } else if (value === 'poll') {
           cleanup(
-            client.bindPoll(element, pollBinding(modifiers), () =>
-              expression.trim()
-                ? Alpine.evaluateRaw<unknown>(element, expression)
-                : client.bridge.sync(),
+            client.bindPoll(
+              element,
+              pollBinding(modifiers, defaults.pollInterval),
+              () =>
+                expression.trim()
+                  ? Alpine.evaluateRaw<unknown>(element, expression)
+                  : client.bridge.sync(),
             ),
           );
         } else

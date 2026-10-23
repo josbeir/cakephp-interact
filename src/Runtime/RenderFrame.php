@@ -13,14 +13,14 @@ use Interact\IslandContext;
 class RenderFrame
 {
     /**
-     * @var array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay: int}>}, values?: array<string, mixed>}> Children emitted in this render.
+     * @var array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay?: int}>}, values?: array<string, mixed>}> Children emitted in this render.
      */
     public array $children = [];
 
     /**
      * Start a parent render with its previously signed child identities.
      *
-     * @param array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay: int}>}, values?: array<string, mixed>}> $previous Verified prior identities.
+     * @param array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay?: int}>}, values?: array<string, mixed>}> $previous Verified prior identities.
      */
     public function __construct(
         public readonly array $previous = [],

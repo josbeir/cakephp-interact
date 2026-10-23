@@ -36,7 +36,7 @@ readonly class MountValues
     /**
      * Add a relationship only when composition is used.
      *
-     * @return array{relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay: int}>}}
+     * @return array{relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay?: int}>}}
      */
     public function identity(): array
     {
@@ -46,7 +46,7 @@ readonly class MountValues
     /**
      * Record accepted parent values for later change detection.
      *
-     * @return array{relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay: int}>}, values?: array<string, mixed>}
+     * @return array{relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay?: int}>}, values?: array<string, mixed>}
      */
     public function child(): array
     {

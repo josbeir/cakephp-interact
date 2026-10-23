@@ -17,7 +17,7 @@ use InvalidArgumentException;
 readonly class Relation
 {
     /**
-     * @var array<string, array{path: string, timing: string, delay: int}> Named child value bindings.
+     * @var array<string, array{path: string, timing: string, delay?: int}> Named child value bindings.
      */
     public array $models;
 
@@ -65,7 +65,7 @@ readonly class Relation
     /**
      * Export the same immutable relationship for signing and browser coordination.
      *
-     * @return array{parentId: string, models: array<string, array{path: string, timing: string, delay: int}>}
+     * @return array{parentId: string, models: array<string, array{path: string, timing: string, delay?: int}>}
      */
     public function data(): array
     {

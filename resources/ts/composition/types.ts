@@ -14,7 +14,7 @@ export interface CompositionHooks {
 export interface ModelOptions {
   path: string;
   timing: 'defer' | 'live' | 'change' | 'blur';
-  delay: number;
+  delay?: number;
 }
 
 export interface Relation {

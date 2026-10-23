@@ -57,23 +57,18 @@ page controller or render its layout. Select this view only for
 ## Configure a custom island view
 
 `Factory::createView()` selects the view used to render island content. Creating
-`App\View\IslandTemplateView` alone does not select it: Interact does not discover
-application island views by class name.
+`App\View\IslandTemplateView` alone does not select it: configure its class name
+explicitly.
 
-All three steps below are required:
-
-1. Create an application `TemplateView` subclass and configure its helpers in `initialize()`.
-2. Create an application `Factory` subclass whose `createView()` returns that view.
-3. Register the application factory under `Interact\Runtime\Factory::class` in `Application::services()`.
+Create an application subclass of `TemplateView`, then select it with
+[`Interact.view.className`](/configuration#island-view-class). Both initial
+content and later updates use that class; no factory subclass is required for
+ordinary view customization.
 
 The example assumes an application helper named `App\View\Helper\PresentationHelper`
 already exists. Replace it with the helpers your application needs.
 
-### 1. Create the view
-
-Create `src/View/IslandTemplateView.php` and configure its helpers after the parent initialization:
-
-```php
+```php [src/View/IslandTemplateView.php]
 <?php
 declare(strict_types=1);
 
@@ -83,14 +78,12 @@ use App\View\Helper\PresentationHelper;
 use Interact\View\TemplateView;
 
 /**
- * src/View/IslandTemplateView.php
- *
  * Supplies application helper configuration to every isolated island render.
  */
 class IslandTemplateView extends TemplateView
 {
     /**
-     * Make the application's presentation helper available to island templates.
+     * Register application presentation helpers after the Interact defaults.
      */
     public function initialize(): void
     {
@@ -100,72 +93,27 @@ class IslandTemplateView extends TemplateView
 }
 ```
 
-After the factory is registered below, island templates can use `$this->Presentation`.
-
-### 2. Select the view in a factory
-
-Create `src/Interact/ApplicationFactory.php`. Its `createView()` method explicitly
-constructs the application view instead of the plugin's default `TemplateView`:
-
-```php
-<?php
-declare(strict_types=1);
-
-namespace App\Interact;
-
-use App\View\IslandTemplateView;
-use Cake\View\View;
-use Interact\Runtime\Factory;
-use Interact\View\TemplateView;
-
-/**
- * src/Interact/ApplicationFactory.php
- *
- * Applies the application's island view configuration at the rendering boundary.
- */
-class ApplicationFactory extends Factory
-{
-    /**
-     * Preserve the host request and response while selecting the application view.
-     */
-    protected function createView(View $host): TemplateView
-    {
-        return new IslandTemplateView(
-            $host->getRequest(),
-            $host->getResponse(),
-            viewOptions: ['theme' => $host->getTheme()],
-        );
-    }
-}
+```php [config/app.php — configuration excerpt]
+'Interact' => [
+    'view' => ['className' => \App\View\IslandTemplateView::class],
+],
 ```
 
-### 3. Register the factory
+Island templates can now use `$this->Presentation`. Keep CakePHP's native view
+constructor signature. The configured class must extend `TemplateView`; helper
+configuration on an ordinary hosting `AppView` is not copied into island content.
+For page islands, keep selecting `IslandView` on the controller; the configured
+class controls island content while the page view retains the outer layout.
 
-Add these imports to `src/Application.php`, then add the registration to your
-existing `Application::services()` method. This registration is what makes Interact
-use `ApplicationFactory` instead of its shipped factory:
+### Custom factories
 
-```php [Application imports]
-use App\Interact\ApplicationFactory;
-use Interact\Discovery\Registry;
-use Interact\Runtime\Factory;
-use Interact\Security\SnapshotCodec;
-use Interact\Upload\UploadManager;
-```
-
-```php [Inside Application::services()]
-$container->addShared(Factory::class, ApplicationFactory::class)
-    ->addArguments([Registry::class, SnapshotCodec::class, UploadManager::class]);
-```
-
-When resolving `Interact\Runtime\Factory`, CakePHP's container now constructs
-`ApplicationFactory`. Its `createView()` constructs `IslandTemplateView`, which
-loads the application's helper configuration. Interact checks for an existing
-factory definition before registering its default and preserves this application binding.
-
-Keep this registration in application services so both initial renders and update
-requests select the same view. Configuring helpers only on the hosting `AppView`
-does not configure the isolated island view.
+Applications needing different runtime assembly can still subclass
+`Interact\Runtime\Factory`, override `createView(View $host): TemplateView`,
+and register it under `Factory::class` in `Application::services()`. Existing
+application factory definitions take precedence over the default registration.
+Pass `Registry`, `SnapshotCodec`, `UploadManager`, and `Configuration` as
+constructor arguments when using the inherited constructor and application settings.
+A custom factory that overrides view selection owns that choice.
 
 ## Dependency boundaries
 

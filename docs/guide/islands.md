@@ -93,14 +93,9 @@ See [nested islands](/guide/nesting#modelable-child-inputs) for child model bind
 
 ### Helper options
 
-| Option       | Default     | Description                                              |
-| ------------ | ----------- | -------------------------------------------------------- |
-| `autoScript` | `true`      | Queue the Composer bundle in the layout's script block   |
-| `scope`      | `'default'` | Server-configured scope bound to snapshots               |
-| `endpoint`   | `null`      | Named `interact:update` route, or an explicit routed URL |
-
-See [Installation](/installation) for helper setup and
-[custom endpoints](/security#custom-endpoints) for scoped routes.
+See [helper configuration](/configuration#existing-helper-options) for defaults,
+asset inclusion, endpoint, scope, and document metadata. Scoped routes are
+covered in [custom endpoints](/security#custom-endpoints).
 
 ## Passing initial values
 

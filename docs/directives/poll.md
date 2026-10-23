@@ -116,3 +116,5 @@ declaration or island releases its timer and visibility resources.
 The directive accepts one duration, optional `.visible`, and an optional Alpine
 expression. A blank expression synchronizes. Unknown/repeated modifiers and
 multiple declarations owned by one island are initialization errors.
+
+The default interval can be changed through [JavaScript configuration](/configuration#javascript-configuration). Explicit duration modifiers override it.

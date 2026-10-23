@@ -22,7 +22,10 @@ export class RequestActivity {
   /**
    * Use the host Alpine instance's reactivity for queue and timer transitions.
    */
-  constructor(private readonly reactive: <T extends object>(value: T) => T) {
+  constructor(
+    private readonly reactive: <T extends object>(value: T) => T,
+    private readonly loadingDelay = 200,
+  ) {
     this.state = reactive({ requests: [] });
   }
 
@@ -60,7 +63,7 @@ export class RequestActivity {
   loading(selector?: string | null | LoadingTarget, ...args: Json[]): boolean {
     const query = target(selector, args);
     if (!this.pending(query)) return false;
-    const delay = query.delay ?? 200;
+    const delay = query.delay ?? this.loadingDelay;
     if (delay === 0) return true;
     const key = canonical({ ...query, delay });
     let entry = this.delayed.get(key);

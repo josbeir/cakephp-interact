@@ -14,8 +14,8 @@ export class NavigationActivity {
   readonly store: NavigationStore;
   protected readonly requests: RequestActivity;
 
-  constructor(reactive: <T extends object>(value: T) => T) {
-    this.requests = new RequestActivity(reactive);
+  constructor(reactive: <T extends object>(value: T) => T, loadingDelay = 200) {
+    this.requests = new RequestActivity(reactive, loadingDelay);
     const requests = this.requests;
     this.store = {
       get pending() {

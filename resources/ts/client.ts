@@ -137,12 +137,13 @@ export class IslandClient {
     private readonly fetcher: Fetcher = (url, init) => fetch(url, init),
     private readonly uploader: Uploader = postUpload,
     private readonly effects: BrowserEffects = new BrowserEffects(),
+    readonly defaults: TimingDefaults = defaultTiming,
   ) {
     this.streams = new StreamReceiver(
       root,
       () => !this.disposed && !this.leaving,
     );
-    this.requests = new RequestActivity(reactive);
+    this.requests = new RequestActivity(reactive, defaults.loadingDelay);
     this.activity = reactive({ paused: false });
     const activity = this.activity;
     this.metadata = readMetadata(root);
@@ -778,3 +779,5 @@ export class IslandClient {
     );
   }
 }
+import { defaultTiming } from './configuration';
+import type { TimingDefaults } from './configuration';

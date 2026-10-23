@@ -4,6 +4,22 @@ import { defineConfig } from 'vite-plus';
 export default defineConfig({
   pack: [
     {
+      name: 'configuration-fixture',
+      entry: { configuration: 'tests/browser/configuration-runtime.ts' },
+      outDir: 'tests/test_app/webroot/js',
+      format: 'iife',
+      platform: 'browser',
+      target: 'es2022',
+      minify: true,
+      dts: false,
+      outputOptions: { entryFileNames: '[name].js' },
+      deps: {
+        alwaysBundle: [/./],
+        onlyBundle: ['@alpinejs/csp', '@alpinejs/morph'],
+        onlyImport: [],
+      },
+    },
+    {
       name: 'demo-widgets',
       entry: { widgets: 'tests/test_app/resources/ts/widgets.ts' },
       outDir: 'tests/test_app/webroot/js',

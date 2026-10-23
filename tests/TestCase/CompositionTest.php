@@ -428,7 +428,7 @@ class CompositionTest extends TestCase
             ['flag' => true, 'count' => 0, 'items' => []],
             new BoundValues()->values($relation, new Definition(ProbeIsland::class), $this->frame($probe)),
         );
-        static::assertSame(0, $relation->models['count']['delay']);
+        static::assertSame(0, $relation->models['count']['delay'] ?? null);
         static::assertSame($relation->data(), Relation::read($relation->data())?->data());
     }
 

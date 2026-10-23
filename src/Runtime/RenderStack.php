@@ -103,7 +103,7 @@ class RenderStack
     /**
      * Enter a native render scope, rejecting excessive recursive nesting.
      *
-     * @param array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay: int}>}, values?: array<string, mixed>}> $previous Verified direct children.
+     * @param array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay?: int}>}, values?: array<string, mixed>}> $previous Verified direct children.
      */
     public function push(
         array $previous,

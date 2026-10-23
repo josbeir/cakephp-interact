@@ -114,7 +114,7 @@ debounce timers do not count.
 <span role="status" x-show="$server.loading('save')" x-cloak>Saving…</span>
 ```
 
-`loading()` accepts the same targets as `pending()`, with a 200 ms default delay.
+`loading()` accepts the same targets as `pending()`, with the [configured loading delay](/configuration#javascript-configuration), initially 200 ms.
 The object form can set a delay from 0 to 60,000 whole milliseconds:
 
 ```html

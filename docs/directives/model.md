@@ -147,7 +147,7 @@ control values even before blur or an outstanding debounce. Synchronization does
 not save a database record.
 
 Use one timing mode. `.debounce` is valid only with `.live`, optionally followed
-by `0ms` through `60000ms`. Without a duration it uses 250 ms. Unknown, repeated,
+by `0ms` through `60000ms`. Without a duration it uses the [configured debounce default](/configuration#javascript-configuration), initially 250 ms. Unknown, repeated,
 or conflicting modifiers are errors.
 
 ::: code-group

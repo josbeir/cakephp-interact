@@ -15,6 +15,8 @@ use LogicException;
  * Each render receives declared state, props, validation feedback, and computed data.
  * Controller variables are not inherited; the previous view scope is restored on failure.
  *
+ * Subclasses selected through view.className retain CakePHP's native constructor signature.
+ *
  * @property \Interact\View\Helper\InteractHelper $Interact
  * @property \Interact\View\Helper\PaginatorHelper $Paginator
  */

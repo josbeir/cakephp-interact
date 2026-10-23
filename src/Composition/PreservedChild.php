@@ -28,8 +28,8 @@ class PreservedChild
      * Check immutable inputs and produce a preservation marker with an optional capability.
      *
      * @param array<string, mixed> $props New application-owned props.
-     * @param array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay: int}>}, values?: array<string, mixed>} $previous Previous signed child identity.
-     * @return array{child: array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay: int}>}, values?: array<string, mixed>}, result: Result}
+     * @param array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay?: int}>}, values?: array<string, mixed>} $previous Previous signed child identity.
+     * @return array{child: array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay?: int}>}, values?: array<string, mixed>}, result: Result}
      */
     public function render(
         Declaration|Definition $declaration,
