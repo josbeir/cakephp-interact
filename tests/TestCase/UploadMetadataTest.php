@@ -3,12 +3,15 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase;
 
+use Cake\Utility\Fs\Finder;
+use Cake\Utility\Fs\Path;
 use Interact\Test\Fixture\UploadMetadataStream;
 use Interact\Test\TestSuite\UploadStorageTestCase;
 use Interact\Upload\UploadConfig;
 use Interact\Upload\UploadFilesystem;
 use Interact\Upload\UploadOwner;
 use RuntimeException;
+use SplFileInfo;
 
 /**
  * Verifies complete, private metadata publication and preservation of existing records.
@@ -53,11 +56,16 @@ class UploadMetadataTest extends UploadStorageTestCase
         $filesystem->locked(new UploadOwner('session', 'scope', 'island', 'file'), function (string $directory) use (
             $filesystem,
         ): void {
-            $path = $directory . '/record.json';
+            $path = Path::join($directory, 'record.json');
             $filesystem->write($path, $this->record);
             static::assertSame(json_encode($this->record, JSON_THROW_ON_ERROR), file_get_contents($path));
             static::assertSame(0o600, fileperms($path) & 0o777);
-            static::assertSame([$path], glob($directory . '/*'));
+            $entries = array_map(
+                static fn(SplFileInfo $entry): string => $entry->getPathname(),
+                iterator_to_array(new Finder()->in($directory)->recursive(false)->all(), false),
+            );
+            sort($entries, SORT_STRING);
+            static::assertSame([$path], $entries);
         });
     }
 

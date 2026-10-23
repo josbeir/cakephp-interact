@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase;
 
+use Cake\Utility\Fs\Finder;
+use Cake\Utility\Fs\Path;
 use Interact\Attribute\Upload;
 use Interact\Test\Fixture\UploadTypesIsland;
 use Interact\Test\TestSuite\UploadStorageTestCase;
@@ -78,7 +80,13 @@ class UploadFieldLimitsTest extends UploadStorageTestCase
             static::fail('The actual byte count must respect the field ceiling.');
         } catch (UploadRejected) {
             static::assertNotNull($storage->find($accepted->id, $owner));
-            static::assertCount(1, glob($this->directory . '/' . $owner->sessionKey() . '/*.bin') ?: []);
+            static::assertCount(1, iterator_to_array(
+                new Finder()->in(Path::join($this->directory, $owner->sessionKey()))
+                    ->recursive(false)
+                    ->name('*.bin')
+                    ->all(),
+                false,
+            ));
         }
     }
 
@@ -95,7 +103,13 @@ class UploadFieldLimitsTest extends UploadStorageTestCase
         } catch (UploadRejected) {
             static::assertNotNull($storage->find($first->id, $owner));
             static::assertNotNull($storage->find($otherFile->id, $other));
-            static::assertCount(2, glob($this->directory . '/' . $owner->sessionKey() . '/*.bin') ?: []);
+            static::assertCount(2, iterator_to_array(
+                new Finder()->in(Path::join($this->directory, $owner->sessionKey()))
+                    ->recursive(false)
+                    ->name('*.bin')
+                    ->all(),
+                false,
+            ));
         }
     }
 

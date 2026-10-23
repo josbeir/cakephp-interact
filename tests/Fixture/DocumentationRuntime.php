@@ -15,6 +15,8 @@ use Cake\Http\Session;
 use Cake\ORM\Locator\TableLocator;
 use Cake\ORM\TableRegistry;
 use Cake\Routing\Router;
+use Cake\Utility\Fs\Finder;
+use Cake\Utility\Fs\Path;
 use Interact\Discovery\Registry;
 use Interact\IslandContext;
 use Interact\Runtime\Factory;
@@ -24,6 +26,7 @@ use Interact\Upload\LocalUploadStorage;
 use Interact\Upload\UploadConfig;
 use Interact\Upload\UploadManager;
 use Interact\View\TemplateView;
+use SplFileInfo;
 use TestApp\Island\Article\FormIsland as ArticleForm;
 use TestApp\Model\Table\CommentsTable;
 use TestApp\Model\Table\FormArticlesTable;
@@ -48,10 +51,18 @@ class DocumentationRuntime
     public function __construct(?UploadManager $uploads = null)
     {
         $this->connection = new Connection(['driver' => Sqlite::class, 'database' => ':memory:']);
-        $sources = [
-            ...(glob(dirname(__DIR__) . '/docs/app/schema/*.sql') ?: []),
-            dirname(__DIR__) . '/test_app/config/schema/form_articles.sql',
-        ];
+        $sources = array_map(
+            static fn(SplFileInfo $source): string => $source->getPathname(),
+            iterator_to_array(
+                new Finder()->in(Path::join(dirname(__DIR__), 'docs/app/schema'))
+                    ->recursive(false)
+                    ->name('*.sql')
+                    ->all(),
+                false,
+            ),
+        );
+        sort($sources, SORT_STRING);
+        $sources[] = Path::join(dirname(__DIR__), 'test_app/config/schema/form_articles.sql');
         foreach ($sources as $source) {
             $sql = (string)file_get_contents($source);
             foreach (explode(';', $sql) as $statement) {
