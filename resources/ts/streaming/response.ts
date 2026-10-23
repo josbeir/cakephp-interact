@@ -15,11 +15,13 @@ export async function readStream(
   result: Response,
   id: string,
   receive: (message: unknown) => void,
+  acceptedStatus?: (status: number) => void,
 ): Promise<UpdateResponse> {
   if (result.status !== 200 || !result.body)
     throw requestError('invalid_response', result.status);
   const reader = result.body.getReader();
   let terminal: UpdateResponse | IslandRequestError | undefined;
+  let terminalStatus: number | undefined;
   const decoder = new SseDecoder((event, data) => {
     if (event !== 'interact' || terminal)
       throw requestError('invalid_response', 200);
@@ -36,6 +38,7 @@ export async function readStream(
       responseMatches(message.payload, id, message.status)
     ) {
       terminal = message.payload;
+      terminalStatus = message.status;
     } else if (
       message.type === 'failure' &&
       typeof message.status === 'number' &&
@@ -56,6 +59,7 @@ export async function readStream(
     decoder.finish();
     if (terminal instanceof IslandRequestError) throw terminal;
     if (!terminal) throw requestError('invalid_response', 200);
+    if (terminalStatus !== undefined) acceptedStatus?.(terminalStatus);
     return terminal;
   } catch (cause: unknown) {
     await reader.cancel().catch(() => {});

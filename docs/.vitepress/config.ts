@@ -156,6 +156,7 @@ export default defineConfig({
           items: [
             { text: 'Alpine', link: '/guide/alpine' },
             { text: '$server', link: '/reference/server' },
+            { text: 'Request lifecycle', link: '/reference/request-lifecycle' },
           ],
         },
         {
