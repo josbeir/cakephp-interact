@@ -207,7 +207,7 @@ export class ChildBinding {
         timer: setTimeout(() => {
           this.timers.delete(name);
           this.synchronize();
-        }, binding.delay),
+        }, binding.delay ?? this.parent.defaults.debounce),
       });
     }
   }

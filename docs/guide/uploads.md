@@ -162,29 +162,9 @@ Multipart overhead also counts toward server body limits.
 
 ## Private staging and cleanup
 
-Ordinary installations need no storage registration. Configure optional limits
-in your application's configuration:
-
-```php [config/app.php — configuration excerpt]
-'Interact' => [
-    'uploads' => [
-        'directory' => TMP . 'interact/uploads',
-        'maxFileSize' => '10MB',
-        'maxFiles' => 10,
-        'maxIslandSize' => '50MB',
-        'maxSessionSize' => '100MB',
-        'maxSessionFiles' => 100,
-        'ttl' => 86_400,
-    ],
-],
-```
-
-Size settings accept integer bytes or human-readable strings such as `'10MB'`
-and `'1.5GB'`, parsed by CakePHP's `Text::parseFileSize()`. Counts remain positive
-integers and retention is in seconds. These are transport/storage ceilings;
-your application can impose smaller limits and its own allowed types. Abandoned
-transfers count toward capacity until cleanup. Zero-byte files count toward the
-file-count limit too.
+Ordinary installations need no storage registration. See
+[temporary upload configuration](/configuration#temporary-uploads) for the staging
+directory, limits, retention, accepted size strings, and their defaults.
 
 Keep staging outside the webroot. Configure PHP's `upload_max_filesize`,
 `post_max_size`, and your web server's body limits to accommodate a file plus its

@@ -15,7 +15,7 @@ readonly class ModelOptions
     /**
      * Normalize a shorthand path or explicit binding options.
      *
-     * @return array{path: string, timing: string, delay: int}
+     * @return array{path: string, timing: string, delay?: int}
      */
     public function read(mixed $value): array
     {
@@ -42,6 +42,9 @@ readonly class ModelOptions
 
         Values::path($path);
 
-        return ['path' => $path, 'timing' => $timing, 'delay' => $delay];
+        return (
+            ['path' => $path, 'timing' => $timing]
+                + ($timing === 'live' && !array_key_exists('delay', $options) ? [] : ['delay' => $delay])
+        );
     }
 }

@@ -120,7 +120,7 @@ you only use application-owned endpoints; the service remains available.
 
 ## Snapshots
 
-Snapshots are signed, session-bound, scope-bound JSON with a 30-minute default lifetime. The default signing service uses CakePHP's security salt with domain separation. Replace `SnapshotCodec` through the application container to configure a dedicated key or lifetime. Use a strong secret and keep it out of source control.
+Snapshots are signed, session-bound, scope-bound JSON with a 30-minute default lifetime. The default signing service uses CakePHP's security salt with domain separation. Configure the [snapshot lifetime and signing key](/configuration#snapshots) through application settings. Use a strong secret and keep it out of source control. Application container replacements remain available for custom signing behavior.
 
 Snapshots are visible to the browser. More transported props and state mean larger
 requests; computed `viewData()` does not add its results to the snapshot. Keep

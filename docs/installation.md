@@ -132,14 +132,16 @@ cd ../../..
 npm install ./vendor/josbeir/cakephp-interact @alpinejs/csp
 ```
 
-Set `autoScript` to `false` in the helper configuration:
+Set [`Interact.assets.script`](/configuration#browser-assets) to `false` in your
+application configuration so the standalone runtime is not included:
 
 ```php
-$this->addHelper('Interact', [
-    'className' => InteractHelper::class,
-    'autoScript' => false,
-]);
+'Interact' => [
+    'assets' => ['script' => false],
+],
 ```
+
+Existing helper registrations using `autoScript: false` remain supported.
 
 Register the plugin before your application's existing `Alpine.start()`:
 
@@ -154,7 +156,8 @@ Alpine.start();
 Load this entry using your application's bundler. Use one Alpine instance per
 page; omit the standalone Interact script for this integration. If you use
 standard `alpinejs` instead, its expression evaluator has different CSP needs.
-Repeat the module build and refresh your application's dependency after Composer
+Use [`createInteract()`](/configuration#javascript-configuration) to override shared
+browser timing defaults. Repeat the module build and refresh your application's dependency after Composer
 updates the plugin.
 
 ## Prepare the plugin checkout
@@ -182,6 +185,6 @@ Build assets in that checkout. For application-owned Alpine, use
 
 ## Enhanced navigation setup
 
-The existing Interact installer also installs its internal navigation integration. No additional JavaScript dependency or stylesheet is needed. Keep rendering the layout's `script` block even with `autoScript: false`: the helper supplies document compatibility metadata for the npm integration too.
+The existing Interact installer also installs its internal navigation integration. No additional JavaScript dependency or stylesheet is needed. Keep rendering the [configured script block](/configuration#browser-assets) even with `assets.script: false`: the helper supplies document compatibility metadata for the npm integration too.
 
 Use [x-interact:navigate](/directives/navigate) to opt individual links in. The default plugin middleware marks complete HTML responses after application middleware. Missing metadata, unsupported pages, and incompatible document policies use native navigation.

@@ -18,10 +18,11 @@ export type ModelBinding = {
 export function modelBinding(
   expression: string,
   modifiers: string[],
+  debounce = 250,
 ): ModelBinding {
   path(expression);
   let timing: ModelBinding['timing'] = 'defer';
-  let delay = 250;
+  let delay = debounce;
   const seen = new Set<string>();
   for (let index = 0; index < modifiers.length; index++) {
     const modifier = modifiers[index];
@@ -44,5 +45,5 @@ export function modelBinding(
     throw new Error(
       'Debounce requires a live model and a delay from 0 to 60000 ms.',
     );
-  return { path: expression, timing, delay };
+  return { path: expression, timing, delay: timing === 'live' ? delay : 250 };
 }

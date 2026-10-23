@@ -4,16 +4,15 @@ declare(strict_types=1);
 namespace Interact\View\Helper;
 
 use Cake\Routing\Router;
-use Cake\Utility\Security;
 use Cake\View\Helper;
 use Cake\View\Helper\HtmlHelper;
+use Interact\Configuration;
 use Interact\Discovery\Registry;
 use Interact\IslandContext;
 use Interact\Loading\Options;
 use Interact\Navigation\DocumentMiddleware;
 use Interact\Runtime\Factory;
 use Interact\Runtime\Runtime;
-use Interact\Security\SnapshotCodec;
 
 /**
  * Mounts named islands inside normal CakePHP views and manages their browser bootstrap.
@@ -47,14 +46,16 @@ class InteractHelper extends Helper
     public function initialize(array $config): void
     {
         parent::initialize($config);
+        $settings = Configuration::read();
+        $view = $this->getView();
         if ($this->getConfig('document') === true) {
-            $this->getView()->append('script', DocumentMiddleware::PLACEHOLDER);
+            $view->append($settings->scriptBlock, DocumentMiddleware::PLACEHOLDER);
         }
 
-        if ($this->getConfig('autoScript') === true) {
+        if ($this->getConfig('autoScript') === true && $settings->script !== false) {
             $html = $this->getView()->loadHelper('Html');
             assert($html instanceof HtmlHelper, 'The configured collaborator must satisfy its declared contract.');
-            $html->script('Interact.runtime', ['block' => 'script', 'defer' => true]);
+            $html->script($settings->script, $settings->scriptOptions);
         }
     }
 
@@ -119,7 +120,8 @@ class InteractHelper extends Helper
         /** @var mixed $factory */
         $factory = $this->getConfig('factory') ?? $this->getView()->getConfig('interactFactory');
         if (!$factory instanceof Factory) {
-            $factory = new Factory(new Registry(), new SnapshotCodec(Security::getSalt()));
+            $settings = Configuration::read();
+            $factory = new Factory(new Registry(), $settings->snapshots(), configuration: $settings);
         }
 
         return $this->runtime = $factory->create($this->getView(), $this->context());

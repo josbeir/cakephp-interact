@@ -17,10 +17,12 @@ export function relation(value: unknown): value is Relation {
       typeof binding.path !== 'string' ||
       typeof binding.timing !== 'string' ||
       !['defer', 'live', 'change', 'blur'].includes(binding.timing) ||
-      typeof binding.delay !== 'number' ||
-      !Number.isInteger(binding.delay) ||
-      binding.delay < 0 ||
-      binding.delay > 60000
+      (binding.delay !== undefined &&
+        (typeof binding.delay !== 'number' ||
+          !Number.isInteger(binding.delay) ||
+          binding.delay < 0 ||
+          binding.delay > 60000)) ||
+      (binding.delay === undefined && binding.timing !== 'live')
     )
       return false;
     return path(name).length === 1 && path(binding.path).length > 0;

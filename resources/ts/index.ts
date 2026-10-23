@@ -6,6 +6,9 @@ import { IslandClient } from './client';
 import { Relationships } from './composition/relationships';
 import { registerBindings } from './bindings/alpine';
 import { morphRoot } from './dom/morph';
+import { timingDefaults } from './configuration';
+import type { InteractOptions } from './configuration';
+export type { InteractOptions } from './configuration';
 export type {
   IslandBridge,
   RequestFailure,
@@ -39,7 +42,19 @@ const installed = new WeakSet<Alpine>();
  * ```
  */
 export default function install(Alpine: Alpine): void {
+  createInteract()(Alpine);
+}
+
+/** Create an Alpine plugin whose optional browser defaults override built-in timing. */
+export function createInteract(
+  options: InteractOptions = {},
+): (Alpine: Alpine) => void {
+  return (Alpine) => installConfigured(Alpine, options);
+}
+
+function installConfigured(Alpine: Alpine, options: InteractOptions): void {
   if (installed.has(Alpine)) return;
+  const defaults = timingDefaults(options);
   installed.add(Alpine);
   Alpine.plugin(morph);
   Alpine.data('interact', () => ({}));
@@ -62,14 +77,22 @@ export default function install(Alpine: Alpine): void {
         element,
         morphRoot(Alpine),
         Alpine.reactive,
+        undefined,
+        undefined,
+        undefined,
+        defaults,
       );
       clients.set(element, client);
       relationships.register(client);
       Alpine.onElRemoved(element, () => client.dispose());
     }),
   );
-  const navigation = new NavigationController(Alpine, (root, incoming) =>
-    clients.get(root)?.refreshContext(incoming),
+  const navigation = new NavigationController(
+    Alpine,
+    (root, incoming) => clients.get(root)?.refreshContext(incoming),
+    undefined,
+    undefined,
+    defaults,
   );
   for (const suffix of [
     '',
@@ -108,5 +131,6 @@ export default function install(Alpine: Alpine): void {
     },
     (element, value, modifiers, expression) =>
       navigationBinding(navigation, element, value, modifiers, expression),
+    defaults,
   );
 }

@@ -39,7 +39,7 @@ readonly class SnapshotData
     public array $state;
 
     /**
-     * @var array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay: int}>}, values?: array<string, mixed>}> Verified direct children.
+     * @var array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay?: int}>}, values?: array<string, mixed>}> Verified direct children.
      */
     public array $children;
 

@@ -104,6 +104,7 @@ export default defineConfig({
           items: [
             { text: 'Overview', link: '/why' },
             { text: 'Installation', link: '/installation' },
+            { text: 'Configuration', link: '/configuration' },
             { text: 'Quickstart', link: '/getting-started' },
           ],
         },

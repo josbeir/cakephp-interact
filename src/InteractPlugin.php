@@ -15,7 +15,6 @@ use Cake\Event\EventManagerInterface;
 use Cake\Http\MiddlewareQueue;
 use Cake\Http\ServerRequest;
 use Cake\Routing\RouteBuilder;
-use Cake\Utility\Security;
 use Interact\Discovery\Registry;
 use Interact\Http\FailureResponder;
 use Interact\Http\UpdateErrorListener;
@@ -70,6 +69,10 @@ class InteractPlugin extends BasePlugin
      */
     public function services(ContainerInterface $container): void
     {
+        if (!$container->hasDefinition(Configuration::class)) {
+            $container->addShared(Configuration::class, Configuration::read(...));
+        }
+
         if (!$container->hasDefinition(FailureResponder::class)) {
             $container->addShared(FailureResponder::class);
         }
@@ -100,14 +103,14 @@ class InteractPlugin extends BasePlugin
         if (!$container->hasDefinition(SnapshotCodec::class)) {
             $container->addShared(
                 SnapshotCodec::class,
-                static fn(): SnapshotCodec => new SnapshotCodec(Security::getSalt()),
+                static fn(): SnapshotCodec => $container->get(Configuration::class)->snapshots(),
             );
         }
 
         new UploadServices()->register($container);
         if (!$container->hasDefinition(Factory::class)) {
             $container->addShared(Factory::class)
-                ->addArguments([Registry::class, SnapshotCodec::class, UploadManager::class]);
+                ->addArguments([Registry::class, SnapshotCodec::class, UploadManager::class, Configuration::class]);
         }
     }
 

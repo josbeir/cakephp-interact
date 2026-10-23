@@ -16,7 +16,7 @@ class SnapshotChildren
     /**
      * Read verified but not yet schema-checked child records.
      *
-     * @return array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay: int}>}, values?: array<string, mixed>}>
+     * @return array<string, array{id: string, alias: string, props: array<string, mixed>, urlPrefix?: string, relation?: array{parentId: string, models: array<string, array{path: string, timing: string, delay?: int}>}, values?: array<string, mixed>}>
      */
     public function read(mixed $data): array
     {

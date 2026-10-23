@@ -9,8 +9,11 @@ export type PollBinding = {
 /**
  * Parse whole milliseconds or seconds without allowing overflowing browser timers.
  */
-export function pollBinding(modifiers: string[]): PollBinding {
-  let interval = 5000;
+export function pollBinding(
+  modifiers: string[],
+  defaultInterval = 5000,
+): PollBinding {
+  let interval = defaultInterval;
   let durationSeen = false;
   let visible = false;
   for (const modifier of modifiers) {

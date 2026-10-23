@@ -41,6 +41,8 @@ Include a revision when
 you intentionally want a fresh mount. Removing a child disposes it; showing it
 again creates a new instance.
 
+See [JavaScript configuration](/configuration#javascript-configuration) for shared timing defaults.
+
 ## Reactive props
 
 `#[Prop(reactive: true)]` lets an accepted parent render update a child input without
@@ -141,12 +143,12 @@ parent should synchronize automatically:
 ]) ?>
 ```
 
-| Timing   | Parent request                                          |
-| -------- | ------------------------------------------------------- |
-| `defer`  | Next explicit parent action or synchronization; default |
-| `live`   | Debounced value changes; `delay` defaults to 250 ms     |
-| `change` | Value changes, including accepted child PHP changes     |
-| `blur`   | Focus leaves the child island                           |
+| Timing   | Parent request                                                                    |
+| -------- | --------------------------------------------------------------------------------- |
+| `defer`  | Next explicit parent action or synchronization; default                           |
+| `live`   | Debounced value changes; `delay` uses the installation default (250 ms initially) |
+| `change` | Value changes, including accepted child PHP changes                               |
+| `blur`   | Focus leaves the child island                                                     |
 
 `live` accepts a whole-millisecond `delay` from 0 to 60,000. Child search fields
 can use their own synchronization timing independently. Equivalent propagated
