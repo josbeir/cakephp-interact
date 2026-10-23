@@ -60,6 +60,7 @@ export async function readResponse(
   result: Response,
   id: string,
   receive?: (message: unknown) => void,
+  terminal?: (status: number) => void,
 ): Promise<UpdateResponse> {
   if (
     result.type === 'opaqueredirect' ||
@@ -69,7 +70,7 @@ export async function readResponse(
   if (!result.ok && result.status !== 422) throw await readFailure(result);
   if (result.headers.get('content-type')?.includes('text/event-stream')) {
     if (!receive) throw requestError('invalid_response', result.status);
-    return readStream(result, id, receive);
+    return readStream(result, id, receive, terminal);
   }
   if (!result.headers.get('content-type')?.includes('application/json'))
     throw requestError('invalid_response', result.status);

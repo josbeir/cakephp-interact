@@ -162,6 +162,8 @@ Return PHP-only template variables for the current render. The
 The browser applies returned HTML while preserving newer drafts, focus, local
 Alpine state, and matching nested islands. Removing an island releases its
 browser resources. See [Requests and DOM updates](/reference/browser).
+Browser integrations can observe [request lifecycle events](/reference/request-lifecycle)
+without modifying request execution.
 
 A successful action redirect skips view data and rendering. [Renderless actions](/guide/actions#renderless-actions) also skip view data and rendering while returning accepted state and events. Validation errors force a render, and the next successful action renders again to clear that feedback. Downloads accompany an accepted rendered or renderless response. Both helpers are restricted to declared actions; see [redirects and downloads](/guide/redirects-and-downloads#action-lifecycle).
 

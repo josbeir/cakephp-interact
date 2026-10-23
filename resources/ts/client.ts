@@ -22,6 +22,8 @@ import { preserveSelection } from './dom/selection';
 import { RequestActivity } from './scheduling/request-activity';
 import { copyArguments } from './scheduling/targets';
 import { RequestQueue } from './scheduling/request-queue';
+import { RequestLifecycle } from './diagnostics/request-lifecycle';
+import type { RequestKind } from './diagnostics/types';
 import { Poller } from './scheduling/poller';
 import { changedWritable } from './state/drafts';
 import { clone, equal } from './state/values';
@@ -182,7 +184,7 @@ export class IslandClient {
       call: (action: string, ...args: Json[]) => this.request(action, args),
     });
     this.queue = new RequestQueue(
-      (invocation) => this.execute(invocation),
+      (invocation, lifecycle) => this.execute(invocation, lifecycle),
       (error) => this.failed(error),
       (requests) => this.requests.update(requests),
       (error) =>
@@ -393,7 +395,7 @@ export class IslandClient {
         );
       }
       if (this.mounted && this.urlTarget && !upload) {
-        await this.queue.enqueue({
+        await this.enqueueTask({
           action: null,
           args: [],
           urlRestore: this.urlTarget,
@@ -446,7 +448,7 @@ export class IslandClient {
     }
     this.bridge.error = null;
     this.activity.paused = false;
-    return this.queue.enqueue({
+    return this.enqueueTask({
       ...(navigationEpoch === undefined ? {} : { navigationEpoch }),
       ...(this.url ? { urlEpoch: this.url.epoch() } : {}),
       action,
@@ -458,7 +460,10 @@ export class IslandClient {
   /**
    * Submit the current draft and apply a verified response while the island still exists.
    */
-  private async execute(invocation: Invocation): Promise<void> {
+  private async execute(
+    invocation: Invocation,
+    lifecycle?: RequestLifecycle,
+  ): Promise<void> {
     const upload = invocation.upload;
     if (
       upload
@@ -530,6 +535,7 @@ export class IslandClient {
             }
           : {}),
       };
+      lifecycle?.sending(upload?.kind === 'stage' ? 'xhr' : 'fetch');
       const result =
         upload?.kind === 'stage'
           ? await this.uploader(
@@ -548,7 +554,15 @@ export class IslandClient {
             );
       if (upload?.kind === 'stage' && upload.signal.aborted)
         throw requestError('cancelled', null);
-      if (this.disposed) return;
+      if (this.disposed) {
+        lifecycle?.result('cancelled');
+        return;
+      }
+      lifecycle?.response(result.status);
+      if (this.disposed) {
+        lifecycle?.result('cancelled');
+        return;
+      }
       const streaming = result.headers
         .get('content-type')
         ?.includes('text/event-stream');
@@ -559,6 +573,7 @@ export class IslandClient {
           invocation.urlRestore)
       )
         throw requestError('invalid_response', result.status);
+      let acceptedStatus = result.status;
       const accepted = await readResponse(
         result,
         this.metadata.id,
@@ -566,9 +581,15 @@ export class IslandClient {
           if (!page || pageEpoch === page.epoch())
             this.bridge.receiveStream(message);
         },
+        (status) => {
+          acceptedStatus = status;
+        },
       );
-      if (this.disposed || (streaming && page && pageEpoch !== page.epoch()))
+      if (this.disposed || (streaming && page && pageEpoch !== page.epoch())) {
+        lifecycle?.result(this.disposed ? 'cancelled' : 'ignored');
         return;
+      }
+      lifecycle?.validated(acceptedStatus);
       if ('redirect' in accepted) {
         if (
           invocation.action === null ||
@@ -576,13 +597,22 @@ export class IslandClient {
           invocation.urlRestore
         )
           throw requestError('invalid_response', result.status);
-        if (page && pageEpoch !== page.epoch()) return;
+        if (page && pageEpoch !== page.epoch()) {
+          lifecycle?.result('ignored');
+          return;
+        }
+        lifecycle?.result('redirect');
         if (accepted.redirect.navigate) {
           const visit = await enhancedRedirect(accepted.redirect, () =>
             this.effects.navigate(accepted.redirect),
           );
-          if (visit === 'cancelled' || (visit === 'enhanced' && !this.disposed))
+          if (
+            visit === 'cancelled' ||
+            (visit === 'enhanced' && !this.disposed)
+          ) {
+            lifecycle?.result('ignored');
             return;
+          }
         } else this.effects.navigate(accepted.redirect);
         this.leaving = true;
         this.controls.clearPending();
@@ -618,6 +648,7 @@ export class IslandClient {
         if (this.parentTicket === parentTicket) this.parentTicket = undefined;
         else if (mounting && this.parentTicket && !this.bridge.paused)
           void this.bridge.sync();
+        lifecycle?.applied(accepted.html !== null);
       } catch (cause: unknown) {
         throw requestError('client_error', result.status, cause);
       }
@@ -746,16 +777,37 @@ export class IslandClient {
     if (this.bridge.paused && this.bridge.error?.recovery !== 'retry') return;
     this.bridge.error = null;
     this.activity.paused = false;
-    void this.queue
-      .enqueue({
-        action: null,
-        args: [],
-        urlRestore: target,
-        urlEpoch: target.epoch,
-      })
-      .catch(() => {
-        // The queue owns failure feedback. Keep the selected target available for explicit recovery.
-      });
+    void this.enqueueTask({
+      action: null,
+      args: [],
+      urlRestore: target,
+      urlEpoch: target.epoch,
+    }).catch(() => {
+      // The queue owns failure feedback. Keep the selected target available for explicit recovery.
+    });
+  }
+
+  /** Attach observations only when the queue accepts a distinct task. */
+  private enqueueTask(invocation: Invocation): Promise<void> {
+    return this.queue.enqueue(invocation, () => {
+      const kind: RequestKind = !this.mounted
+        ? 'initialize'
+        : invocation.upload
+          ? invocation.upload.kind === 'stage'
+            ? 'upload-stage'
+            : 'upload-remove'
+          : invocation.urlRestore
+            ? 'restore'
+            : invocation.action === null
+              ? 'sync'
+              : 'action';
+      return new RequestLifecycle(
+        this.root,
+        this.metadata.id,
+        kind,
+        invocation.action,
+      );
+    });
   }
 
   /**

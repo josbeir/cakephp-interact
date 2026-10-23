@@ -18,6 +18,9 @@ updates or renderless state updates. These rules are shared by actions, models, 
 
 ## Request queue
 
+Observe queueing, response application, timings, and completion through the
+[public request lifecycle events](/reference/request-lifecycle).
+
 One request executes at a time per island. Actions queue in order; pending
 synchronization coalesces. Different islands operate independently. Actions
 capture current controls, including edits not yet sent by blur or debounce.

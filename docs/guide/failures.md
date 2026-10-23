@@ -85,6 +85,10 @@ Inspect the [`RequestResult`](/reference/server#request-results) returned by
 the same failure fields and fires once per failed request, not for each blocked
 attempt. Removed islands do not emit new failure UI.
 
+[Request lifecycle diagnostics](/reference/request-lifecycle) provide request
+identities, execution stages, timings, and safe outcomes, including queued work
+cancelled before sending.
+
 ## Server integration
 
 Updates and deferred initialization require the mounting page path in signed
