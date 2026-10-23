@@ -304,6 +304,7 @@ class HttpTest extends HttpTestCase
         $this->assertContentType('application/json');
         $this->assertResponseNotContains('Fatal error');
         $this->assertResponseContains('csrf_failed');
+        $this->assertHeader('Interact', 'true');
     }
 
     public function testSearchUpdateDoesNotRerunTheControllerOrLayout(): void
@@ -331,6 +332,7 @@ class HttpTest extends HttpTestCase
         $mount = $this->mounted(1);
         $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['title' => ''], 'action' => 'save']);
         $this->assertResponseCode(422);
+        $this->assertHeader('Interact', 'true');
         $this->assertResponseContains('A title is required.');
         /** @var mixed $payload */
         $payload = json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR);

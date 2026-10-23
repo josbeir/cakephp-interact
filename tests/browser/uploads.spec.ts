@@ -17,7 +17,10 @@ async function choose(page: Page, name = 'notes.txt', field = 'Main document') {
     transfer(response.request()),
   );
   await page.getByLabel(field, { exact: true }).setInputFiles(file(name));
-  expect((await accepted).status()).toBe(200);
+  const response = await accepted;
+  expect(response.status()).toBe(200);
+  expect(response.headers()['interact']).toBe('true');
+  expect(response.request().headers()['interact']).toBe('true');
   await expect(
     page.getByRole('list', { name: `${field} files`, exact: true }),
   ).toContainText(name);

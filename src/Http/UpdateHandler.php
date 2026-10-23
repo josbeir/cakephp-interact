@@ -57,6 +57,7 @@ class UpdateHandler
 
             return $response->withStatus($result->errors === [] ? 200 : 422)
                 ->withType('application/json')
+                ->withHeader('Interact', 'true')
                 ->withHeader('Cache-Control', 'no-store')
                 ->withStringBody(json_encode($result->payload(), JSON_THROW_ON_ERROR | JSON_HEX_TAG));
         } catch (InvalidSnapshotException|InvalidArgumentException|HttpException $exception) {

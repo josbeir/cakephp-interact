@@ -172,6 +172,7 @@ class StreamingTest extends TestCase
         static::assertSame(['authorize'], StreamingIsland::lifecycle());
         static::assertStringContainsString('text/event-stream', $response->getHeaderLine('Content-Type'));
         static::assertSame('kept', $response->getHeaderLine('X-Application'));
+        static::assertSame('true', $response->getHeaderLine('Interact'));
         static::assertFalse($response->hasHeader('Content-Length'));
         StreamingIsland::$afterChunk = function (): void {
             static::assertFalse($this->context->request->getSession()->started());

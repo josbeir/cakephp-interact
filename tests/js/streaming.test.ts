@@ -98,6 +98,7 @@ it('shows chunks before completion, keeps the queue busy, and accepts the final 
   const first = client.bridge.call('generate');
   const second = client.bridge.call('retain');
   await vi.waitFor(() => expect(stream).toBeDefined());
+  expect(fetcher.mock.calls[0]?.[1].headers).toHaveProperty('Interact', 'true');
   stream?.enqueue(encoder.encode(frame(message('<script>literal</script> €'))));
   stream?.enqueue(
     encoder.encode(

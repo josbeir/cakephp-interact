@@ -131,7 +131,9 @@ class IslandTestTest extends TestCase
         static::assertSame(3, $probe->constructions);
         static::assertSame(3, $probe->renders);
         static::assertSame('GET', $probe->requests[0]->getMethod());
+        static::assertFalse($probe->requests[0]->hasHeader('Interact'));
         static::assertSame('POST', $probe->requests[1]->getMethod());
+        static::assertSame('true', $probe->requests[1]->getHeaderLine('Interact'));
         static::assertSame('/_interact/update', $probe->requests[1]->getUri()->getPath());
         static::assertSame('record', $probe->requests[1]->getData('action'));
         static::assertSame('application/json', $probe->requests[1]->getHeaderLine('Content-Type'));

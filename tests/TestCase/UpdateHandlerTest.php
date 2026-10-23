@@ -36,6 +36,7 @@ class UpdateHandlerTest extends TestCase
         )->mount('Counter', [], 'Counter', new IslandContext($request, 'admin', '/custom/update'));
         $response = new Response()->withHeader('X-Application', 'kept')
             ->withHeader('Content-Type', 'text/html')
+            ->withHeader('Interact', 'false')
             ->withHeader('Cache-Control', 'public');
         $result = $handler->handle($request->withParsedBody([
             'version' => 1,
@@ -44,12 +45,14 @@ class UpdateHandlerTest extends TestCase
             'args' => [1],
         ]), $response);
         static::assertSame(200, $result->getStatusCode());
+        static::assertSame('true', $result->getHeaderLine('Interact'));
         static::assertSame('kept', $result->getHeaderLine('X-Application'));
         static::assertSame('application/json', $result->getHeaderLine('Content-Type'));
         static::assertSame('no-store', $result->getHeaderLine('Cache-Control'));
         static::assertStringContainsString('"count":1', (string)$result->getBody());
         $failure = $handler->handle($request->withParsedBody(['version' => 2]), $response);
         static::assertSame(400, $failure->getStatusCode());
+        static::assertSame('true', $failure->getHeaderLine('Interact'));
         static::assertSame('kept', $failure->getHeaderLine('X-Application'));
         static::assertStringContainsString('invalid_request', (string)$failure->getBody());
     }

@@ -37,6 +37,7 @@ export async function postUpdate(
       cache: 'no-store',
       signal,
       headers: {
+        Interact: 'true',
         'Content-Type': 'application/json',
         Accept: 'application/json, text/event-stream',
         'X-CSRF-Token': metadata.csrf,

@@ -17,6 +17,7 @@ class UploadRequest {
   headers: Record<string, string> = {};
   data: FormData | undefined;
   contentType: string | null = 'application/json';
+  interact: string | null = 'true';
   onload: (() => void) | null = null;
   onerror: (() => void) | null = null;
   ontimeout: (() => void) | null = null;
@@ -39,8 +40,8 @@ class UploadRequest {
   setRequestHeader(name: string, value: string) {
     this.headers[name] = value;
   }
-  getResponseHeader() {
-    return this.contentType;
+  getResponseHeader(name: string) {
+    return name === 'Interact' ? this.interact : this.contentType;
   }
   send(data: FormData) {
     this.data = data;
@@ -77,6 +78,7 @@ it('sends multipart data with credentials and CSRF while forwarding known and un
   expect(request.withCredentials).toBe(true);
   expect(request.headers).toEqual({
     Accept: 'application/json',
+    Interact: 'true',
     'X-CSRF-Token': 'token',
   });
   expect(request.data?.get('payload')).toBe('{"version":1}');
@@ -85,7 +87,9 @@ it('sends multipart data with credentials and CSRF while forwarding known and un
   request.upload.onprogress?.({ lengthComputable: false, total: 0, loaded: 2 });
   expect(value.progress.mock.calls).toEqual([[50], [null]]);
   request.onload?.();
-  expect((await value.promise).status).toBe(200);
+  const response = await value.promise;
+  expect(response.status).toBe(200);
+  expect(response.headers.get('Interact')).toBe('true');
   expect(request.onload).toBeNull();
 });
 
@@ -143,6 +147,9 @@ it('settles construction errors and permits empty-body HTTP statuses for normal 
   if (!value.request) throw new Error('Missing XHR');
   value.request.status = 204;
   value.request.contentType = null;
+  value.request.interact = null;
   value.request.onload?.();
-  expect((await value.promise).status).toBe(204);
+  const response = await value.promise;
+  expect(response.status).toBe(204);
+  expect(response.headers.has('Interact')).toBe(false);
 });

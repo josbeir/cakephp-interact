@@ -55,6 +55,9 @@ test('finishes a normal streaming action with authoritative text and element mar
   page,
 }) => {
   await page.goto('/streaming');
+  const response = page.waitForResponse((response) =>
+    response.url().endsWith('/_interact/update'),
+  );
   const partial = page.evaluate(
     () =>
       new Promise<{ text: string; busy: boolean; rows: number }>((resolve) => {
@@ -79,6 +82,10 @@ test('finishes a normal streaming action with authoritative text and element mar
       }),
   );
   await page.getByRole('button', { name: 'Generate report' }).click();
+  const stream = await response;
+  expect(stream.headers()['content-type']).toContain('text/event-stream');
+  expect(stream.headers()['interact']).toBe('true');
+  expect(stream.request().headers()['interact']).toBe('true');
   const first = await partial;
   expect(first.text).toContain('CakePHP templates');
   expect(first.text).not.toContain('Signed final state');

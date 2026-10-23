@@ -53,6 +53,7 @@ it('routes page directives outside islands through the installer and refreshes a
   input.dispatchEvent(new Event('input', { bubbles: true }));
   link.click();
   await vi.waitFor(() => expect(document.title).toBe('Second page'));
+  expect(fetcher.mock.calls[0]?.[1].headers).not.toHaveProperty('Interact');
   expect(document.querySelector('[data-interact-id]')).toBe(root);
   expect(document.querySelector('input')).toBe(input);
   expect(input.value).toBe('unsent draft');

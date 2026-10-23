@@ -329,6 +329,7 @@ class IslandTest
             ->withMethod('POST')
             ->withUri($this->context->request->getUri()->withPath($target->getPath())->withQuery($target->getQuery()))
             ->withHeader('Content-Type', 'application/json')
+            ->withHeader('Interact', 'true')
             ->withHeader('Accept', 'application/json')
             ->withParsedBody($payload);
         $context = new IslandContext($request, $this->context->scope, $this->context->endpoint);

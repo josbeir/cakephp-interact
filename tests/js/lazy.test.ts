@@ -128,6 +128,7 @@ it('loads once on explicit sync and immediately enables real models and actions'
     action: null,
     args: [],
   });
+  expect(fetch.mock.calls[0]?.[1].headers).toHaveProperty('Interact', 'true');
   expect(client.bridge.state).toEqual({ query: '', count: 4 });
   expect(element.querySelector('input')?.value).toBe('');
   expect(await client.bridge.call('increment')).toEqual({ ok: true });

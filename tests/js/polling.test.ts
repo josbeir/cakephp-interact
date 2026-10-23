@@ -92,7 +92,10 @@ describe('polling through the Alpine bridge', () => {
     await vi.advanceTimersByTimeAsync(1);
     expect(fetcher).toHaveBeenCalledOnce();
     const options = fetcher.mock.calls[0]?.[1];
-    expect(options?.headers).toMatchObject({ 'X-CSRF-Token': 'csrf' });
+    expect(options?.headers).toMatchObject({
+      Interact: 'true',
+      'X-CSRF-Token': 'csrf',
+    });
     expect(options?.credentials).toBe('same-origin');
     expect(options?.body).toBe(
       JSON.stringify({

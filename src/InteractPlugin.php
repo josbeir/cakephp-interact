@@ -13,6 +13,7 @@ use Cake\Error\ExceptionTrap;
 use Cake\Event\EventInterface;
 use Cake\Event\EventManagerInterface;
 use Cake\Http\MiddlewareQueue;
+use Cake\Http\ServerRequest;
 use Cake\Routing\RouteBuilder;
 use Cake\Utility\Security;
 use Interact\Discovery\Registry;
@@ -41,10 +42,12 @@ class InteractPlugin extends BasePlugin
     protected ?Factory $factory = null;
 
     /**
-     * Attach application rendering services without scanning island classes.
+     * Register request identification and attach rendering services without scanning island classes.
      */
     public function bootstrap(PluginApplicationInterface $app): void
     {
+        ServerRequest::addDetector('interact', ['header' => ['Interact' => 'true']]);
+
         if ($this->isEnabled('events') && $app instanceof ContainerApplicationInterface) {
             $factory = $app->getContainer()->get(Factory::class);
             assert($factory instanceof Factory, 'The configured collaborator must satisfy its declared contract.');

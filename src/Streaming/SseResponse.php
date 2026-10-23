@@ -54,6 +54,7 @@ class SseResponse
         });
 
         return $response->withStatus(200)
+            ->withHeader('Interact', 'true')
             ->withHeader('Content-Type', 'text/event-stream; charset=UTF-8')
             ->withHeader('Cache-Control', 'no-store')
             ->withHeader('X-Accel-Buffering', 'no')
