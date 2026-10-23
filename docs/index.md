@@ -19,16 +19,39 @@ hero:
     - theme: alt
       text: Explore the examples
       link: /examples
+features:
+  - title: PHP actions, native templates
+    details: Declare state and actions in PHP. Render updates with familiar CakePHP templates and elements.
+    link: /guide/islands
+    linkText: Build an island
+  - title: Reactive forms
+    details: Bind inputs to writable drafts and display CakePHP validation errors. Your application decides when to save.
+    link: /guide/forms
+    linkText: Work with forms
+  - title: Independent islands
+    details: Compose reusable islands that update independently while preserving nearby drafts and Alpine state.
+    link: /guide/nesting
+    linkText: Compose islands
+  - title: Search and URL state
+    details: Keep filters and pagination in the URL, with browser Back and Forward support.
+    link: /guide/url-state
+    linkText: Bind URL state
+  - title: Streaming and polling
+    details: Stream text, rendered elements, and progress events, or refresh an island on a timer.
+    link: /guide/streaming
+    linkText: Stream updates
+  - title: CakePHP security
+    details: Keep your application's CSRF protection, authorization, and middleware. Signed snapshots protect state integrity.
+    link: /security
+    linkText: Review security
 ---
 
 <span id="a-php-class-an-element-one-mount-call"></span>
 
 ## A PHP class, a template, one mount call
 
-An island owns a region of your page. A button calls its PHP action, and Interact
-updates that region with freshly rendered HTML.
-
-These three files work together after [installation](/installation):
+After [installation](/installation), declare a counter, add its template, and
+mount it in an existing view. Clicking the button updates only the island.
 
 ::: code-group
 
@@ -43,7 +66,7 @@ use Interact\Attribute\State;
 use Interact\Island;
 
 /**
- * Keeps a count for one region and changes it through a server action.
+ * Owns the displayed count and its increment action.
  *
  * Save as src/Island/CounterIsland.php.
  */
@@ -53,7 +76,7 @@ class CounterIsland extends Island
     public int $count = 0;
 
     /**
-     * Increase this island's count when its button is pressed.
+     * Increase the displayed count.
      */
     #[Action]
     public function increment(): void
@@ -81,34 +104,13 @@ declare(strict_types=1);
 >
     Add one
 </button>
-<p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
 ```php [Mount]
-<?php
-declare(strict_types=1);
-
-/**
- * templates/Articles/index.php
- *
- * @var \Cake\View\View $this
- */
-?>
-<h1>Articles</h1>
 <?= $this->Interact->render('Counter') ?>
 ```
 
 :::
 
-Use the same approach for [live search](/examples/search),
-[editable forms](/guide/forms), and [independent nested editors](/guide/nesting).
-CakePHP continues to own queries, validation, authorization, and saving.
-
-See [HTML directives](/directives/) and [`$server`](/reference/server) for syntax
-and options, or [Examples](/examples) for complete implementations.
-
-Interact is a development preview for **PHP 8.5 and CakePHP 6 development builds**.
-Install `dev-main` from [Packagist](https://packagist.org/packages/josbeir/cakephp-interact);
-there is no stable release yet.
-Start with [installation](/installation), or [run the included demo](/examples)
-to try the interactions before integrating it into an application.
+Development preview for **PHP 8.5 and CakePHP 6 development builds**. Install
+`dev-main` using the [installation guide](/installation).
