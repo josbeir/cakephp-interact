@@ -97,6 +97,15 @@ export class FormSubmissions {
     const forms = Array.from(
       this.root.querySelectorAll<HTMLFormElement>('form'),
     );
+    const submitters = Array.from(
+      this.root.querySelectorAll('button,input'),
+    ).filter(
+      (button): button is SubmitControl =>
+        (button instanceof HTMLButtonElement ||
+          button instanceof HTMLInputElement) &&
+        (button.type === 'submit' ||
+          (button instanceof HTMLInputElement && button.type === 'image')),
+    );
     for (const entry of this.submissions) {
       if (!this.owns(entry.form) && entry.key !== null) {
         const replacement = forms.find(
@@ -111,20 +120,8 @@ export class FormSubmissions {
       if (!entry.protected) entry.busy = entry.form.getAttribute('aria-busy');
       entry.protected = true;
       entry.form.setAttribute('aria-busy', 'true');
-      for (const button of this.root.querySelectorAll('button,input')) {
-        if (
-          !(
-            button instanceof HTMLButtonElement ||
-            button instanceof HTMLInputElement
-          ) ||
-          button.form !== entry.form ||
-          !this.owns(button) ||
-          !(
-            button.type === 'submit' ||
-            (button instanceof HTMLInputElement && button.type === 'image')
-          )
-        )
-          continue;
+      for (const button of submitters) {
+        if (button.form !== entry.form || !this.owns(button)) continue;
         if (!entry.buttons.has(button))
           entry.buttons.set(button, button.disabled);
         button.disabled = true;

@@ -58,10 +58,17 @@ export function clone(value: State): State {
 
 /**
  * Compare transport values while keeping missing values distinct from explicit null.
+ *
+ * Objects are traversed even at identical references so Alpine tracks nested edits.
  */
 export function equal(
   left: Json | undefined,
   right: Json | undefined,
 ): boolean {
+  if (
+    (left === null || typeof left !== 'object') &&
+    (right === null || typeof right !== 'object')
+  )
+    return left === right;
   return JSON.stringify(left) === JSON.stringify(right);
 }

@@ -180,6 +180,11 @@ describe('native submission protection', () => {
       () => otherPending,
     );
     expect(otherButton.disabled).toBe(true);
+    const discover = vi.spyOn(root, 'querySelectorAll');
+    guard.refresh();
+    expect(
+      discover.mock.calls.filter(([selector]) => selector === 'button,input'),
+    ).toHaveLength(1);
     done({ ok: true });
     await otherPending;
     expect(otherButton.disabled).toBe(false);
