@@ -169,6 +169,30 @@ describe('query codec', () => {
 });
 
 describe('page URL ownership and history', () => {
+  it('keeps URL lists detached from initial and later drafts when selecting owned state', async () => {
+    const coordinator = new UrlCoordinator(window);
+    const tags = ['initial'];
+    const registration = coordinator.register(
+      { tags: { name: 'tags', type: 'array', default: [], history: true } },
+      { tags, draft: { text: 'unrelated' } },
+      () => {},
+    );
+    tags.push('edited before initialization');
+    await Promise.resolve();
+    expect(location.search).toBe('?tags%5B0%5D=initial');
+    const push = vi.spyOn(history, 'pushState');
+    const accepted = ['accepted'];
+    registration.accept({ tags: accepted, draft: [] }, 0, false);
+    accepted.push('newer');
+    registration.accept({ tags: ['accepted', 'newer'] }, 0, false);
+    expect(push).toHaveBeenCalledTimes(2);
+    expect(location.search).toBe('?tags%5B0%5D=accepted&tags%5B1%5D=newer');
+    expect(() => registration.accept({}, 0, false)).toThrow(
+      'Invalid accepted URL state',
+    );
+    registration.dispose();
+  });
+
   it('canonicalizes once, preserves history state, and pushes only selected changes', async () => {
     history.replaceState(
       { application: 'keep' },

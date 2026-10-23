@@ -750,6 +750,41 @@ it('sends generated input tickets only to the preserved direct child after paren
   });
 });
 
+it('discovers child roots once while routing sibling tickets independently', async () => {
+  const { parent, child, parentRoot, childRoot, relationships } =
+    await fixture();
+  const siblingRoot = root(
+    'sibling',
+    { value: '', end: '', notes: '' },
+    {
+      value: { type: 'string', nullable: false },
+      end: { type: 'string', nullable: false },
+      notes: { type: 'string', nullable: false },
+    },
+  );
+  siblingRoot.dataset.interactRelation = childRoot.dataset.interactRelation;
+  parentRoot.append(siblingRoot);
+  const sibling = participant(siblingRoot, relationships);
+  await Promise.resolve();
+  const incoming = parentRoot.cloneNode(false);
+  if (!(incoming instanceof HTMLElement))
+    throw new Error('Missing replacement.');
+  const discover = vi.spyOn(parentRoot, 'querySelectorAll');
+  parent.client.composition?.accepted(incoming);
+  expect(discover).not.toHaveBeenCalled();
+  incoming.innerHTML =
+    '<div data-interact-preserve="child" data-interact-parent-inputs="first-ticket"></div><div data-interact-preserve="sibling" data-interact-parent-inputs="second-ticket"></div>';
+  parent.client.composition?.accepted(incoming);
+  expect(discover).toHaveBeenCalledExactlyOnceWith('[data-interact-id]');
+  await vi.waitFor(() => {
+    expect(child.requests).toHaveLength(1);
+    expect(sibling.requests).toHaveLength(1);
+  });
+  expect(child.requests[0]).toMatchObject({ parentInputs: 'first-ticket' });
+  expect(sibling.requests[0]).toMatchObject({ parentInputs: 'second-ticket' });
+  expect(parent.requests).toHaveLength(0);
+});
+
 it('sends accepted parent models with the input ticket in one coherent child update', async () => {
   const { parent, child } = await fixture({
     parentContent:
@@ -805,6 +840,11 @@ it('ignores missing targets, nested markers, and disposed children', async () =>
   incoming.innerHTML =
     '<div data-interact-preserve="absent" data-interact-parent-inputs="missing"></div><div data-interact-id="nested"><div data-interact-preserve="child" data-interact-parent-inputs="nested"></div></div><div data-interact-preserve="unregistered" data-interact-parent-inputs="orphan"></div><div data-interact-preserve="child" data-interact-parent-inputs=""></div>';
   parentRoot.append(root('unregistered', {}, {}));
+  const nested = root('nested', {}, {});
+  nested.append(root('child', {}, {}));
+  parentRoot.prepend(nested);
+  incoming.innerHTML +=
+    '<div data-interact-preserve="child" data-interact-parent-inputs="shadowed"></div>';
   parent.client.composition?.accepted(incoming);
   child.client.dispose();
   child.client.receiveParentInputs('ignored');

@@ -1,6 +1,6 @@
 import { navigation } from '../navigation/registry';
 import { clone, equal } from '../state/values';
-import type { State } from '../types';
+import type { Json, State } from '../types';
 import type { UrlFields, UrlRestoration } from './types';
 import { readQuery, writeQuery } from './codec';
 
@@ -85,7 +85,8 @@ export class UrlCoordinator {
       this.host.addEventListener('popstate', this.navigate);
     const owner: Owner = {
       fields,
-      accepted: accepted === undefined ? undefined : clone(accepted),
+      accepted:
+        accepted === undefined ? undefined : this.copy(fields, accepted),
       restore,
       failure,
       root,
@@ -133,7 +134,7 @@ export class UrlCoordinator {
     restoring: boolean,
   ): void {
     const previous = owner.accepted;
-    owner.accepted = clone(state);
+    owner.accepted = this.copy(owner.fields, state);
     if (this.suspended || epoch !== this.generation || !this.owners.has(owner))
       return;
     const url = new URL(this.host.location.href);
@@ -146,6 +147,16 @@ export class UrlCoordinator {
           field.history && !equal(previous[property], state[property]),
       );
     this.write(url, push);
+  }
+
+  /** Copy claimed properties only, keeping URL lists independent of mutable island drafts. */
+  protected copy(fields: UrlFields, state: State): State {
+    const entries: [string, Json][] = [];
+    for (const property of Object.keys(fields)) {
+      const value = state[property];
+      if (value !== undefined) entries.push([property, value]);
+    }
+    return clone(Object.fromEntries(entries));
   }
 
   /** Route native history and restoration failures through the owning island's feedback. */

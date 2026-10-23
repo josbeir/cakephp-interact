@@ -138,16 +138,24 @@ export class Relationships {
     replacement: HTMLElement,
   ): Map<IslandClient, string> {
     const inputs = new Map<IslandClient, string>();
-    for (const marker of replacement.querySelectorAll<HTMLElement>(
+    const markers = replacement.querySelectorAll<HTMLElement>(
       '[data-interact-parent-inputs]',
+    );
+    if (!markers.length) return inputs;
+    const children = new Map<string, HTMLElement>();
+    for (const root of parent.root.querySelectorAll<HTMLElement>(
+      '[data-interact-id]',
     )) {
+      const id = root.dataset.interactId;
+      // A later duplicate must not bypass the first match's ownership check.
+      if (id !== undefined && !children.has(id)) children.set(id, root);
+    }
+    for (const marker of markers) {
       if (marker.parentElement?.closest('[data-interact-id]') !== replacement)
         continue;
       const id = marker.dataset.interactPreserve;
       const ticket = marker.dataset.interactParentInputs;
-      const root = [
-        ...parent.root.querySelectorAll<HTMLElement>('[data-interact-id]'),
-      ].find((node) => node.dataset.interactId === id);
+      const root = id === undefined ? undefined : children.get(id);
       const child = root ? this.resolve(root) : undefined;
       if (
         child &&
