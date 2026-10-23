@@ -47,16 +47,21 @@ class DocumentationTest extends TestCase
         $this->previousPaths = Configure::read('App.paths.templates');
         $this->previousNamespace = (string)Configure::read('App.namespace');
         $this->uploadFixture = new UploadFixture();
+        $this->uploadFixture->configure();
+
         $this->examples = new DocumentationRuntime($this->uploadFixture->manager());
     }
 
     protected function tearDown(): void
     {
-        $this->uploadFixture->close();
-        TableRegistry::setTableLocator($this->previousLocator);
-        Configure::write('App.paths.templates', $this->previousPaths);
-        Configure::write('App.namespace', $this->previousNamespace);
-        parent::tearDown();
+        try {
+            $this->uploadFixture->close();
+        } finally {
+            TableRegistry::setTableLocator($this->previousLocator);
+            Configure::write('App.paths.templates', $this->previousPaths);
+            Configure::write('App.namespace', $this->previousNamespace);
+            parent::tearDown();
+        }
     }
 
     public function testDeferredCountUsesDeclaredDefaultPropsAndNativePlaceholderElements(): void
@@ -398,14 +403,8 @@ class DocumentationTest extends TestCase
 
     public function testSingleUploadRetainsValidationAndStoresAnAcceptedFile(): void
     {
-        $this->examples->connection->execute('INSERT INTO documents (id, filename) VALUES (?, ?)', [
-            random_int(100_000, 999_999),
-            'reserved',
-        ]);
-        $directory = TMP . 'example-documents/';
-        if (!is_dir($directory)) {
-            mkdir($directory, 0o700, true);
-        }
+        $directory = $this->uploadFixture->documentsDirectory;
+        mkdir($directory, 0o700, true);
 
         $mount = $this->examples->runtime->mount('DocumentUpload', [], 'upload', $this->examples->context);
         $invalid = $this->examples->runtime->update([
@@ -438,11 +437,7 @@ class DocumentationTest extends TestCase
             ->find()
             ->where(['filename' => 'document.txt'])
             ->firstOrFail();
-        $path = $directory . (string)$record->get('id') . '.upload';
-        try {
-            static::assertSame('documentation file', file_get_contents($path));
-        } finally {
-            unlink($path);
-        }
+        $path = $directory . '/' . (string)$record->get('id') . '.upload';
+        static::assertSame('documentation file', file_get_contents($path));
     }
 }

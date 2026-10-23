@@ -14,7 +14,8 @@ application locations.
 Create the `documents` table using the schema tab and a writable private
 `TMP . 'example-documents/'` directory (usually `tmp/example-documents/`). This
 sample output directory is separate from Interact's staging directory. Choose
-your application's persistent storage location for production.
+your application's persistent storage location for production through the
+application's `Documents.directory` CakePHP configuration setting.
 
 `document` is a transient validation field, not a database column. The example
 uses a generic entity; an existing Document entity must allow the supplied fields.

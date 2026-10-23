@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Test\TestCase;
 
 use Cake\I18n\DateTime;
+use Cake\Utility\Fs\Finder;
 use Interact\Test\TestSuite\HttpTestCase;
 use Laminas\Diactoros\Stream;
 use Laminas\Diactoros\UploadedFile;
@@ -72,6 +73,14 @@ class UploadHttpTest extends HttpTestCase
         ]);
         $this->assertResponseOk();
         $this->assertResponseContains('Saved 1 file(s)');
+        $saved = iterator_to_array(
+            new Finder()->in($this->uploadFixture->documentsDirectory)
+                ->recursive(false)
+                ->files(),
+            false,
+        );
+        static::assertCount(1, $saved);
+        static::assertSame('a plain text document', file_get_contents($saved[0]->getPathname()));
         static::assertMatchesRegularExpression(
             '/"document":\{"multiple":false,"maxSize":\d+,"maxFiles":1,"files":\[\]\}/',
             (string)$this->response?->getBody(),

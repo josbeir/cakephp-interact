@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Island;
 
+use Cake\Core\Configure;
 use Cake\Datasource\EntityInterface;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Action;
@@ -44,7 +45,8 @@ class DocumentUploadIsland extends Island
             return;
         }
 
-        $this->document?->moveTo(TMP . 'example-documents/' . (string)$this->record->get('id') . '.upload');
+        $directory = (string)Configure::read('Documents.directory', TMP . 'example-documents');
+        $this->document?->moveTo($directory . '/' . (string)$this->record->get('id') . '.upload');
         $this->document = null;
     }
 

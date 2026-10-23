@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace TestApp\Form;
 
+use Cake\Core\Configure;
 use Cake\Form\Form;
 use Cake\Form\Schema;
 use Cake\Validation\Validation;
@@ -66,7 +67,7 @@ class DocumentForm extends Form
      */
     protected function process(array $data): bool
     {
-        $directory = TMP . 'demo-documents';
+        $directory = (string)Configure::read('Documents.directory', TMP . 'demo-documents');
         if (!is_dir($directory) && !mkdir($directory, 0o700, true)) {
             throw new RuntimeException('Cannot create demo document storage.');
         }

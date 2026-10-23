@@ -25,7 +25,9 @@ class UploadFixtureTest extends TestCase
         $first = new UploadFixture();
         $second = new UploadFixture();
         static::assertNotSame($first->directory, $second->directory);
+        static::assertNotSame($first->documentsDirectory, $second->documentsDirectory);
         static::assertDirectoryDoesNotExist($first->directory);
+        static::assertDirectoryDoesNotExist($first->documentsDirectory);
         static::assertDirectoryDoesNotExist($second->directory);
         $stream = new Stream('php://temp', 'w+');
         $stream->write('draft');
@@ -52,6 +54,7 @@ class UploadFixtureTest extends TestCase
         DateTime::setTestNow($initial);
         Configure::write('Interact.uploads', ['maxFiles' => 3, 'directory' => TMP . 'unrelated-uploads']);
         Configure::write('Interact.snapshots.ttl', 42);
+        Configure::write('Documents', ['directory' => TMP . 'unrelated-documents', 'policy' => 'private']);
         $fixture = new UploadFixture();
         $outside = new UploadFixture();
         try {
@@ -62,6 +65,9 @@ class UploadFixtureTest extends TestCase
                 $fixture->configure();
                 static::assertSame(3, Configure::read('Interact.uploads.maxFiles'));
                 static::assertSame($fixture->directory, Configure::read('Interact.uploads.directory'));
+                static::assertSame($fixture->documentsDirectory, Configure::read('Documents.directory'));
+                mkdir($fixture->documentsDirectory, 0o700, true);
+                file_put_contents($fixture->documentsDirectory . '/saved.upload', 'saved');
                 mkdir($fixture->directory . '/.hidden/nested', 0o700, true);
                 file_put_contents($fixture->directory . '/.hidden/nested/.lock', 'lock');
                 symlink($outside->directory, $fixture->directory . '/linked');
@@ -75,12 +81,17 @@ class UploadFixtureTest extends TestCase
             }
 
             static::assertDirectoryDoesNotExist($fixture->directory);
+            static::assertDirectoryDoesNotExist($fixture->documentsDirectory);
             static::assertSame('unrelated', file_get_contents($outside->directory . '/keep.txt'));
             static::assertSame(
                 ['maxFiles' => 3, 'directory' => TMP . 'unrelated-uploads'],
                 Configure::read('Interact.uploads'),
             );
             static::assertSame(42, Configure::read('Interact.snapshots.ttl'));
+            static::assertSame(
+                ['directory' => TMP . 'unrelated-documents', 'policy' => 'private'],
+                Configure::read('Documents'),
+            );
             static::assertSame($initial, DateTime::getTestNow());
             $fixture->close();
         } finally {
@@ -92,15 +103,20 @@ class UploadFixtureTest extends TestCase
     public function testCleanupRestoresAnAbsentConfigurationGroup(): void
     {
         Configure::delete('Interact.uploads');
+        Configure::delete('Documents');
         $fixture = new UploadFixture();
         try {
             $fixture->configure();
             static::assertSame($fixture->directory, Configure::read('Interact.uploads.directory'));
+            mkdir($fixture->documentsDirectory, 0o700, true);
+            file_put_contents($fixture->documentsDirectory . '/saved.upload', 'saved without staged files');
         } finally {
             $fixture->close();
         }
 
         static::assertNull(Configure::read('Interact.uploads'));
+        static::assertNull(Configure::read('Documents'));
+        static::assertDirectoryDoesNotExist($fixture->documentsDirectory);
         $fixture->close();
     }
 }

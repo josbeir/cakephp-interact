@@ -13,18 +13,22 @@ use Interact\Upload\UploadConfig;
 use Interact\Upload\UploadManager;
 
 /**
- * Owns one test's private upload directory and optional application configuration scope.
+ * Owns one test's staging and saved-document directories and optional configuration scope.
  *
- * The directory is created by storage only, so authorization tests can assert that
+ * Staging is created by storage only, so authorization tests can assert that
  * no staging occurred. Cleanup never traverses symlinks or removes shared uploads.
  */
 class UploadFixture
 {
     public readonly string $directory;
 
+    public readonly string $documentsDirectory;
+
     protected readonly ?Chronos $clock;
 
     protected mixed $previousConfiguration = null;
+
+    protected mixed $previousDocuments = null;
 
     protected bool $configured = false;
 
@@ -34,20 +38,23 @@ class UploadFixture
     public function __construct()
     {
         $this->directory = Path::join(TMP, 'upload-test-' . bin2hex(random_bytes(8)));
+        $this->documentsDirectory = $this->directory . '-documents';
         $this->clock = DateTime::getTestNow();
     }
 
     /**
-     * Point newly constructed application services at this fixture, preserving other limits.
+     * Isolate staging and application-saved documents while preserving other settings.
      */
     public function configure(): void
     {
         if (!$this->configured) {
             $this->previousConfiguration = Configure::read('Interact.uploads');
+            $this->previousDocuments = Configure::read('Documents');
             $this->configured = true;
         }
 
         Configure::write('Interact.uploads.directory', $this->directory);
+        Configure::write('Documents.directory', $this->documentsDirectory);
     }
 
     /**
@@ -68,13 +75,22 @@ class UploadFixture
     public function close(): void
     {
         try {
-            $this->remove($this->directory);
+            try {
+                $this->remove($this->directory);
+            } finally {
+                $this->remove($this->documentsDirectory);
+            }
         } finally {
             DateTime::setTestNow($this->clock);
             if ($this->configured) {
                 Configure::delete('Interact.uploads');
                 if ($this->previousConfiguration !== null) {
                     Configure::write('Interact.uploads', $this->previousConfiguration);
+                }
+
+                Configure::delete('Documents');
+                if ($this->previousDocuments !== null) {
+                    Configure::write('Documents', $this->previousDocuments);
                 }
 
                 $this->configured = false;
