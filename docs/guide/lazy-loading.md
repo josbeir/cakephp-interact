@@ -91,11 +91,11 @@ Custom placeholders own their presentation and should show
 
 ## Lifecycle and authorization
 
-The initial request validates props, initializes declared URL input, and calls
+The initial request calls `initialize()`, validates props, initializes declared URL input, and calls
 `authorize()` before rendering a placeholder. Loading constructs a fresh instance,
-assigns the signed props, initializes current URL input, authorizes again, and
+calls `initialize()`, assigns the signed props, initializes current URL input, authorizes again, and
 then runs `mount()` and rendering. Put expensive initialization in `mount()` or
-`viewData()`, rather than constructors.
+`viewData()`, rather than constructors or `initialize()`.
 
 Pending tickets use the same session, scope, and expiry protections as snapshots.
 They allow initialization only; they cannot execute actions, state edits, or

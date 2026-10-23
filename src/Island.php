@@ -17,8 +17,8 @@ use Psr\Http\Message\UriInterface;
 /**
  * Owns the application behavior and response feedback for one interactive region.
  *
- * The runtime constructs a fresh instance on every request. Override authorize(),
- * mount(), updated(), and viewData() at their documented lifecycle points; expose
+ * The runtime constructs a fresh instance on every request. Override initialize(),
+ * authorize(), mount(), updated(), and viewData() at their documented lifecycle points; expose
  * browser actions explicitly. Injected services never become snapshot state.
  */
 abstract class Island
@@ -150,7 +150,17 @@ abstract class Island
     }
 
     /**
-     * Authorize initial mounts and updates before application hooks and rendering.
+     * Configure request-local dependencies after construction, before props, state, and authorization.
+     *
+     * Runs once per runtime-created instance, including loading placeholders. Keep
+     * resource access and draft initialization in the authorized lifecycle hooks.
+     */
+    public function initialize(): void
+    {
+    }
+
+    /**
+     * Authorize initial mounts and updates before application behavior and rendering.
      */
     public function authorize(IslandContext $context): void
     {
