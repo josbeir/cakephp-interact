@@ -80,13 +80,13 @@ class UploadFieldLimitsTest extends UploadStorageTestCase
             static::fail('The actual byte count must respect the field ceiling.');
         } catch (UploadRejected) {
             static::assertNotNull($storage->find($accepted->id, $owner));
-            static::assertCount(1, iterator_to_array(
+            static::assertCount(
+                1,
                 new Finder()->in(Path::join($this->directory, $owner->sessionKey()))
                     ->recursive(false)
                     ->name('*.bin')
                     ->all(),
-                false,
-            ));
+            );
         }
     }
 
@@ -103,13 +103,13 @@ class UploadFieldLimitsTest extends UploadStorageTestCase
         } catch (UploadRejected) {
             static::assertNotNull($storage->find($first->id, $owner));
             static::assertNotNull($storage->find($otherFile->id, $other));
-            static::assertCount(2, iterator_to_array(
+            static::assertCount(
+                2,
                 new Finder()->in(Path::join($this->directory, $owner->sessionKey()))
                     ->recursive(false)
                     ->name('*.bin')
                     ->all(),
-                false,
-            ));
+            );
         }
     }
 

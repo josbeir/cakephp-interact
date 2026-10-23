@@ -90,13 +90,13 @@ class UploadStorageTest extends UploadStorageTestCase
                 static::fail('The configured capacity must reject a second file.');
             } catch (UploadRejected) {
                 static::assertNotNull($storage->find($first->id, $owner));
-                static::assertCount(1, iterator_to_array(
+                static::assertCount(
+                    1,
                     new Finder()->in(Path::join($this->directory, $owner->sessionKey()))
                         ->recursive(false)
                         ->name('*.bin')
                         ->all(),
-                    false,
-                ));
+                );
             }
         }
     }
