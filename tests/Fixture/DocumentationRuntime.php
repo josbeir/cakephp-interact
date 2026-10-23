@@ -45,7 +45,7 @@ class DocumentationRuntime
     /**
      * Configure public examples, deterministic rows, signing, and PHP template rendering.
      */
-    public function __construct()
+    public function __construct(?UploadManager $uploads = null)
     {
         $this->connection = new Connection(['driver' => Sqlite::class, 'database' => ':memory:']);
         $sources = [
@@ -100,7 +100,7 @@ class DocumentationRuntime
         $request = new ServerRequest(['session' => $session, 'url' => '/documentation-example']);
         $this->context = new IslandContext($request->withAttribute('csrfToken', 'docs-csrf'), 'docs', '/docs-update');
         $config = new UploadConfig(['directory' => TMP . 'documentation-uploads']);
-        $uploads = new UploadManager(new LocalUploadStorage($config), $config);
+        $uploads ??= new UploadManager(new LocalUploadStorage($config), $config);
         $factory = new Factory($registry, new SnapshotCodec(str_repeat('d', 32)), $uploads);
         $this->runtime = $factory->create(new TemplateView($request), $this->context);
     }

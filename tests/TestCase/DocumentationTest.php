@@ -16,6 +16,7 @@ use Interact\Runtime\Factory;
 use Interact\Runtime\RedirectResult;
 use Interact\Security\SnapshotCodec;
 use Interact\Test\Fixture\DocumentationRuntime;
+use Interact\Test\TestSuite\UploadFixture;
 use Interact\View\TemplateView;
 use Laminas\Diactoros\Stream;
 use Laminas\Diactoros\UploadedFile;
@@ -37,17 +38,21 @@ class DocumentationTest extends TestCase
 
     protected DocumentationRuntime $examples;
 
+    protected UploadFixture $uploadFixture;
+
     protected function setUp(): void
     {
         parent::setUp();
         $this->previousLocator = TableRegistry::getTableLocator();
         $this->previousPaths = Configure::read('App.paths.templates');
         $this->previousNamespace = (string)Configure::read('App.namespace');
-        $this->examples = new DocumentationRuntime();
+        $this->uploadFixture = new UploadFixture();
+        $this->examples = new DocumentationRuntime($this->uploadFixture->manager());
     }
 
     protected function tearDown(): void
     {
+        $this->uploadFixture->close();
         TableRegistry::setTableLocator($this->previousLocator);
         Configure::write('App.paths.templates', $this->previousPaths);
         Configure::write('App.namespace', $this->previousNamespace);

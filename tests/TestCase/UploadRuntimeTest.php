@@ -12,22 +12,17 @@ use Interact\Runtime\Runtime;
 use Interact\Security\SnapshotCodec;
 use Interact\Test\Fixture\CallbackRenderer;
 use Interact\Test\Fixture\ProtectedUploadIsland;
-use Interact\Upload\LocalUploadStorage;
-use Interact\Upload\UploadConfig;
-use Interact\Upload\UploadManager;
+use Interact\Test\TestSuite\UploadStorageTestCase;
 use Laminas\Diactoros\Stream;
 use Laminas\Diactoros\UploadedFile;
-use PHPUnit\Framework\TestCase;
 
 /**
  * Checks upload authorization before storing bytes and before invoking application actions.
  */
-class UploadRuntimeTest extends TestCase
+class UploadRuntimeTest extends UploadStorageTestCase
 {
     public function testRevokedPermissionRejectsTransfersBeforePrivateStorageIsCreated(): void
     {
-        $directory = TMP . 'unauthorized-upload-' . bin2hex(random_bytes(8));
-        $config = new UploadConfig(['directory' => $directory]);
         $registry = new Registry();
         $registry->register(ProtectedUploadIsland::class);
 
@@ -35,7 +30,7 @@ class UploadRuntimeTest extends TestCase
             $registry,
             new SnapshotCodec(str_repeat('k', 32)),
             new CallbackRenderer(static fn(): string => ''),
-            uploads: new UploadManager(new LocalUploadStorage($config), $config),
+            uploads: $this->uploadFixture->manager(),
         );
         $session = new Session(['defaults' => 'php', 'ini' => ['session.use_cookies' => 0]]);
         $request = new ServerRequest(['session' => $session]);
@@ -57,7 +52,7 @@ class UploadRuntimeTest extends TestCase
             );
             static::fail('Revoked access must reject the transfer.');
         } catch (ForbiddenException) {
-            static::assertDirectoryDoesNotExist($directory);
+            static::assertDirectoryDoesNotExist($this->directory);
         }
 
         $this->expectException(ForbiddenException::class);

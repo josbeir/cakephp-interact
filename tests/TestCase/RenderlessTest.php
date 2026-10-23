@@ -15,18 +15,18 @@ use Interact\Test\Fixture\CallbackRenderer;
 use Interact\Test\Fixture\CounterIsland;
 use Interact\Test\Fixture\RenderlessIsland;
 use Interact\Test\Fixture\RuntimeReference;
+use Interact\Test\TestSuite\UploadStorageTestCase;
 use InvalidArgumentException;
 use Laminas\Diactoros\Stream;
 use Laminas\Diactoros\UploadedFile;
 use LogicException;
-use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
 /**
  * Verifies renderless updates retain signed state and child ownership without evaluating views.
  * Validation, authorization, and response effects run through the real runtime.
  */
-class RenderlessTest extends TestCase
+class RenderlessTest extends UploadStorageTestCase
 {
     protected Runtime $runtime;
 
@@ -39,6 +39,7 @@ class RenderlessTest extends TestCase
      */
     protected function setUp(): void
     {
+        parent::setUp();
         RenderlessIsland::$views = 0;
         RenderlessIsland::$allowed = true;
         $this->context = new IslandContext(
@@ -54,15 +55,18 @@ class RenderlessTest extends TestCase
 
         $this->codec = new SnapshotCodec(str_repeat('k', 32));
         $reference = new RuntimeReference();
-        $this->runtime = new Runtime($registry, $this->codec, new CallbackRenderer(function ($definition) use (
-            $reference,
-        ): string {
-            if ($definition->declaration->name === 'Renderless') {
-                return $reference->runtime->mount('Counter', ['recordId' => 7], 'child', $this->context)->html;
-            }
+        $this->runtime = new Runtime(
+            $registry,
+            $this->codec,
+            new CallbackRenderer(function ($definition) use ($reference): string {
+                if ($definition->declaration->name === 'Renderless') {
+                    return $reference->runtime->mount('Counter', ['recordId' => 7], 'child', $this->context)->html;
+                }
 
-            return '<p>Child</p>';
-        }));
+                return '<p>Child</p>';
+            }),
+            uploads: $this->uploadFixture->manager(),
+        );
         $reference->runtime = $this->runtime;
     }
 
