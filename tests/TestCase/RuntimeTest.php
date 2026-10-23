@@ -83,17 +83,27 @@ class RuntimeTest extends TestCase
         $initial = $runtime->mount('Counter', ['recordId' => 7], 'first', $context);
         $updated = $runtime->update([
             'snapshot' => $initial->snapshot,
-            'updates' => ['form.title' => '', 'form.tags.0' => 'a', 'amount' => 0, 'enabled' => true],
+            'updates' => [
+                'form.title' => '',
+                'form.tags.0' => 'a',
+                'form.address.city' => 'Ghent',
+                'amount' => 0,
+                'enabled' => true,
+            ],
         ], $context);
-        static::assertSame(['title' => '', 'tags' => ['a']], $updated->state['form']);
+        static::assertSame(
+            ['title' => '', 'tags' => ['a'], 'address' => ['city' => 'Ghent']],
+            $updated->state['form'],
+        );
         static::assertSame(0.0, $updated->state['amount']);
         static::assertTrue($updated->state['enabled']);
         $again = $runtime->update([
             'snapshot' => $updated->snapshot,
-            'updates' => ['amount' => null, 'enabled' => false],
+            'updates' => ['amount' => null, 'enabled' => false, 'form.address' => null],
         ], $context);
         static::assertNull($again->state['amount']);
         static::assertFalse($again->state['enabled']);
+        static::assertSame(['title' => '', 'tags' => ['a'], 'address' => null], $again->state['form']);
     }
 
     public function testValidationSuppressesSuccessEvents(): void
@@ -143,6 +153,7 @@ class RuntimeTest extends TestCase
         yield 'unknown property' => [['unknown' => 0], null, []];
         yield 'nested scalar' => [['count.child' => 1], null, []];
         yield 'traverse scalar' => [['form.title.child' => 1], null, []];
+        yield 'traverse explicit null' => [['form.address' => null, 'form.address.city' => 'Ghent'], null, []];
         yield 'invalid path' => [['form..title' => 'x'], null, []];
         yield 'prototype path' => [['form.__proto__.x' => 1], null, []];
         yield 'prototype value' => [['form' => ['constructor' => []]], null, []];

@@ -5,6 +5,7 @@ namespace Interact\Upload;
 
 use Cake\Container\ContainerInterface;
 use Cake\Core\Configure;
+use InvalidArgumentException;
 
 /**
  * Registers upload collaborators while respecting application replacements.
@@ -20,7 +21,9 @@ class UploadServices
             $container->addShared(UploadConfig::class, static function (): UploadConfig {
                 /** @var mixed $options */
                 $options = Configure::read('Interact.uploads', []);
-                assert(is_array($options), 'Upload configuration must be an array.');
+                if (!is_array($options)) {
+                    throw new InvalidArgumentException('Upload configuration must be an array.');
+                }
 
                 return new UploadConfig($options);
             });

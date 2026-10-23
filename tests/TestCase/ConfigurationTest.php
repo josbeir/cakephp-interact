@@ -21,6 +21,7 @@ use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotCodec;
 use Interact\Test\Fixture\ConfigurationView;
 use Interact\Test\Fixture\Island\ConfigurationIsland;
+use Interact\Upload\UploadConfig;
 use Interact\Upload\UploadServices;
 use Interact\View\Helper\InteractHelper;
 use Interact\View\IslandView;
@@ -141,6 +142,16 @@ class ConfigurationTest extends TestCase
         Configure::write('Interact', false);
         $this->expectException(InvalidArgumentException::class);
         Configuration::read();
+    }
+
+    public function testInvalidUploadConfigurationIsRejectedAtServiceConstruction(): void
+    {
+        Configure::write('Interact.uploads', false);
+        $container = new Container();
+        new UploadServices()->register($container);
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Upload configuration must be an array.');
+        $container->get(UploadConfig::class);
     }
 
     public function testDisabledAssetsAndExistingHelperOptOutPreserveDocumentMetadata(): void
