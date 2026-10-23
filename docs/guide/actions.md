@@ -182,3 +182,10 @@ A failed connection can occur after an operation completed. See
 operations.
 
 Actions can also [redirect](/guide/redirects-and-downloads) or request a [download](/guide/redirects-and-downloads#downloads) through PHP helpers. The template still uses `$server.call()`.
+
+## Streaming actions
+
+`#[Action(stream: true)]` enables `stream()`, `streamElement()`, and
+`streamEvent()` during execution. Call it through the same `$server.call()` API.
+Combine it with `render: false` to retain incremental output without a final morph.
+See [Streaming](/guide/streaming) for targets, completion, and deployment requirements.

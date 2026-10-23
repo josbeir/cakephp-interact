@@ -91,6 +91,41 @@ abstract class Island
     }
 
     /**
+     * Append text to a named display target during a declared streaming action.
+     *
+     * @throws LogicException Outside an active streaming action.
+     * @throws InvalidArgumentException For an invalid target name.
+     */
+    public function stream(string $to, string $content, bool $replace = false): void
+    {
+        $this->actionEffects()->stream()->text($to, $content, $replace);
+    }
+
+    /**
+     * Stream an application-owned native element to an explicit HTML display target.
+     *
+     * @param array<string, mixed> $data Explicit element variables; escape application values in the element.
+     * @throws LogicException Outside an active streaming action or without a native element renderer.
+     * @throws InvalidArgumentException For an invalid target name.
+     */
+    public function streamElement(string $to, string $element, array $data = [], bool $replace = false): void
+    {
+        $this->actionEffects()->stream()->element($to, $element, $data, $replace);
+    }
+
+    /**
+     * Emit immediate JSON-compatible progress data through the interact:stream browser event.
+     *
+     * @param array<string, mixed> $detail Browser-visible progress data, never signed state.
+     * @throws LogicException Outside an active streaming action.
+     * @throws InvalidArgumentException For an invalid name or non-JSON progress record.
+     */
+    public function streamEvent(string $name, array $detail = []): void
+    {
+        $this->actionEffects()->stream()->event($name, $detail);
+    }
+
+    /**
      * Request full-page navigation after a successful action without terminating PHP execution.
      *
      * @param array<array-key, mixed>|string|UriInterface $url CakePHP route or HTTP(S) URL.

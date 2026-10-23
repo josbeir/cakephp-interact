@@ -6,11 +6,10 @@ namespace Interact\Http;
 use Cake\Http\Exception\HttpException;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
-use Interact\IslandContext;
 use Interact\Runtime\Factory;
-use Interact\Runtime\Values;
 use Interact\Security\InvalidSnapshotException;
-use Interact\Upload\UploadLimits;
+use Interact\Streaming\RequestContext;
+use Interact\Streaming\SseResponse;
 use Interact\View\TemplateView;
 use InvalidArgumentException;
 
@@ -25,8 +24,11 @@ class UpdateHandler
     /**
      * Receive the shared runtime factory and safe failure encoder through the container.
      */
-    public function __construct(protected readonly Factory $factory, protected readonly FailureResponder $failures)
-    {
+    public function __construct(
+        protected readonly Factory $factory,
+        protected readonly FailureResponder $failures,
+        protected readonly SseResponse $streams = new SseResponse(),
+    ) {
     }
 
     /**
@@ -36,25 +38,7 @@ class UpdateHandler
     {
         try {
             $request->allowMethod(['post']);
-            /** @var mixed $body */
-            $body = $request->getData();
-            if (str_starts_with($request->getHeaderLine('Content-Type'), 'multipart/form-data')) {
-                UploadLimits::assertRequest($request);
-                /** @var mixed $payload */
-                $payload = $request->getData('payload');
-                if (!is_string($payload) || strlen($payload) > 1_048_576) {
-                    throw new InvalidArgumentException('Invalid upload envelope.');
-                }
-
-                /** @var mixed $body */
-                $body = json_decode($payload, true);
-            } elseif (strlen((string)$request->getBody()) > 1_048_576) {
-                throw new InvalidArgumentException('Invalid island request size.');
-            }
-
-            if (!is_array($body) || ($body['version'] ?? null) !== 1) {
-                throw new InvalidArgumentException('Invalid island request.');
-            }
+            $body = new UpdatePayload()->read($request);
 
             /** @var mixed $scope */
             $scope = $request->getParam('interactScope', 'default');
@@ -62,9 +46,14 @@ class UpdateHandler
                 throw new InvalidArgumentException('Invalid island scope.');
             }
 
-            $context = new IslandContext($request, $scope, $request->getUri()->getPath());
+            $context = new RequestContext($request, $scope, $request->getUri()->getPath());
             $runtime = $this->factory->create(new TemplateView($request, $response), $context);
-            $result = $runtime->update(Values::map($body), $context);
+            $update = $runtime->prepare($body, $context);
+            if ($update->stream && $request->accepts('text/event-stream')) {
+                return $this->streams->create($update, $context, $response);
+            }
+
+            $result = $update->run();
 
             return $response->withStatus($result->errors === [] ? 200 : 422)
                 ->withType('application/json')

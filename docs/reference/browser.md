@@ -48,6 +48,15 @@ and [`x-interact:model`](/directives/model#custom-alpine-inputs) for modelable v
 [`x-interact:poll`](/directives/poll) skips drafts and feedback instead of
 refreshing over them.
 
+## Streaming actions
+
+[Streaming actions](/guide/streaming) use the same POST endpoint and queue while
+reading incremental SSE frames through fetch. Display updates reach named
+[`x-interact:stream`](/directives/stream) targets; a terminal result follows the
+ordinary state reconciliation, validation, and rendering rules. The public
+[`receiveStream()`](/reference/server#receivestream) bridge accepts normalized
+provisional messages from application-owned adapters.
+
 ## Nested ownership
 
 Model capture, polling, forms, uploads, and `$server` resolve to the nearest
@@ -82,7 +91,7 @@ Use public directives and the bridge rather than constructing a parallel client.
 ## File transport
 
 Native multipart uploads use XMLHttpRequest for progress; ordinary JSON updates
-use fetch. Both share the endpoint, CSRF protection, response validation, and
+use fetch, including finite SSE responses for streaming actions. Both share the endpoint, CSRF protection, response validation, and
 rendering. File references remain bound to the session, route scope, island, and
 field. See [File uploads](/guide/uploads) and
 [`$server.uploads`](/reference/server#uploads).

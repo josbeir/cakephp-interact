@@ -14,7 +14,7 @@ export { expect } from '@playwright/test';
  * PHP chooses a free port; SQLite, sessions, uploads, and documentation subprocesses
  * share only that worker's directory. Teardown stops PHP before removing its files.
  */
-export const test = base.extend<object, { appURL: string }>({
+export const test = base.extend<object, { appURL: string; peerURL: string }>({
   appURL: [
     async ({ playwright }, use, workerInfo) => {
       const storage = await mkdtemp(join(tmpdir(), 'interact-playwright-'));
@@ -115,6 +115,69 @@ export const test = base.extend<object, { appURL: string }>({
         } finally {
           await rm(storage, { recursive: true, force: true });
         }
+      }
+    },
+    { scope: 'worker' },
+  ],
+  peerURL: [
+    async ({ appURL }, use) => {
+      // Depend on appURL so the primary worker has already installed its isolated storage.
+      if (!appURL) throw new Error('Missing primary application');
+      const storage = process.env.INTERACT_DEMO_TMP;
+      if (!storage) throw new Error('Missing isolated application storage');
+      const server = spawn(
+        'php',
+        [
+          '-d',
+          `session.save_path=${storage}`,
+          '-S',
+          '127.0.0.1:0',
+          '-t',
+          'tests/test_app/webroot',
+          'tests/test_app/webroot/index.php',
+        ],
+        { stdio: ['ignore', 'ignore', 'pipe'] },
+      );
+      const output = createInterface({ input: server.stderr });
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      try {
+        const address = await new Promise<string>((resolve, reject) => {
+          timeout = setTimeout(
+            () => reject(new Error('Peer PHP startup timed out')),
+            15000,
+          );
+          server.once('error', reject);
+          server.once('exit', () =>
+            reject(new Error('Peer PHP server exited')),
+          );
+          output.on('line', (line) => {
+            const url = line.match(
+              /Development Server \((http:\/\/127\.0\.0\.1:\d+)\) started/,
+            )?.[1];
+            if (url) {
+              clearTimeout(timeout);
+              resolve(url);
+            }
+          });
+        });
+        await use(address);
+      } finally {
+        clearTimeout(timeout);
+        if (
+          server.pid !== undefined &&
+          server.exitCode === null &&
+          server.signalCode === null
+        ) {
+          const stopped = once(server, 'close');
+          server.kill('SIGTERM');
+          const force = setTimeout(() => server.kill('SIGKILL'), 5000);
+          try {
+            await stopped;
+          } finally {
+            clearTimeout(force);
+          }
+        }
+        output.close();
       }
     },
     { scope: 'worker' },

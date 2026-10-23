@@ -98,3 +98,5 @@ Open `/navigation` in the demo for [enhanced visits and a persistent notebook](/
 ## Renderless draft saves
 
 The [draft editor](/examples/renderless-actions) saves through CakePHP without rebuilding the form, with validation recovery and conditional rendering. Run it at `/renderless` in the demo.
+
+[Streaming report](/examples/streaming) combines text, native elements, and JSON progress in one action.

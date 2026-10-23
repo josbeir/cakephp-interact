@@ -209,3 +209,13 @@ client scheduling, navigation, and upload transfer behavior.
 Dedicated upload, deferred-initialization, and browser-history drivers are not
 part of this API. Existing integration and browser tests remain appropriate for
 those flows. The helper does not create browser assets or require JavaScript.
+
+## Streaming assertions
+
+Streaming actions run synchronously with a collecting sink in `IslandTest`; no
+bytes are emitted. `assertStreamed($to, $content, replace: false, html: false)`
+matches an exact incremental target update.
+`assertStreamEvent($name, $detail = [])` matches immediate progress data. Both
+inspect only the latest interaction and work alongside ordinary state, rendering,
+validation, and event assertions. Browser tests should also verify delivery before
+action completion through the actual web server.

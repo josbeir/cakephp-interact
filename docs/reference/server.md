@@ -10,20 +10,21 @@ description: Look up island state, actions, synchronization, activity, errors, a
 `$server` gives Alpine expressions and JavaScript access to an island's state
 and actions. It resolves to the nearest containing island.
 
-| Member                                  | Description                                           |
-| --------------------------------------- | ----------------------------------------------------- |
-| [`state`](#state)                       | Props and state, including local edits                |
-| [`call(action, ...args)`](#call)        | Call a declared PHP action                            |
-| [`sync()`](#sync)                       | Send edits and render without an action               |
-| [`pending(target?, ...args)`](#pending) | Match queued or executing requests                    |
-| [`loading(target?, ...args)`](#loading) | Match requests after a visual delay                   |
-| [`busy`](#busy)                         | Whether a request is executing                        |
-| [`dirty`](#dirty)                       | Whether edits or file selections need synchronization |
-| [`errors`](#errors)                     | Field validation messages                             |
-| [`error`](#error)                       | Current request failure or `null`                     |
-| [`paused`](#paused)                     | Whether automatic updates are paused after a failure  |
-| [`exportDraft()`](#exportdraft)         | Export writable values as JSON                        |
-| [`uploads`](#uploads)                   | Per-field file progress and controls                  |
+| Member                                     | Description                                           |
+| ------------------------------------------ | ----------------------------------------------------- |
+| [`state`](#state)                          | Props and state, including local edits                |
+| [`call(action, ...args)`](#call)           | Call a declared PHP action                            |
+| [`sync()`](#sync)                          | Send edits and render without an action               |
+| [`pending(target?, ...args)`](#pending)    | Match queued or executing requests                    |
+| [`loading(target?, ...args)`](#loading)    | Match requests after a visual delay                   |
+| [`busy`](#busy)                            | Whether a request is executing                        |
+| [`dirty`](#dirty)                          | Whether edits or file selections need synchronization |
+| [`errors`](#errors)                        | Field validation messages                             |
+| [`error`](#error)                          | Current request failure or `null`                     |
+| [`paused`](#paused)                        | Whether automatic updates are paused after a failure  |
+| [`exportDraft()`](#exportdraft)            | Export writable values as JSON                        |
+| [`receiveStream(message)`](#receivestream) | Display a normalized message from a custom adapter    |
+| [`uploads`](#uploads)                      | Per-field file progress and controls                  |
 
 <span id="state-and-scope"></span>
 
@@ -263,3 +264,31 @@ does not cancel server execution.
 ## Before a deferred mount
 
 For a [pending island](/guide/lazy-loading), `sync()` initializes its content. Request feedback works normally; state and uploads remain empty until loading succeeds. Actions, model bindings, and polling require loaded content. Repeated initialization triggers share one request.
+
+## receiveStream()
+
+`receiveStream(message: unknown): void` validates and displays a normalized
+[stream message](/guide/streaming#custom-receiving-adapters) from an
+application-owned transport adapter. It does not start a connection or request.
+
+```ts
+server.receiveStream({
+  version: 1,
+  id: islandId,
+  type: 'target',
+  to: 'answer',
+  content: 'Next result',
+  replace: false,
+  html: false,
+});
+```
+
+`id` must match the receiving island's `data-interact-id`. Target messages require
+`to`, `content`, `replace`, and `html`; event messages require `type: 'event'`,
+`name`, and JSON-compatible record `detail`. Both include `version: 1` and `id`.
+The npm package exports `StreamMessage` for these shapes.
+
+Targets obey [`x-interact:stream`](/directives/stream) ownership and mode checks.
+Unknown or invalid messages throw. Calls after disposal are ignored. This method
+accepts provisional display messages; normal requests exclusively own signed state
+and terminal results. Applications own subscription authorization and cleanup.

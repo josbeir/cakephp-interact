@@ -55,7 +55,7 @@ $currentPath = $this->getRequest()->getUri()->getPath();
             @click="menuOpen = false"
             @keydown.escape="$refs.menuToggle.focus()"
         >
-            <?php foreach (['/' => 'Embedded islands', '/playground' => 'Playground', '/forms' => 'Article form', '/search' => 'Search library', '/composition' => 'Child inputs', '/uploads' => 'Uploads', '/outcomes' => 'Action outcomes', '/loading' => 'Lazy loading', '/page' => 'Whole-page island', '/navigation' => 'Navigation', '/renderless' => 'Renderless actions'] as $path => $label): ?>
+            <?php foreach (['/' => 'Embedded islands', '/playground' => 'Playground', '/forms' => 'Article form', '/search' => 'Search library', '/composition' => 'Child inputs', '/uploads' => 'Uploads', '/outcomes' => 'Action outcomes', '/loading' => 'Lazy loading', '/page' => 'Whole-page island', '/navigation' => 'Navigation', '/renderless' => 'Renderless actions', '/streaming' => 'Streaming'] as $path => $label): ?>
                 <a
                     href="<?= (string)h($path) ?>"
                     x-interact:navigate<?= $path === '/navigation' ? '.trail' : '' ?>

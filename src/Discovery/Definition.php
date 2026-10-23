@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Interact\Discovery;
 
-use Interact\Attribute\Action;
 use Interact\Attribute\Prop;
 use Interact\Attribute\Render;
 use Interact\Attribute\State;
@@ -13,7 +12,6 @@ use Interact\Upload\UploadProperty;
 use Interact\Url\UrlState;
 use InvalidArgumentException;
 use ReflectionClass;
-use ReflectionMethod;
 
 /**
  * Compiles one island class into its property and action allowlists.
@@ -49,6 +47,11 @@ readonly class Definition
      * @var array<string, bool> Cached rendering policy for explicitly declared actions.
      */
     public array $renderlessActions;
+
+    /**
+     * @var array<string, bool> Actions permitted to emit incremental updates.
+     */
+    public array $streamingActions;
 
     /**
      * Compile one concrete island class into validated declaration metadata.
@@ -94,31 +97,21 @@ readonly class Definition
             }
         }
 
-        $actions = [];
-        $renderless = [];
-        foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC
-            | ReflectionMethod::IS_PROTECTED
-            | ReflectionMethod::IS_PRIVATE) as $method) {
-            if ($method->getAttributes(Action::class) === []) {
-                continue;
-            }
-
-            if (
-                ($method->getModifiers() & ReflectionMethod::IS_PUBLIC) === 0
-                || $method->isStatic()
-                || method_exists(Island::class, $method->getName())
-            ) {
-                throw new InvalidArgumentException('Only public, nonstatic application methods may be actions.');
-            }
-
-            $actions[$method->getName()] = $method;
-            $renderless[$method->getName()] = !$method->getAttributes(Action::class)[0]->newInstance()->render;
-        }
-
         $this->properties = $properties;
         $this->uploads = $uploads;
-        $this->actions = $actions;
-        $this->renderlessActions = $renderless;
+        $actions = new Actions($reflection);
+        $this->actions = $actions->methods;
+
+        $this->renderlessActions = $actions->renderless;
+        $this->streamingActions = $actions->streaming;
         new UrlState()->metadata($this, null);
+    }
+
+    /**
+     * Read the server-owned streaming policy without allowing synchronization to enable it.
+     */
+    public function streams(?string $action): bool
+    {
+        return $action !== null && ($this->streamingActions[$action] ?? false);
     }
 }

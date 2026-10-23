@@ -25,3 +25,5 @@ actions, and request feedback. See [Quickstart](/getting-started) for setup.
 
 - [`x-interact:navigate`](/directives/navigate) visits ordinary CakePHP pages.
 - [`x-interact:persist`](/directives/persist) retains explicit layout regions between visits.
+
+[`x-interact:stream`](/directives/stream) declares display targets for incremental action output.

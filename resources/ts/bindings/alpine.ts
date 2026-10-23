@@ -68,6 +68,37 @@ export function registerBindings(
               'x-interact:model requires an input, select, textarea, form, or x-modelable wrapper.',
             );
           }
+        } else if (value === 'stream') {
+          cleanup(
+            client.streams.bind(
+              element,
+              expression,
+              modifiers,
+              Alpine.prefixed(''),
+              (fragment, replace) => {
+                Alpine.mutateDom(() => {
+                  if (replace) {
+                    const previous = document.createElement('div');
+                    previous.append(...element.childNodes);
+                    Alpine.destroyTree(previous);
+                    element.replaceChildren();
+                  }
+                  if (
+                    fragment.childNodes.length === 1 &&
+                    fragment.firstChild instanceof Text &&
+                    element.lastChild instanceof Text
+                  ) {
+                    element.lastChild.appendData(fragment.firstChild.data);
+                    return;
+                  }
+                  const children = [...fragment.children];
+                  element.append(fragment);
+                  for (const child of children)
+                    if (child instanceof HTMLElement) Alpine.initTree(child);
+                });
+              },
+            ),
+          );
         } else if (value === 'ignore') {
           if (element === client.root || modifiers.length || expression.trim())
             throw new Error(
@@ -99,7 +130,7 @@ export function registerBindings(
           );
         } else
           throw new Error(
-            'Unknown x-interact directive. Use model, submit, poll, ignore, navigate, or persist.',
+            'Unknown x-interact directive. Use model, submit, poll, stream, ignore, navigate, or persist.',
           );
       },
     ),

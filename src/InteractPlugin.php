@@ -6,8 +6,10 @@ namespace Interact;
 use Cake\Container\ContainerInterface;
 use Cake\Controller\Controller;
 use Cake\Core\BasePlugin;
+use Cake\Core\Configure;
 use Cake\Core\ContainerApplicationInterface;
 use Cake\Core\PluginApplicationInterface;
+use Cake\Error\ExceptionTrap;
 use Cake\Event\EventInterface;
 use Cake\Event\EventManagerInterface;
 use Cake\Http\MiddlewareQueue;
@@ -16,9 +18,12 @@ use Cake\Utility\Security;
 use Interact\Discovery\Registry;
 use Interact\Http\FailureResponder;
 use Interact\Http\UpdateErrorListener;
+use Interact\Http\UpdateHandler;
 use Interact\Navigation\DocumentMiddleware;
 use Interact\Runtime\Factory;
+use Interact\Runtime\Values;
 use Interact\Security\SnapshotCodec;
+use Interact\Streaming\SseResponse;
 use Interact\Upload\UploadManager;
 use Interact\Upload\UploadServices;
 
@@ -64,6 +69,21 @@ class InteractPlugin extends BasePlugin
     {
         if (!$container->hasDefinition(FailureResponder::class)) {
             $container->addShared(FailureResponder::class);
+        }
+
+        if (!$container->hasDefinition(SseResponse::class)) {
+            $container->addShared(SseResponse::class, static fn(): SseResponse => new SseResponse(
+                $container->get(FailureResponder::class),
+                new ExceptionTrap(Values::map(Configure::read('Error', []))),
+            ));
+        }
+
+        if (!$container->hasDefinition(UpdateHandler::class)) {
+            $container->add(UpdateHandler::class)->addArguments([
+                Factory::class,
+                FailureResponder::class,
+                SseResponse::class,
+            ]);
         }
 
         if (!$container->hasDefinition(UpdateErrorListener::class)) {

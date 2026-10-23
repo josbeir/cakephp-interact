@@ -22,6 +22,7 @@ export type {
 } from './uploads/types';
 export type { NavigationStore } from './navigation/activity';
 export type { NavigationDetail } from './navigation/controller';
+export type { StreamMessage } from './streaming/messages';
 export { IslandClient } from './client';
 const installed = new WeakSet<Alpine>();
 
