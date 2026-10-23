@@ -564,12 +564,6 @@ export class IslandClient {
         result,
         this.metadata.id,
         (message) => {
-          if (
-            invocation.action === null ||
-            invocation.upload ||
-            invocation.urlRestore
-          )
-            throw requestError('invalid_response', result.status);
           if (!page || pageEpoch === page.epoch())
             this.bridge.receiveStream(message);
         },

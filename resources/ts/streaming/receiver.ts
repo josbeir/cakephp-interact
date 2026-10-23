@@ -45,14 +45,8 @@ export class StreamReceiver {
       );
     this.assertAncestors(element, prefix);
     this.assertDisplay(element, prefix, element);
-    const observer = new MutationObserver((records) => {
-      const target = this.targets.get(element);
-      if (target && records.length) target.dirty = true;
-    });
-    observer.observe(element, {
-      childList: true,
-      attributes: true,
-      subtree: true,
+    const observer = new MutationObserver(() => {
+      target.dirty = true;
     });
     const target: Target = {
       element,
@@ -64,6 +58,11 @@ export class StreamReceiver {
       update,
     };
     this.targets.set(element, target);
+    observer.observe(element, {
+      childList: true,
+      attributes: true,
+      subtree: true,
+    });
     return () => {
       observer.disconnect();
       this.targets.delete(element);

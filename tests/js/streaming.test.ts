@@ -6,6 +6,7 @@ import { SseDecoder } from '../../resources/ts/streaming/sse';
 import { StreamReceiver } from '../../resources/ts/streaming/receiver';
 import { readResponse } from '../../resources/ts/transport/request';
 import { streamMessage } from '../../resources/ts/streaming/messages';
+import { registerNavigation } from '../../resources/ts/navigation/registry';
 
 const clients: IslandClient[] = [];
 const encoder = new TextEncoder();
@@ -486,4 +487,120 @@ it.each([
     ok: false,
     error: { code: 'invalid_response' },
   });
+});
+
+it.each([false, true])(
+  'applies streaming results only to the originating page (navigation changed: %s)',
+  async (navigated) => {
+    let epoch = 0;
+    const unregister = registerNavigation(window, {
+      epoch: () => epoch,
+      visit: async () => 'enhanced',
+      invalidate: () => {},
+      query: () => {},
+    });
+    try {
+      let stream: ReadableStreamDefaultController<Uint8Array> | undefined;
+      const fetcher = vi.fn<Fetcher>(
+        async () =>
+          new Response(
+            new ReadableStream<Uint8Array>({
+              start(controller) {
+                stream = controller;
+              },
+            }),
+            { headers: { 'Content-Type': 'text/event-stream' } },
+          ),
+      );
+      const { client, root } = setup(fetcher);
+      const completed = vi.fn();
+      root.addEventListener('finished', completed);
+      const action = client.bridge.call('generate');
+      await vi.waitFor(() => expect(stream).toBeDefined());
+      stream?.enqueue(encoder.encode(frame(message('Current page'))));
+      await vi.waitFor(() =>
+        expect(root.querySelector('pre')?.textContent).toBe('Current page'),
+      );
+      if (navigated) epoch++;
+      stream?.enqueue(
+        encoder.encode(
+          frame(message(' · next chunk')) +
+            frame(result({ events: [{ name: 'finished', detail: {} }] })),
+        ),
+      );
+      stream?.close();
+      await expect(action).resolves.toEqual({ ok: true });
+      expect(root.querySelector('pre')?.textContent).toBe(
+        navigated ? 'Current page' : 'Current page · next chunk',
+      );
+      expect(client.bridge.state.answer).toBe(navigated ? '' : 'Complete');
+      expect(root.dataset.interactSnapshot).toBe(
+        navigated ? 'initial' : 'fresh',
+      );
+      expect(completed).toHaveBeenCalledTimes(navigated ? 0 : 1);
+      expect(client.bridge.busy).toBe(false);
+      expect(client.bridge.paused).toBe(false);
+      expect(fetcher).toHaveBeenCalledOnce();
+    } finally {
+      unregister();
+    }
+  },
+);
+
+it('streams static SVG alongside Alpine HTML and cleans up replacement content', async () => {
+  const { client, root } = setup(async () => response(frame(result())));
+  client.bridge.receiveStream(
+    message(
+      '<svg role="img" aria-label="Result chart" viewBox="0 0 10 10"><path d="M0 0 L10 10" /></svg><span x-data="{ count: 0 }" x-init="count++" x-text="count"></span>',
+      { to: 'results', html: true },
+    ),
+  );
+  const chart = root.querySelector('svg');
+  expect(chart).toBeInstanceOf(SVGElement);
+  expect(chart?.getAttribute('viewBox')).toBe('0 0 10 10');
+  expect(chart?.querySelector('path')?.getAttribute('d')).toBe('M0 0 L10 10');
+  await vi.waitFor(() =>
+    expect(root.querySelector('span')?.textContent).toBe('1'),
+  );
+  client.bridge.receiveStream(
+    message('<p>Chart complete</p>', {
+      to: 'results',
+      html: true,
+      replace: true,
+    }),
+  );
+  expect(chart?.isConnected).toBe(false);
+  expect(root.querySelector('svg, span')).toBeNull();
+  expect(root.querySelector('p')?.textContent).toBe('Chart complete');
+});
+
+it('ignores empty SSE frames and resets event names before subsequent data', () => {
+  const messages: [string, string][] = [];
+  const decoder = new SseDecoder((event, data) => messages.push([event, data]));
+  decoder.push(
+    encoder.encode(
+      'event: unused\n\n: heartbeat\r\n\r\nretry: 500\n\ndata: ready\n\n',
+    ),
+  );
+  decoder.finish();
+  expect(messages).toEqual([['message', 'ready']]);
+});
+
+it('disconnects ownership observers when targets are unbound with pending mutations', async () => {
+  const root = document.createElement('section');
+  root.dataset.interactId = 'streaming';
+  const target = document.createElement('pre');
+  root.append(target);
+  const receive = vi.fn((fragment: DocumentFragment) => {
+    target.append(fragment);
+  });
+  const receiver = new StreamReceiver(root, () => true);
+  const unbind = receiver.bind(target, 'answer', [], 'x-', receive);
+  target.append(document.createElement('input'));
+  unbind();
+  await Promise.resolve();
+  receiver.receive(message('Late delivery', { replace: true }));
+  expect(receive).not.toHaveBeenCalled();
+  expect(target.querySelector('input')).not.toBeNull();
+  receiver.dispose();
 });

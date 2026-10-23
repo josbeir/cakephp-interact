@@ -183,34 +183,41 @@ the terminal payload. Keep individual chunks and the final view within that limi
 
 ## Custom receiving adapters
 
-[`$server.receiveStream(message)`](/reference/server#receivestream) accepts normalized,
-versioned, island-scoped display messages independently of SSE. An application can
-translate its own transport's events to these messages, including events from
-Mercure or a WebSocket client. Import `StreamMessage` and `IslandBridge` from the
-npm package for TypeScript integration.
+An adapter connects an application-owned feed, such as Mercure or a WebSocket,
+to an island's display targets. Map your provider's messages to
+[`$server.receiveStream()`](/reference/server#receivestream); the normal action
+POST keeps its built-in SSE reader.
 
-```ts
-import type { IslandBridge, StreamMessage } from '@josbeir/cakephp-interact';
+For example, suppose an authorized SSE feed sends `{"text":"Next result\n"}`.
+Register this external script [before Interact starts](/guide/alpine#custom-javascript):
 
-export function displayProgress(
-  server: IslandBridge,
-  islandId: string,
-  percent: number,
-): void {
-  const message: StreamMessage = {
-    version: 1,
-    id: islandId,
-    type: 'event',
-    name: 'progress',
-    detail: { percent },
-  };
-  server.receiveStream(message);
-}
+<<< @/../tests/docs/app/webroot/js/text-feed.js
+
+Inside the receiving island, supply an authorized subscription URL as `$feedUrl`
+through `viewData()` and attach the adapter:
+
+```php
+<?php
+declare(strict_types=1);
+use function Cake\Core\h;
+/** @var string $feedUrl */
+?>
+<div x-data="textFeed" data-feed-url="<?= (string)h($feedUrl) ?>">
+    <pre x-interact:stream="output"></pre>
+</div>
 ```
 
-The receiver validates unknown input, enforces island identity and target ownership,
-and accepts text/HTML targets or progress events. It cannot accept signed state,
-terminal action results, or execute PHP actions. Invalid messages throw; delivery
-after island disposal is ignored. Applications own adapter connection lifetime,
-authentication, subscription authorization, routing, reconnection, and cleanup.
-No push provider or subscription client is required by action streaming.
+Each message appends literal text to this island's `output` target immediately.
+The adapter supplies the current island ID, catches malformed messages, and closes
+its connection when Alpine destroys the wrapper. The connection stays outside
+reactive state. Use your provider's client and cleanup method in the same lifecycle;
+authentication, authorized topics, and reconnection belong to that integration.
+
+The receiver also accepts `replace: true`, HTML for explicit `.html` targets, and
+`type: 'event'` messages with `name` and JSON record `detail`. Event messages emit
+`interact:stream` from the island root. The npm package exports `StreamMessage`
+and `IslandBridge` for typed adapters; see the [message contract](/reference/server#receivestream).
+
+These are provisional display updates. Signed state, validation, request activity,
+and action results stay with normal requests; a subsequent render is authoritative.
+Invalid input throws to the adapter, while delivery after island disposal is ignored.
