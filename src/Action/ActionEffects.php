@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Action;
 
 use Closure;
+use Interact\Streaming\Stream;
 use LogicException;
 
 /**
@@ -12,6 +13,8 @@ use LogicException;
  */
 class ActionEffects
 {
+    protected ?Stream $stream = null;
+
     protected bool $active = false;
 
     protected bool $skipRender = false;
@@ -21,18 +24,30 @@ class ActionEffects
     /**
      * Run application code within the outcome capability and release it on failure.
      */
-    public function capture(Closure $action): ?Outcome
+    public function capture(Closure $action, ?Stream $stream = null): ?Outcome
     {
         $this->outcome = null;
         $this->skipRender = false;
         $this->active = true;
+        $this->stream = $stream;
         try {
             $action();
 
             return $this->outcome;
         } finally {
             $this->active = false;
+            $this->stream = null;
         }
+    }
+
+    /**
+     * Require the active streaming action capability, excluding hooks and ordinary actions.
+     */
+    public function stream(): Stream
+    {
+        return (
+            $this->stream ?? throw new LogicException('Streaming requires an active action declared with stream: true.')
+        );
     }
 
     /**

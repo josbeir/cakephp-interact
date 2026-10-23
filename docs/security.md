@@ -41,6 +41,30 @@ Configure that view's Interact helper with `scope: 'admin'` and the URL generate
 
 Override `authorize(IslandContext $context)` to check current resource access on every request. Treat action arguments as untrusted resource identifiers and authorize their use. Signing a record ID does not permanently authorize it.
 
+## Request identification
+
+The browser sends `Interact: true` on island update requests, including deferred
+initialization, polling, file transfers, and streaming actions. The plugin
+registers a CakePHP request detector during bootstrap:
+
+```php
+$request->is('interact'); // Exact Interact: true header match.
+```
+
+Use the detector for middleware integration or logging. The header is supplied
+by the caller and does not establish authorization, CSRF validity, or snapshot
+integrity. Update endpoints still accept requests without it. Route scope
+configuration continues to identify endpoints for exception handling.
+
+Generated JSON responses, including validation and safe error responses, and
+SSE responses carry `Interact: true`. This identifies the response format;
+the browser still validates the content type and protocol payload. Protocol
+versions remain in the payload.
+
+Ordinary HTML documents, enhanced navigation requests, and native downloads do
+not receive the marker from Interact. The plugin does not echo a request header
+onto unrelated responses or replace application-handled responses.
+
 ## Custom endpoints
 
 Use the shared `Interact\Http\UpdateHandler` service when an island endpoint

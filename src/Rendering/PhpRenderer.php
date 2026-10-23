@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Rendering;
 
+use Interact\Discovery\Declaration;
 use Interact\Discovery\Definition;
 use Interact\Loading\Options;
 use Interact\Loading\PlaceholderRenderer;
@@ -11,7 +12,7 @@ use Interact\View\TemplateView;
 /**
  * Bridges the runtime's explicit render contract to CakePHP's native PHP view engine.
  */
-class PhpRenderer implements RendererInterface, PlaceholderRendererInterface
+class PhpRenderer implements RendererInterface, PlaceholderRendererInterface, ElementRendererInterface
 {
     /**
      * Applications can supply a TemplateView subclass with their own helper initialization.
@@ -28,6 +29,20 @@ class PhpRenderer implements RendererInterface, PlaceholderRendererInterface
     public function render(Definition $definition, array $data): string
     {
         return $this->view->island($definition->declaration, $data);
+    }
+
+    /**
+     * Render a streamed element in an isolated scope through the configured view.
+     *
+     * @param array<string, mixed> $data Explicit element variables.
+     */
+    public function element(Definition $definition, string $element, array $data): string
+    {
+        if (!str_contains($element, '.') && $definition->plugin !== null) {
+            $element = $definition->plugin . '.' . $element;
+        }
+
+        return $this->view->island(new Declaration($definition->declaration->name, element: $element), $data);
     }
 
     /**

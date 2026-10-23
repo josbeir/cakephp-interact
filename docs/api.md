@@ -46,6 +46,10 @@ PHP contracts are documented with their related features.
 [events()](/guide/events#events), [redirect()](/guide/redirects-and-downloads), and
 [downloadUrl()](/guide/redirects-and-downloads#downloads).
 
+## Streaming
+
+[`stream()`, `streamElement()`, `streamEvent()`, and `#[Action(stream: true)]`](/guide/streaming).
+
 ## Binding and actions
 
 [Writable properties](/guide/state#state), [model binding](/directives/model),

@@ -1375,3 +1375,411 @@ progress::-moz-progress-bar {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* The streaming report keeps text, rendered results, and request feedback visible together. */
+.stream-intro h1 span {
+  color: var(--accent);
+}
+.stream-intro .intro-copy {
+  max-width: 42ch;
+}
+.stream-demo {
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 12px 40px #172f3509;
+}
+.stream-toolbar,
+.stream-progress-heading,
+.stream-panel-heading,
+.stream-console-footer,
+.stream-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.stream-toolbar {
+  gap: 1.25rem;
+  padding: 1.6rem 1.8rem;
+}
+.stream-title {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.stream-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 2.65rem;
+  height: 2.65rem;
+  border: 1px solid #c8ded2;
+  border-radius: 0.8rem;
+  color: var(--accent);
+  background: #f0f7f2;
+  font-size: 1.5rem;
+}
+.stream-title h2 {
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+.stream-title p {
+  margin-top: 0.15rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.stream-run {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+}
+.stream-run:disabled {
+  opacity: 0.85;
+}
+.stream-run-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.stream-run-icon.is-running {
+  animation: stream-spin 1.5s linear infinite;
+}
+.stream-progress-heading {
+  padding: 0 1.8rem 0.7rem;
+  font-size: 0.72rem;
+}
+.stream-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.stream-state-dot,
+.stream-connection-dot {
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: #a9bbb3;
+}
+.stream-state.is-live,
+.stream-state.is-complete {
+  color: var(--accent);
+}
+.stream-state.is-live .stream-state-dot,
+.stream-state.is-complete .stream-state-dot {
+  background: #238567;
+}
+.stream-state.is-live .stream-state-dot {
+  box-shadow: 0 0 0 4px #23856715;
+  animation: stream-pulse 1.5s ease-in-out infinite;
+}
+.stream-percentage {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+progress.stream-meter {
+  display: block;
+  width: 100%;
+  height: 3px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: #eaf1ed;
+  accent-color: #249570;
+}
+progress.stream-meter::-webkit-progress-bar {
+  background: #eaf1ed;
+}
+progress.stream-meter::-webkit-progress-value {
+  background: #249570;
+  transition: width 350ms ease;
+}
+progress.stream-meter::-moz-progress-bar {
+  background: #249570;
+}
+.stream-panels {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+}
+.stream-panel-heading {
+  gap: 0.5rem;
+  padding: 1rem 1.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+.stream-format {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+.stream-console {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  background: #122d2f;
+  color: #c1d5cf;
+}
+.stream-console .stream-panel-heading {
+  border-bottom: 1px solid #ffffff0d;
+}
+.stream-console .stream-format {
+  color: #9db6ad;
+}
+.stream-console-body {
+  position: relative;
+  flex: 1;
+  min-height: 20rem;
+  padding: 1.3rem 1.4rem;
+}
+.stream-transcript {
+  margin: 0;
+  color: #ccebdc;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.76rem;
+  line-height: 1.85;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.stream-empty {
+  position: absolute;
+  inset: 2.25rem 1.4rem auto;
+}
+.stream-prompt {
+  display: block;
+  margin-bottom: 1.25rem;
+  color: #71b798;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 2rem;
+  letter-spacing: -0.08em;
+}
+.stream-empty p {
+  color: #d5e9df;
+  font-size: 0.85rem;
+}
+.stream-empty > span:last-child {
+  color: #829f98;
+  font-size: 0.72rem;
+}
+.stream-cursor {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.95rem;
+  background: #8bdfb7;
+  animation: stream-pulse 900ms ease-in-out infinite;
+}
+.stream-console-footer {
+  justify-content: flex-start;
+  gap: 0.45rem;
+  min-height: 2.6rem;
+  padding: 0.65rem 1.4rem;
+  border-top: 1px solid #ffffff0d;
+  color: #829f98;
+  font-size: 0.64rem;
+}
+.stream-connection-dot {
+  background: #5a7771;
+}
+.stream-connection-dot.is-connected {
+  background: #8bdfb7;
+  box-shadow: 0 0 8px #8bdfb755;
+}
+.stream-results {
+  min-width: 0;
+  background: #fbfcfa;
+}
+.stream-results .stream-panel-heading {
+  border-bottom: 1px solid var(--line);
+}
+.stream-result-list {
+  margin: 0;
+  padding: 1.15rem;
+  list-style: none;
+}
+.stream-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 1.15rem 0.95rem;
+  border: 1px solid #dde8e0;
+  border-radius: 0.7rem;
+  background: #fff;
+  box-shadow: 0 2px 5px #183c2803;
+  animation: stream-arrive 300ms ease-out both;
+}
+.stream-result + .stream-result {
+  margin-top: 0.7rem;
+}
+.stream-result-number {
+  padding-top: 0.1rem;
+  color: #89a093;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.65rem;
+}
+.stream-result > div {
+  flex: 1;
+  min-width: 0;
+}
+.stream-result h3 {
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.stream-result p {
+  margin-top: 0.3rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.65;
+}
+.stream-result-check {
+  display: grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: #247d5b;
+  background: #e9f4ec;
+  font-size: 0.68rem;
+}
+.stream-results-empty {
+  display: grid;
+  justify-items: center;
+  padding: 4.4rem 0.8rem;
+  text-align: center;
+}
+.stream-results-empty p {
+  margin-top: 1.3rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.stream-results-empty > span:last-child {
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.stream-empty-stack {
+  display: grid;
+  gap: 0.3rem;
+  width: 3rem;
+  transform: rotate(-8deg);
+}
+.stream-empty-stack i {
+  display: block;
+  height: 0.7rem;
+  border: 1px solid #cadbd0;
+  border-radius: 0.2rem;
+  background: #f1f6f0;
+}
+.stream-empty-stack i:nth-child(2) {
+  transform: translateX(0.25rem);
+}
+.stream-waiting-bars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 2rem;
+}
+.stream-waiting-bars i {
+  width: 0.3rem;
+  height: 1.2rem;
+  border-radius: 0.2rem;
+  background: #4b9c77;
+  animation: stream-pulse 900ms ease-in-out infinite alternate;
+}
+.stream-waiting-bars i:nth-child(2) {
+  animation-delay: 150ms;
+}
+.stream-waiting-bars i:nth-child(3) {
+  animation-delay: 300ms;
+}
+.stream-footer {
+  justify-content: flex-start;
+  gap: 0.65rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.stream-footer-symbol {
+  color: #498a6d;
+  font-size: 1rem;
+}
+.stream-footer-tag {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.62rem;
+  white-space: nowrap;
+}
+.stream-demo-note {
+  margin: 1rem 0 2rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.stream-request-error {
+  margin: 0;
+  padding-inline: 1.5rem;
+}
+@keyframes stream-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes stream-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes stream-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 680px) {
+  .stream-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    padding: 1.25rem;
+  }
+  .stream-run {
+    width: 100%;
+  }
+  .stream-progress-heading {
+    padding-inline: 1.25rem;
+  }
+  .stream-panels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .stream-console-body {
+    min-height: 17rem;
+  }
+  .stream-result-list {
+    padding: 1rem;
+  }
+  .stream-results-empty {
+    padding-block: 2.25rem;
+  }
+  .stream-footer {
+    flex-wrap: wrap;
+    padding: 1rem 1.25rem;
+  }
+  .stream-footer-tag {
+    width: 100%;
+    margin: 0 0 0 1.65rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stream-run-icon.is-running,
+  .stream-state.is-live .stream-state-dot,
+  .stream-cursor,
+  .stream-waiting-bars i,
+  .stream-result {
+    animation: none;
+  }
+  progress.stream-meter::-webkit-progress-value {
+    transition: none;
+  }
+}

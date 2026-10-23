@@ -98,3 +98,7 @@ application-handled responses retain their handling. Custom error documents get
 status-based feedback; exception messages are not parsed to classify failures.
 Raw error pages and traces are not inserted into island HTML. See
 [custom endpoints](/security#custom-endpoints) for route scope requirements.
+
+Generated Interact errors include `Interact: true`. The
+[request marker](/security#request-identification) is informational; supplying it
+on another route does not opt that route into Interact exception handling.

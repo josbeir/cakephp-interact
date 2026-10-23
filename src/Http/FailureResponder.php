@@ -52,6 +52,7 @@ class FailureResponder
         }
 
         return $response->withType('application/json')
+            ->withHeader('Interact', 'true')
             ->withHeader('Cache-Control', 'no-store')
             ->withStringBody(json_encode([
                 'version' => 1,

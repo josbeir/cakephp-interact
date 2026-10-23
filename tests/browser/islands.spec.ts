@@ -141,6 +141,8 @@ test('submits with a foreign CakePHP CSRF cookie already present', async ({
   const update = await response;
   expect(update.status()).toBe(200);
   expect(update.headers()['content-type']).toContain('application/json');
+  expect(update.headers()['interact']).toBe('true');
+  expect(update.request().headers()['interact']).toBe('true');
   await expect(editor.getByRole('status')).toHaveText('Saved.');
 });
 

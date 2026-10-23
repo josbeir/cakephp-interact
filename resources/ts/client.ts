@@ -1,3 +1,4 @@
+import { StreamReceiver } from './streaming/receiver';
 import { paginationLinks } from './pagination/links';
 import { navigation, enhancedRedirect } from './navigation/registry';
 import { LoadTrigger } from './loading/trigger';
@@ -54,6 +55,7 @@ export class IslandClient {
   composition: CompositionHooks | undefined;
   private parentTicket: string | undefined;
   readonly bridge: IslandBridge;
+  readonly streams: StreamReceiver;
   private readonly metadata: MountMetadata;
   private readonly controls: Controls;
   private readonly queue: RequestQueue;
@@ -136,6 +138,10 @@ export class IslandClient {
     private readonly uploader: Uploader = postUpload,
     private readonly effects: BrowserEffects = new BrowserEffects(),
   ) {
+    this.streams = new StreamReceiver(
+      root,
+      () => !this.disposed && !this.leaving,
+    );
     this.requests = new RequestActivity(reactive);
     this.activity = reactive({ paused: false });
     const activity = this.activity;
@@ -169,6 +175,7 @@ export class IslandClient {
       get dirty() {
         return dirty();
       },
+      receiveStream: (message: unknown) => this.streams.receive(message),
       sync: () => this.request(null, []),
       call: (action: string, ...args: Json[]) => this.request(action, args),
     });
@@ -313,6 +320,7 @@ export class IslandClient {
   dispose(): void {
     this.composition?.dispose();
     this.disposed = true;
+    this.streams.dispose();
     this.lifetime.abort();
     this.disposePagination();
     this.trigger?.dispose();
@@ -542,8 +550,26 @@ export class IslandClient {
       if (upload?.kind === 'stage' && upload.signal.aborted)
         throw requestError('cancelled', null);
       if (this.disposed) return;
-      const accepted = await readResponse(result, this.metadata.id);
-      if (this.disposed) return;
+      const streaming = result.headers
+        .get('content-type')
+        ?.includes('text/event-stream');
+      if (
+        streaming &&
+        (invocation.action === null ||
+          invocation.upload ||
+          invocation.urlRestore)
+      )
+        throw requestError('invalid_response', result.status);
+      const accepted = await readResponse(
+        result,
+        this.metadata.id,
+        (message) => {
+          if (!page || pageEpoch === page.epoch())
+            this.bridge.receiveStream(message);
+        },
+      );
+      if (this.disposed || (streaming && page && pageEpoch !== page.epoch()))
+        return;
       if ('redirect' in accepted) {
         if (
           invocation.action === null ||

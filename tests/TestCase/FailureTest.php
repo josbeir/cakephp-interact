@@ -65,6 +65,7 @@ class FailureTest extends TestCase
         static::assertSame($status, $response->getStatusCode());
         static::assertSame('application/json', $response->getHeaderLine('Content-Type'));
         static::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
+        static::assertSame('true', $response->getHeaderLine('Interact'));
         $body = (string)$response->getBody();
         static::assertStringNotContainsString('private', $body);
         /** @var array{version: int, error: array{code: string, message: string}} $payload */
@@ -102,6 +103,7 @@ class FailureTest extends TestCase
         $response = $event->getResult();
         static::assertInstanceOf(Response::class, $response);
         static::assertSame(500, $response->getStatusCode());
+        static::assertSame('true', $response->getHeaderLine('Interact'));
         $event->setResult(new Response(['status' => 418]));
         $listener->render($event);
         /** @var mixed $handled */
@@ -114,6 +116,10 @@ class FailureTest extends TestCase
             ['request' => $request->withParam('interactScope', null), 'exception' => new RuntimeException()],
             ['request' => $request->withParam('interactScope', 42), 'exception' => new RuntimeException()],
             ['request' => $request->withParam('interactScope', false), 'exception' => new RuntimeException()],
+            [
+                'request' => $request->withParam('interactScope', null)->withHeader('Interact', 'true'),
+                'exception' => new RuntimeException(),
+            ],
         ] as $data) {
             $ignored = new Event('Exception.beforeRender', data: $data);
             $listener->render($ignored);

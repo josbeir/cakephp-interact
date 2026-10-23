@@ -46,14 +46,17 @@ export const postUpload: Uploader = (
         reject(requestError('network_error', null));
         return;
       }
+      const headers = new Headers({
+        'Content-Type': xhr.getResponseHeader('Content-Type') ?? '',
+      });
+      const interact = xhr.getResponseHeader('Interact');
+      if (interact !== null) headers.set('Interact', interact);
       resolve(
         new Response(
           [204, 205, 304].includes(xhr.status) ? null : xhr.responseText,
           {
             status: xhr.status,
-            headers: {
-              'Content-Type': xhr.getResponseHeader('Content-Type') ?? '',
-            },
+            headers,
           },
         ),
       );
@@ -70,6 +73,7 @@ export const postUpload: Uploader = (
       xhr.open('POST', endpoint);
       xhr.withCredentials = true;
       xhr.setRequestHeader('Accept', 'application/json');
+      xhr.setRequestHeader('Interact', 'true');
       xhr.setRequestHeader('X-CSRF-Token', csrf);
       signal.addEventListener('abort', abort, { once: true });
       const data = new FormData();

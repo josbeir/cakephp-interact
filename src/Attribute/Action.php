@@ -17,7 +17,7 @@ final readonly class Action
     /**
      * Choose whether successful invocations normally render their island template.
      */
-    public function __construct(public bool $render = true)
+    public function __construct(public bool $render = true, public bool $stream = false)
     {
     }
 }

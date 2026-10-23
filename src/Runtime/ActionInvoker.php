@@ -9,6 +9,8 @@ use Interact\Action\OutcomeResponder;
 use Interact\Discovery\Definition;
 use Interact\Island;
 use Interact\IslandContext;
+use Interact\Streaming\Stream;
+use Interact\UpdatedPaths;
 use InvalidArgumentException;
 use ReflectionNamedType;
 
@@ -82,14 +84,25 @@ class ActionInvoker
     }
 
     /**
-     * Invoke only after state validation and application authorization have succeeded.
+     * Invoke hooks and the action only after state validation and authorization have succeeded.
+     *
+     * @param list<string> $paths Accepted state changes, applied before entering the action capability.
      */
-    public function invoke(Definition $definition, Island $island, UpdateRequest $request): ?Outcome
-    {
+    public function invoke(
+        Definition $definition,
+        Island $island,
+        UpdateRequest $request,
+        ?Stream $stream = null,
+        array $paths = [],
+    ): ?Outcome {
+        if ($paths !== []) {
+            $island->updated(new UpdatedPaths($paths));
+        }
+
         if ($request->action !== null) {
             $callback = $definition->actions[$request->action]->getClosure($island);
 
-            return $island->actionEffects()->capture(static fn() => $callback(...$request->arguments));
+            return $island->actionEffects()->capture(static fn() => $callback(...$request->arguments), $stream);
         }
 
         return null;

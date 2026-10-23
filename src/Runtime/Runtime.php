@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Runtime;
 
+use Closure;
 use Interact\Action\RouteContext;
 use Interact\Composition\BoundValues;
 use Interact\Composition\InputTickets;
@@ -20,7 +21,7 @@ use Interact\Pagination\PagePath;
 use Interact\Pagination\Pagination;
 use Interact\Rendering\RendererInterface;
 use Interact\Security\SnapshotCodec;
-use Interact\UpdatedPaths;
+use Interact\Streaming\Stream;
 use Interact\Upload\UploadManager;
 use Interact\Upload\UploadOperation;
 use InvalidArgumentException;
@@ -152,12 +153,28 @@ class Runtime
      */
     public function update(array $request, IslandContext $context): Result
     {
+        return $this->prepare($request, $context)->run();
+    }
+
+    /**
+     * Verify and authorize an update before selecting its response transport.
+     *
+     * @param array<string, mixed> $request Untrusted versioned request fields.
+     */
+    public function prepare(array $request, IslandContext $context): PreparedUpdate
+    {
         $input = new UpdateRequest($request);
         $verified = $this->snapshots->open($input->snapshot, $context->binding(), $context->scope);
         $verified += ['pagePath' => null];
         PagePath::required($verified['pagePath']);
         if ($input->initialize) {
-            return $this->initialize(new PendingMount($verified), $input, $context);
+            $pending = new PendingMount($verified);
+
+            return new PreparedUpdate(false, $pending->identity->id, fn(): Result => $this->initialize(
+                $pending,
+                $input,
+                $context,
+            ));
         }
 
         $data = new SnapshotData($verified);
@@ -167,21 +184,41 @@ class Runtime
         $island = $this->registry->create($definition);
         $this->hydrator->restore($island, $definition, $data->state);
 
-        $previousPath = $this->pagePath;
-        $this->pagePath = $data->pagePath;
-        $previousRouting = $this->pageRouting;
-        $this->pageRouting = $data->routing;
-        $previous = $this->pageQuery;
-        $previousInputs = $this->parentValues;
-        $this->parentValues = $parentValues;
-        $this->pageQuery = $input->pageQuery;
+        $prepare = fn(): PreparedUpdate => $this->updateIsland($island, $definition, $data, $input, $context);
+        $prepared = $this->inContext($data, $input, $parentValues, $prepare);
+
+        return new PreparedUpdate($prepared->stream, $data->id, fn(Closure $send): Result => $this->inContext(
+            $data,
+            $input,
+            $parentValues,
+            static fn(): Result => $prepared->run($send),
+        ));
+    }
+
+    /**
+     * Restore nested rendering context around preparation and deferred execution alike.
+     *
+     * @template T
+     * @param Closure(): T $callback Request-local work.
+     * @return T
+     */
+    protected function inContext(
+        SnapshotData $data,
+        UpdateRequest $input,
+        ParentValues $parents,
+        Closure $callback,
+    ): mixed {
+        $previous = [$this->pagePath, $this->pageRouting, $this->pageQuery, $this->parentValues];
+        [$this->pagePath, $this->pageRouting, $this->pageQuery, $this->parentValues] = [
+            $data->pagePath,
+            $data->routing,
+            $input->pageQuery,
+            $parents,
+        ];
         try {
-            return $this->updateIsland($island, $definition, $data, $input, $context);
+            return $callback();
         } finally {
-            $this->pageQuery = $previous;
-            $this->pageRouting = $previousRouting;
-            $this->pagePath = $previousPath;
-            $this->parentValues = $previousInputs;
+            [$this->pagePath, $this->pageRouting, $this->pageQuery, $this->parentValues] = $previous;
         }
     }
 
@@ -228,30 +265,44 @@ class Runtime
         SnapshotData $data,
         UpdateRequest $input,
         IslandContext $context,
-    ): Result {
+    ): PreparedUpdate {
         $restored = $input->urlRestore ? $this->state->restorationPaths($definition, $input->updates) : null;
         $propPaths = $this->parentValues->apply($island, $definition);
         $paths = $this->state->apply($island, $definition, array_replace($this->parentValues->models, $input->updates));
         $island->attachPagination(new Pagination($definition, $data, $context, $input->pageQuery));
         $uploadPaths = $this->authorizeUploads($island, $definition, $data, $input, $context);
         if ($uploadPaths === null) {
-            return $this->html->render($island, $definition, $data, $context);
+            return new PreparedUpdate(false, $data->id, fn(): Result => $this->html->render(
+                $island,
+                $definition,
+                $data,
+                $context,
+            ));
         }
 
         $paths = array_values(array_unique([...$propPaths, ...($restored ?? []), ...$paths, ...$uploadPaths]));
-        if ($paths !== []) {
-            $island->updated(new UpdatedPaths($paths));
-        }
+        $streaming = $definition->streams($input->action);
 
-        $outcome = $this->actions->invoke($definition, $island, $input);
-
-        return $this->actions->respond(
+        return new PreparedUpdate($streaming, $data->id, function (Closure $send) use (
+            $paths,
             $island,
-            $outcome,
+            $definition,
             $data,
+            $input,
             $context,
-            fn(): Result => $this->html->update($island, $definition, $data, $input, $context),
-        );
+            $streaming,
+        ): Result {
+            $stream = $streaming ? new Stream($send, $this->renderer, $definition) : null;
+            $outcome = $this->actions->invoke($definition, $island, $input, $stream, $paths);
+
+            return $this->actions->respond(
+                $island,
+                $outcome,
+                $data,
+                $context,
+                fn(): Result => $this->html->update($island, $definition, $data, $input, $context),
+            );
+        });
     }
 
     /**

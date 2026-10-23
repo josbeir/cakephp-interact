@@ -6,19 +6,25 @@ namespace Interact;
 use Cake\Container\ContainerInterface;
 use Cake\Controller\Controller;
 use Cake\Core\BasePlugin;
+use Cake\Core\Configure;
 use Cake\Core\ContainerApplicationInterface;
 use Cake\Core\PluginApplicationInterface;
+use Cake\Error\ExceptionTrap;
 use Cake\Event\EventInterface;
 use Cake\Event\EventManagerInterface;
 use Cake\Http\MiddlewareQueue;
+use Cake\Http\ServerRequest;
 use Cake\Routing\RouteBuilder;
 use Cake\Utility\Security;
 use Interact\Discovery\Registry;
 use Interact\Http\FailureResponder;
 use Interact\Http\UpdateErrorListener;
+use Interact\Http\UpdateHandler;
 use Interact\Navigation\DocumentMiddleware;
 use Interact\Runtime\Factory;
+use Interact\Runtime\Values;
 use Interact\Security\SnapshotCodec;
+use Interact\Streaming\SseResponse;
 use Interact\Upload\UploadManager;
 use Interact\Upload\UploadServices;
 
@@ -36,10 +42,12 @@ class InteractPlugin extends BasePlugin
     protected ?Factory $factory = null;
 
     /**
-     * Attach application rendering services without scanning island classes.
+     * Register request identification and attach rendering services without scanning island classes.
      */
     public function bootstrap(PluginApplicationInterface $app): void
     {
+        ServerRequest::addDetector('interact', ['header' => ['Interact' => 'true']]);
+
         if ($this->isEnabled('events') && $app instanceof ContainerApplicationInterface) {
             $factory = $app->getContainer()->get(Factory::class);
             assert($factory instanceof Factory, 'The configured collaborator must satisfy its declared contract.');
@@ -64,6 +72,21 @@ class InteractPlugin extends BasePlugin
     {
         if (!$container->hasDefinition(FailureResponder::class)) {
             $container->addShared(FailureResponder::class);
+        }
+
+        if (!$container->hasDefinition(SseResponse::class)) {
+            $container->addShared(SseResponse::class, static fn(): SseResponse => new SseResponse(
+                $container->get(FailureResponder::class),
+                new ExceptionTrap(Values::map(Configure::read('Error', []))),
+            ));
+        }
+
+        if (!$container->hasDefinition(UpdateHandler::class)) {
+            $container->add(UpdateHandler::class)->addArguments([
+                Factory::class,
+                FailureResponder::class,
+                SseResponse::class,
+            ]);
         }
 
         if (!$container->hasDefinition(UpdateErrorListener::class)) {

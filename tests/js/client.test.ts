@@ -168,7 +168,10 @@ describe('island lifecycle and transport', () => {
     const options = fetcher.mock.calls[0]?.[1];
     expect(options?.credentials).toBe('same-origin');
     expect(options?.redirect).toBe('manual');
-    expect(options?.headers).toMatchObject({ 'X-CSRF-Token': 'csrf' });
+    expect(options?.headers).toMatchObject({
+      Interact: 'true',
+      'X-CSRF-Token': 'csrf',
+    });
     expect(requestBody(options)).toMatchObject({
       version: 1,
       snapshot: 'initial-signature',

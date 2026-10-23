@@ -141,6 +141,8 @@ export type RequestResult =
  * island's queue; synchronization alone never implies application persistence.
  */
 export interface IslandBridge {
+  /** Receive a validated, island-scoped provisional message from a custom transport adapter. */
+  receiveStream(message: unknown): void;
   uploads: Record<string, UploadField>;
   state: State;
   busy: boolean;

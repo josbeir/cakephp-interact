@@ -28,6 +28,11 @@ class IslandTest
     protected Result $lastResult;
 
     /**
+     * @var list<array<string, mixed>> Incremental messages from the latest interaction.
+     */
+    protected array $streamed = [];
+
+    /**
      * Mount immediately using the application's existing services and declared props.
      *
      * @param string $island Conventional application/plugin name or island class reference.
@@ -185,6 +190,38 @@ class IslandTest
     }
 
     /**
+     * Assert the latest action streamed an exact target update.
+     */
+    public function assertStreamed(string $to, string $content, bool $replace = false, bool $html = false): static
+    {
+        Assert::assertContains([
+            'type' => 'target',
+            'to' => $to,
+            'content' => $content,
+            'replace' => $replace,
+            'html' => $html,
+        ], $this->streamed);
+
+        return $this;
+    }
+
+    /**
+     * Assert immediate progress data was emitted by the latest action.
+     *
+     * @param array<string, mixed> $detail Complete expected progress detail.
+     */
+    public function assertStreamEvent(string $name, array $detail = []): static
+    {
+        Assert::assertContainsEquals([
+            'type' => 'event',
+            'name' => $name,
+            'detail' => $detail === [] ? (object)[] : $detail,
+        ], $this->streamed);
+
+        return $this;
+    }
+
+    /**
      * Assert the latest response emitted no event with this name.
      */
     public function assertNotDispatched(string $name): static
@@ -292,10 +329,15 @@ class IslandTest
             ->withMethod('POST')
             ->withUri($this->context->request->getUri()->withPath($target->getPath())->withQuery($target->getQuery()))
             ->withHeader('Content-Type', 'application/json')
+            ->withHeader('Interact', 'true')
             ->withHeader('Accept', 'application/json')
             ->withParsedBody($payload);
         $context = new IslandContext($request, $this->context->scope, $this->context->endpoint);
-        $this->lastResult = $this->factory->create(new TemplateView($request), $context)->update($payload, $context);
+        $this->streamed = [];
+        $update = $this->factory->create(new TemplateView($request), $context)->prepare($payload, $context);
+        $this->lastResult = $update->run(function (array $message): void {
+            $this->streamed[] = $message;
+        });
 
         return $this;
     }

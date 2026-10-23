@@ -1,5 +1,6 @@
 import type { Fetcher, Invocation, UpdateResponse, State } from '../types';
 import type { MountMetadata } from './metadata';
+import { readStream } from '../streaming/response';
 import { response } from './protocol';
 import { readFailure, requestError } from './failure';
 
@@ -36,8 +37,9 @@ export async function postUpdate(
       cache: 'no-store',
       signal,
       headers: {
+        Interact: 'true',
         'Content-Type': 'application/json',
-        Accept: 'application/json',
+        Accept: 'application/json, text/event-stream',
         'X-CSRF-Token': metadata.csrf,
       },
       body: JSON.stringify(payload),
@@ -57,6 +59,7 @@ export async function postUpdate(
 export async function readResponse(
   result: Response,
   id: string,
+  receive?: (message: unknown) => void,
 ): Promise<UpdateResponse> {
   if (
     result.type === 'opaqueredirect' ||
@@ -64,6 +67,10 @@ export async function readResponse(
   )
     throw requestError('unexpected_redirect', result.status || null);
   if (!result.ok && result.status !== 422) throw await readFailure(result);
+  if (result.headers.get('content-type')?.includes('text/event-stream')) {
+    if (!receive) throw requestError('invalid_response', result.status);
+    return readStream(result, id, receive);
+  }
   if (!result.headers.get('content-type')?.includes('application/json'))
     throw requestError('invalid_response', result.status);
   let payload: unknown;
