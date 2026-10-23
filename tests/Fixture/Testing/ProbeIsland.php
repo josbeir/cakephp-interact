@@ -50,11 +50,19 @@ class ProbeIsland extends Island
     protected int $construction;
 
     /**
-     * Count constructor work independently of restored transported state.
+     * Accept the request-local observer through the application container.
      */
     public function __construct(protected ProbeService $service)
     {
-        $this->construction = ++$service->constructions;
+    }
+
+    /**
+     * Observe fresh instance setup before mount or snapshot values are assigned.
+     */
+    public function initialize(): void
+    {
+        $this->construction = ++$this->service->constructions;
+        $this->service->initializationCounts[] = $this->count;
     }
 
     /**

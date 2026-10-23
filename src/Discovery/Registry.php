@@ -119,7 +119,7 @@ class Registry
     }
 
     /**
-     * Construct a fresh instance even when its dependency registration is shared.
+     * Construct and initialize a fresh instance even when its dependency registration is shared.
      */
     public function create(Definition $definition): Island
     {
@@ -130,6 +130,8 @@ class Registry
         if (!$instance instanceof Island) {
             throw new InvalidArgumentException('The container must return an Island instance.');
         }
+
+        $instance->initialize();
 
         return $instance;
     }

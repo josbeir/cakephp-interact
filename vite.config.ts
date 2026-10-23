@@ -15,7 +15,7 @@ export default defineConfig({
       outputOptions: { entryFileNames: '[name].js' },
       deps: {
         alwaysBundle: [/./],
-        onlyBundle: ['@alpinejs/csp', '@alpinejs/morph'],
+        onlyBundle: ['@alpinejs/csp', '@alpinejs/morph', 'eventsource-parser'],
         onlyImport: [],
       },
     },
@@ -61,8 +61,8 @@ export default defineConfig({
       dts: { generator: 'tsgo' },
       tsconfig: 'tsconfig.build.json',
       deps: {
-        neverBundle: ['alpinejs', '@alpinejs/morph'],
-        onlyImport: ['alpinejs', '@alpinejs/morph'],
+        neverBundle: ['alpinejs', '@alpinejs/morph', 'eventsource-parser'],
+        onlyImport: ['alpinejs', '@alpinejs/morph', 'eventsource-parser'],
       },
     },
     {
@@ -78,7 +78,7 @@ export default defineConfig({
       inputOptions: { preserveEntrySignatures: false },
       deps: {
         alwaysBundle: [/./],
-        onlyBundle: ['@alpinejs/csp', '@alpinejs/morph'],
+        onlyBundle: ['@alpinejs/csp', '@alpinejs/morph', 'eventsource-parser'],
         onlyImport: [],
       },
       banner: '/*! Bundled third-party licenses: THIRD-PARTY-LICENSES.txt */',
@@ -88,6 +88,7 @@ export default defineConfig({
             readFile('resources/licenses/alpine.txt', 'utf8'),
             readFile('node_modules/@vue/reactivity/LICENSE', 'utf8'),
             readFile('node_modules/@vue/shared/LICENSE', 'utf8'),
+            readFile('node_modules/eventsource-parser/LICENSE', 'utf8'),
           ]);
           await writeFile(
             'webroot/js/THIRD-PARTY-LICENSES.txt',

@@ -23,6 +23,8 @@ class EditorIsland extends Island
 {
     use LocatorAwareTrait;
 
+    protected ArticlesTable $articles;
+
     #[Prop]
     public int $articleId;
 
@@ -38,6 +40,14 @@ class EditorIsland extends Island
     protected ?EntityInterface $article = null;
 
     /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $this->articles = $this->fetchTable(ArticlesTable::class);
+    }
+
+    /**
      * Reject ownership or permission changes before reading editable content or invoking actions.
      */
     public function authorize(IslandContext $context): void
@@ -49,7 +59,7 @@ class EditorIsland extends Island
         }
 
         try {
-            $this->articles()->get($this->articleId, 'ownedBy', ownerId: $identity['id']);
+            $this->articles->get($this->articleId, 'ownedBy', ownerId: $identity['id']);
         } catch (RecordNotFoundException) {
             throw new ForbiddenException('Editing is not allowed.');
         }
@@ -60,7 +70,7 @@ class EditorIsland extends Island
      */
     public function mount(): void
     {
-        $this->title = (string)$this->articles()->get($this->articleId)->get('title');
+        $this->title = (string)$this->articles->get($this->articleId)->get('title');
     }
 
     /**
@@ -80,7 +90,7 @@ class EditorIsland extends Island
     #[Action]
     public function save(): void
     {
-        $articles = $this->articles();
+        $articles = $this->articles;
         $article = $articles->patchEntity(
             $articles->get($this->articleId),
             ['title' => $this->title],
@@ -104,17 +114,6 @@ class EditorIsland extends Island
      */
     public function viewData(): array
     {
-        return ['article' => $this->article ?? $this->articles()->get($this->articleId)];
-    }
-
-    /**
-     * Resolve the application's normal CakePHP model through its Table locator.
-     */
-    protected function articles(): ArticlesTable
-    {
-        $table = $this->fetchTable('Articles');
-        assert($table instanceof ArticlesTable, 'The configured collaborator must satisfy its declared contract.');
-
-        return $table;
+        return ['article' => $this->article ?? $this->articles->get($this->articleId)];
     }
 }

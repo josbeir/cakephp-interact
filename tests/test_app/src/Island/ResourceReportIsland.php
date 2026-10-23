@@ -10,6 +10,7 @@ use Interact\Attribute\Prop;
 use Interact\Attribute\State;
 use Interact\Island;
 use Interact\IslandContext;
+use TestApp\Model\Table\ResourcesTable;
 
 /**
  * Queries the resource library only when its deferred content is actually rendered.
@@ -18,6 +19,8 @@ use Interact\IslandContext;
 class ResourceReportIsland extends Island
 {
     use LocatorAwareTrait;
+
+    protected ResourcesTable $resources;
 
     #[Prop]
     public string $heading = 'Resource report';
@@ -30,6 +33,14 @@ class ResourceReportIsland extends Island
 
     #[State]
     public int $refreshes = 0;
+
+    /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $this->resources = $this->fetchTable(ResourcesTable::class);
+    }
 
     /**
      * Demonstrate permission changes while the placeholder is waiting.
@@ -58,7 +69,7 @@ class ResourceReportIsland extends Island
      */
     public function viewData(): array
     {
-        return ['total' => $this->fetchTable('Resources')->find('matching', search: $this->search)->count()];
+        return ['total' => $this->resources->find('matching', search: $this->search)->count()];
     }
 
     /**

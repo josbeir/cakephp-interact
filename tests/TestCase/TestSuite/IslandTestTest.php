@@ -129,6 +129,7 @@ class IslandTestTest extends TestCase
         $test->sync()->assertSet('count', 8)->assertSee('Construction: 3');
         static::assertSame($identity, $test->result()->id);
         static::assertSame(3, $probe->constructions);
+        static::assertSame([0, 0, 0], $probe->initializationCounts);
         static::assertSame(3, $probe->renders);
         static::assertSame('GET', $probe->requests[0]->getMethod());
         static::assertFalse($probe->requests[0]->hasHeader('Interact'));

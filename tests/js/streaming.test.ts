@@ -261,9 +261,11 @@ it('decodes split UTF-8, multiline data, comments, optional fields, CRLF, CR, an
   ]);
 });
 
-it('rejects oversized lines, oversized multiline frames, and invalid UTF-8', () => {
+it('bounds incomplete messages and rejects invalid UTF-8', () => {
   expect(() =>
-    new SseDecoder(() => {}).push(encoder.encode('x'.repeat(1_048_577))),
+    new SseDecoder(() => {}).push(
+      encoder.encode(`data: ${'x'.repeat(1_048_577)}`),
+    ),
   ).toThrow('size');
   expect(() =>
     new SseDecoder(() => {}).push(
@@ -276,6 +278,47 @@ it('rejects oversized lines, oversized multiline frames, and invalid UTF-8', () 
   const decoder = new SseDecoder(() => {});
   decoder.push(Uint8Array.of(0xe2));
   expect(() => decoder.finish()).toThrow();
+});
+
+it.each(['x', '€', '😀'])(
+  'enforces the UTF-8 data limit for %s regardless of chunk boundaries',
+  (unit) => {
+    const limit = 1_048_576;
+    const width = encoder.encode(unit).byteLength;
+    const data =
+      unit.repeat(Math.floor(limit / width)) + 'x'.repeat(limit % width);
+    for (const extra of ['', 'x']) {
+      const bytes = encoder.encode(`data: ${data}${extra}\n\n`);
+      for (const size of [bytes.length, 4096]) {
+        const receive = vi.fn();
+        const decoder = new SseDecoder(receive);
+        const consume = () => {
+          for (let offset = 0; offset < bytes.length; offset += size)
+            decoder.push(bytes.subarray(offset, offset + size));
+          decoder.finish();
+        };
+        if (extra) {
+          expect(consume).toThrow('size');
+          expect(receive).not.toHaveBeenCalled();
+        } else {
+          consume();
+          expect(receive).toHaveBeenCalledExactlyOnceWith('message', data);
+        }
+      }
+    }
+  },
+);
+
+it('ignores unknown fields and invalid retry hints without reconnecting or stripping two BOMs', () => {
+  const receive = vi.fn();
+  const decoder = new SseDecoder(receive);
+  decoder.push(
+    encoder.encode(
+      '\uFEFF\uFEFFdata: ignored\n\nunknown: field\nretry: nope\n: comment\ndata: ready\n\n',
+    ),
+  );
+  decoder.finish();
+  expect(receive).toHaveBeenCalledExactlyOnceWith('message', 'ready');
 });
 
 it.each([

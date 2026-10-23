@@ -95,7 +95,8 @@ validates HTTP envelopes, and DOM modules own morphing and selection.
 ## Keep examples trustworthy
 
 Demo controllers use routing attributes connected through `connectAttributes()`.
-Islands use `LocatorAwareTrait::fetchTable()` for Tables; domain queries belong in
+Islands assign Table properties in `initialize()` using `LocatorAwareTrait::fetchTable()`;
+domain queries belong in
 named finders. Keep other behavior services injectable.
 
 Give every PHP/TypeScript class an informative responsibility docblock, including

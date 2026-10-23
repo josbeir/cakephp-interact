@@ -44,7 +44,8 @@ Back and Forward restore the search and page together. `updated()` respects an
 explicitly supplied page. Rows and counts remain in the native paginated result;
 only the search and page are transported.
 
-The Table returns a composable query; the island chooses pagination. See
+`initialize()` assigns the request-local Table; `viewData()` runs its finder and
+paginates after authorization. The Table stays out of the snapshot. See
 [pagination](/guide/pagination) for configuration, sorting, page sizes, and custom
 helper templates. The larger [demo listing](/examples#demo-catalog) adds filters,
 allowlisted sorting, and page-size controls.

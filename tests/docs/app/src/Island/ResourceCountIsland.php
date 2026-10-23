@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Island;
 
+use App\Model\Table\ResourcesTable;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Prop;
 use Interact\Island;
@@ -16,8 +17,18 @@ class ResourceCountIsland extends Island
 {
     use LocatorAwareTrait;
 
+    protected ResourcesTable $resources;
+
     #[Prop]
     public string $search = '';
+
+    /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $this->resources = $this->fetchTable(ResourcesTable::class);
+    }
 
     /**
      * Keep query execution on the server and outside the initial placeholder render.
@@ -26,6 +37,6 @@ class ResourceCountIsland extends Island
      */
     public function viewData(): array
     {
-        return ['total' => $this->fetchTable('Resources')->find('matching', search: $this->search)->count()];
+        return ['total' => $this->resources->find('matching', search: $this->search)->count()];
     }
 }

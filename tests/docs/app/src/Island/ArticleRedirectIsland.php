@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Island;
 
+use App\Model\Table\ArticlesTable;
 use Cake\Datasource\EntityInterface;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Action;
@@ -18,10 +19,20 @@ class ArticleRedirectIsland extends Island
 {
     use LocatorAwareTrait;
 
+    protected ArticlesTable $articles;
+
     #[State(writable: true)]
     public string $title = '';
 
     protected ?EntityInterface $article = null;
+
+    /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $this->articles = $this->fetchTable(ArticlesTable::class);
+    }
 
     /**
      * Keep failed entity errors on the form, or redirect after saving succeeds.
@@ -29,7 +40,7 @@ class ArticleRedirectIsland extends Island
     #[Action]
     public function save(): void
     {
-        $articles = $this->fetchTable('Articles');
+        $articles = $this->articles;
         $this->article = $articles->newEntity(['title' => $this->title]);
         if (!$articles->save($this->article)) {
             $this->setErrors($this->article->getErrors() ?: ['_form' => ['Unable to save the article.']]);
@@ -47,6 +58,6 @@ class ArticleRedirectIsland extends Island
      */
     public function viewData(): array
     {
-        return ['article' => $this->article ?? $this->fetchTable('Articles')->newEmptyEntity()];
+        return ['article' => $this->article ?? $this->articles->newEmptyEntity()];
     }
 }
