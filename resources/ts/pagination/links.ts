@@ -1,4 +1,5 @@
 import { linkDestination } from '../navigation/links';
+import { ownsIslandElement } from '../dom/ownership';
 import { record } from '../state/values';
 import type { State, Writable } from '../types';
 
@@ -17,7 +18,7 @@ export function paginationLinks(
     const link = event.target.closest('a');
     if (
       !(link instanceof HTMLAnchorElement) ||
-      link.closest('[data-interact-id]') !== root ||
+      !ownsIslandElement(root, link) ||
       [...link.attributes].some((attribute) =>
         attribute.name.startsWith('x-interact:navigate'),
       )
@@ -33,10 +34,10 @@ export function paginationLinks(
     )
       return;
     try {
-      for (const marker of root.querySelectorAll(
+      for (const marker of root.querySelectorAll<HTMLTemplateElement>(
         'template[data-interact-pagination]',
       )) {
-        if (marker.closest('[data-interact-id]') !== root) continue;
+        if (!ownsIslandElement(root, marker)) continue;
         const targets: unknown = JSON.parse(
           marker.getAttribute('data-interact-pagination') ?? '{}',
         );

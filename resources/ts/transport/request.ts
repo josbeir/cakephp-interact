@@ -1,7 +1,7 @@
 import type { Fetcher, Invocation, UpdateResponse, State } from '../types';
 import type { MountMetadata } from './metadata';
 import { readStream } from '../streaming/response';
-import { response } from './protocol';
+import { responseMatches } from './protocol';
 import { readFailure, requestError } from './failure';
 
 /**
@@ -79,11 +79,7 @@ export async function readResponse(
   } catch (cause: unknown) {
     throw requestError('invalid_response', result.status, cause);
   }
-  if (
-    !response(payload) ||
-    payload.id !== id ||
-    (('redirect' in payload || payload.html === null) && result.status !== 200)
-  )
+  if (!responseMatches(payload, id, result.status))
     throw requestError('invalid_response', result.status);
   return payload;
 }

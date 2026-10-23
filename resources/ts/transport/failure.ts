@@ -155,31 +155,49 @@ export async function readFailure(
   } catch {
     return fallback;
   }
-  if (!record(value) || value.version !== 1) return fallback;
+
+  return failurePayload(value, result.status);
+}
+
+/** Require a versioned failure frame before accepting it as a streaming terminal. */
+export function failureEnvelope(value: unknown): value is {
+  version: 1;
+  error: { code: string; message: string };
+} {
+  return (
+    record(value) &&
+    value.version === 1 &&
+    record(value.error) &&
+    typeof value.error.code === 'string' &&
+    typeof value.error.message === 'string' &&
+    value.error.message.length > 0
+  );
+}
+
+/** Validate parsed server feedback independently of JSON or streaming transport. */
+export function failurePayload(
+  value: unknown,
+  status: number,
+): IslandRequestError {
+  if (!record(value) || value.version !== 1)
+    return requestError(httpCode(status), status);
+  if (!failureEnvelope(value)) return requestError('invalid_response', status);
   const error = value.error;
-  if (
-    !record(error) ||
-    !serverCode(error.code) ||
-    typeof error.message !== 'string' ||
-    error.message.length === 0
-  )
-    return requestError('invalid_response', result.status);
+  if (!serverCode(error.code)) return requestError('invalid_response', status);
   const expected = serverStatuses[error.code];
   if (
-    (error.code === 'server_error' && result.status < 500) ||
+    (error.code === 'server_error' && status < 500) ||
     (error.code === 'http_error' &&
-      (result.status < 400 ||
-        result.status >= 500 ||
-        [400, 401, 403, 413].includes(result.status))) ||
-    (expected !== 0 &&
-      error.code !== 'server_error' &&
-      expected !== result.status)
+      (status < 400 ||
+        status >= 500 ||
+        [400, 401, 403, 413].includes(status))) ||
+    (expected !== 0 && error.code !== 'server_error' && expected !== status)
   )
-    return requestError('invalid_response', result.status);
+    return requestError('invalid_response', status);
   return new IslandRequestError({
     code: error.code,
     message: error.message,
-    status: result.status,
+    status,
     recovery: definitions[error.code].recovery,
   });
 }
