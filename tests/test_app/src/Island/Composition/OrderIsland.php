@@ -18,6 +18,8 @@ class OrderIsland extends Island
 {
     use LocatorAwareTrait;
 
+    protected ResourcesTable $resources;
+
     #[Prop]
     public string $pickerLoading = 'eager';
 
@@ -34,6 +36,16 @@ class OrderIsland extends Island
     public string $reviewed = '';
 
     /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $table = $this->fetchTable('Resources');
+        assert($table instanceof ResourcesTable, 'Configure the application Resources table.');
+        $this->resources = $table;
+    }
+
+    /**
      * Check current resource membership rather than trusting the child input or its snapshot.
      */
     #[Action]
@@ -45,7 +57,7 @@ class OrderIsland extends Island
             return;
         }
 
-        $resource = $this->fetchTable('Resources')
+        $resource = $this->resources
             ->find('filtered', category: $this->category)
             ->where(['Resources.id' => $this->data['resourceId']])
             ->first();

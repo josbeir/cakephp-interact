@@ -19,6 +19,8 @@ class ListingIsland extends Island
 {
     use LocatorAwareTrait;
 
+    protected ArticlesTable $articles;
+
     #[State(writable: true)]
     public string $search = '';
 
@@ -26,6 +28,16 @@ class ListingIsland extends Island
     public int $page = 1;
 
     protected int $ownerId = 0;
+
+    /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $table = $this->fetchTable('Articles');
+        assert($table instanceof ArticlesTable, 'The configured collaborator must satisfy its declared contract.');
+        $this->articles = $table;
+    }
 
     /**
      * Re-establish the current identity on every request; identity is not client state.
@@ -81,7 +93,7 @@ class ListingIsland extends Island
     {
         return [
             'totalPages' => $this->totalPages(),
-            'articles' => $this->articles()
+            'articles' => $this->articles
                 ->find(
                     'listing',
                     ownerId: $this->ownerId,
@@ -98,19 +110,8 @@ class ListingIsland extends Island
      */
     protected function totalPages(): int
     {
-        $count = $this->articles()->find('listing', ownerId: $this->ownerId, search: $this->search)->count();
+        $count = $this->articles->find('listing', ownerId: $this->ownerId, search: $this->search)->count();
 
         return max(1, (int)ceil($count / 3));
-    }
-
-    /**
-     * Resolve the application's normal CakePHP model through its Table locator.
-     */
-    protected function articles(): ArticlesTable
-    {
-        $table = $this->fetchTable('Articles');
-        assert($table instanceof ArticlesTable, 'The configured collaborator must satisfy its declared contract.');
-
-        return $table;
     }
 }

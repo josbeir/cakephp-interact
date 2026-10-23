@@ -8,6 +8,7 @@ use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Action;
 use Interact\Attribute\State;
 use Interact\Island;
+use TestApp\Model\Table\OutcomeArticlesTable;
 
 /**
  * Demonstrates native model validation followed by navigation or a separate invoice download.
@@ -16,6 +17,8 @@ use Interact\Island;
 class ActionOutcomesIsland extends Island
 {
     use LocatorAwareTrait;
+
+    protected OutcomeArticlesTable $articles;
 
     #[State(writable: true)]
     public string $title = '';
@@ -26,12 +29,22 @@ class ActionOutcomesIsland extends Island
     protected ?EntityInterface $article = null;
 
     /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $table = $this->fetchTable('OutcomeArticles');
+        assert($table instanceof OutcomeArticlesTable, 'Configure the application OutcomeArticles table.');
+        $this->articles = $table;
+    }
+
+    /**
      * Validate and create a demo article before navigating to its application page.
      */
     #[Action]
     public function save(bool $replace = false): void
     {
-        $articles = $this->fetchTable('OutcomeArticles');
+        $articles = $this->articles;
         $this->article = $articles->newEntity(['title' => $this->title]);
         if (!$articles->save($this->article)) {
             $this->setErrors($this->article->getErrors() ?: ['_form' => ['Unable to save the article.']]);
@@ -77,6 +90,6 @@ class ActionOutcomesIsland extends Island
      */
     public function viewData(): array
     {
-        return ['article' => $this->article ?? $this->fetchTable('OutcomeArticles')->newEmptyEntity()];
+        return ['article' => $this->article ?? $this->articles->newEmptyEntity()];
     }
 }

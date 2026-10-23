@@ -21,6 +21,8 @@ class FormIsland extends Island
 {
     use LocatorAwareTrait;
 
+    protected FormArticlesTable $articles;
+
     /**
      * @var array{title: string, body: string, published: bool, topics: list<string>, comments: list<array{body: string, approved: bool, id?: mixed}>, id?: mixed}
      */
@@ -37,6 +39,16 @@ class FormIsland extends Island
     public bool $saved = false;
 
     protected ?EntityInterface $article = null;
+
+    /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $table = $this->fetchTable('FormArticles');
+        assert($table instanceof FormArticlesTable, 'Configure the application FormArticles table.');
+        $this->articles = $table;
+    }
 
     /**
      * Clear stale save feedback when the application receives another draft edit.
@@ -96,7 +108,7 @@ class FormIsland extends Island
             return;
         }
 
-        $articles = $this->articles();
+        $articles = $this->articles;
         $this->article = $articles->patchEntity($articles->newEmptyEntity(), $this->data, [
             'fields' => ['title', 'body', 'published', 'topics', 'comments'],
             'associated' => ['Comments' => ['fields' => ['body', 'approved']]],
@@ -121,17 +133,6 @@ class FormIsland extends Island
      */
     public function viewData(): array
     {
-        return ['article' => $this->article ?? $this->articles()->newEmptyEntity()->patch($this->data)];
-    }
-
-    /**
-     * Resolve the application's normal Table through CakePHP's locator.
-     */
-    protected function articles(): FormArticlesTable
-    {
-        $table = $this->fetchTable('FormArticles');
-        assert($table instanceof FormArticlesTable, 'Configure the application FormArticles table.');
-
-        return $table;
+        return ['article' => $this->article ?? $this->articles->newEmptyEntity()->patch($this->data)];
     }
 }

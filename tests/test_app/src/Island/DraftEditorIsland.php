@@ -20,6 +20,8 @@ class DraftEditorIsland extends Island
 {
     use LocatorAwareTrait;
 
+    protected FormArticlesTable $articles;
+
     /**
      * @var array{title: string, body: string} Application-owned editable values.
      */
@@ -36,6 +38,16 @@ class DraftEditorIsland extends Island
     public int $signals = 0;
 
     protected ?EntityInterface $article = null;
+
+    /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $table = $this->fetchTable('FormArticles');
+        assert($table instanceof FormArticlesTable, 'Configure the application FormArticles table.');
+        $this->articles = $table;
+    }
 
     /**
      * Authorize both the initial form and every later action against the current demo role.
@@ -55,7 +67,7 @@ class DraftEditorIsland extends Island
     #[Action(render: false)]
     public function saveDraft(): void
     {
-        $table = $this->articles();
+        $table = $this->articles;
         $entity = $this->articleId === null ? $table->newEmptyEntity() : $table->get($this->articleId);
         $this->article = $table->patchEntity($entity, $this->data, ['fields' => ['title', 'body'], 'associated' => []]);
         if (!$table->save($this->article, ['associated' => []])) {
@@ -89,17 +101,6 @@ class DraftEditorIsland extends Island
      */
     public function viewData(): array
     {
-        return ['article' => $this->article ?? $this->articles()->newEmptyEntity()->patch($this->data)];
-    }
-
-    /**
-     * Resolve the normal application Table without transporting it or its entities.
-     */
-    protected function articles(): FormArticlesTable
-    {
-        $table = $this->fetchTable('FormArticles');
-        assert($table instanceof FormArticlesTable, 'Configure the application FormArticles table.');
-
-        return $table;
+        return ['article' => $this->article ?? $this->articles->newEmptyEntity()->patch($this->data)];
     }
 }

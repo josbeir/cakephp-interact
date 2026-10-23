@@ -21,6 +21,7 @@ declare(strict_types=1);
 namespace App\Island;
 
 use Cake\ORM\Locator\LocatorAwareTrait;
+use Cake\ORM\Table;
 use Interact\Attribute\State;
 use Interact\Island;
 
@@ -39,6 +40,16 @@ class ResourcesIsland extends Island
      */
     protected array $paginate = ['limit' => 20, 'order' => ['Resources.id' => 'asc']];
 
+    protected Table $resources;
+
+    /**
+     * Assign the Table without querying or transporting its rows.
+     */
+    public function initialize(): void
+    {
+        $this->resources = $this->fetchTable('Resources');
+    }
+
     /**
      * Fetch request-local results without transporting rows.
      *
@@ -46,7 +57,7 @@ class ResourcesIsland extends Island
      */
     public function viewData(): array
     {
-        return ['resources' => $this->paginate($this->fetchTable('Resources')->find())];
+        return ['resources' => $this->paginate($this->resources->find())];
     }
 }
 ```

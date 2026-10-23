@@ -9,6 +9,7 @@ use Interact\Attribute\Prop;
 use Interact\Attribute\State;
 use Interact\Island;
 use Interact\UpdatedPaths;
+use TestApp\Model\Table\ResourcesTable;
 
 /**
  * Exposes one modelable selection while searching through application-owned resource finders.
@@ -17,6 +18,8 @@ use Interact\UpdatedPaths;
 class PickerIsland extends Island
 {
     use LocatorAwareTrait;
+
+    protected ResourcesTable $resources;
 
     #[Prop(reactive: true)]
     public string $category = 'cakephp';
@@ -29,6 +32,16 @@ class PickerIsland extends Island
 
     #[State(writable: true)]
     public string $notes = '';
+
+    /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $table = $this->fetchTable('Resources');
+        assert($table instanceof ResourcesTable, 'Configure the application Resources table.');
+        $this->resources = $table;
+    }
 
     /**
      * Clear a selection whose category changed without replacing unrelated child drafts.
@@ -48,7 +61,7 @@ class PickerIsland extends Island
     #[Action]
     public function choose(int $id): void
     {
-        $resource = $this->fetchTable('Resources')
+        $resource = $this->resources
             ->find('filtered', category: $this->category)
             ->where(['Resources.id' => $id])
             ->first();
@@ -69,7 +82,7 @@ class PickerIsland extends Island
     public function viewData(): array
     {
         return [
-            'resources' => $this->fetchTable('Resources')
+            'resources' => $this->resources
                 ->find('listing', search: $this->search, category: $this->category)
                 ->limit(8)
                 ->all(),

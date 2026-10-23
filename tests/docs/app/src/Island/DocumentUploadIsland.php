@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Island;
 
+use App\Model\Table\DocumentsTable;
 use Cake\Core\Configure;
 use Cake\Datasource\EntityInterface;
 use Cake\ORM\Locator\LocatorAwareTrait;
@@ -22,10 +23,22 @@ class DocumentUploadIsland extends Island
 {
     use LocatorAwareTrait;
 
+    protected DocumentsTable $documents;
+
     #[Upload(maxFileSize: '1MB')]
     public ?UploadedFileInterface $document = null;
 
     protected ?EntityInterface $record = null;
+
+    /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $table = $this->fetchTable('Documents');
+        assert($table instanceof DocumentsTable, 'Configure the application Documents table.');
+        $this->documents = $table;
+    }
 
     /**
      * Validate and save the record, then move the file into private storage.
@@ -33,7 +46,7 @@ class DocumentUploadIsland extends Island
     #[Action]
     public function save(): void
     {
-        $documents = $this->fetchTable('Documents');
+        $documents = $this->documents;
         $this->record = $documents->newEntity([
             'filename' => $this->document?->getClientFilename(),
             'document' => $this->document,
@@ -57,7 +70,7 @@ class DocumentUploadIsland extends Island
      */
     public function viewData(): array
     {
-        $record = $this->record ?? $this->fetchTable('Documents')->newEmptyEntity();
+        $record = $this->record ?? $this->documents->newEmptyEntity();
         $record->setErrors($record->getErrors() + $this->errors());
 
         return ['record' => $record];

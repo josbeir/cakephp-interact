@@ -17,6 +17,8 @@ class DependentSelectsIsland extends Island
 {
     use LocatorAwareTrait;
 
+    protected CitiesTable $cities;
+
     #[State(writable: true)]
     public string $country = 'BE';
 
@@ -25,6 +27,16 @@ class DependentSelectsIsland extends Island
 
     #[State]
     public bool $confirmed = false;
+
+    /**
+     * Assign the request-local Table before authorization and state restoration.
+     */
+    public function initialize(): void
+    {
+        $table = $this->fetchTable('Cities');
+        assert($table instanceof CitiesTable, 'The configured collaborator must satisfy its declared contract.');
+        $this->cities = $table;
+    }
 
     /**
      * Clear the selected city when its owning country changes.
@@ -48,7 +60,7 @@ class DependentSelectsIsland extends Island
         if (
             !in_array($this->country, ['BE', 'NL'], true)
             || $this->cityId === null
-            || !$this->cities()->find('selection', country: $this->country, cityId: $this->cityId)->count()
+            || !$this->cities->find('selection', country: $this->country, cityId: $this->cityId)->count()
         ) {
             $this->setErrors(['cityId' => ['Choose a city in the selected country.']]);
 
@@ -65,17 +77,6 @@ class DependentSelectsIsland extends Island
      */
     public function viewData(): array
     {
-        return ['cities' => $this->cities()->find('inCountry', country: $this->country)->all()];
-    }
-
-    /**
-     * Resolve the application's normal CakePHP model through its Table locator.
-     */
-    protected function cities(): CitiesTable
-    {
-        $table = $this->fetchTable('Cities');
-        assert($table instanceof CitiesTable, 'The configured collaborator must satisfy its declared contract.');
-
-        return $table;
+        return ['cities' => $this->cities->find('inCountry', country: $this->country)->all()];
     }
 }
