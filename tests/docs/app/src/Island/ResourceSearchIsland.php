@@ -36,9 +36,7 @@ class ResourceSearchIsland extends Island
      */
     public function initialize(): void
     {
-        $table = $this->fetchTable('Resources');
-        assert($table instanceof ResourcesTable, 'The resource search requires the application Resources table.');
-        $this->resources = $table;
+        $this->resources = $this->fetchTable(ResourcesTable::class);
     }
 
     /**

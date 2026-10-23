@@ -44,9 +44,7 @@ class EditorIsland extends Island
      */
     public function initialize(): void
     {
-        $table = $this->fetchTable('Articles');
-        assert($table instanceof ArticlesTable, 'The configured collaborator must satisfy its declared contract.');
-        $this->articles = $table;
+        $this->articles = $this->fetchTable(ArticlesTable::class);
     }
 
     /**

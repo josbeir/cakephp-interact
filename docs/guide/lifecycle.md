@@ -45,8 +45,8 @@ URL values, and snapshot state have not been assigned yet.
 ```php
 namespace App\Island;
 
+use App\Model\Table\ArticlesTable;
 use Cake\ORM\Locator\LocatorAwareTrait;
-use Cake\ORM\Table;
 use Interact\Island;
 
 /**
@@ -56,14 +56,14 @@ class ArticleListIsland extends Island
 {
     use LocatorAwareTrait;
 
-    protected Table $articles;
+    protected ArticlesTable $articles;
 
     /**
      * Assign the Table for this request without transporting it to the browser.
      */
     public function initialize(): void
     {
-        $this->articles = $this->fetchTable('Articles');
+        $this->articles = $this->fetchTable(ArticlesTable::class);
     }
 }
 ```

@@ -33,9 +33,7 @@ class ActionOutcomesIsland extends Island
      */
     public function initialize(): void
     {
-        $table = $this->fetchTable('OutcomeArticles');
-        assert($table instanceof OutcomeArticlesTable, 'Configure the application OutcomeArticles table.');
-        $this->articles = $table;
+        $this->articles = $this->fetchTable(OutcomeArticlesTable::class);
     }
 
     /**

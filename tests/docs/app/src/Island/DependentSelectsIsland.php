@@ -33,9 +33,7 @@ class DependentSelectsIsland extends Island
      */
     public function initialize(): void
     {
-        $table = $this->fetchTable('Cities');
-        assert($table instanceof CitiesTable, 'The configured collaborator must satisfy its declared contract.');
-        $this->cities = $table;
+        $this->cities = $this->fetchTable(CitiesTable::class);
     }
 
     /**

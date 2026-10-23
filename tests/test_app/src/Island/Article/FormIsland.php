@@ -45,9 +45,7 @@ class FormIsland extends Island
      */
     public function initialize(): void
     {
-        $table = $this->fetchTable('FormArticles');
-        assert($table instanceof FormArticlesTable, 'Configure the application FormArticles table.');
-        $this->articles = $table;
+        $this->articles = $this->fetchTable(FormArticlesTable::class);
     }
 
     /**

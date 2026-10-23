@@ -38,9 +38,7 @@ class PickerIsland extends Island
      */
     public function initialize(): void
     {
-        $table = $this->fetchTable('Resources');
-        assert($table instanceof ResourcesTable, 'Configure the application Resources table.');
-        $this->resources = $table;
+        $this->resources = $this->fetchTable(ResourcesTable::class);
     }
 
     /**

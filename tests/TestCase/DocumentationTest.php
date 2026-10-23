@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Test\TestCase;
 
 use App\Controller\InvoicesController;
+use App\Model\Table\DocumentsTable;
 use Cake\Core\Configure;
 use Cake\Http\ServerRequest;
 use Cake\ORM\Locator\LocatorInterface;
@@ -21,6 +22,7 @@ use Interact\View\TemplateView;
 use Laminas\Diactoros\Stream;
 use Laminas\Diactoros\UploadedFile;
 use PHPUnit\Framework\TestCase;
+use TestApp\Model\Table\FormArticlesTable;
 
 /**
  * Verifies the copyable documentation source through real signing, rendering, and model behavior.
@@ -135,7 +137,7 @@ class DocumentationTest extends TestCase
         static::assertSame([], $valid->errors);
         static::assertTrue($valid->state['saved']);
         static::assertSame('article-saved', $valid->events[0]['name']);
-        static::assertSame(1, TableRegistry::getTableLocator()->get('FormArticles')->find()->count());
+        static::assertSame(1, TableRegistry::getTableLocator()->get(FormArticlesTable::class)->find()->count());
     }
 
     public function testNestedArticleDraftMarshallingValidationAndExplicitSaves(): void
@@ -185,7 +187,7 @@ class DocumentationTest extends TestCase
         ], $context);
         static::assertSame([], $saved->errors);
         static::assertTrue($saved->state['saved']);
-        $articles = TableRegistry::getTableLocator()->get('FormArticles');
+        $articles = TableRegistry::getTableLocator()->get(FormArticlesTable::class);
         $article = $articles->get($saved->events[0]['detail']['id']);
         static::assertSame('<script>draft</script>', $article->get('body'));
         static::assertTrue($article->get('published'));
@@ -433,7 +435,7 @@ class DocumentationTest extends TestCase
         static::assertSame([], $saved->errors);
         static::assertStringContainsString('Document saved.', $saved->html);
         $record = TableRegistry::getTableLocator()
-            ->get('Documents')
+            ->get(DocumentsTable::class)
             ->find()
             ->where(['filename' => 'document.txt'])
             ->firstOrFail();

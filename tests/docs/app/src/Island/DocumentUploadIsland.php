@@ -35,9 +35,7 @@ class DocumentUploadIsland extends Island
      */
     public function initialize(): void
     {
-        $table = $this->fetchTable('Documents');
-        assert($table instanceof DocumentsTable, 'Configure the application Documents table.');
-        $this->documents = $table;
+        $this->documents = $this->fetchTable(DocumentsTable::class);
     }
 
     /**
