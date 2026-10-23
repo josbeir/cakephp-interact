@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test';
+import Alpine from '@alpinejs/csp';
 import { refreshControl } from '../../resources/ts/bindings/control-values';
 import {
   clone,
@@ -9,9 +10,52 @@ import {
 } from '../../resources/ts/state/values';
 import { path, read, write } from '../../resources/ts/state/paths';
 import { response, writable } from '../../resources/ts/transport/protocol';
-import type { State } from '../../resources/ts/types';
+import type { Json, State } from '../../resources/ts/types';
 
 describe('transport values', () => {
+  it('compares primitive transport values without coercing distinct scalar types', () => {
+    const cases: [Json | undefined, Json | undefined, boolean][] = [
+      [undefined, undefined, true],
+      [undefined, null, false],
+      [null, null, true],
+      [null, false, false],
+      [false, 0, false],
+      [true, true, true],
+      [0, -0, true],
+      [1, '1', false],
+      ['', '', true],
+      ['0', false, false],
+      [2.5, 2.6, false],
+      ['draft', 'different', false],
+      [{ value: 1 }, 1, false],
+      [null, [], false],
+    ];
+    for (const [left, right, expected] of cases)
+      expect(equal(left, right)).toBe(expected);
+  });
+
+  it('tracks nested object and array edits even when comparing the same reactive object', async () => {
+    const value = Alpine.reactive({
+      nested: { title: 'first' },
+      items: ['first'],
+    });
+    let runs = 0;
+    const runner = Alpine.effect(() => {
+      runs++;
+      expect(equal(value, value)).toBe(true);
+    });
+    try {
+      value.nested.title = 'second';
+      await Promise.resolve();
+      expect(runs).toBe(2);
+      value.items[0] = 'second';
+      await Promise.resolve();
+      expect(runs).toBe(3);
+    } finally {
+      Alpine.release(runner);
+    }
+  });
+
   it.each([
     [null, ''],
     [undefined, ''],

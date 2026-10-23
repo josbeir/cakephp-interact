@@ -2,6 +2,7 @@ import type { State } from '../types';
 
 /** Request lifecycle hooks owned by the installation's parent/child coordinator. */
 export interface CompositionHooks {
+  /** Read the client's detached request snapshot without mutating it. */
   begin(action: string | null, sent: State): void;
   preserve(incoming: State): State;
   capture(): void;

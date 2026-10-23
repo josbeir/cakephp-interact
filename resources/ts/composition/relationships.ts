@@ -40,17 +40,23 @@ export class Relationships {
       begin: (invocation, values) => {
         epoch = ++this.clock;
         action = invocation;
-        sent = clone(values);
+        sent = values;
         flush(sent);
       },
       preserve: (incoming) => {
-        const values = clone(incoming);
-        for (const link of this.links) link.preserve(client, values, epoch);
-        return changedWritable(
-          values,
-          incoming,
-          readMetadata(client.root).writable,
-        );
+        let values: State | undefined;
+        for (const link of this.links) {
+          if (link.parent !== client && link.child !== client) continue;
+          values ??= clone(incoming);
+          link.preserve(client, values, epoch);
+        }
+        return values
+          ? changedWritable(
+              values,
+              incoming,
+              readMetadata(client.root).writable,
+            )
+          : {};
       },
       capture: () => {
         for (const link of this.links)
@@ -67,11 +73,12 @@ export class Relationships {
           link.received(client, epoch, action, sent);
         for (const link of this.links)
           if (link.child === client) link.reconcile();
-        const inputs = replacement
-          ? this.inputs(client, replacement)
-          : new Map<IslandClient, string>();
+        let inputs: Map<IslandClient, string> | undefined;
         for (const link of this.links)
-          if (link.parent === client) link.accepted(inputs.get(link.child));
+          if (link.parent === client) {
+            if (replacement) inputs ??= this.inputs(client, replacement);
+            link.accepted(inputs?.get(link.child));
+          }
       },
       dispose: () => {
         disposed = true;
@@ -131,16 +138,24 @@ export class Relationships {
     replacement: HTMLElement,
   ): Map<IslandClient, string> {
     const inputs = new Map<IslandClient, string>();
-    for (const marker of replacement.querySelectorAll<HTMLElement>(
+    const markers = replacement.querySelectorAll<HTMLElement>(
       '[data-interact-parent-inputs]',
+    );
+    if (!markers.length) return inputs;
+    const children = new Map<string, HTMLElement>();
+    for (const root of parent.root.querySelectorAll<HTMLElement>(
+      '[data-interact-id]',
     )) {
+      const id = root.dataset.interactId;
+      // A later duplicate must not bypass the first match's ownership check.
+      if (id !== undefined && !children.has(id)) children.set(id, root);
+    }
+    for (const marker of markers) {
       if (marker.parentElement?.closest('[data-interact-id]') !== replacement)
         continue;
       const id = marker.dataset.interactPreserve;
       const ticket = marker.dataset.interactParentInputs;
-      const root = [
-        ...parent.root.querySelectorAll<HTMLElement>('[data-interact-id]'),
-      ].find((node) => node.dataset.interactId === id);
+      const root = id === undefined ? undefined : children.get(id);
       const child = root ? this.resolve(root) : undefined;
       if (
         child &&

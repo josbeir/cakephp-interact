@@ -160,6 +160,76 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+it.each([false, true])(
+  'avoids state copies and child discovery for an unrelated island (other bindings: %s)',
+  async (otherBindings) => {
+    const relationships = otherBindings
+      ? (await fixture()).relationships
+      : new Relationships(Alpine, (element) => roots.get(element));
+    const element = root(
+      'standalone',
+      { value: 'current' },
+      { value: { type: 'string', nullable: false } },
+    );
+    document.body.append(element);
+    const { client } = participant(element, relationships);
+    await Promise.resolve();
+    const incoming = { value: 'accepted' };
+    const parse = vi.spyOn(JSON, 'parse');
+    const serialize = vi.spyOn(JSON, 'stringify');
+    const discover = vi.spyOn(element, 'querySelectorAll');
+    client.composition?.begin(null, { value: 'sent' });
+    const changes = client.composition?.preserve(incoming);
+    client.composition?.accepted(element);
+    expect(parse).not.toHaveBeenCalled();
+    expect(serialize).not.toHaveBeenCalled();
+    expect(discover).not.toHaveBeenCalled();
+    expect(changes).toEqual({});
+    expect(incoming).toEqual({ value: 'accepted' });
+  },
+);
+
+it('preserves a newly connected child action while an unbound parent request is in flight', async () => {
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const { parent, child, parentRoot, childRoot, relationships } = await fixture(
+    {
+      parentServer: async (_request, current) => {
+        await held;
+        return current;
+      },
+    },
+  );
+  child.client.dispose();
+  destroyBindings(childRoot);
+  childRoot.remove();
+  const saving = parent.client.bridge.call('save');
+  await vi.waitFor(() => expect(parent.requests).toHaveLength(1));
+  const element = root(
+    'late-child',
+    { value: '' },
+    { value: { type: 'string', nullable: false } },
+  );
+  element.dataset.interactRelation = JSON.stringify({
+    parentId: 'parent',
+    models: { value: { path: 'data.value', timing: 'defer', delay: 250 } },
+  });
+  parentRoot.append(element);
+  const late = participant(element, relationships, async () => ({
+    value: 'newly accepted',
+  }));
+  await Promise.resolve();
+  expect(await late.client.bridge.call('choose')).toEqual({ ok: true });
+  release();
+  expect(await saving).toEqual({ ok: true });
+  expect(parent.client.bridge.state.data).toMatchObject({
+    value: 'newly accepted',
+  });
+  expect(late.client.bridge.state.value).toBe('newly accepted');
+});
+
 it('mirrors multiple local values in both directions without sending requests by default', async () => {
   const { parent, child, input } = await fixture();
   edit(input, 'chosen');
@@ -680,6 +750,41 @@ it('sends generated input tickets only to the preserved direct child after paren
   });
 });
 
+it('discovers child roots once while routing sibling tickets independently', async () => {
+  const { parent, child, parentRoot, childRoot, relationships } =
+    await fixture();
+  const siblingRoot = root(
+    'sibling',
+    { value: '', end: '', notes: '' },
+    {
+      value: { type: 'string', nullable: false },
+      end: { type: 'string', nullable: false },
+      notes: { type: 'string', nullable: false },
+    },
+  );
+  siblingRoot.dataset.interactRelation = childRoot.dataset.interactRelation;
+  parentRoot.append(siblingRoot);
+  const sibling = participant(siblingRoot, relationships);
+  await Promise.resolve();
+  const incoming = parentRoot.cloneNode(false);
+  if (!(incoming instanceof HTMLElement))
+    throw new Error('Missing replacement.');
+  const discover = vi.spyOn(parentRoot, 'querySelectorAll');
+  parent.client.composition?.accepted(incoming);
+  expect(discover).not.toHaveBeenCalled();
+  incoming.innerHTML =
+    '<div data-interact-preserve="child" data-interact-parent-inputs="first-ticket"></div><div data-interact-preserve="sibling" data-interact-parent-inputs="second-ticket"></div>';
+  parent.client.composition?.accepted(incoming);
+  expect(discover).toHaveBeenCalledExactlyOnceWith('[data-interact-id]');
+  await vi.waitFor(() => {
+    expect(child.requests).toHaveLength(1);
+    expect(sibling.requests).toHaveLength(1);
+  });
+  expect(child.requests[0]).toMatchObject({ parentInputs: 'first-ticket' });
+  expect(sibling.requests[0]).toMatchObject({ parentInputs: 'second-ticket' });
+  expect(parent.requests).toHaveLength(0);
+});
+
 it('sends accepted parent models with the input ticket in one coherent child update', async () => {
   const { parent, child } = await fixture({
     parentContent:
@@ -735,6 +840,11 @@ it('ignores missing targets, nested markers, and disposed children', async () =>
   incoming.innerHTML =
     '<div data-interact-preserve="absent" data-interact-parent-inputs="missing"></div><div data-interact-id="nested"><div data-interact-preserve="child" data-interact-parent-inputs="nested"></div></div><div data-interact-preserve="unregistered" data-interact-parent-inputs="orphan"></div><div data-interact-preserve="child" data-interact-parent-inputs=""></div>';
   parentRoot.append(root('unregistered', {}, {}));
+  const nested = root('nested', {}, {});
+  nested.append(root('child', {}, {}));
+  parentRoot.prepend(nested);
+  incoming.innerHTML +=
+    '<div data-interact-preserve="child" data-interact-parent-inputs="shadowed"></div>';
   parent.client.composition?.accepted(incoming);
   child.client.dispose();
   child.client.receiveParentInputs('ignored');
