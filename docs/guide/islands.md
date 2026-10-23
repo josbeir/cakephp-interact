@@ -8,6 +8,9 @@ description: Declare, mount, and render interactive PHP regions in CakePHP.
 An island is a PHP class that renders a part of a page and handles its updates
 without a full page reload.
 
+[How it works](/how-it-works) shows how a hosting view, island classes, and island
+templates connect, and what happens when the browser sends an update.
+
 ## Declaring an island
 
 Extend `Interact\Island` and use the `Island` class suffix. Interact resolves

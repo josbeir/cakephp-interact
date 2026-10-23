@@ -16,6 +16,8 @@ HTML and handles subsequent actions without reloading the surrounding page.
 A PHP class declares its state and actions. CakePHP templates produce the HTML;
 Alpine handles browser interactions. Interact is independent of Livewire and htmx.
 
+See [How it works](/how-it-works) for flowcharts of page rendering and island updates.
+
 ## Features
 
 - Input binding, live search, conditional fields, and URL-bound state.

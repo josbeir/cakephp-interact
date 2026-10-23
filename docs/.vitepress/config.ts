@@ -103,6 +103,7 @@ export default defineConfig({
           text: 'Getting started',
           items: [
             { text: 'Overview', link: '/why' },
+            { text: 'How it works', link: '/how-it-works' },
             { text: 'Installation', link: '/installation' },
             { text: 'Configuration', link: '/configuration' },
             { text: 'Quickstart', link: '/getting-started' },
