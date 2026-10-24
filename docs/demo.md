@@ -44,6 +44,18 @@ Matching templates live under `templates/island/`, with page mounts under
 | <span id="streaming"></span>`/streaming`<br>Stream text, native elements, and progress during one action                                            | [Report island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/StreamingReportIsland.php), [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/streaming_report.php)   |
 | `/page`<br>Update a whole-page island while its layout stays in place                                                                               | [Controller](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Controller/ArticlesController.php)                                                                                                                             |
 
+## Debugging
+
+Open `/debugging` from the demo navigation. Edit the message and try **Dump draft**,
+**Stream three dumps**, or **Dump without rendering**. Clear the message before
+**Dump and validate** to receive validation feedback alongside the dump.
+**Dump then fail** deliberately throws after dumping; **Resume after failure**
+restores normal requests.
+
+The tested example uses [DebuggingIsland](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/DebuggingIsland.php)
+and its [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/debugging.php).
+See [debugging](/guide/debugging) for viewer settings and DebugKit coexistence.
+
 ## Source and reset
 
 The demo uses the `TestApp` namespace. Adapt it to your application's namespace

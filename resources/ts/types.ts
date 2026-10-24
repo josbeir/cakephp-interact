@@ -1,6 +1,7 @@
 import type { Redirect } from './effects/browser';
 import type { UrlFields, UrlRestoration } from './url/types';
 import type { UploadField, UploadJob, UploadMetadata } from './uploads/types';
+import type { DiagnosticOutput } from './diagnostics/output';
 /**
  * Values accepted by the JSON transport, including nested lists and records.
  */
@@ -54,6 +55,7 @@ export interface LoadingTarget extends RequestTarget {
 
 /** Terminal navigation accepted for an explicitly invoked island action. */
 export interface RedirectResponse {
+  diagnostics?: DiagnosticOutput;
   version: 1;
   id: string;
   redirect: Redirect;
@@ -69,6 +71,7 @@ export type UpdateResponse =
  * Browser effects never establish authorization or durable business messages.
  */
 export interface StateResponse {
+  diagnostics?: DiagnosticOutput;
   download?: string;
   uploads?: UploadMetadata;
   url?: UrlFields;

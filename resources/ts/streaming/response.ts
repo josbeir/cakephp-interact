@@ -9,6 +9,7 @@ import {
 import { responseMatches } from '../transport/protocol';
 import { streamMessage } from './messages';
 import { SseDecoder } from './sse';
+import { DiagnosticRequest, diagnosticOutput } from '../diagnostics/output';
 
 /** Read a finite action response, retaining the request queue until exactly one terminal frame. */
 export async function readStream(
@@ -16,6 +17,7 @@ export async function readStream(
   id: string,
   receive: (message: unknown) => void,
   acceptedStatus?: (status: number) => void,
+  diagnostics = new DiagnosticRequest(id),
 ): Promise<UpdateResponse> {
   if (result.status !== 200 || !result.body)
     throw requestError('invalid_response', result.status);
@@ -28,6 +30,13 @@ export async function readStream(
     const message: unknown = JSON.parse(data);
     if (!record(message) || message.version !== 1 || message.id !== id)
       throw requestError('invalid_response', 200);
+    if (
+      message.type === 'diagnostic' &&
+      diagnosticOutput(message.diagnostics)
+    ) {
+      diagnostics.show(message.diagnostics);
+      return;
+    }
     if (streamMessage(message)) {
       receive(message);
       return;
@@ -38,6 +47,7 @@ export async function readStream(
       responseMatches(message.payload, id, message.status)
     ) {
       terminal = message.payload;
+      if (terminal.diagnostics) diagnostics.show(terminal.diagnostics);
       terminalStatus = message.status;
     } else if (
       message.type === 'failure' &&
@@ -48,6 +58,11 @@ export async function readStream(
       failureEnvelope(message.payload)
     ) {
       terminal = failurePayload(message.payload, message.status);
+      if (
+        terminal.failure.code !== 'invalid_response' &&
+        message.payload.diagnostics
+      )
+        diagnostics.show(message.payload.diagnostics);
     } else throw requestError('invalid_response', 200);
   });
   try {

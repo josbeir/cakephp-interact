@@ -15,6 +15,7 @@ use Cake\Event\EventManagerInterface;
 use Cake\Http\MiddlewareQueue;
 use Cake\Http\ServerRequest;
 use Cake\Routing\RouteBuilder;
+use Interact\Debugging\Diagnostics;
 use Interact\Discovery\Registry;
 use Interact\Http\FailureResponder;
 use Interact\Http\UpdateErrorListener;
@@ -77,6 +78,10 @@ class InteractPlugin extends BasePlugin
             $container->addShared(FailureResponder::class);
         }
 
+        if (!$container->hasDefinition(Diagnostics::class)) {
+            $container->addShared(Diagnostics::class)->addArgument(Configuration::class);
+        }
+
         if (!$container->hasDefinition(SseResponse::class)) {
             $container->addShared(SseResponse::class, static fn(): SseResponse => new SseResponse(
                 $container->get(FailureResponder::class),
@@ -89,11 +94,13 @@ class InteractPlugin extends BasePlugin
                 Factory::class,
                 FailureResponder::class,
                 SseResponse::class,
+                Diagnostics::class,
             ]);
         }
 
         if (!$container->hasDefinition(UpdateErrorListener::class)) {
-            $container->addShared(UpdateErrorListener::class)->addArgument(FailureResponder::class);
+            $container->addShared(UpdateErrorListener::class)
+                ->addArguments([FailureResponder::class, Diagnostics::class]);
         }
 
         if (!$container->hasDefinition(Registry::class)) {

@@ -119,6 +119,12 @@ class ConfigurationTest extends TestCase
             'numeric attributes' => ['assets' => ['scriptOptions' => ['value']]],
             'empty block' => ['assets' => ['scriptOptions' => ['block' => '']]],
             'false block' => ['assets' => ['scriptOptions' => ['block' => false]]],
+            'invalid debug group' => ['debug' => false],
+            'unknown debug option' => ['debug' => ['console' => true]],
+            'null debug enabled' => ['debug' => ['enabled' => null]],
+            'string debug enabled' => ['debug' => ['enabled' => 'true']],
+            'null debug viewer' => ['debug' => ['viewer' => null]],
+            'numeric debug viewer' => ['debug' => ['viewer' => 1]],
             'null block' => ['assets' => ['scriptOptions' => ['block' => null]]],
         ] as $name => $options) {
             yield $name => [$options];

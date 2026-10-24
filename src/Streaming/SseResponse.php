@@ -3,11 +3,15 @@ declare(strict_types=1);
 
 namespace Interact\Streaming;
 
+use Cake\Core\Configure;
 use Cake\Error\ExceptionTrap;
 use Cake\Http\CallbackStream;
 use Cake\Http\Response;
+use Closure;
+use Interact\Debugging\OutputCapture;
 use Interact\Http\FailureResponder;
 use Interact\Runtime\PreparedUpdate;
+use Interact\Runtime\Result;
 use LengthException;
 use Throwable;
 
@@ -31,13 +35,30 @@ class SseResponse
     /**
      * Select a non-seekable body without executing the action before headers are emitted.
      */
-    public function create(PreparedUpdate $update, RequestContext $context, Response $response): Response
-    {
-        $body = new CallbackStream(function () use ($update, $context): void {
-            $send = fn(array $message) => $this->write(['version' => 1, 'id' => $update->id, ...$message]);
+    public function create(
+        PreparedUpdate $update,
+        RequestContext $context,
+        Response $response,
+        ?OutputCapture $capture = null,
+    ): Response {
+        $body = new CallbackStream(function () use ($update, $context, $capture): void {
+            $write = function (array $message) use ($update, $capture): void {
+                $emit = fn() => $this->write(['version' => 1, 'id' => $update->id, ...$message]);
+                if (!$capture instanceof OutputCapture) {
+                    $emit();
+                } else {
+                    $capture->pass($emit);
+                }
+            };
+            $send = function (array $message) use ($write, $capture): void {
+                $this->diagnostics($capture, $write);
+                $write($message);
+            };
             try {
                 $context->release();
-                $result = $update->run($send);
+                $this->diagnostics($capture, $write);
+                $execute = static fn(): Result => $update->run($send);
+                $result = $capture instanceof OutputCapture ? $capture->run($execute) : $execute();
                 $send([
                     'type' => 'result',
                     'status' => $result->errors === [] ? 200 : 422,
@@ -61,6 +82,33 @@ class SseResponse
             ->withHeader('X-Accel-Buffering', 'no')
             ->withoutHeader('Content-Length')
             ->withBody($body);
+    }
+
+    /**
+     * Drain bounded diagnostics between application frames, never inside an output handler.
+     *
+     * @param \Closure(array<string, mixed>): void $write Protocol writer bypassing capture.
+     */
+    protected function diagnostics(?OutputCapture $capture, Closure $write): void
+    {
+        $data = $capture?->take();
+        if ($data === null || !Configure::read('debug')) {
+            return;
+        }
+
+        $output = $data['output'];
+        do {
+            $chunk = mb_strcut($output, 0, 32_768, 'UTF-8');
+            $output = substr($output, strlen($chunk));
+            $write([
+                'type' => 'diagnostic',
+                'diagnostics' => [
+                    'output' => $chunk,
+                    'truncated' => $data['truncated'] && $output === '',
+                    'viewer' => $data['viewer'],
+                ],
+            ]);
+        } while ($output !== '');
     }
 
     /**

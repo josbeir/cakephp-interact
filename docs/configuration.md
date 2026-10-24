@@ -29,6 +29,10 @@ are constructed.
         'scriptOptions' => ['block' => 'script', 'defer' => true],
     ],
     'navigationVersion' => '',
+    'debug' => [
+        // Omit enabled to follow the application's debug mode.
+        'viewer' => true,
+    ],
     'uploads' => [
         'directory' => TMP . 'interact/uploads',
         'maxFileSize' => '10MB',
@@ -41,9 +45,17 @@ are constructed.
 ],
 ```
 
-Invalid values and unknown keys inside `snapshots`, `view`, or `assets` fail when
+Invalid values and unknown keys inside `snapshots`, `view`, `assets`, or `debug` fail when
 configuration is resolved. `scriptOptions` accepts native HtmlHelper options.
 There is no PHP browser-timing configuration.
+
+### Debug output
+
+`debug.enabled` defaults to the application's CakePHP `debug` mode; explicit
+`true` cannot override production mode. `debug.viewer` defaults to `true`.
+Set `viewer: false` to keep captured dumps in Network responses without the
+built-in UI, or `enabled: false` to disable capture entirely. Both settings
+require booleans. See [debugging](/guide/debugging) for JSON, SSE, and DebugKit behavior.
 
 ### Snapshots
 
