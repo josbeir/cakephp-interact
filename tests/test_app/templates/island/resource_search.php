@@ -28,8 +28,8 @@ $this->Paginator->setTemplates([
 ]);
 ?>
 <section class="demo-card resource-library" aria-label="Resource library">
-    <div class="card-heading"><div><p class="eyebrow">Live search / <?= number_format($librarySize) ?> sample resources</p><h2>A library worth exploring</h2></div><span class="capability">Search + filter + sort</span></div>
-    <p class="card-description">Search titles, descriptions, and topics. Combine filters to narrow the list, or change the reading order to find something quick.</p>
+    <div class="card-heading"><div><p class="eyebrow">Live search / <?= number_format($librarySize) ?> sample resources</p><h2>Resource results</h2></div><span class="capability">Search + filter + sort</span></div>
+    <p class="card-description">Finder filters compose with allowlisted ordering and pagination. Result rows remain on the server.</p>
     <?= $this->Form->create(null, ['url' => false, 'idPrefix' => $controlPrefix, 'x-interact:submit' => '$server.sync()']) ?>
         <div class="library-query">
             <?= $this->Form->control('search', [
@@ -84,7 +84,7 @@ $this->Paginator->setTemplates([
     <?= $this->Form->end() ?>
     <div class="library-summary"><p role="status" aria-live="polite" aria-atomic="true">Showing <?= number_format((int)$this->Paginator->param('start')) ?>–<?= number_format((int)$this->Paginator->param('end')) ?> of <strong><?= number_format($total) ?></strong> results</p><span class="quiet" x-show="$server.loading(null)" x-cloak>Searching…</span><button class="button-text" type="button" @click="$server.call('clear')" :disabled="$server.busy">Clear filters</button></div>
     <?php if ($total === 0): ?>
-        <div class="empty-state library-empty"><h3>No resources found</h3><p>Try fewer words, choose another topic, or clear the filters to explore the full library.</p><button type="button" @click="$server.call('clear')" :disabled="$server.busy">Show all resources</button></div>
+        <div class="empty-state library-empty"><h3>No resources found</h3><p>No rows match the current search and filters.</p><button type="button" @click="$server.call('clear')" :disabled="$server.busy">Show all resources</button></div>
     <?php else: ?>
         <div class="search-results">
             <table class="resource-table">

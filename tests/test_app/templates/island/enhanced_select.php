@@ -16,13 +16,13 @@ use function Cake\Core\h;
     <div class="card-heading">
         <div>
             <p class="eyebrow">08 / Application-owned JavaScript</p>
-            <h2>A widget that feels at home.</h2>
+            <h2>Custom input</h2>
         </div>
         <span class="capability">Alpine + Tom Select</span>
     </div>
     <p class="card-description">
-        Search for a country. PHP can validate or reset your selection while
-        the widget keeps ownership of its markup. This example does not save anything.
+        A modelable Alpine value synchronizes with writable PHP state. Tom Select owns
+        the ignored DOM; server validation and resets preserve its instance.
     </p>
     <?= $this->Form->create(null, [
         'url' => false,

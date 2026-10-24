@@ -6,6 +6,7 @@ use TestApp\Application;
 
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $demoAssets = [
+    '/interact-mark.svg' => 'image/svg+xml',
     '/demo.css' => 'text/css; charset=utf-8',
     '/js/widgets.js' => 'text/javascript; charset=utf-8',
     '/js/widgets.css' => 'text/css; charset=utf-8',

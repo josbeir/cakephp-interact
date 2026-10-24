@@ -17,7 +17,7 @@ class ArticleFormHttpTest extends HttpTestCase
     {
         $mount = $this->mounted(url: '/forms');
         $this->assertResponseContains('x-interact:model="data"');
-        $this->assertResponseContains('Write an article');
+        $this->assertResponseContains('Article draft');
         $this->update([
             'snapshot' => $mount['snapshot'],
             'action' => 'save',

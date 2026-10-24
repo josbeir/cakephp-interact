@@ -9,8 +9,8 @@ declare(strict_types=1);
  */
 ?>
 <section class="demo-card article-list" aria-label="Articles" @article-saved.stop="$server.sync()">
-    <div class="card-heading"><div><p class="eyebrow">01 / Nested islands</p><h2>An editor in every row</h2></div><span class="capability">Search + save</span></div>
-    <p class="card-description">Each article is an independent island. Search updates this list; saving updates just the article, then lets the list know.</p>
+    <div class="card-heading"><div><p class="eyebrow">01 / Nested islands</p><h2>Article listing</h2></div><span class="capability">Search + save</span></div>
+    <p class="card-description">Each row is a keyed child island. Search renders the parent; saving a child dispatches an event that refreshes this list.</p>
     <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'Article/Listing', 'x-interact:submit' => '$server.sync()']) ?>
         <?= $this->Form->control('search', [
             'type' => 'search',

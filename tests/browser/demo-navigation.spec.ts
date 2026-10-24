@@ -24,7 +24,7 @@ test('desktop navigation stays beside the page and survives enhanced visits', as
     .click();
   await expect(page).toHaveURL('/renderless');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(
-    'Save the draft. Keep the view.',
+    'Renderless actions',
   );
   expect(await original?.evaluate((element) => element.isConnected)).toBe(true);
   await expect(navigation.locator('[aria-current="page"]')).toHaveCount(1);

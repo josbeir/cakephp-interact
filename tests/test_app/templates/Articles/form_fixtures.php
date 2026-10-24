@@ -4,7 +4,7 @@ declare(strict_types=1);
 ?>
 <header class="page-intro compact">
     <p class="eyebrow">Form-level models</p>
-    <h1>Article and comments</h1>
+    <h1>Article form</h1>
     <p>Native names bind to array drafts. CakePHP marshals, validates, and saves each article explicitly.</p>
 </header>
 <section aria-label="FormHelper article">

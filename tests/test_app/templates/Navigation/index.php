@@ -15,7 +15,7 @@ $loading = $this->getRequest()->getQuery('manual') === '1' ? 'manual' : 'eager';
 <section class="page-intro">
     <p class="eyebrow">Enhanced navigation</p>
     <h1><?= (string)h($page) ?></h1>
-    <p class="intro-copy">Move between server-rendered pages. Your layout notebook keeps its draft and its island.</p>
+    <p class="intro-copy">Normal CakePHP GET routes replace page content. Persisted layout islands retain their clients and drafts.</p>
 </section>
 <div class="navigation-example">
     <aside class="demo-card navigation-notebook" x-interact:persist="notebook">
@@ -33,7 +33,7 @@ $loading = $this->getRequest()->getQuery('manual') === '1' ? 'manual' : 'eager';
             <a href="/navigation" x-interact:navigate.preserve-scroll>Overview</a>
             <a href="/navigation/details" x-interact:navigate.hover.preserve-scroll>Details</a>
         </nav>
-        <h2>A fresh island on every page</h2>
+        <h2>Page-owned state</h2>
         <p class="card-description">
             Add five to the counter, then switch between Overview and Details.
             The counter resets to zero because it belongs to the page.
@@ -41,7 +41,7 @@ $loading = $this->getRequest()->getQuery('manual') === '1' ? 'manual' : 'eager';
         </p>
         <?= $this->Interact->render('Counter', props: ['label' => 'Page counter'], key: 'page-counter') ?>
         <section class="navigation-tools" aria-labelledby="navigation-tools-heading">
-            <p class="eyebrow">Try another behavior</p>
+            <p class="eyebrow">Navigation options</p>
             <h2 id="navigation-tools-heading">Scroll, history, and mount identity</h2>
             <dl class="navigation-experiments">
                 <div>
@@ -61,7 +61,7 @@ $loading = $this->getRequest()->getQuery('manual') === '1' ? 'manual' : 'eager';
         </section>
         <section class="navigation-history-note">
             <p class="eyebrow">Browser history</p>
-            <h2>Go back without replaying an action</h2>
+            <h2>History restoration</h2>
             <p>Enter a notebook URL filter, change pages, then use Back and Forward.
                 The URL filter follows history, your unrelated notebook draft survives,
                 and the page counter starts fresh on each page visit.</p>

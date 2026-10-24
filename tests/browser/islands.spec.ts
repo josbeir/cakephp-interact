@@ -244,7 +244,7 @@ test('whole-page islands retain their layout through pagination', async ({
 }) => {
   await page.goto('/page');
   await expect(
-    page.getByRole('heading', { name: 'Whole-page listing' }),
+    page.getByRole('heading', { name: 'Page island' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Next page' }).click();
   await expect(page.getByText('Page 2', { exact: true })).toBeVisible();

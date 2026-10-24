@@ -16,8 +16,8 @@ use function Cake\Core\h;
  */
 ?>
 <section class="demo-card" aria-label="Workshop planner">
-    <div class="card-heading"><div><p class="eyebrow">02 / Conditional forms</p><h2>Plan a workshop</h2></div><span class="capability">Live quote</span></div>
-    <p class="card-description">Change the format, add extras, or request a company invoice. The server calculates your quote as you go.</p>
+    <div class="card-heading"><div><p class="eyebrow">02 / Conditional forms</p><h2>Conditional form</h2></div><span class="capability">Live quote</span></div>
+    <p class="card-description">Writable form state controls conditional fields. PHP computes the total and validates the submitted selection.</p>
     <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'workshop', 'x-interact:submit' => '$server.call("confirm")']) ?>
         <div class="field-grid">
             <?= $this->Form->control('format', [

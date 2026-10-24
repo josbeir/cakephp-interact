@@ -6,17 +6,18 @@ use function Cake\Core\h;
  * @var \Interact\View\TemplateView $this
  * @var string $title
  */
+$this->assign('title', $title . ' · Interact');
 ?>
 <header class="page-intro">
-    <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>The interactive demo</p>
+    <p class="eyebrow">Nested state</p>
     <h1><?= (string)h($title) ?></h1>
-    <p class="intro-copy">Search, edit, and connect parts of a page. CakePHP renders the HTML; each island takes care of its own interaction.</p>
-    <div class="intro-links"><a class="button button-primary" href="/playground">Explore the playground <span aria-hidden="true">↗</span></a><span class="quiet">Try an edit below. No page reload needed.</span></div>
+    <p class="intro-copy">Nested article editors keep independent drafts. Saves dispatch an event that refreshes the parent listing.</p>
+    <div class="intro-links"><a class="button button-primary" href="/playground">Open playground</a><span class="quiet">Server-rendered HTML with isolated state.</span></div>
 </header>
 <div class="demo-columns">
     <?= $this->Interact->render('Article/Listing') ?>
     <div class="side-stack">
         <?= $this->Interact->render('DependentSelects') ?>
-        <aside class="note-card"><p class="eyebrow">Try this</p><h2>A draft of your own</h2><p>Edit an article without saving, then search for it. Its draft stays with that article while the surrounding list updates.</p><p>Saving emits an event that refreshes the parent list.</p></aside>
+        <aside class="note-card"><p class="eyebrow">State ownership</p><h2>Draft ownership</h2><p>Child keys preserve article drafts during parent search and pagination.</p><p>Saving dispatches an event; the parent then renders the updated listing.</p></aside>
     </div>
 </div>

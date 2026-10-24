@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 /** @var \Interact\View\TemplateView $this */
+$this->assign('title', 'Independent searches · Interact');
 ?>
 <header class="page-intro compact">
     <h1>Independent searches</h1>

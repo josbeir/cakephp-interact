@@ -18,7 +18,7 @@ declare(strict_types=1);
     <div class="card-heading">
         <div>
             <p class="eyebrow">06 / Conditional polling</p>
-            <h2>Refresh until the work is done.</h2>
+            <h2>Conditional polling</h2>
         </div>
         <span class="capability">PHP actions</span>
     </div>

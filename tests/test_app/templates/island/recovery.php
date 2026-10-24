@@ -10,8 +10,8 @@ use function Cake\Core\h;
  */
 ?>
 <section class="demo-card" aria-label="Failure recovery">
-    <div class="card-heading"><div><p class="eyebrow">04 / Explicit recovery</p><h2>Keep the draft. Understand the failure.</h2></div></div>
-    <p class="card-description">Simulate a failure, keep typing, then choose what to do. These examples do not save to a database.</p>
+    <div class="card-heading"><div><p class="eyebrow">04 / Explicit recovery</p><h2>Request recovery</h2></div></div>
+    <p class="card-description">Failed requests pause automatic updates and preserve local drafts. Recovery is explicit; this example does not persist data.</p>
     <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'Recovery', 'x-interact:submit' => '$server.call("save")']) ?>
         <?= $this->Form->control('message', [
             'type' => 'textarea',

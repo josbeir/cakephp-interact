@@ -18,14 +18,14 @@ use function Cake\Core\h;
     <div class="card-heading">
         <div>
             <p class="eyebrow">05 / Automatic refresh</p>
-            <h2>A fresh view from the server.</h2>
+            <h2>Server polling</h2>
         </div>
         <span class="capability">Polling</span>
     </div>
 
     <p class="card-description">
-        The server supplies this time on every render.
-        Refresh every five seconds, or pause and update it yourself.
+        Polling synchronizes server time every five seconds. An Alpine condition
+        pauses automatic requests; manual synchronization uses the same bridge.
     </p>
 
     <time class="polling-time" datetime="<?= (string)h($timestamp) ?>">

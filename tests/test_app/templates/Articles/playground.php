@@ -4,16 +4,17 @@ declare(strict_types=1);
 use TestApp\Island\CounterIsland;
 
 /** @var \Interact\View\TemplateView $this */
+$this->assign('title', 'Playground · Interact');
 ?>
 <header class="page-intro">
-    <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>A few things you can build</p>
-    <h1>Meet your next interaction.</h1>
-    <p class="intro-copy">Small, working examples of server state, conditional forms, and dynamic lists. Change something and see what happens.</p>
-    <p class="quiet">These examples live in the current page. Reload to start fresh.</p>
+    <p class="eyebrow">State and actions</p>
+    <h1>Playground</h1>
+    <p class="intro-copy">Typed actions, conditional controls, and keyed collections. Each island synchronizes its own state.</p>
+    <p class="quiet">Unsaved state resets on reload.</p>
 </header>
 <section class="demo-card counter-card" aria-label="Independent counters">
-    <div class="card-heading"><div><p class="eyebrow">01 / Isolated state</p><h2>Two islands. Their own pace.</h2></div><span class="capability">Typed actions</span></div>
-    <p class="card-description">Both counters use the same PHP class with different starting values. Change one; its neighbor stays put.</p>
+    <div class="card-heading"><div><p class="eyebrow">01 / Isolated state</p><h2>Independent counters</h2></div><span class="capability">Typed actions</span></div>
+    <p class="card-description">Two mounts of the same class use distinct props and keys. Declared actions update only the targeted island.</p>
     <div class="counter-grid">
         <?= $this->Interact->render(CounterIsland::class, props: ['label' => 'First counter', 'initial' => 0], key: 'first-counter') ?>
         <?= $this->Interact->render('Counter', props: ['label' => 'Second counter', 'initial' => 5], key: 'second-counter') ?>

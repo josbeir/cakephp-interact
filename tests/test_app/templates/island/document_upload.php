@@ -16,7 +16,7 @@ use function Cake\Core\h;
     <div class="card-heading">
         <div>
             <p class="eyebrow">Staging / Validation / Explicit saving</p>
-            <h2>A document and its attachments.</h2>
+            <h2>Document upload</h2>
         </div>
         <span class="capability">File uploads</span>
     </div>
