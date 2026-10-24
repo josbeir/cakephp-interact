@@ -189,13 +189,23 @@ The functions above are application-supplied. Global listeners survive page visi
 
 ## Head elements and scripts
 
-Navigation updates the title, document attributes, canonical links, and metadata. Inline `<style>` elements are replaced with the destination's styles on each visit. Existing external assets are retained for the document's lifetime. New stylesheets load before displaying the destination; new external scripts execute once before incoming Alpine initialization. Register late-loaded Alpine components immediately when Alpine already exists, rather than waiting for `alpine:init`.
+Navigation reconciles the destination's head in declaration order. Equivalent elements are reused one-to-one, including repeated metadata. Obsolete page stylesheets, inline styles, canonical links, and metadata are removed. Stylesheets and inline styles keep their interleaved cascade order. Head elements inserted later by application JavaScript remain after server-declared elements.
 
-Scope page-specific CSS. Executable inline scripts, `<base>`, and `http-equiv` metadata require a native visit in this version. Data scripts such as `application/json` remain inert. Alpine and Interact bootstrap scripts are not rerun.
+New required stylesheets download concurrently while the current page remains styled. Only the winning visit activates them and replaces the head and body. Disabled and alternate stylesheets retain their native attributes. Failed or superseded visits remove staged styles without removing the current page's styles.
 
-Interact's document middleware records compatibility after application middleware has produced the response. Keep it outside middleware that changes document security headers. If later plugin or infrastructure middleware changes those headers, place Interact's document middleware outside it too, or use native navigation for those pages. Navigation never replaces the original browser CSP or rewrites nonces.
+External scripts execute once per browser document, before incoming Alpine initialization. Removing a script tag cannot undo its code or listeners. Register late-loaded Alpine components immediately when Alpine already exists, rather than waiting for `alpine:init`. Alpine and Interact bootstrap scripts are not rerun. Data scripts such as `application/json` remain inert. Executable inline scripts, import maps, `<base>`, and `http-equiv` metadata require a native visit.
 
-Set [`Interact.navigationVersion`](/configuration#navigation-compatibility) when application-owned assets change incompatibly. The built-in runtime fingerprint is tracked automatically. See [security](/security) and [redirects](/guide/redirects-and-downloads).
+Use [x-interact:asset](/directives/asset) to reload on changes to versioned application bundles or explicitly retain a shared stylesheet. Unmarked page styles are removed when absent from the destination.
+
+### CSP nonces
+
+Nonce-only CSP rotation supports enhanced navigation. Interact maps nonce values advertised by the destination's CSP response headers to the active document's corresponding script/style nonces. Unrecognized values are not granted a nonce. The original browser policy remains active, and this does not enable executable inline scripts.
+
+Changes to policy directives, sources, nonce relationships, session identity, or runtime compatibility require a native visit. The same checks apply to prefetched responses and history restoration. See [security](/security#enhanced-navigation).
+
+Interact's document middleware records compatibility after application middleware has produced the response. Keep it outside middleware that changes document security headers. Headers added by later plugin or infrastructure middleware are not covered by its fingerprint; place the document middleware outside that middleware too, or use native navigation for those pages. Nonce markers must agree with the fetched response's actual CSP headers.
+
+Set [`Interact.navigationVersion`](/configuration#navigation-compatibility) when application-owned assets change incompatibly without changing a tracked head asset. The built-in runtime fingerprint is tracked automatically. See [redirects](/guide/redirects-and-downloads).
 
 ## Options
 
