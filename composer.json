@@ -22,7 +22,6 @@
     "psr-4": {
       "Interact\\Test\\": "tests/",
       "TestApp\\": "tests/test_app/src/",
-      "App\\": "tests/docs/app/src/",
       "Commerce\\": "tests/Fixture/Plugins/Commerce/src/",
       "Acme\\Catalog\\": "tests/Fixture/Plugins/Catalog/src/"
     }
@@ -50,7 +49,11 @@
       "@rector",
       "@format-check"
     ],
-    "test-coverage-branches": "phpunit --path-coverage --coverage-text=build/php-branches.txt"
+    "test-coverage-branches": "phpunit --path-coverage --coverage-text=build/php-branches.txt",
+    "preview": [
+      "Composer\\Config::disableProcessTimeout",
+      "@php -d opcache.enable=0 -d upload_max_filesize=2M -d post_max_size=8M -S 127.0.0.1:8765 -t tests/test_app/webroot tests/test_app/webroot/index.php"
+    ]
   },
   "config": {
     "sort-packages": true,

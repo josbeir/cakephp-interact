@@ -72,7 +72,7 @@ This example assumes an application `Articles` Table and the conventional
 `templates/island/article_list.php` template. The protected Table is available to
 `authorize()`, `mount()`, actions, and `viewData()` and stays out of snapshots.
 `LocatorAwareTrait` is explicitly added by the application; islands do not load
-Tables automatically. See the complete [search example](/examples/search).
+Tables automatically. See the complete [search example](/demo#search).
 
 `initialize()` runs before authorization, including on denied requests and
 loading placeholders. Keep it limited to instance configuration. Load protected
@@ -146,7 +146,7 @@ public function updated(UpdatedPaths $paths): void
 ```
 
 This fragment assumes writable `country` and `cityId` properties. See the
-[dependent fields example](/examples/dependent-fields).
+[dependent fields example](/demo).
 
 ## viewData()
 

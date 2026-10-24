@@ -124,7 +124,7 @@ The Alpine store `$store.interactNavigation` describes page visits independently
 
 The default delay follows [JavaScript configuration](/configuration#javascript-configuration). Delay accepts whole milliseconds from 0 to 60,000. Activity includes fetching, required assets, replacement, and initialization. Prefetching alone does not show feedback. Completion, cancellation, and failures clear timers; older requests cannot hide feedback for a newer visit. Use your application's existing `x-cloak` rule.
 
-See the [tested navigation example](/examples/navigation) for an application-styled top bar.
+See the [tested navigation example](/demo#navigation) for an application-styled top bar.
 
 ## Document events
 

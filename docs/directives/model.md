@@ -112,7 +112,7 @@ This assumes writable array `data` and writable string `search` state.
 Controls start from declared browser state. Missing leaves use the normal empty
 control values; server-rendered entity values are not imported into the draft.
 Initialize `$data` yourself and supply the failed entity to FormHelper for
-validation errors. The [article and comments example](/examples/article-form)
+validation errors. The [article and comments example](/demo#forms)
 shows `patchEntity($entity, $this->data, $options)` and an explicit save.
 
 Form binding follows `form.elements`, including external controls associated by
@@ -173,7 +173,7 @@ or conflicting modifiers are errors.
 :::
 
 This assumes a writable string `search` property. See the
-[search example](/examples/search) for a model-backed listing.
+[search example](/demo#search) for a model-backed listing.
 
 <span id="text-fields-and-textareas"></span>
 
@@ -230,7 +230,7 @@ For a writable string `country` property initialized to `''`:
 :::
 
 `.change` sends the selected value immediately. For dependent choices, see
-[country and city fields](/examples/dependent-fields).
+[country and city fields](/demo).
 
 ## Radio buttons
 
@@ -477,7 +477,7 @@ wrapper without sending another request.
 
 Do not combine `x-model` and `x-interact:model` on the same element. Use JSON
 values and keep library instances outside reactive state. See the
-[enhanced select example](/examples/enhanced-select).
+[enhanced select example](/demo#widgets).
 
 ## File inputs
 

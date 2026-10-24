@@ -131,10 +131,10 @@ not server validation.
 ## Validation and saving
 
 Pass the uploaded file as an entity field, validate through the Table, then save
-and move it in your application action. The complete
-[single-document example](/examples/upload) includes the Table and entity context.
+and move it in your application action. Alternatively, use a CakePHP Form for
+validation and storage, as in the [demo upload workflow](/demo#uploads).
 Accepted files remain staged after validation fails, so another submission does
-not resend them. Clear the upload property after successful storage.
+not resend them. Clear the upload property or replace its accepted file selection after successful storage.
 
 For image thumbnails, prepare a URL with an application image service in
 `viewData()`. Interact does not provide image processing or public preview routes.

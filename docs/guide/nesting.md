@@ -173,7 +173,7 @@ local model drafts reconcile through the normal update path. Removing a child
 disposes its connections and timers. Compatible persistent regions retain their
 connections during enhanced navigation.
 
-The [child inputs example](/examples/child-inputs) includes a reactive resource
+The [child inputs example](/demo#child-inputs) includes a reactive resource
 picker, multiple date bindings, parent validation, and a runnable mount call.
 
 <span id="announce-a-successful-save"></span>

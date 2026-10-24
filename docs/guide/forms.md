@@ -22,7 +22,7 @@ $this->setErrors($article->getErrors());
 
 `setErrors()` supplies PHP `$errors` and browser `$server.errors`, selects a
 renderable HTTP 422 response, and suppresses success events. It does not run
-validation or save a record. See the complete [article form](/examples/article-form).
+validation or save a record. See the complete [article form](/demo#forms).
 
 <span id="separate-the-record-from-the-draft"></span>
 <span id="render-a-normal-form"></span>
@@ -124,7 +124,7 @@ browser binding shown in the HTML tab.
 
 Reset dependent values in `updated()` and recheck allowed combinations in the
 action. Hidden inputs and rendered choices are not authorization. The
-[dependent fields example](/examples/dependent-fields) checks city membership
+[dependent fields example](/demo) checks city membership
 through a Table finder.
 
 <span id="keep-protection-and-persistence-explicit"></span>

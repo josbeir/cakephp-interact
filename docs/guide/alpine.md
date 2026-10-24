@@ -93,8 +93,8 @@ Use `init()` for initialization and `$watch()` for accepted state changes.
 Use `destroy()` to release library instances and resources. Keep library instances
 outside reactive state, and return promises from request methods.
 
-The [enhanced select](/examples/enhanced-select) and [chart](/examples/chart)
-examples include complete registrations and lifecycle handling.
+The [demo's enhanced select](/demo#widgets) includes a complete registration and
+lifecycle handling. See [DOM protection](/directives/ignore) for display-only widgets.
 
 <span id="alternative-application-owned-alpine"></span>
 

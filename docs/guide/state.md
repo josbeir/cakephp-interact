@@ -139,5 +139,5 @@ The method runs on initial and subsequent renders. Keep database queries in
 Table finders and execute them from the island.
 
 Returned names must not duplicate props, state, or the reserved `errors` name.
-The [article form example](/examples/article-form) passes an entity to FormHelper
+The [article form example](/demo#forms) passes an entity to FormHelper
 through `viewData()`.

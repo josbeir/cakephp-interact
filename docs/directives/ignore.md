@@ -55,15 +55,17 @@ Keep the modelable wrapper outside the ignored markup:
 
 The application registers `countryPicker`, exposes `selection`, and declares
 writable `country` state. Keep server-rendered validation errors outside the
-ignored region too. See the complete [enhanced select](/examples/enhanced-select).
+ignored region too. See the complete [enhanced select](/demo#widgets).
 
 <span id="update-a-chart-without-replacing-it"></span>
 
 ## Data updates
 
 DOM protection does not prevent library updates through JavaScript. Watch PHP
-state from an Alpine wrapper and call the library's update method. The
-[chart example](/examples/chart) shows initialization, data changes, and cleanup.
+state from an Alpine wrapper and call the library's update method. Copy the
+accepted data before passing it to a library that mutates its inputs, and release
+the instance in the wrapper's `destroy()` hook. See
+[custom JavaScript](/guide/alpine#custom-javascript) for registration and lifetime.
 
 <span id="recreate-or-remove-the-widget"></span>
 

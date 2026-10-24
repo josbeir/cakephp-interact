@@ -17,8 +17,8 @@ hero:
       text: Build your first island
       link: /getting-started
     - theme: alt
-      text: Explore the examples
-      link: /examples
+      text: Explore the demo
+      link: /demo
 features:
   - title: PHP actions, native templates
     details: Declare state and actions in PHP. Render updates with familiar CakePHP templates and elements.

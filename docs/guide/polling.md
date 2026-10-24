@@ -16,4 +16,4 @@ search: false
 This topic is documented on the following pages:
 
 - [Directive and options](/directives/poll)
-- [Complete job example](/examples/polling)
+- [Complete job example](/demo#polling)

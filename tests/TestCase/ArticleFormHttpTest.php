@@ -3,30 +3,18 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase;
 
-use Composer\Autoload\ClassLoader;
 use Interact\Test\TestSuite\HttpTestCase;
-use PHPUnit\Framework\Attributes\PreserveGlobalState;
-use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 
 /**
- * Verifies that the demo owns its form workflow independently of documentation fixtures.
- *
- * A fresh process prevents previously loaded documentation classes from hiding
- * dependencies during the real CakePHP mount and associated save requests.
+ * Verifies the demo's form workflow through the real middleware and update endpoint.
  */
 class ArticleFormHttpTest extends HttpTestCase
 {
     /**
-     * Mount and save the demo with documentation autoloading disabled.
+     * Mount and explicitly save an associated article draft.
      */
-    #[RunInSeparateProcess]
-    #[PreserveGlobalState(false)]
-    public function testFormMountAndSaveDoNotLoadDocumentationApplication(): void
+    public function testFormMountAndAssociatedSave(): void
     {
-        foreach (ClassLoader::getRegisteredLoaders() as $loader) {
-            $loader->setPsr4('App\\', []);
-        }
-
         $mount = $this->mounted(url: '/forms');
         $this->assertResponseContains('x-interact:model="data"');
         $this->assertResponseContains('Write an article');
@@ -34,21 +22,13 @@ class ArticleFormHttpTest extends HttpTestCase
             'snapshot' => $mount['snapshot'],
             'action' => 'save',
             'updates' => [
-                'data.title' => 'Standalone demo form',
-                'data.comments.0.body' => 'Saved without documentation fixtures.',
+                'data.title' => 'Demo form',
+                'data.comments.0.body' => 'Saved through the real update endpoint.',
                 'data.comments.0.approved' => true,
             ],
         ]);
         $this->assertResponseOk();
         $this->assertResponseContains('"saved":true');
         $this->assertResponseContains('article-saved');
-        $documentation = dirname(__DIR__) . '/docs/app/';
-        static::assertSame(
-            [],
-            array_values(array_filter(
-                get_included_files(),
-                static fn(string $file): bool => str_starts_with($file, $documentation),
-            )),
-        );
     }
 }

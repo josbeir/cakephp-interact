@@ -42,10 +42,9 @@ afterEach(() => {
 it('connects the documented adapter, scopes text updates, rejects invalid data, and closes on disposal', () => {
   window.Alpine = Alpine;
   vi.stubGlobal('EventSource', ExampleFeed);
-  runInThisContext(
-    readFileSync('tests/docs/app/webroot/js/text-feed.js', 'utf8'),
-    { filename: 'text-feed.js' },
-  );
+  runInThisContext(readFileSync('tests/Fixture/browser/text-feed.js', 'utf8'), {
+    filename: 'text-feed.js',
+  });
   document.dispatchEvent(new Event('alpine:init'));
   const fetcher = vi.fn(async () => {
     throw new Error('The receiving adapter must not send an action request.');
