@@ -80,6 +80,10 @@ For a job panel, combine the conditions:
 `autoRefresh && $server.state.running && $server.call('refreshStatus')`.
 Resuming the local preference then cannot restart a completed job.
 
+`autoRefresh` belongs to Alpine and changes without a request. The poll directive
+evaluates its Alpine expression on each tick; a truthy condition lets the
+`$server` operation send a request. See [Alpine and Interact](/guide/alpine).
+
 <span id="poll-only-while-visible"></span>
 
 ## Visibility

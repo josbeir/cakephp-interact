@@ -9,7 +9,7 @@ export default defineConfig({
   title: 'CakePHP Interact',
   titleTemplate: ':title | CakePHP Interact',
   description:
-    'Build interactive CakePHP pages with PHP islands and native templates.',
+    'Build interactive CakePHP pages with Alpine, PHP islands, and native templates.',
   lang: 'en-US',
   base,
   srcExclude: ['public/**'],
@@ -82,6 +82,7 @@ export default defineConfig({
             { text: 'Installation', link: '/installation' },
             { text: 'Configuration', link: '/configuration' },
             { text: 'Quickstart', link: '/getting-started' },
+            { text: 'Alpine and Interact', link: '/guide/alpine' },
           ],
         },
         {
@@ -130,7 +131,6 @@ export default defineConfig({
         {
           text: 'JavaScript',
           items: [
-            { text: 'Alpine', link: '/guide/alpine' },
             { text: '$server', link: '/reference/server' },
             { text: 'Request lifecycle', link: '/reference/request-lifecycle' },
           ],

@@ -12,6 +12,11 @@ mount parameters with `#[Prop]` and interactive values with `#[State]`.
 
 Import both attributes from `Interact\Attribute`.
 
+Keep browser-only values, such as the selected tab or an open menu, in Alpine's
+`x-data`. They need no PHP declaration or request. See
+[local state and PHP state](/guide/alpine#local-state-and-php-state) for choosing
+where a value belongs and how Alpine reads PHP state.
+
 <span id="bind-a-text-input"></span>
 <span id="choose-when-to-send-edits"></span>
 

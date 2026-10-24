@@ -148,6 +148,11 @@ Authorize routes serving temporary files and choose private storage paths.
 `cancel()`, `remove()`, and `retry()`. Removal accepts browser item IDs or PHP
 `TemporaryUpload::id`. Progress at 100% does not itself prove server acceptance.
 
+Display these values with Alpine's `x-show`, `x-text`, and attribute bindings;
+invoke transfer controls from Alpine `@click` handlers. Interact owns the
+transfer state, while your application owns its markup and styling. See the
+[`$server.uploads` example](/reference/server#uploads).
+
 Saves wait for preceding transfers. Failed/cancelled prerequisites block the
 queued save; changing a selection also discards a waiting action. Submit again
 when the intended files are ready. Retry never saves automatically. Polling skips

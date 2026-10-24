@@ -34,6 +34,13 @@ Automatic loading waits while the browser tab is hidden. Without
 Loading options apply when an instance is first created. They do not remount
 retained keyed children.
 
+Use Alpine's `x-data` and `x-show` for an optional panel containing a lazy
+island. Opening the panel is local UI behavior; Interact initializes the island
+when its placeholder becomes visible. Add `x-transition` to animate the panel's
+visibility, and application CSS for any entrance animation of loaded content.
+See the [loading modes demo](/demo#lazy-loading) and
+[Alpine primer](/guide/alpine#template-expressions).
+
 ## Manual loading
 
 Use `manual` for optional content that should load only on request:

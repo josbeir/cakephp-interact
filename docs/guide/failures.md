@@ -16,6 +16,10 @@ updates. Local edits remain available.
 <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
+Alpine's `x-text` displays Interact's error value. Use local Alpine state and
+bindings for dismissible details or other presentation; see
+[Alpine and Interact](/guide/alpine#events-and-request-feedback).
+
 Ordinary actions need no `.catch()` callback. The persistent alert can announce
 changed messages. Put padding or a background on a wrapper shown only while an
 error exists if the empty alert should take no visual space.

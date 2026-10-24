@@ -38,6 +38,11 @@ The attribute contains a literal property path, such as `title` or
 `form.address.city`. Props and state without `writable: true` cannot receive
 model edits. See [Properties](/guide/state) for declarations.
 
+Alpine's `x-model` binds to local Alpine state; `x-interact:model` binds to a PHP
+draft and manages its synchronization. Choose one per native control. Use local
+Alpine state for values PHP does not need, such as an expanded panel or a local
+filter. See [local state and PHP state](/guide/alpine#local-state-and-php-state).
+
 ## Whole forms
 
 Declare writable array state and initialize its draft in application code:

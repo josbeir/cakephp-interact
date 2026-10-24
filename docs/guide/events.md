@@ -6,7 +6,9 @@ description: Dispatch browser events from PHP and refresh parent, sibling, or ma
 # Events
 
 `dispatch()` sends a browser event after an accepted island update. Other islands
-can listen with Alpine and refresh their own content.
+can listen with Alpine and refresh their own content. Listeners use Alpine's
+native `@event` syntax and modifiers; Interact supplies the PHP dispatch and
+`$server` operations.
 
 ## dispatch()
 
@@ -76,8 +78,10 @@ on the server.
 
 ## Browser events
 
-Use ordinary Alpine `$dispatch` for browser-only events. Interact request failures
-emit `interact:error`; see [error handling](/guide/failures).
+Use Alpine's `$dispatch` for browser-only events. Dispatching and receiving an
+event do not themselves send a request; a listener can choose to call `$server`
+when PHP needs to respond. See [Alpine and Interact](/guide/alpine#events-and-request-feedback).
+Interact request failures emit `interact:error`; see [error handling](/guide/failures).
 
 ## events()
 
