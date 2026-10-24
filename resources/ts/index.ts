@@ -1,7 +1,7 @@
 import morph from '@alpinejs/morph';
 import type { Alpine } from 'alpinejs';
 import { NavigationController } from './navigation/controller';
-import { navigationBinding } from './navigation/alpine';
+import { navigationBinding, navigationSelector } from './navigation/alpine';
 import { IslandClient } from './client';
 import { Relationships } from './composition/relationships';
 import { registerBindings } from './bindings/alpine';
@@ -100,29 +100,9 @@ function installConfigured(Alpine: Alpine, options: InteractOptions): void {
     undefined,
     defaults,
   );
-  for (const suffix of [
-    '',
-    '.hover',
-    '.preserve-scroll',
-    '.hover.preserve-scroll',
-    '.preserve-scroll.hover',
-    '.trail',
-    '.trail.hover',
-    '.hover.trail',
-    '.trail.preserve-scroll',
-    '.preserve-scroll.trail',
-    '.trail.hover.preserve-scroll',
-    '.trail.preserve-scroll.hover',
-    '.hover.trail.preserve-scroll',
-    '.hover.preserve-scroll.trail',
-    '.preserve-scroll.trail.hover',
-    '.preserve-scroll.hover.trail',
-  ]) {
-    Alpine.addInitSelector(
-      () =>
-        `[${Alpine.prefixed(`interact:navigate${suffix}`).replaceAll(':', '\\:').replaceAll('.', '\\.')}]`,
-    );
-  }
+  Alpine.addInitSelector(() =>
+    navigationSelector(Alpine.prefixed('interact:navigate')),
+  );
   Alpine.addInitSelector(
     () => `[${Alpine.prefixed('interact:persist').replaceAll(':', '\\:')}]`,
   );
