@@ -21,7 +21,7 @@ use function Cake\Core\h;
             <span class="stream-mark" aria-hidden="true">↗</span>
             <div>
                 <h2>Report runner</h2>
-                <p>Three results. One continuous response.</p>
+                <p>Text, HTML elements, and progress events.</p>
             </div>
         </div>
         <button
@@ -53,8 +53,8 @@ use function Cake\Core\h;
             <div class="stream-console-body" :class="{ 'is-receiving': $server.busy }">
                 <div class="stream-empty" x-show="percent === 0 && !$server.busy">
                     <span class="stream-prompt" aria-hidden="true">&gt;_</span>
-                    <p>Your next result starts here.</p>
-                    <span>Generate a report to open the stream.</span>
+                    <p>No output received.</p>
+                    <span>Run the action to open an SSE response.</span>
                 </div>
                 <pre class="stream-transcript" x-interact:stream="report"><?= (string)h($report) ?></pre>
                 <span class="stream-cursor" x-show="$server.busy" x-cloak aria-hidden="true"></span>
@@ -74,8 +74,8 @@ use function Cake\Core\h;
                 <?php if ($sections === []): ?>
                     <li class="stream-results-empty">
                         <span class="stream-empty-stack" aria-hidden="true"><i></i><i></i><i></i></span>
-                        <p>Results, as they arrive.</p>
-                        <span>Each card is a native CakePHP element.</span>
+                        <p>No rendered results.</p>
+                        <span>Results arrive as native CakePHP elements.</span>
                     </li>
                 <?php else: ?>
                     <?php foreach ($sections as $index => $section): ?>
@@ -88,7 +88,7 @@ use function Cake\Core\h;
 
     <div class="stream-footer">
         <span class="stream-footer-symbol" aria-hidden="true">✳</span>
-        <p x-text="$server.busy ? 'No refresh. No waiting for the whole report.' : (percent === 100 ? 'All done. The final render keeps every result.' : 'Server-rendered, one result at a time.')">Server-rendered, one result at a time.</p>
+        <p x-text="$server.busy ? 'SSE response open; receiving incremental output.' : (percent === 100 ? 'Response complete; final state accepted.' : 'The action emits text, elements, and progress.')">The action emits text, elements, and progress.</p>
         <span class="stream-footer-tag">Text + HTML + progress</span>
     </div>
     <p class="request-error stream-request-error" role="alert" x-show="$server.error" x-text="$server.error ? $server.error.message : ''" x-cloak></p>

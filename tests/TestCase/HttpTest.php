@@ -20,7 +20,7 @@ class HttpTest extends HttpTestCase
         $this->mounted(url: '/search');
         $this->assertResponseContains('1,200 sample resources');
         $this->assertResponseContains('Showing 1–20 of');
-        $this->assertResponseContains('aria-current="page">Search library');
+        $this->assertResponseContains('aria-current="page">Search');
         $document = HTMLDocument::createFromString((string)$this->response?->getBody());
         $xpath = new XPath($document);
         $xpath->registerNamespace('html', 'http://www.w3.org/1999/xhtml');
@@ -121,13 +121,13 @@ class HttpTest extends HttpTestCase
     public function testPlaygroundMountsDistinctExamplesWithinTheSharedLayout(): void
     {
         $this->mounted(url: '/playground');
-        $this->assertResponseContains('Meet your next interaction.');
+        $this->assertResponseContains('Playground');
         $this->assertResponseContains('href="/demo.css"');
         $this->assertResponseContains('aria-current="page">Playground');
         $this->assertResponseContains('First counter');
         $this->assertResponseContains('Second counter');
-        $this->assertResponseContains('Plan a workshop');
-        $this->assertResponseContains('A little list of things');
+        $this->assertResponseContains('Conditional form');
+        $this->assertResponseContains('Task list');
     }
 
     public function testCountersUseTypedActionsAndRetainTheirIndependentMountProps(): void
@@ -409,7 +409,7 @@ class HttpTest extends HttpTestCase
     public function testWholePageReusesActionTemplate(): void
     {
         $mount = $this->mounted(url: '/page');
-        $this->assertResponseContains('Whole-page listing');
+        $this->assertResponseContains('Page island');
         $this->update(['snapshot' => $mount['snapshot'], 'action' => 'next']);
         $this->assertResponseOk();
         $this->assertResponseContains('Page 2');

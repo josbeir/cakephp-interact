@@ -52,6 +52,9 @@ test('loads deferred, manual, hidden, and below-fold reports through their own t
   await expect(manual).toContainText('Refreshed 1 times');
   await expect(manual).toContainText('Mounted 1 time');
   await page.getByRole('button', { name: 'Toggle report panel' }).click();
+  await expect(hidden).toBeVisible();
+  // Opening the panel can leave its lazy placeholder below the viewport.
+  await hidden.scrollIntoViewIfNeeded();
   await expect(hidden).not.toHaveAttribute('data-interact-loading');
   await lazy.scrollIntoViewIfNeeded();
   await expect(lazy).not.toHaveAttribute('data-interact-loading');

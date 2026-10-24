@@ -14,7 +14,7 @@ use function Cake\Core\h;
 ?>
 <section class="demo-card" aria-label="Dependent choices">
     <div class="card-heading"><div><p class="eyebrow">02 / Connected fields</p><h2>Dependent choices</h2></div></div>
-    <p class="card-description">Pick a country to load its cities. Your notes stay with you when the options change.</p>
+    <p class="card-description">A country change resets the selected city and loads scoped options. Unrelated draft fields are preserved.</p>
     <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'dependent-choices', 'x-interact:submit' => '$server.call("confirm")']) ?>
         <?= $this->Form->control('country', [
             'label' => 'Country',

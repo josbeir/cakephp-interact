@@ -8,8 +8,8 @@ declare(strict_types=1);
  */
 ?>
 <section class="demo-card" aria-label="Date range">
-    <p class="eyebrow">03 · Make time to read</p>
-    <h2>Reading dates</h2>
+    <p class="eyebrow">03 · Modelable dates</p>
+    <h2>Date range</h2>
     <p class="card-description">Set a date range, or start with a suggested month.</p>
     <div class="composition-dates">
         <?= $this->Form->control('reading_start', [

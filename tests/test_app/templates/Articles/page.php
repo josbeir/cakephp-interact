@@ -1,10 +1,11 @@
 <?php
 declare(strict_types=1);
 /** @var \Interact\View\TemplateView $this */
+$this->assign('title', 'Page island · Interact');
 ?>
 <header class="page-intro compact">
-    <p class="eyebrow"><span class="live-dot" aria-hidden="true"></span>One page, one island</p>
-    <h1>Whole-page listing</h1>
-    <p class="intro-copy">The same article listing, rendered through the controller action's template. Search and pagination update the content while the surrounding layout stays in place.</p>
+    <p class="eyebrow">Controller integration</p>
+    <h1>Page island</h1>
+    <p class="intro-copy">The controller action template renders as one island. Search and pagination replace its content while the shared layout remains mounted.</p>
 </header>
 <?= $this->element('Article/listing') ?>

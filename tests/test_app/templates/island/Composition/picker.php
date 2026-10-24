@@ -14,8 +14,8 @@ use function Cake\Core\h;
 <section class="demo-card" aria-label="Resource picker">
     <div class="card-heading">
         <div>
-            <p class="eyebrow">02 · Pick a resource</p>
-            <h2>Choose something to read</h2>
+            <p class="eyebrow">02 · Modelable selection</p>
+            <h2>Resource picker</h2>
         </div>
         <span class="topic-tag" data-category><?= (string)h($category) ?></span>
     </div>

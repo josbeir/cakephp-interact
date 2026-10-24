@@ -10,12 +10,13 @@ $currentPath = $this->getRequest()->getUri()->getPath();
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= (string)h($this->fetch('title') ?: 'Interact · CakePHP playground') ?></title>
-    <link rel="stylesheet" href="/demo.css">
+    <title><?= (string)h($this->fetch('title') ?: 'Interact · Demo') ?></title>
     <?php if ($currentPath === '/playground'): ?>
         <link rel="stylesheet" href="/js/widgets.css">
         <script src="/js/widgets.js" defer></script>
     <?php endif; ?>
+    <link rel="stylesheet" href="/demo.css">
+    <link rel="icon" type="image/svg+xml" href="/interact-mark.svg">
     <?= $this->fetch('script') ?>
 </head>
 <body>
@@ -27,7 +28,7 @@ $currentPath = $this->getRequest()->getUri()->getPath();
         role="status"
         aria-label="Loading page"
     ></div>
-    <a class="skip-link" href="#main">Skip to examples</a>
+    <a class="skip-link" href="#main">Skip to content</a>
     <header
         class="site-sidebar"
         x-interact:persist="site-navigation"
@@ -35,8 +36,8 @@ $currentPath = $this->getRequest()->getUri()->getPath();
         @keydown.escape="menuOpen = false"
     >
         <a class="brand" href="/" aria-label="Interact home">
-            <span class="brand-mark" aria-hidden="true">i.</span>
-            <span>interact<span class="brand-context">CakePHP demo</span></span>
+            <img class="brand-mark" src="/interact-mark.svg" alt="" width="44" height="44">
+            <span>Interact</span>
         </a>
         <button
             type="button"
@@ -55,18 +56,18 @@ $currentPath = $this->getRequest()->getUri()->getPath();
             @click="menuOpen = false"
             @keydown.escape="$refs.menuToggle.focus()"
         >
-            <?php foreach (['/' => 'Embedded islands', '/playground' => 'Playground', '/forms' => 'Article form', '/search' => 'Search library', '/composition' => 'Child inputs', '/uploads' => 'Uploads', '/outcomes' => 'Action outcomes', '/loading' => 'Lazy loading', '/page' => 'Whole-page island', '/navigation' => 'Navigation', '/renderless' => 'Renderless actions', '/streaming' => 'Streaming'] as $path => $label): ?>
+            <?php foreach (['/' => 'Embedded islands', '/playground' => 'Playground', '/forms' => 'Article form', '/search' => 'Search', '/composition' => 'Child inputs', '/uploads' => 'Uploads', '/outcomes' => 'Action outcomes', '/loading' => 'Lazy loading', '/page' => 'Page island', '/navigation' => 'Navigation', '/renderless' => 'Renderless actions', '/streaming' => 'Streaming'] as $path => $label): ?>
                 <a
                     href="<?= (string)h($path) ?>"
                     x-interact:navigate<?= $path === '/navigation' ? '.trail' : '' ?>
                     <?= $currentPath === $path ? 'aria-current="page"' : '' ?>><?= (string)h($label) ?></a>
             <?php endforeach; ?>
         </nav>
-        <span class="version-tag">Development preview</span>
+        <span class="version-tag">Development build</span>
     </header>
     <main id="main" class="page-shell">
         <?= $this->fetch('content') ?>
     </main>
-    <footer class="site-footer"><span>Rendered in PHP. Interactive in the browser.</span><span>CakePHP Interact · Demo lab</span></footer>
+    <footer class="site-footer"><span>CakePHP Interact</span><span>PHP 8.5 · CakePHP 6</span></footer>
 </body>
 </html>

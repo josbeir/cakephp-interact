@@ -24,7 +24,7 @@ test('parent props arriving during initialization are applied after the child lo
   });
   await page.goto('/composition?loading=manual');
   const order = page.getByRole('region', {
-    name: 'Resource order',
+    name: 'Parent draft',
     exact: true,
   });
   await order
@@ -67,7 +67,7 @@ test('a delayed child action cannot replace a newer parent reset', async ({
   });
   await page.goto('/composition');
   const order = page.getByRole('region', {
-    name: 'Resource order',
+    name: 'Parent draft',
     exact: true,
   });
   const range = page.getByRole('region', { name: 'Date range', exact: true });
@@ -88,7 +88,7 @@ test('reactive props refresh an existing child and modelable PHP changes reach t
 }) => {
   await page.goto('/composition');
   const order = page.getByRole('region', {
-    name: 'Resource order',
+    name: 'Parent draft',
     exact: true,
   });
   const picker = page.getByRole('region', {
@@ -130,7 +130,7 @@ test('multiple values mirror immediately and renderless changes flow in both dir
 }) => {
   await page.goto('/composition');
   const order = page.getByRole('region', {
-    name: 'Resource order',
+    name: 'Parent draft',
     exact: true,
   });
   const range = page.getByRole('region', { name: 'Date range', exact: true });
@@ -154,7 +154,7 @@ test('a waiting manual child receives the latest parent props without loading ea
 }) => {
   await page.goto('/composition?loading=manual');
   const order = page.getByRole('region', {
-    name: 'Resource order',
+    name: 'Parent draft',
     exact: true,
   });
   const load = order.getByRole('button', { name: 'Load content', exact: true });

@@ -11,8 +11,8 @@ use function Cake\Core\h;
  */
 ?>
 <section class="demo-card" aria-label="Task board">
-    <div class="card-heading"><div><p class="eyebrow">03 / Dynamic collections</p><h2>A little list of things</h2></div><span class="capability">Keyed rows</span></div>
-    <p class="card-description">Add a task, mark it done, or remove it. Each row keeps its identity as the collection changes.</p>
+    <div class="card-heading"><div><p class="eyebrow">03 / Dynamic collections</p><h2>Task list</h2></div><span class="capability">Keyed rows</span></div>
+    <p class="card-description">Declared actions update a state array. Stable row IDs preserve DOM identity as tasks are added, toggled, or removed.</p>
     <div class="task-progress"><span><?= (string)$completed ?> of <?= (string)count($tasks) ?> completed</span><progress value="<?= (string)$completed ?>" max="<?= (string)max(1, count($tasks)) ?>" aria-label="Task completion"></progress></div>
     <ul class="task-list">
         <?php foreach ($tasks as $task): ?>

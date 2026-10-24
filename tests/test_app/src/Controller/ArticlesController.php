@@ -21,7 +21,7 @@ class ArticlesController extends AppController
     #[Get('/', name: 'demo:index')]
     public function index(): void
     {
-        $this->set('title', __('Small islands. Real interactions.'));
+        $this->set('title', __('Embedded islands'));
     }
 
     /**

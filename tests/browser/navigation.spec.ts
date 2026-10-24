@@ -206,9 +206,7 @@ test('loads new page assets without restarting Alpine', async ({ page }) => {
     .getByRole('navigation', { name: 'Demo pages' })
     .getByRole('link', { name: 'Playground', exact: true })
     .click();
-  await expect(
-    page.getByRole('heading', { name: 'Meet your next interaction.' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Playground' })).toBeVisible();
   await expect(page.locator('.ts-wrapper')).toBeVisible();
   await expect(page.locator('head script[src$="/js/widgets.js"]')).toHaveCount(
     1,
@@ -658,9 +656,7 @@ test('retains staged files and one polling lifecycle until the region is left', 
     .getByRole('navigation', { name: 'Demo pages' })
     .getByRole('link', { name: 'Playground', exact: true })
     .click();
-  await expect(
-    page.getByRole('heading', { name: 'Meet your next interaction.' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Playground' })).toBeVisible();
   await expect(page.locator(`[data-interact-id="${jobId}"]`)).toHaveCount(0);
 });
 

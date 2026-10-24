@@ -13,7 +13,7 @@ $this->Form->setTemplates(['error' => '<div class="error-message field-error" id
     <h2>Article draft</h2>
     <span class="capability">Explicit saves</span>
 </div>
-<p class="card-description">Save a valid draft repeatedly. The live count advances while the PHP count stays put. An invalid title renders FormHelper errors; correcting it renders once more to clear them.</p>
+<p class="card-description">Accepted state updates the Alpine count without replacing HTML. Invalid input renders FormHelper errors; the next valid save renders once to clear them.</p>
 <?= $this->Form->create($article, [
     'url' => false,
     'x-interact:model' => 'data',

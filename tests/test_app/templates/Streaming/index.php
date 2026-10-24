@@ -4,11 +4,11 @@ declare(strict_types=1);
 $this->assign('title', 'Streaming · Interact');
 ?>
 <section class="page-intro stream-intro">
-    <p class="eyebrow">Streaming / Live demo</p>
-    <h1>A report.<br><span>In real time.</span></h1>
-    <p class="intro-copy">Press generate. Watch the text flow, results land, and progress move. All from one PHP action.</p>
+    <p class="eyebrow">Server-sent events</p>
+    <h1>Streaming</h1>
+    <p class="intro-copy">One PHP action emits text, rendered elements, and JSON progress over SSE. A final render publishes the accepted state.</p>
 </section>
 <section class="demo-card stream-demo" aria-label="Streaming report">
     <?= $this->Interact->render('StreamingReport') ?>
 </section>
-<p class="stream-demo-note">Results are deliberately paced for this demo. In your application, stream them as your work produces them.</p>
+<p class="stream-demo-note">The demo delays results to make incremental delivery visible.</p>

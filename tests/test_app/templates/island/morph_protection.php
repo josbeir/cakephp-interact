@@ -13,13 +13,13 @@ use function Cake\Core\h;
     <div class="card-heading">
         <div>
             <p class="eyebrow">07 / DOM ownership</p>
-            <h2>One render. Two different results.</h2>
+            <h2>DOM ownership</h2>
         </div>
         <span class="capability">x-interact:ignore</span>
     </div>
     <p class="card-description">
-        PHP sends the same count and color to both panels. Update them and watch
-        the protected panel keep its original markup.
+        Both panels receive the same server HTML. The ignored panel retains its DOM
+        until its identity changes.
     </p>
     <div class="ownership-grid">
         <div class="ownership-panel swatch-<?= (string)h($color) ?>" aria-label="Normal region">
