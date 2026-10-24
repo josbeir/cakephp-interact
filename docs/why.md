@@ -27,7 +27,7 @@ See [How it works](/how-it-works) for flowcharts of page rendering and island up
 - Alpine integration and third-party JavaScript widgets.
 
 Start with [Installation](/installation) and [Quickstart](/getting-started).
-[Examples](/examples) contains complete applications. Use the documentation's
+[Demo](/demo) links to the runnable application and its source. Use the documentation's
 feature and API pages for syntax, defaults, and behavior.
 
 ## Application responsibilities

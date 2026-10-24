@@ -43,4 +43,4 @@ Keep controls, child islands, ignored widget regions, executable scripts, runtim
 metadata, and nested stream targets outside streamed content. Changes are
 provisional: the final normal render is authoritative. See
 [completion and failures](/guide/streaming#completion-validation-and-failure) and
-[the complete report example](/examples/streaming).
+[the complete report example](/demo#streaming).

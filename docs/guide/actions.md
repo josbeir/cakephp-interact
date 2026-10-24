@@ -52,7 +52,7 @@ public function saveDraft(): void
 ```
 
 The fragment assumes a declared `savedCount` state property. The
-[complete draft editor](/examples/renderless-actions) includes CakePHP persistence
+[complete draft editor](/demo#renderless-actions) includes CakePHP persistence
 and a FormHelper form.
 
 ```html
@@ -151,7 +151,7 @@ action's application flow.
 
 Use [`x-interact:submit`](/directives/submit) to call an action from a form.
 It captures current bound controls and protects against repeated submissions
-while the request settles. The [article form](/examples/article-form) includes
+while the request settles. The [article form](/demo#forms) includes
 entity validation and saving.
 
 <span id="show-progress-and-failures"></span>

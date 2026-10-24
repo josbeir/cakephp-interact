@@ -91,7 +91,7 @@ use function Cake\Core\h;
 ```
 
 Mount with `<?= $this->Interact->render('Resources') ?>`. This example assumes an
-application `Resources` Table with a `title` column. The [search example](/examples/search)
+application `Resources` Table with a `title` column. The [search example](/demo#search)
 includes a tested Table, SQLite schema, template, and mount call.
 
 ## Configuration and state

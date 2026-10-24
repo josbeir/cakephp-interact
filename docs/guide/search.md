@@ -14,5 +14,5 @@ search: false
 This topic is documented on the following pages:
 
 - [Native pagination](/guide/pagination)
-- [Complete example](/examples/search)
+- [Complete example](/demo#search)
 - [Input binding](/directives/model)

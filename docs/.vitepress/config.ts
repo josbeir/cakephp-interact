@@ -70,34 +70,9 @@ export default defineConfig({
     },
     nav: [
       { text: 'Documentation', link: '/why' },
-      { text: 'Examples', link: '/examples' },
+      { text: 'Demo', link: '/demo' },
     ],
     sidebar: {
-      '/examples': [
-        {
-          text: 'Examples',
-          items: [
-            { text: 'Overview and demo', link: '/examples' },
-            { text: 'Article form', link: '/examples/article-form' },
-            {
-              text: 'Renderless draft saves',
-              link: '/examples/renderless-actions',
-            },
-            { text: 'Navigation', link: '/examples/navigation' },
-            { text: 'Streaming report', link: '/examples/streaming' },
-            { text: 'Save and redirect', link: '/examples/redirect' },
-            { text: 'Invoice download', link: '/examples/download' },
-            { text: 'Search and pagination', link: '/examples/search' },
-            { text: 'Reusable child inputs', link: '/examples/child-inputs' },
-            { text: 'Dependent fields', link: '/examples/dependent-fields' },
-            { text: 'Single document upload', link: '/examples/upload' },
-            { text: 'Job polling', link: '/examples/polling' },
-            { text: 'Lazy resource count', link: '/examples/lazy-loading' },
-            { text: 'Enhanced select', link: '/examples/enhanced-select' },
-            { text: 'Chart updates', link: '/examples/chart' },
-          ],
-        },
-      ],
       '/': [
         {
           text: 'Getting started',

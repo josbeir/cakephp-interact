@@ -1,1 +1,0 @@
-CREATE TABLE documents (id INTEGER PRIMARY KEY, filename VARCHAR(255) NOT NULL);

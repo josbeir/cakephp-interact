@@ -50,7 +50,7 @@ For writable `title` state and an exposed `save()` action:
 
 The expression runs in Alpine scope and must include the call. `save()` needs
 [`#[Action]`](/guide/actions). The application owns validation and persistence;
-see the complete [article form](/examples/article-form).
+see the complete [article form](/demo#forms).
 
 Bind an entire native form with `x-interact:model="data"` when writable array
 `data` holds its draft. Names such as `title` and `comments[0][body]` then map to

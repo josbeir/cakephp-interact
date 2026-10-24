@@ -37,4 +37,4 @@ Mutable drafts, Alpine state, polling, uploads, and pending requests survive a c
 
 Retained islands keep their existing signed snapshots and originating CakePHP route defaults. Every later update still authorizes against current application permissions. Persistence does not grant access or silently retarget action routing to the destination controller.
 
-When a region is replaced or absent, Alpine cleanup disposes its island clients, requests, timers, controls, observers, and widgets. Page-owned islands always mount fresh, including on Back/Forward. See the [tested example](/examples/navigation).
+When a region is replaced or absent, Alpine cleanup disposes its island clients, requests, timers, controls, observers, and widgets. Page-owned islands always mount fresh, including on Back/Forward. See the [tested example](/demo#navigation).

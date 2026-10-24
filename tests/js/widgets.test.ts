@@ -155,6 +155,50 @@ describe('widget DOM ownership', () => {
     expect(toggle?.getAttribute('aria-expanded')).toBe('true');
   });
 
+  it('updates a widget from nested server data without sharing state or recreating it, and disposes it', async () => {
+    let data: unknown;
+    const initialized = vi.fn();
+    const updated = vi.fn();
+    const destroyed = vi.fn();
+    Alpine.data('chartProbe', () => ({
+      init() {
+        initialized();
+        data = structuredClone(Alpine.raw(bridge(this.$el).state.chartData));
+        this.$watch('$server.state.chartData', (accepted: unknown) => {
+          data = structuredClone(Alpine.raw(accepted));
+          updated();
+        });
+      },
+      destroy() {
+        destroyed();
+      },
+    }));
+    const root = mount(
+      '<div x-data="chartProbe"><div x-interact:ignore><canvas data-instance="retained"></canvas></div></div>',
+      { chartData: { labels: ['Monday'], datasets: [{ data: [12] }] } },
+    );
+    const canvas = root.querySelector('canvas');
+    expect(data).toEqual({ labels: ['Monday'], datasets: [{ data: [12] }] });
+    expect(data).not.toBe(bridge(root).state.chartData);
+    // A library may mutate its own copy without creating island drafts.
+    if (typeof data !== 'object' || data === null)
+      throw new Error('Missing chart data');
+    Reflect.set(data, 'libraryOnly', true);
+    expect(bridge(root).state.chartData).not.toHaveProperty('libraryOnly');
+    const next = {
+      chartData: { labels: ['Monday'], datasets: [{ data: [13] }] },
+    };
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(reply(root, next)));
+    await bridge(root).sync();
+    await vi.waitFor(() => expect(updated).toHaveBeenCalledOnce());
+    expect(data).toEqual(next.chartData);
+    expect(root.querySelector('canvas')).toBe(canvas);
+    expect(initialized).toHaveBeenCalledOnce();
+    Alpine.destroyTree(root);
+    root.remove();
+    expect(destroyed).toHaveBeenCalledOnce();
+  });
+
   it('protects SVG attributes and children for application-owned charts', async () => {
     const root = mount(
       '<svg id="chart" viewBox="0 0 10 10" x-interact:ignore><circle r="3" /></svg>',

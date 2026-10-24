@@ -39,7 +39,7 @@ snapshot generation, URL-state publication, and queued application events. This
 supports delete-and-redirect actions whose deleted record can no longer render.
 The initiating island stops polling and drops unsent requests before leaving.
 
-See the complete [save-and-redirect example](/examples/redirect).
+See the complete [save-and-redirect example](/demo#redirects-and-downloads).
 
 ### Browser history
 
@@ -81,7 +81,7 @@ $this->downloadUrl(['_name' => 'invoices:download']);
 
 After an accepted response, Interact applies state and URL changes, requests the
 download, and then dispatches application events. The page stays open.
-See the complete [invoice download example](/examples/download).
+See the complete [authorized download in the demo](/demo#redirects-and-downloads).
 
 ### Destination endpoint
 

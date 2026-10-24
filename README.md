@@ -33,7 +33,7 @@ handles browser interactions; Interact connects them to your application's PHP.
 - [Configuration](https://josbeir.github.io/cakephp-interact/configuration.html)
 - [Build your first island](https://josbeir.github.io/cakephp-interact/getting-started.html)
 - [Island conventions](https://josbeir.github.io/cakephp-interact/guide/conventions.html)
-- [Explore the working examples](https://josbeir.github.io/cakephp-interact/examples.html)
+- [Explore the demo](https://josbeir.github.io/cakephp-interact/demo.html)
 - [Look up the PHP API](https://josbeir.github.io/cakephp-interact/api.html)
 - [Look up browser bindings and actions](https://josbeir.github.io/cakephp-interact/reference/browser.html)
 

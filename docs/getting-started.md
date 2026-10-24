@@ -134,17 +134,17 @@ class and template folders.
 
 ## Choose your next step
 
-| Task                                                   | Guide                                     |
-| ------------------------------------------------------ | ----------------------------------------- |
-| Look up a directive                                    | [HTML directives](/directives/)           |
-| Look up a JavaScript bridge member                     | [$server](/reference/server)              |
-| Bind an input or pass an initial value                 | [Properties](/guide/state)                |
-| Read PHP data from Alpine or a JavaScript file         | [Alpine and `$server`](/guide/alpine)     |
-| Call an action with arguments or show loading feedback | [Actions](/guide/actions)                 |
-| Upload and validate files                              | [File uploads](/guide/uploads)            |
-| Filter a larger model-backed listing                   | [Search and pagination](/examples/search) |
-| Validate and save an editable record                   | [Article form](/examples/article-form)    |
-| Reuse a controller action's template                   | [Page islands](/guide/page-islands)       |
+| Task                                                   | Guide                                 |
+| ------------------------------------------------------ | ------------------------------------- |
+| Look up a directive                                    | [HTML directives](/directives/)       |
+| Look up a JavaScript bridge member                     | [$server](/reference/server)          |
+| Bind an input or pass an initial value                 | [Properties](/guide/state)            |
+| Read PHP data from Alpine or a JavaScript file         | [Alpine and `$server`](/guide/alpine) |
+| Call an action with arguments or show loading feedback | [Actions](/guide/actions)             |
+| Upload and validate files                              | [File uploads](/guide/uploads)        |
+| Filter a larger model-backed listing                   | [Search and pagination](/demo#search) |
+| Validate and save an editable record                   | [Article form](/demo#forms)           |
+| Reuse a controller action's template                   | [Page islands](/guide/page-islands)   |
 
 ## Application-owned Alpine
 

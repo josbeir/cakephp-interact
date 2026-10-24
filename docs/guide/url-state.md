@@ -45,7 +45,7 @@ Bind controls normally:
 :::
 
 No additional directive, JavaScript registration, or `$server` operation is needed.
-See the complete [search example](/examples/search).
+See the complete [search example](/demo#search).
 
 ## Defaults and types
 
@@ -129,7 +129,7 @@ public function updated(UpdatedPaths $paths): void
 }
 ```
 
-Apply initial bounds in `mount()` as well. The [search example](/examples/search)
+Apply initial bounds in `mount()` as well. The [search example](/demo#search)
 shows both paths using the same normalization method. Keep persistence in actions;
 `updated()` also runs during history restoration.
 

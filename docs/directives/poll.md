@@ -15,7 +15,7 @@ description: Refresh a PHP island periodically, conditionally, or only while vis
 
 The default is five seconds. Each tick calls `$server.sync()` and rerenders the
 whole island, including fresh `viewData()`. The controller and `mount()` do not
-run again. See the [job polling example](/examples/polling).
+run again. See the [job polling example](/demo#polling).
 
 <span id="change-the-interval"></span>
 

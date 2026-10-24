@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\TestSuite;
 
-use App\Island\CounterIsland as QuickstartCounter;
 use Cake\Core\Configure;
 use Cake\Core\ConsoleApplicationInterface;
 use Cake\Core\HttpApplicationInterface;
@@ -22,6 +21,7 @@ use Commerce\Island\Article\EditorIsland as PluginEditor;
 use Interact\IslandContext;
 use Interact\Runtime\RenderlessResult;
 use Interact\Security\InvalidSnapshotException;
+use Interact\Test\Fixture\Quickstart\Island\CounterIsland as QuickstartCounter;
 use Interact\Test\Fixture\Testing\Application;
 use Interact\Test\Fixture\Testing\ProbeIsland;
 use Interact\Test\Fixture\Testing\ProbeService;
@@ -95,8 +95,8 @@ class IslandTestTest extends TestCase
 
     public function testTheDocumentedQuickstartCounterTestWorks(): void
     {
-        Configure::write('App.namespace', 'App');
-        Configure::write('App.paths.templates', [dirname(__DIR__, 2) . '/docs/app/templates/']);
+        Configure::write('App.namespace', 'Interact\\Test\\Fixture\\Quickstart');
+        Configure::write('App.paths.templates', [dirname(__DIR__, 2) . '/Fixture/Quickstart/templates/']);
         $this->testIsland(QuickstartCounter::class)
             ->assertSet('count', 0)
             ->call('increment')

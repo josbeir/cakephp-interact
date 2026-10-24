@@ -14,7 +14,7 @@ visible. Its `mount()`, `viewData()`, and normal template wait until that reques
 
 The built-in placeholder supplies loading feedback and failure recovery. Once
 loaded, the island supports normal actions, models, polling, and uploads.
-See the complete [resource count example](/examples/lazy-loading).
+See the complete [resource count example](/demo#lazy-loading).
 
 ## Loading modes
 

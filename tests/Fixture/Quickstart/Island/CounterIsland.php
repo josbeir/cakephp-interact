@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Island;
+namespace Interact\Test\Fixture\Quickstart\Island;
 
 use Interact\Attribute\Action;
 use Interact\Attribute\State;

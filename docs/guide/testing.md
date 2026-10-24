@@ -76,7 +76,7 @@ $island = $this->testIsland('Article/Form')
 ```
 
 This fragment assumes an application `Article/Form` island with writable `data`
-state and a declared `save` action, as in the [article form](/examples/article-form).
+state and a declared `save` action, as in the [article form](/demo#forms).
 Each `set()`, `fill()`, `call()`, and `sync()` is a separate interaction.
 `call($action, ...$args)` accepts typed JSON-compatible arguments, and `sync()`
 refreshes without an action. Locked state and props cannot be edited through

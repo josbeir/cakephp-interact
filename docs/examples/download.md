@@ -1,34 +1,10 @@
 ---
-title: Invoice download
-description: Update an island and download a sample CSV through a normal CakePHP endpoint.
+title: 'Invoice download'
+description: This example is now covered by the demo and feature documentation.
+search: false
 ---
 
-# Invoice download
+<span id="invoice-download"></span>
 
-This example updates a request count and downloads a public sample invoice without
-leaving the page. The file is served by an ordinary CakePHP controller.
-
-Use the [installation setup](/installation) and normal application attribute
-routing. Save each file at the path in its docblock. The sample is public;
-real invoice endpoints must authorize access to the requested record independently.
-
-::: code-group
-
-<<< @/../tests/docs/app/src/Island/InvoiceDownloadIsland.php [Island]
-
-<<< @/../tests/docs/app/templates/island/invoice_download.php [Template]
-
-<<< @/../tests/docs/app/src/Controller/InvoicesController.php [Controller]
-
-```php [Mount]
-<?= $this->Interact->render('InvoiceDownload') ?>
-```
-
-:::
-
-The browser requests `/invoices/sample` after the island renders the new count.
-CakePHP's `withDownload()` supplies the filename. For a protected example with
-current-permission checks, open `/outcomes` in the larger demo.
-
-See [downloads](/guide/redirects-and-downloads#downloads) for destination rules, file responses, and the
-limits of transfer feedback.
+This example page has moved. See the [demo and source](/demo#redirects-and-downloads) and the
+[feature documentation](/why).

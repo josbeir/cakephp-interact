@@ -1,6 +1,6 @@
 ---
 title: 'JavaScript widgets'
-description: Links to the feature documentation and complete examples.
+description: Links to widget integration guidance and the runnable demo.
 search: false
 ---
 
@@ -17,5 +17,5 @@ This topic is documented on the following pages:
 
 - [DOM protection](/directives/ignore)
 - [Modelable inputs](/directives/model#custom-alpine-inputs)
-- [Enhanced select example](/examples/enhanced-select)
-- [Chart example](/examples/chart)
+- [Enhanced select example](/demo#widgets)
+- [Display-only widget updates](/directives/ignore#update-a-chart-without-replacing-it)

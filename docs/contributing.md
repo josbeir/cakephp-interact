@@ -7,7 +7,7 @@ description: Set up the repository, run its PHP and browser quality gates, maint
 
 Read the root [contributor guidelines](https://github.com/josbeir/cakephp-interact/blob/main/AGENTS.md)
 before changing code. Use PHP 8.5, CakePHP 6 development builds, and Node 24.11+ or Node 26+.
-For installation and fixture setup, start with [the demo](/examples).
+For installation and fixture setup, start with [the demo](/demo).
 
 For testing islands in an application, see [Testing islands](/guide/testing).
 The commands below verify the Interact repository itself.
@@ -67,8 +67,7 @@ TypeScript compatibility aliases or second compiler installations.
 Playwright exercises the real CakePHP application in Chromium, Firefox, and
 WebKit with three parallel workers. Import `test` and `expect` from
 `tests/browser/fixtures.ts`; its worker-scoped fixture boots PHP on an OS-assigned
-port with separate SQLite, session, cache, and upload storage. Documentation
-rendering subprocesses use that same worker storage. Workers stop their server
+port with separate SQLite, session, cache, and upload storage. Workers stop their server
 and remove temporary storage on teardown; PHP diagnostics remain in
 `test-results/worker-*.log`. Browser tests do not use a running demo preview.
 
@@ -106,10 +105,9 @@ add coverage-ignore annotations to reach a target.
 
 For feature documentation, start with a direct definition and minimal syntax.
 Keep one page per topic. Small control examples use HTML-first tabs with a
-FormHelper alternative. Put focused complete applications in Examples and import
-their tested source from the demo or `tests/docs/app/`. The article form's island,
-models, schema, and template live in `tests/test_app/`; documentation imports
-those files. Keep demo code independent of documentation fixtures. Check snippets,
+FormHelper alternative. Keep short examples within the relevant feature or API page. Complete interactions
+live in `tests/test_app/` and are linked from [Demo](/demo). HTTP and browser tests
+exercise that same application; do not maintain a separate documentation app. Check snippets,
 behavior, links, and desktop/mobile navigation.
 
 ## Documentation and releases

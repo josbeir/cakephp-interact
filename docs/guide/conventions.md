@@ -33,7 +33,7 @@ templates/island/Article/
 | `article_editor` | `App\Island\ArticleEditorIsland`  | `island/article_editor.php` |
 | `Article/Editor` | `App\Island\Article\EditorIsland` | `island/Article/editor.php` |
 
-Template paths in the table are relative to `templates/`. The [demo](/examples#run-the-demo)
+Template paths in the table are relative to `templates/`. The [demo](/demo)
 uses matching article folders. Application namespaces are read from CakePHP's
 `App.namespace` configuration.
 

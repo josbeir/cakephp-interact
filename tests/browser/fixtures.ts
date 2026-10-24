@@ -11,8 +11,8 @@ export { expect } from '@playwright/test';
 /**
  * Give each parallel worker its own real PHP application and disposable storage.
  *
- * PHP chooses a free port; SQLite, sessions, uploads, and documentation subprocesses
- * share only that worker's directory. Teardown stops PHP before removing its files.
+ * PHP chooses a free port; SQLite, sessions, and uploads share only that worker's
+ * directory. Teardown stops PHP before removing its files.
  */
 export const test = base.extend<object, { appURL: string; peerURL: string }>({
   appURL: [

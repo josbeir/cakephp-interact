@@ -63,7 +63,7 @@ use function Cake\Core\h;
 :::
 
 Complete [installation](/installation) first. See the tested
-[report example](/examples/streaming) for text, elements, and progress together.
+[report example](/demo#streaming) for text, elements, and progress together.
 
 ## stream()
 
@@ -200,7 +200,7 @@ POST keeps its built-in SSE reader.
 For example, suppose an authorized SSE feed sends `{"text":"Next result\n"}`.
 Register this external script [before Interact starts](/guide/alpine#custom-javascript):
 
-<<< @/../tests/docs/app/webroot/js/text-feed.js
+<<< @/../tests/Fixture/browser/text-feed.js
 
 Inside the receiving island, supply an authorized subscription URL as `$feedUrl`
 through `viewData()` and attach the adapter:

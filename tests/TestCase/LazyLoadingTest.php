@@ -14,6 +14,7 @@ use Interact\IslandContext;
 use Interact\Loading\Options;
 use Interact\Loading\PendingMount;
 use Interact\Loading\PlaceholderRenderer;
+use Interact\Runtime\Factory;
 use Interact\Runtime\RenderStack;
 use Interact\Runtime\Runtime;
 use Interact\Security\InvalidSnapshotException;
@@ -22,6 +23,7 @@ use Interact\Test\Fixture\CallbackRenderer;
 use Interact\Test\Fixture\ContextRuntime;
 use Interact\Test\Fixture\LazyIsland;
 use Interact\Test\Fixture\RuntimeReference;
+use Interact\View\TemplateView;
 use InvalidArgumentException;
 use Laminas\Diactoros\UploadedFile;
 use LogicException;
@@ -90,6 +92,37 @@ class LazyLoadingTest extends TestCase
             1,
             count(array_filter(LazyIsland::$trace, static fn(string $item): bool => $item === 'mount')),
         );
+    }
+
+    public function testNativePlaceholdersUseDeclaredDefaultsAndEscapePropsWithoutLeakingViewVariables(): void
+    {
+        $context = $this->context();
+        $context = new IslandContext(
+            $context->request->withAttribute('identity', ['id' => 1, 'role' => 'editor']),
+            $context->scope,
+            '/updates',
+        );
+        $view = new TemplateView($context->request);
+        $view->set('heading', 'host-only');
+
+        $runtime = new Factory(new Registry(), new SnapshotCodec(str_repeat('p', 32)))->create($view, $context);
+        $default = $runtime->mount('ResourceReport', [], 'default', $context, new Options('manual', 'Loading/report'));
+        static::assertStringContainsString('Resource report placeholder', $default->html);
+        static::assertStringNotContainsString('host-only', $default->html);
+        static::assertSame('host-only', $view->get('heading'));
+        static::assertSame([], $default->state);
+        $custom = $runtime->mount(
+            'ResourceReport',
+            ['heading' => '<Custom report>'],
+            'custom',
+            $context,
+            new Options('manual', 'Loading/report'),
+        );
+        static::assertStringContainsString('&lt;Custom report&gt;', $custom->html);
+        $loaded = $runtime->update(['snapshot' => $default->snapshot, 'initialize' => true], $context);
+        static::assertSame(1, $loaded->state['mounts']);
+        $refreshed = $runtime->update(['snapshot' => $loaded->snapshot, 'action' => 'refreshReport'], $context);
+        static::assertSame(1, $refreshed->state['refreshes']);
     }
 
     public function testPermissionIsRecheckedBeforeDeferredHooks(): void

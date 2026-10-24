@@ -11,7 +11,7 @@ Interact is available on
 [Packagist](https://packagist.org/packages/josbeir/cakephp-interact) as `dev-main`
 only. There is no stable release yet, and the API is experimental.
 
-To explore without integrating an existing application, [run the demo](/examples).
+To explore without integrating an existing application, [run the demo](/demo).
 
 ## Install in your application
 
