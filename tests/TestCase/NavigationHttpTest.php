@@ -114,10 +114,36 @@ class NavigationHttpTest extends HttpTestCase
         static::assertNotSame((string)$first->getBody(), (string)$second->getBody());
     }
 
+    public function testRotatingNoncesUseNativeHiddenMarkersAndStableCompatibility(): void
+    {
+        $this->mounted(url: '/navigation/nonces');
+        $first = $this->metadata();
+        $before = (string)$this->response?->getBody();
+        $header = $this->response?->getHeaderLine('Content-Security-Policy');
+        $this->mounted(url: '/navigation/nonces/details');
+        static::assertSame($first, $this->metadata());
+        static::assertNotSame($header, $this->response?->getHeaderLine('Content-Security-Policy'));
+        static::assertNotSame($before, (string)$this->response?->getBody());
+        $document = HTMLDocument::createFromString((string)$this->response?->getBody());
+        $markers = new XPath($document)->query('//*[@name="interact-navigation-nonce"]');
+        static::assertSame(2, $markers->length);
+        foreach ($markers as $index => $marker) {
+            static::assertInstanceOf(Element::class, $marker);
+            $nonce = $marker->getAttribute('nonce');
+            static::assertNotEmpty($nonce);
+            static::assertSame((string)$index, $marker->getAttribute('content'));
+            static::assertStringContainsString(
+                "'nonce-" . (string)$nonce . "'",
+                (string)$this->response?->getHeaderLine('Content-Security-Policy'),
+            );
+            static::assertStringNotContainsString((string)$nonce, json_encode($first, JSON_THROW_ON_ERROR));
+        }
+    }
+
     /**
      * Read the runtime-owned document envelope without relying on attribute ordering.
      *
-     * @return array{version: string, application: string, session: string, policy: string}
+     * @return array{version: string, application: string, session: string, policy: string, nonceCount?: int}
      */
     protected function metadata(): array
     {
@@ -126,7 +152,7 @@ class NavigationHttpTest extends HttpTestCase
         static::assertSame(1, $nodes->length);
         $node = $nodes->item(0);
         static::assertInstanceOf(Element::class, $node);
-        /** @var array{version: string, application: string, session: string, policy: string} $value */
+        /** @var array{version: string, application: string, session: string, policy: string, nonceCount?: int} $value */
         $value = json_decode((string)$node->getAttribute('content'), true, flags: JSON_THROW_ON_ERROR);
         static::assertIsArray($value);
 

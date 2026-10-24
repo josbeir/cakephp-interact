@@ -127,6 +127,7 @@ export default defineConfig({
             { text: 'x-interact:ignore', link: '/directives/ignore' },
             { text: 'x-interact:navigate', link: '/directives/navigate' },
             { text: 'x-interact:persist', link: '/directives/persist' },
+            { text: 'x-interact:asset', link: '/directives/asset' },
           ],
         },
         {

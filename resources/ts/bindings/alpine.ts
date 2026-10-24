@@ -32,7 +32,10 @@ export function registerBindings(
         { value, modifiers, expression, original },
         { cleanup, effect },
       ) => {
-        if ((value === 'navigate' || value === 'persist') && pageBinding) {
+        if (
+          (value === 'navigate' || value === 'persist' || value === 'asset') &&
+          pageBinding
+        ) {
           cleanup(pageBinding(element, value, modifiers, expression));
           return;
         }
@@ -140,7 +143,7 @@ export function registerBindings(
           );
         } else
           throw new Error(
-            'Unknown x-interact directive. Use model, submit, poll, stream, ignore, navigate, or persist.',
+            'Unknown x-interact directive. Use model, submit, poll, stream, ignore, navigate, persist, or asset.',
           );
       },
     ),

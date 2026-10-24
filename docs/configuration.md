@@ -134,8 +134,9 @@ Output it in the layout, using its configured name:
 | `navigationVersion` | `''`    | Application asset compatibility identifier used by enhanced navigation. |
 
 Set a string build identifier when application-owned assets change incompatibly.
-Different identifiers require a native page visit. The built-in runtime
-fingerprint is tracked automatically. See [navigation](/directives/navigate#head-elements-and-scripts).
+Different identifiers require a native page visit. Alternatively, mark versioned
+head bundles with [x-interact:asset="reload"](/directives/asset#reload-on-asset-changes).
+The built-in runtime fingerprint is tracked automatically. See [navigation](/directives/navigate#head-elements-and-scripts).
 
 ### Temporary uploads
 

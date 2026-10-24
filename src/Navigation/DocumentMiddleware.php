@@ -48,29 +48,29 @@ class DocumentMiddleware implements MiddlewareInterface
         $session = $request->getSession();
         $session->start();
 
-        $policy = [];
-        foreach ([
-            'Content-Security-Policy',
-            'Content-Security-Policy-Report-Only',
-            'Cross-Origin-Opener-Policy',
-            'Cross-Origin-Embedder-Policy',
-            'Referrer-Policy',
-            'Permissions-Policy',
-        ] as $header) {
-            $policy[$header] = $response->getHeader($header);
-        }
+        $policy = DocumentPolicy::fromResponse($response);
 
         $bundle = dirname(__DIR__, 2) . '/webroot/js/runtime.js';
         $metadata = [
             'version' => '1:' . (is_file($bundle) ? (string)hash_file('sha256', $bundle) : 'source'),
             'application' => (string)Configure::read('Interact.navigationVersion', ''),
             'session' => hash_hmac('sha256', $session->id(), Security::getSalt()),
-            'policy' => hash('sha256', json_encode($policy, JSON_THROW_ON_ERROR)),
+            'policy' => $policy->fingerprint,
+            ...($policy->nonces === [] ? [] : ['nonceCount' => count($policy->nonces)]),
         ];
         $marker =
             '<meta name="interact-navigation" content="'
             . htmlspecialchars(json_encode($metadata, JSON_THROW_ON_ERROR), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
             . '">';
+        foreach ($policy->nonces as $index => $nonce) {
+            $marker .=
+                '<meta name="interact-navigation-nonce" content="'
+                . $index
+                . '" nonce="'
+                . htmlspecialchars($nonce, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                . '">';
+        }
+
         $body = new Stream('php://temp', 'wb+');
         $body->write(str_replace(static::PLACEHOLDER, $marker, $html));
 

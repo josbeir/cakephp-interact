@@ -56,6 +56,14 @@ The tested example uses [DebuggingIsland](https://github.com/josbeir/cakephp-int
 and its [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/debugging.php).
 See [debugging](/guide/debugging) for viewer settings and DebugKit coexistence.
 
+## Navigation head and CSP examples
+
+Open `/navigation` and switch between Overview and Details. Each page has its own external stylesheet; the previous page's sheet is removed. A shared inline style uses `x-interact:asset="persist"` with a stable id and remains when absent from Details.
+
+Follow **Try rotating CSP nonces** to `/navigation/nonces`. Each GET generates distinct script/style nonces. Switch pages and use Back/Forward: the nonce-authorized heading color changes while enhanced navigation retains the original browser policy. Leaving this example changes the policy and uses a native visit.
+
+Tested source: [nonce page](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/Navigation/nonces.php), [demo security middleware](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Middleware/DemoSecurityMiddleware.php).
+
 ## Source and reset
 
 The demo uses the `TestApp` namespace. Adapt it to your application's namespace
