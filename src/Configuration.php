@@ -40,6 +40,10 @@ readonly class Configuration
 
     public string $scriptBlock;
 
+    public bool $debugEnabled;
+
+    public bool $debugViewer;
+
     /**
      * Validate new setting groups while leaving existing upload and navigation settings intact.
      *
@@ -66,6 +70,17 @@ readonly class Configuration
         $this->script = $assets->script;
         $this->scriptOptions = $assets->options;
         $this->scriptBlock = $assets->block;
+        $debug = static::group($options, 'debug', ['enabled', 'viewer']);
+        /** @var mixed $enabled */
+        $enabled = array_key_exists('enabled', $debug) ? $debug['enabled'] : Configure::read('debug', false);
+        /** @var mixed $viewer */
+        $viewer = array_key_exists('viewer', $debug) ? $debug['viewer'] : true;
+        if (!is_bool($enabled) || !is_bool($viewer)) {
+            throw new InvalidArgumentException('Interact debug settings must be booleans.');
+        }
+
+        $this->debugEnabled = Configure::read('debug') === true && $enabled;
+        $this->debugViewer = $viewer;
     }
 
     /**

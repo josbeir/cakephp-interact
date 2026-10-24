@@ -113,6 +113,7 @@ export default defineConfig({
             { text: 'File uploads', link: '/guide/uploads' },
             { text: 'Streaming', link: '/guide/streaming' },
             { text: 'Error handling', link: '/guide/failures' },
+            { text: 'Debugging', link: '/guide/debugging' },
           ],
         },
         {

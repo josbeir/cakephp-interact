@@ -6,12 +6,15 @@ namespace Interact\Http;
 use Cake\Http\Exception\HttpException;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
+use Interact\Debugging\Diagnostics;
+use Interact\Debugging\OutputCapture;
 use Interact\Runtime\Factory;
 use Interact\Security\InvalidSnapshotException;
 use Interact\Streaming\RequestContext;
 use Interact\Streaming\SseResponse;
 use Interact\View\TemplateView;
 use InvalidArgumentException;
+use Throwable;
 
 /**
  * Handles island HTTP requests independently of their hosting controller.
@@ -28,6 +31,7 @@ class UpdateHandler
         protected readonly Factory $factory,
         protected readonly FailureResponder $failures,
         protected readonly SseResponse $streams = new SseResponse(),
+        protected readonly Diagnostics $diagnostics = new Diagnostics(),
     ) {
     }
 
@@ -35,6 +39,26 @@ class UpdateHandler
      * Validate a POST request and return an uncached, versioned JSON response.
      */
     public function handle(ServerRequest $request, Response $response): Response
+    {
+        $capture = $this->diagnostics->begin();
+        try {
+            $execute = fn(): Response => $this->execute($request, $response, $capture);
+            $result = $capture instanceof OutputCapture ? $capture->run($execute) : $execute();
+
+            return $result->getHeaderLine('Content-Type') === 'application/json'
+                ? $this->diagnostics->response($result, $capture)
+                : $result;
+        } catch (Throwable $throwable) {
+            $this->diagnostics->remember($throwable, $capture);
+
+            throw $throwable;
+        }
+    }
+
+    /**
+     * Execute the existing update contract within the selected diagnostic boundary.
+     */
+    protected function execute(ServerRequest $request, Response $response, ?OutputCapture $capture): Response
     {
         try {
             $request->allowMethod(['post']);
@@ -50,7 +74,7 @@ class UpdateHandler
             $runtime = $this->factory->create(new TemplateView($request, $response), $context);
             $update = $runtime->prepare($body, $context);
             if ($update->stream && $request->accepts('text/event-stream')) {
-                return $this->streams->create($update, $context, $response);
+                return $this->streams->create($update, $context, $response, $capture);
             }
 
             $result = $update->run();

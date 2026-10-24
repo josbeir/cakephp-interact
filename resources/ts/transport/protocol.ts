@@ -3,6 +3,7 @@ import { urlFields, urlState } from '../url/codec';
 import { uploadMetadata } from '../uploads/protocol';
 import type { UpdateResponse, Writable } from '../types';
 import { forbidden, record, state } from '../state/values';
+import { diagnosticEnvelope } from '../diagnostics/output';
 
 /**
  * Validate browser-write metadata against the supported native PHP property types.
@@ -25,9 +26,10 @@ export function writable(value: unknown): value is Writable {
  * Check the complete update envelope before any server state or effects are applied.
  */
 export function response(value: unknown): value is UpdateResponse {
+  if (!diagnosticEnvelope(value)) return false;
   if (record(value) && 'redirect' in value)
     return (
-      Object.keys(value).length === 3 &&
+      Object.keys(value).length === ('diagnostics' in value ? 4 : 3) &&
       value.version === 1 &&
       typeof value.id === 'string' &&
       redirect(value.redirect)

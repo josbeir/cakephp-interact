@@ -3,6 +3,7 @@ import type { MountMetadata } from './metadata';
 import { readStream } from '../streaming/response';
 import { responseMatches } from './protocol';
 import { readFailure, requestError } from './failure';
+import { DiagnosticRequest } from '../diagnostics/output';
 
 /**
  * Versioned browser request carrying a signed baseline and explicit writable edits.
@@ -67,10 +68,12 @@ export async function readResponse(
     (result.status >= 300 && result.status < 400)
   )
     throw requestError('unexpected_redirect', result.status || null);
-  if (!result.ok && result.status !== 422) throw await readFailure(result);
+  const diagnostics = new DiagnosticRequest(id);
+  if (!result.ok && result.status !== 422)
+    throw await readFailure(result, diagnostics);
   if (result.headers.get('content-type')?.includes('text/event-stream')) {
     if (!receive) throw requestError('invalid_response', result.status);
-    return readStream(result, id, receive, terminal);
+    return readStream(result, id, receive, terminal, diagnostics);
   }
   if (!result.headers.get('content-type')?.includes('application/json'))
     throw requestError('invalid_response', result.status);
@@ -82,5 +85,6 @@ export async function readResponse(
   }
   if (!responseMatches(payload, id, result.status))
     throw requestError('invalid_response', result.status);
+  if (payload.diagnostics) diagnostics.show(payload.diagnostics);
   return payload;
 }

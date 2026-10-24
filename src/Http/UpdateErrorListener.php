@@ -6,6 +6,7 @@ namespace Interact\Http;
 use Cake\Event\EventInterface;
 use Cake\Event\EventListenerInterface;
 use Cake\Http\ServerRequest;
+use Interact\Debugging\Diagnostics;
 use Throwable;
 
 /**
@@ -19,8 +20,10 @@ class UpdateErrorListener implements EventListenerInterface
     /**
      * Share the controller's failure contract through an injectable responder.
      */
-    public function __construct(protected readonly FailureResponder $failures)
-    {
+    public function __construct(
+        protected readonly FailureResponder $failures,
+        protected readonly Diagnostics $diagnostics = new Diagnostics(),
+    ) {
     }
 
     /**
@@ -51,6 +54,6 @@ class UpdateErrorListener implements EventListenerInterface
             return;
         }
 
-        $event->setResult($this->failures->fromException($exception));
+        $event->setResult($this->diagnostics->failure($exception, $this->failures->fromException($exception)));
     }
 }

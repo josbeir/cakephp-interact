@@ -10,6 +10,11 @@ sends a POST to the configured update endpoint and receives JSON containing
 rendered HTML. Record both the HTTP status and response content when diagnosing a
 failure.
 
+Use CakePHP's `debug()` inside island classes during development. Interact
+captures its output separately from JSON and SSE updates. Template dumps remain
+in the rendered HTML. See [debugging](/guide/debugging) for viewer controls,
+configuration, and the limitations of `dd()`.
+
 ## The page renders but buttons do nothing
 
 1. Confirm the plugin and `Interact` helper are loaded.

@@ -21,8 +21,10 @@ document.addEventListener('interact:request-finished', (event) => {
 });
 ```
 
-This example opts into console output. Interact itself keeps no diagnostic history
-and performs no automatic logging or telemetry.
+This example opts into console output. These lifecycle observations keep no
+diagnostic history and perform no automatic logging or telemetry. The separate
+[debug output viewer](/guide/debugging) retains only the latest captured request
+when application debugging is enabled.
 
 ## Events
 

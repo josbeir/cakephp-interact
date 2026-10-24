@@ -1,5 +1,10 @@
 import type { FailureCode, RequestFailure } from '../types';
 import { record } from '../state/values';
+import {
+  diagnosticEnvelope,
+  type DiagnosticOutput,
+  type DiagnosticRequest,
+} from '../diagnostics/output';
 
 const definitions: Record<
   FailureCode,
@@ -145,6 +150,7 @@ function serverCode(value: unknown): value is ServerCode {
  */
 export async function readFailure(
   result: Response,
+  diagnostics?: DiagnosticRequest,
 ): Promise<IslandRequestError> {
   const fallback = requestError(httpCode(result.status), result.status);
   if (!result.headers.get('content-type')?.includes('application/json'))
@@ -156,16 +162,25 @@ export async function readFailure(
     return fallback;
   }
 
-  return failurePayload(value, result.status);
+  const failure = failurePayload(value, result.status);
+  if (
+    failure.failure.code !== 'invalid_response' &&
+    failureEnvelope(value) &&
+    value.diagnostics
+  )
+    diagnostics?.show(value.diagnostics);
+  return failure;
 }
 
 /** Require a versioned failure frame before accepting it as a streaming terminal. */
 export function failureEnvelope(value: unknown): value is {
   version: 1;
   error: { code: string; message: string };
+  diagnostics?: DiagnosticOutput;
 } {
   return (
     record(value) &&
+    diagnosticEnvelope(value) &&
     value.version === 1 &&
     record(value.error) &&
     typeof value.error.code === 'string' &&
