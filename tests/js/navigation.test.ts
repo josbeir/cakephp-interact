@@ -350,6 +350,7 @@ describe('navigation feedback and links', () => {
     expect(visit).toHaveBeenCalledWith(
       new URL('/second', window.location.href).href,
       { preserveScroll: true },
+      undefined,
     );
     link.href = '/first';
     await Promise.resolve();
@@ -441,11 +442,11 @@ describe('navigation feedback and links', () => {
 
   it.each([
     ['private, max-age=30', 1],
-    ['no-store', 2],
-    ['no-cache', 2],
-    ['', 2],
+    ['no-store', 1],
+    ['no-cache', 1],
+    ['', 1],
   ] as const)(
-    'honors %s when a pressed request finishes before click',
+    'uses one GET for the same press when %s finishes before click',
     async (policy, requests) => {
       vi.useFakeTimers();
       const fetcher = vi.fn<Fetcher>(async () => {
@@ -470,6 +471,105 @@ describe('navigation feedback and links', () => {
       dispose();
     },
   );
+
+  it.each([
+    'outside',
+    'no-click',
+    'blur',
+    'pointercancel',
+    'drag',
+    'keyboard',
+    'next-press',
+    'dispose',
+    'href',
+    'prevented-click',
+    'cancelled-navigation',
+  ])('releases a completed uncached press on %s', async (reason) => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn<Fetcher>(async () => {
+      const response = pageResponse();
+      response.headers.set('Cache-Control', 'no-store');
+      return response;
+    });
+    const { controller, native } = setup(fetcher);
+    const prefetch = vi.spyOn(controller, 'prefetch');
+    const link = document.createElement('a');
+    link.href = '/second';
+    document.body.append(link);
+    const dispose = navigationBinding(controller, link, 'navigate', [], '');
+    link.dispatchEvent(
+      new MouseEvent('mousedown', { button: 0, bubbles: true }),
+    );
+    await vi.runAllTimersAsync();
+    expect(fetcher).toHaveBeenCalledOnce();
+    if (reason === 'outside')
+      document.body.dispatchEvent(
+        new MouseEvent('mouseup', { button: 0, bubbles: true }),
+      );
+    if (reason === 'no-click')
+      link.dispatchEvent(
+        new MouseEvent('mouseup', { button: 0, bubbles: true }),
+      );
+    if (reason === 'blur' || reason === 'pointercancel')
+      window.dispatchEvent(new Event(reason));
+    if (reason === 'drag') link.dispatchEvent(new Event('dragstart'));
+    if (reason === 'keyboard')
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    if (reason === 'next-press')
+      document.body.dispatchEvent(
+        new MouseEvent('mousedown', { button: 0, bubbles: true }),
+      );
+    if (reason === 'dispose') dispose();
+    if (reason === 'href') {
+      link.href = '/third';
+      await Promise.resolve();
+    }
+    if (reason === 'prevented-click') {
+      const event = new MouseEvent('click', { cancelable: true });
+      event.preventDefault();
+      link.dispatchEvent(event);
+    }
+    if (reason === 'cancelled-navigation') {
+      document.addEventListener(
+        'interact:navigate',
+        (event) => event.preventDefault(),
+        { once: true },
+      );
+      link.click();
+    }
+    await vi.runAllTimersAsync();
+    expect(prefetch.mock.calls[0]?.[1]?.aborted).toBe(true);
+    // A later programmatic visit cannot claim an abandoned press's private response.
+    const visit = controller.visit(
+      new URL('/second', window.location.href).href,
+    );
+    await vi.runAllTimersAsync();
+    expect(await visit).toBe('enhanced');
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(native).not.toHaveBeenCalled();
+    dispose();
+  });
+
+  it('lets mouse-up hand the completed response to click and clears the deferred release', async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn<Fetcher>(async () => pageResponse());
+    const { controller } = setup(fetcher);
+    const link = document.createElement('a');
+    link.href = '/second';
+    document.body.append(link);
+    const dispose = navigationBinding(controller, link, 'navigate', [], '');
+    link.dispatchEvent(
+      new MouseEvent('mousedown', { button: 0, bubbles: true }),
+    );
+    await vi.runAllTimersAsync();
+    link.dispatchEvent(new MouseEvent('mouseup', { button: 1, bubbles: true }));
+    link.dispatchEvent(new MouseEvent('mouseup', { button: 0, bubbles: true }));
+    link.click();
+    await vi.runAllTimersAsync();
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(window.location.pathname).toBe('/second');
+    dispose();
+  });
 
   it('ignores ineligible presses and removes mouse-down behavior on disposal', () => {
     const { controller } = setup();

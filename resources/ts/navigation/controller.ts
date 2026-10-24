@@ -97,9 +97,9 @@ export class NavigationController implements NavigationService {
     this.pages.clear();
   }
 
-  prefetch(url: string): void {
+  prefetch(url: string, press?: AbortSignal): void {
     if (!this.disposed && documentIdentity(document) && destination(url, true))
-      this.pages.prefetch(url);
+      this.pages.prefetch(url, press);
   }
 
   query(url: URL, push: boolean): void {
@@ -113,7 +113,11 @@ export class NavigationController implements NavigationService {
     document.dispatchEvent(new Event('interact:url'));
   }
 
-  async visit(url: string, options: VisitOptions = {}): Promise<VisitResult> {
+  async visit(
+    url: string,
+    options: VisitOptions = {},
+    press?: AbortSignal,
+  ): Promise<VisitResult> {
     if (this.disposed) return 'cancelled';
     if (!destination(url, true) || !this.history) {
       this.native(url, options.replace ?? false);
@@ -134,7 +138,7 @@ export class NavigationController implements NavigationService {
     document.documentElement.setAttribute('aria-busy', 'true');
     const scroll = { x: window.scrollX, y: window.scrollY };
     try {
-      const response = await this.pages.take(next.href, request.signal);
+      const response = await this.pages.take(next.href, request.signal, press);
       this.current(request, generation);
       const incoming = incomingDocument(response.html, document);
       const activate = await this.assets.prepare(

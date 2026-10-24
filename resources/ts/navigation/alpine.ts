@@ -49,26 +49,65 @@ export function navigationBinding(
     );
   const current = () => updateCurrent(element, modifiers.includes('trail'));
   current();
-  const observer = new MutationObserver(current);
+  const observer = new MutationObserver(() => {
+    release();
+    current();
+  });
   observer.observe(element, { attributes: true, attributeFilter: ['href'] });
   document.addEventListener('interact:url', current);
+  let pressed: { url: string; controller: AbortController } | undefined;
+  let releaseTimer: ReturnType<typeof setTimeout> | undefined;
+  const release = () => {
+    clearTimeout(releaseTimer);
+    pressed?.controller.abort();
+    pressed = undefined;
+    document.removeEventListener('mouseup', released, true);
+    document.removeEventListener('mousedown', release, true);
+    document.removeEventListener('keydown', release, true);
+    window.removeEventListener('blur', release);
+    window.removeEventListener('pointercancel', release);
+    element.removeEventListener('dragstart', release);
+  };
+  const released = (event: MouseEvent) => {
+    if (event.button !== 0) return;
+    // Mouse-up and click are separate events; let this click claim its response first.
+    if (event.target instanceof Node && element.contains(event.target)) {
+      clearTimeout(releaseTimer);
+      releaseTimer = setTimeout(release, 0);
+    } else release();
+  };
   const click = (event: MouseEvent) => {
     const url = linkDestination(element, event);
-    if (!url) return;
     cancel();
-    event.preventDefault();
-    void controller.visit(url.href, {
-      preserveScroll: modifiers.includes('preserve-scroll'),
-    });
+    if (url) {
+      event.preventDefault();
+      void controller.visit(
+        url.href,
+        {
+          preserveScroll: modifiers.includes('preserve-scroll'),
+        },
+        pressed?.url === url.href ? pressed.controller.signal : undefined,
+      );
+    }
+    release();
   };
   element.addEventListener('click', click);
   let timer: ReturnType<typeof setTimeout> | undefined;
   const cancel = () => clearTimeout(timer);
   const press = (event: MouseEvent) => {
+    release();
     const url = linkDestination(element, event);
     if (!url) return;
     cancel();
-    controller.prefetch(url.href);
+    const controllerForPress = new AbortController();
+    pressed = { url: url.href, controller: controllerForPress };
+    controller.prefetch(url.href, controllerForPress.signal);
+    document.addEventListener('mouseup', released, true);
+    document.addEventListener('mousedown', release, true);
+    document.addEventListener('keydown', release, true);
+    window.addEventListener('blur', release);
+    window.addEventListener('pointercancel', release);
+    element.addEventListener('dragstart', release);
   };
   const prefetch = () => {
     cancel();
@@ -87,6 +126,7 @@ export function navigationBinding(
   }
   return () => {
     cancel();
+    release();
     observer.disconnect();
     document.removeEventListener('interact:url', current);
     element.removeEventListener('click', click);
