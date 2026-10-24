@@ -31,13 +31,44 @@ Modified clicks, downloads, external links, links targeting another browsing con
 
 ## Prefetching
 
+By default, an unmodified primary mouse-button press starts fetching the
+destination. Releasing the button over the link activates the visit; pressing
+alone never changes the page. Modified clicks, downloads, external links, and
+links targeting another browsing context keep their native behavior.
+
+Use `.hover` to start earlier:
+
 ```html
 <a href="/articles" x-interact:navigate.hover>Articles</a>
 ```
 
 `.hover` starts fetching after 60 ms of hover or keyboard focus. Leaving before that delay cancels the pending prefetch. Prefetched HTML remains inert: no scripts, islands, polling, uploads, or deferred mounts initialize.
 
-A click can join the in-flight request. Completed responses are retained only when their Cache-Control permits explicit freshness, for at most 30 seconds, and consumed once. `no-store` and `no-cache` responses are not retained. Navigation and island requests invalidate unused prefetched pages. Hover prefetching adds GET requests; destination GET routes must remain safe.
+A click joins an in-flight mouse-down or hover request. Completed responses are
+retained only when their Cache-Control permits explicit freshness, for at most
+30 seconds, and consumed once. `no-store`, `no-cache`, and responses without
+explicit freshness are not retained: if their prefetch finishes before the
+click, the visit makes a fresh GET. Navigation and island requests invalidate
+unused prefetched pages.
+
+Use `.no-prefetch` to disable mouse-down and hover prefetching for a link:
+
+::: code-group
+
+```html [HTML]
+<a href="/reports" x-interact:navigate.no-prefetch>Reports</a>
+```
+
+```php [FormHelper]
+<?= $this->Html->link('Reports', '/reports', ['x-interact:navigate.no-prefetch' => true]) ?>
+```
+
+:::
+
+The link still uses enhanced navigation on click or keyboard activation.
+`.no-prefetch` takes precedence over `.hover` in either modifier order.
+Prefetching adds GET requests even when a user abandons a click; destination
+GET routes must remain safe.
 
 ## Scroll and focus
 
@@ -171,6 +202,7 @@ Set [`Interact.navigationVersion`](/configuration#navigation-compatibility) when
 | Modifier           | Behavior                                                                  |
 | ------------------ | ------------------------------------------------------------------------- |
 | `.hover`           | Prefetch after 60 ms of hover or focus                                    |
+| `.no-prefetch`     | Disable mouse-down and hover prefetching while retaining enhanced visits  |
 | `.preserve-scroll` | Retain current page scroll for the visit                                  |
 | `.trail`           | Mark the current page and URL ancestors with `data-interact-active-trail` |
 

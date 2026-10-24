@@ -392,6 +392,182 @@ describe('navigation feedback and links', () => {
         ),
       ).toThrow();
   });
+
+  it.each([false, true])(
+    'joins a pressed request on click with hover enabled: %s',
+    async (hover) => {
+      vi.useFakeTimers();
+      let complete: ((response: Response) => void) | undefined;
+      const fetcher = vi.fn<Fetcher>(
+        () =>
+          new Promise((resolve) => {
+            complete = resolve;
+          }),
+      );
+      const { controller, native } = setup(fetcher);
+      const link = document.createElement('a');
+      link.href = '/second';
+      document.body.append(link);
+      const dispose = navigationBinding(
+        controller,
+        link,
+        'navigate',
+        hover ? ['hover'] : [],
+        '',
+      );
+      if (hover) {
+        link.dispatchEvent(new Event('mouseenter'));
+        await vi.advanceTimersByTimeAsync(60);
+      }
+      const press = new MouseEvent('mousedown', {
+        button: 0,
+        cancelable: true,
+      });
+      link.dispatchEvent(press);
+      expect(press.defaultPrevented).toBe(false);
+      expect(fetcher).toHaveBeenCalledOnce();
+      expect(window.location.pathname).toBe('/first');
+      expect(document.getElementById('old')).not.toBeNull();
+      link.click();
+      expect(fetcher).toHaveBeenCalledOnce();
+      complete?.(pageResponse());
+      await vi.runAllTimersAsync();
+      expect(window.location.pathname).toBe('/second');
+      expect(document.querySelector('h1')?.textContent).toBe('Second page');
+      expect(native).not.toHaveBeenCalled();
+      dispose();
+    },
+  );
+
+  it.each([
+    ['private, max-age=30', 1],
+    ['no-store', 2],
+    ['no-cache', 2],
+    ['', 2],
+  ] as const)(
+    'honors %s when a pressed request finishes before click',
+    async (policy, requests) => {
+      vi.useFakeTimers();
+      const fetcher = vi.fn<Fetcher>(async () => {
+        const response = pageResponse();
+        response.headers.set('Cache-Control', policy);
+        return response;
+      });
+      const { controller, native } = setup(fetcher);
+      const link = document.createElement('a');
+      link.href = '/second';
+      document.body.append(link);
+      const dispose = navigationBinding(controller, link, 'navigate', [], '');
+      link.dispatchEvent(new MouseEvent('mousedown', { button: 0 }));
+      await vi.runAllTimersAsync();
+      expect(fetcher).toHaveBeenCalledOnce();
+      expect(window.location.pathname).toBe('/first');
+      link.click();
+      await vi.runAllTimersAsync();
+      expect(fetcher).toHaveBeenCalledTimes(requests);
+      expect(window.location.pathname).toBe('/second');
+      expect(native).not.toHaveBeenCalled();
+      dispose();
+    },
+  );
+
+  it('ignores ineligible presses and removes mouse-down behavior on disposal', () => {
+    const { controller } = setup();
+    const prefetch = vi
+      .spyOn(controller, 'prefetch')
+      .mockImplementation(() => {});
+    const link = document.createElement('a');
+    link.href = '/second';
+    document.body.append(link);
+    const dispose = navigationBinding(controller, link, 'navigate', [], '');
+    for (const options of [
+      { button: 1 },
+      { button: 2 },
+      { ctrlKey: true },
+      { metaKey: true },
+      { shiftKey: true },
+      { altKey: true },
+    ])
+      link.dispatchEvent(new MouseEvent('mousedown', options));
+    const prevented = new MouseEvent('mousedown', { cancelable: true });
+    prevented.preventDefault();
+    link.dispatchEvent(prevented);
+    for (const [name, value] of [
+      ['download', ''],
+      ['target', '_blank'],
+      ['rel', 'external'],
+    ] as const) {
+      link.setAttribute(name, value);
+      link.dispatchEvent(new MouseEvent('mousedown'));
+      link.removeAttribute(name);
+    }
+    for (const href of ['https://external.example/page', '/first#section']) {
+      link.href = href;
+      link.dispatchEvent(new MouseEvent('mousedown'));
+    }
+    expect(prefetch).not.toHaveBeenCalled();
+    link.href = '/second';
+    link.dispatchEvent(new MouseEvent('mousedown'));
+    expect(prefetch).toHaveBeenCalledOnce();
+    dispose();
+    link.dispatchEvent(new MouseEvent('mousedown'));
+    expect(prefetch).toHaveBeenCalledOnce();
+  });
+
+  it('lets no-prefetch override hover without disabling enhanced clicks', async () => {
+    vi.useFakeTimers();
+    const { controller } = setup();
+    const prefetch = vi.spyOn(controller, 'prefetch');
+    const visit = vi.spyOn(controller, 'visit').mockResolvedValue('cancelled');
+    const link = document.createElement('a');
+    link.href = '/second';
+    document.body.append(link);
+    const dispose = navigationBinding(
+      controller,
+      link,
+      'navigate',
+      ['no-prefetch', 'hover'],
+      '',
+    );
+    link.dispatchEvent(new Event('mouseenter'));
+    link.dispatchEvent(new Event('focus'));
+    link.dispatchEvent(new MouseEvent('mousedown'));
+    await vi.advanceTimersByTimeAsync(120);
+    expect(prefetch).not.toHaveBeenCalled();
+    link.click();
+    expect(visit).toHaveBeenCalledOnce();
+    dispose();
+    link.click();
+    expect(visit).toHaveBeenCalledOnce();
+  });
+
+  it('cancels delayed hover work when a press or keyboard click starts navigation', async () => {
+    vi.useFakeTimers();
+    const { controller } = setup();
+    const prefetch = vi
+      .spyOn(controller, 'prefetch')
+      .mockImplementation(() => {});
+    vi.spyOn(controller, 'visit').mockResolvedValue('cancelled');
+    const link = document.createElement('a');
+    link.href = '/second';
+    document.body.append(link);
+    const dispose = navigationBinding(
+      controller,
+      link,
+      'navigate',
+      ['hover'],
+      '',
+    );
+    link.dispatchEvent(new Event('mouseenter'));
+    link.dispatchEvent(new MouseEvent('mousedown'));
+    await vi.advanceTimersByTimeAsync(60);
+    expect(prefetch).toHaveBeenCalledOnce();
+    link.dispatchEvent(new Event('focus'));
+    link.click();
+    await vi.advanceTimersByTimeAsync(60);
+    expect(prefetch).toHaveBeenCalledOnce();
+    dispose();
+  });
 });
 
 describe('document visit controller', () => {

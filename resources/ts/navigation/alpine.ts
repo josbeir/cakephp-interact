@@ -1,6 +1,29 @@
 import type { NavigationController } from './controller';
 import { linkDestination, updateCurrent } from './links';
 
+const navigationModifiers = [
+  'hover',
+  'preserve-scroll',
+  'trail',
+  'no-prefetch',
+];
+
+/** Discover opted-in links outside x-data with supported modifiers in any order. */
+export function navigationSelector(attribute: string): string {
+  const selectors: string[] = [];
+  const append = (name: string, remaining: string[]) => {
+    const escaped = name.replaceAll(':', '\\:').replaceAll('.', '\\.');
+    selectors.push('[' + escaped + ']');
+    for (const modifier of remaining)
+      append(
+        `${name}.${modifier}`,
+        remaining.filter((value) => value !== modifier),
+      );
+  };
+  append(attribute, navigationModifiers);
+  return selectors.join(',');
+}
+
 /** Register page directives through Interact's existing Alpine directive dispatcher. */
 export function navigationBinding(
   controller: NavigationController,
@@ -19,12 +42,10 @@ export function navigationBinding(
   if (
     !(element instanceof HTMLAnchorElement) ||
     expression.trim() ||
-    modifiers.some(
-      (modifier) => !['hover', 'preserve-scroll', 'trail'].includes(modifier),
-    )
+    modifiers.some((modifier) => !navigationModifiers.includes(modifier))
   )
     throw new Error(
-      'x-interact:navigate requires a link, no expression, and only hover, preserve-scroll, or trail modifiers.',
+      'x-interact:navigate requires a link, no expression, and only hover, preserve-scroll, trail, or no-prefetch modifiers.',
     );
   const current = () => updateCurrent(element, modifiers.includes('trail'));
   current();
@@ -34,6 +55,7 @@ export function navigationBinding(
   const click = (event: MouseEvent) => {
     const url = linkDestination(element, event);
     if (!url) return;
+    cancel();
     event.preventDefault();
     void controller.visit(url.href, {
       preserveScroll: modifiers.includes('preserve-scroll'),
@@ -42,6 +64,12 @@ export function navigationBinding(
   element.addEventListener('click', click);
   let timer: ReturnType<typeof setTimeout> | undefined;
   const cancel = () => clearTimeout(timer);
+  const press = (event: MouseEvent) => {
+    const url = linkDestination(element, event);
+    if (!url) return;
+    cancel();
+    controller.prefetch(url.href);
+  };
   const prefetch = () => {
     cancel();
     timer = setTimeout(() => {
@@ -49,7 +77,9 @@ export function navigationBinding(
       if (url) controller.prefetch(url.href);
     }, 60);
   };
-  if (modifiers.includes('hover')) {
+  if (!modifiers.includes('no-prefetch'))
+    element.addEventListener('mousedown', press);
+  if (modifiers.includes('hover') && !modifiers.includes('no-prefetch')) {
     element.addEventListener('mouseenter', prefetch);
     element.addEventListener('focus', prefetch);
     element.addEventListener('mouseleave', cancel);
@@ -60,6 +90,7 @@ export function navigationBinding(
     observer.disconnect();
     document.removeEventListener('interact:url', current);
     element.removeEventListener('click', click);
+    element.removeEventListener('mousedown', press);
     element.removeEventListener('mouseenter', prefetch);
     element.removeEventListener('focus', prefetch);
     element.removeEventListener('mouseleave', cancel);

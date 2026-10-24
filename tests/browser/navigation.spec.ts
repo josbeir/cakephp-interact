@@ -4,17 +4,11 @@ test('discovers every navigation modifier order outside x-data', async ({
   page,
 }) => {
   const combinations: string[][] = [[]];
-  const modifiers = ['trail', 'hover', 'preserve-scroll'];
-  for (const first of modifiers) {
-    combinations.push([first]);
-    for (const second of modifiers.filter((modifier) => modifier !== first)) {
-      combinations.push([first, second]);
-      for (const third of modifiers.filter(
-        (modifier) => modifier !== first && modifier !== second,
-      ))
-        combinations.push([first, second, third]);
-    }
-  }
+  const modifiers = ['trail', 'hover', 'preserve-scroll', 'no-prefetch'];
+  for (const combination of combinations)
+    for (const modifier of modifiers)
+      if (!combination.includes(modifier))
+        combinations.push([...combination, modifier]);
   const links = combinations
     .map((combination, index) => {
       const suffix = combination.map((modifier) => `.${modifier}`).join('');
@@ -31,7 +25,7 @@ test('discovers every navigation modifier order outside x-data', async ({
   });
   await page.goto('/navigation/details');
   const menu = page.getByRole('navigation', { name: 'Modifier discovery' });
-  await expect(menu.getByRole('link')).toHaveCount(16);
+  await expect(menu.getByRole('link')).toHaveCount(65);
   for (const [index, combination] of combinations.entries()) {
     const link = menu.getByRole('link', { name: `Link ${index}`, exact: true });
     if (combination.includes('trail'))
