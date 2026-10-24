@@ -1,12 +1,12 @@
 ---
 title: CakePHP Interact
 titleTemplate: false
-description: Add live search, inline editing, and conditional forms to CakePHP with server-rendered PHP islands. Start with a working example.
+description: Build interactive CakePHP pages with Alpine for browser behavior and Interact for PHP state, actions, and server-rendered updates.
 layout: home
 hero:
   name: CakePHP Interact
-  text: Interactive pages. Written in PHP.
-  tagline: Keep your CakePHP templates and application logic. Update the part of the page that changed.
+  text: Alpine in the browser. CakePHP on the server.
+  tagline: Use Alpine for local interactions. Connect PHP state, actions, and native templates with Interact.
   image:
     src: /branding/interact-mark.svg
     alt: CakePHP Interact logo
@@ -20,6 +20,10 @@ hero:
       text: Explore the demo
       link: /demo
 features:
+  - title: Built on Alpine
+    details: Use Alpine's local state, events, bindings, and transitions directly. Alpine is included in the browser runtime.
+    link: /guide/alpine
+    linkText: Use Alpine with Interact
   - title: PHP actions, native templates
     details: Declare state and actions in PHP. Render updates with familiar CakePHP templates and elements.
     link: /guide/islands
@@ -28,10 +32,6 @@ features:
     details: Bind inputs to writable drafts and display CakePHP validation errors. Your application decides when to save.
     link: /guide/forms
     linkText: Work with forms
-  - title: Independent islands
-    details: Compose reusable islands that update independently while preserving nearby drafts and Alpine state.
-    link: /guide/nesting
-    linkText: Compose islands
   - title: Search and URL state
     details: Keep filters and pagination in the URL, with browser Back and Forward support.
     link: /guide/url-state
@@ -51,7 +51,8 @@ features:
 ## A PHP class, a template, one mount call
 
 After [installation](/installation), declare a counter, add its template, and
-mount it in an existing view. Clicking the button updates only the island.
+mount it in an existing view. Alpine's `@click` calls the Interact `$server`
+bridge; PHP increments the count and returns the island's updated HTML.
 
 ::: code-group
 
@@ -111,6 +112,10 @@ declare(strict_types=1);
 ```
 
 :::
+
+Use Alpine's `x-data`, `x-show`, and `x-transition` for browser-only interactions.
+These send no request. Start with [Quickstart](/getting-started), then follow
+[Alpine and Interact](/guide/alpine) to combine local UI state with PHP actions.
 
 Development preview for **PHP 8.5 and CakePHP 6 development builds**. Install
 `dev-main` using the [installation guide](/installation).

@@ -105,6 +105,9 @@ Both attributes update when links initialize, destinations change, or the curren
 
 The Alpine store `$store.interactNavigation` describes page visits independently of any island's `$server` request activity. Interact ships no indicator markup, CSS file, or injected styles.
 
+Use Alpine's `x-show` and attribute bindings to present this activity, just as
+with [island request feedback](/guide/alpine#events-and-request-feedback).
+
 ```html
 <span
   x-data

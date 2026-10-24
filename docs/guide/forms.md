@@ -10,6 +10,11 @@ description: Render CakePHP entity errors and return field feedback with setErro
 Interact displays validation errors returned by your application. Validation
 and saving use CakePHP's normal entity, Table, and service APIs.
 
+Use Alpine for local form presentation, such as expanding help or toggling a
+panel. Use [`x-interact:model`](/directives/model) for writable PHP drafts and
+[`x-interact:submit`](/directives/submit) for protected action submissions.
+The submit directive does not collect unbound controls.
+
 <span id="validate-and-save-in-the-action"></span>
 
 ## setErrors()

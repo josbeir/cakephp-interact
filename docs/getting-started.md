@@ -12,9 +12,14 @@ description: Build a working counter with a PHP action, a native CakePHP templat
 Build a counter that updates without reloading its surrounding page. You will
 add a PHP class, a template, and one mount call to an existing controller view.
 
-Complete [installation](/installation) first: load the plugin and helper, build
-and serve the browser runtime, output the layout's script block, and keep CSRF
-middleware enabled. No database or custom JavaScript is needed for this example.
+Complete [installation](/installation) first: load the plugin and helper, serve
+the included browser runtime, output the layout's script block, and keep CSRF
+middleware enabled. The runtime includes Alpine. No database or separate
+JavaScript file is needed for this example.
+
+Alpine handles browser events and presentation. Interact supplies `$server` to
+connect those expressions to PHP. After this counter, the
+[Alpine and Interact](/guide/alpine) primer adds local state and transitions.
 
 ## Declare an island
 
@@ -83,9 +88,10 @@ declare(strict_types=1);
 <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
-`@click` invokes the PHP action through `$server.call()`. The Alpine shorthand
-`:disabled="$server.busy"` disables the button while a request is running.
-The alert displays a request failure when one occurs.
+`@click` is Alpine's shorthand for an event listener; `$server.call('increment')`
+is the Interact operation that sends a request to PHP. Alpine's `:disabled`
+binding reads `$server.busy`, and `x-text` displays a request failure. These
+bindings update in the browser without making requests of their own.
 
 ## Mount it in an existing page
 

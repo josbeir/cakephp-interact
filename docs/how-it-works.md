@@ -6,8 +6,21 @@ description: Follow a CakePHP page from its controller and hosting view through 
 # How it works
 
 Interact mounts interactive regions inside a CakePHP view. Each island has a PHP
-class, its own declared state, and a native template or element. Alpine connects
-that region to PHP; Interact returns HTML when its state changes.
+class, its own declared state, and a native template or element. Alpine handles
+browser events, local state, and presentation. Interact connects Alpine to PHP
+through `$server` and `x-interact:*` directives.
+
+## Local interactions and PHP updates
+
+An Alpine expression such as `@click="expanded = !expanded"` changes browser-only
+state. Alpine updates `x-show`, `:class`, and other bindings without a request.
+Use this for menus, tabs, and other local UI behavior.
+
+An expression such as `@click="$server.call('increment')"` uses Alpine's event
+handler to call Interact. Interact sends a request, runs the PHP action, and
+applies the response to that island. Model synchronization and polling also use
+Interact's request workflow. See [Alpine and Interact](/guide/alpine) for a
+working example of both kinds of interaction.
 
 ## One view, several islands
 
@@ -97,14 +110,15 @@ not automatically cross into island content. Pass initial values through
 
 ## From interaction to HTML update
 
-Clicking a counter button calls `$server.call('increment')`. A model binding can
-also synchronize writable state. Both use the owning island's update endpoint.
+The counter's Alpine `@click` handler calls `$server.call('increment')`.
+An `x-interact:model` binding can also synchronize writable state. Both use the
+owning island's update endpoint.
 
 <figure class="interact-flow" aria-labelledby="update-caption">
-  <div class="flow-heading"><span class="flow-dot"></span> An island update <span class="flow-tag">Repeat per interaction</span></div>
+  <div class="flow-heading"><span class="flow-dot"></span> An island update <span class="flow-tag">PHP interaction</span></div>
   <div class="flow-node flow-browser">
     <span class="flow-label">1 · Browser</span>
-    <strong>Interact captures the interaction</strong>
+    <strong>Call the Interact bridge or synchronize a model</strong>
     <span>Send the signed snapshot, writable edits, and any action through fetch.</span>
   </div>
   <div class="flow-arrow" aria-hidden="true">↓</div>
@@ -123,7 +137,7 @@ also synchronize writable state. Both use the owning island's update endpoint.
   <div class="flow-node flow-browser">
     <span class="flow-label">4 · Browser</span>
     <strong>Accept state and morph this island's HTML</strong>
-    <span>Alpine Morph preserves newer drafts, focus, and retained local Alpine state. Other islands keep their own state.</span>
+    <span>Interact applies HTML through Alpine Morph, preserving newer drafts, focus, and retained local Alpine state. Other islands keep their own state.</span>
   </div>
   <figcaption id="update-caption">The browser keeps the new signed snapshot for the next interaction. The original controller action, layout, and mount() do not run again.</figcaption>
 </figure>

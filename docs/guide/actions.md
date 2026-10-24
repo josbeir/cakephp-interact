@@ -32,6 +32,11 @@ public function increment(): void
 Only declared actions are callable. By default, the updated state and rendered
 HTML return in the same response.
 
+`@click` is Alpine's event listener; `$server.call()` is Interact's PHP bridge.
+For a local interaction, use the same Alpine syntax with local state instead,
+such as `@click="expanded = !expanded"`. That expression sends no request.
+See [Alpine and Interact](/guide/alpine) for a complete example.
+
 ## Renderless actions {#renderless-actions}
 
 `#[Action(render: false)]` returns accepted state and events without calling
@@ -160,7 +165,9 @@ entity validation and saving.
 ## Request feedback
 
 Use [`$server.pending()` and `$server.loading()`](/reference/server#pending)
-for request feedback. Use [`setErrors()`](/guide/forms#seterrors) for validation
+with Alpine's `:disabled` and `x-show` bindings for request feedback. Interact
+reports request activity; Alpine controls its presentation. Use
+[`setErrors()`](/guide/forms#seterrors) for validation
 messages and [`dispatch()`](/guide/events#dispatch) to announce application events.
 
 <span id="synchronize-without-an-action"></span>

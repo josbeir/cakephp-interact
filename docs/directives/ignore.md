@@ -35,6 +35,10 @@ Alpine still initializes and updates bindings inside the element:
 Alpine's `x-ignore` prevents Alpine initialization. `x-interact:ignore` only
 controls Interact's server HTML updates.
 
+Ordinary local Alpine state already survives updates to retained elements;
+it does not need `x-interact:ignore`. Use protection when a third-party library
+owns the markup. See [Alpine and Interact](/guide/alpine#template-expressions).
+
 <span id="connect-a-custom-input"></span>
 
 ## Custom inputs

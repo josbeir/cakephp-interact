@@ -17,14 +17,15 @@
   <a href="https://vitest.dev/"><img src="https://img.shields.io/badge/tested_with-Vitest-6e9f18?logo=vitest&amp;logoColor=white" alt="Tested with Vitest" /></a>
 </p>
 
-**Interactive CakePHP pages with server-rendered PHP islands.**
+**Interactive CakePHP pages with Alpine and server-rendered PHP islands.**
 
 Build live search, inline editors, and conditional fields with native CakePHP
 templates and explicit PHP actions. Interact updates the owning region while
 preserving local drafts, focus, and independent nested islands.
 
-CakePHP continues to own queries, validation, authorization, and saving. Alpine
-handles browser interactions; Interact connects them to your application's PHP.
+Use Alpine for local state, events, bindings, and transitions. Interact adds PHP
+state, actions, and HTML updates through Alpine expressions and `x-interact:*`
+directives. CakePHP owns queries, validation, authorization, and saving.
 
 **[Read the documentation →](https://josbeir.github.io/cakephp-interact/)**
 
@@ -32,6 +33,7 @@ handles browser interactions; Interact connects them to your application's PHP.
 - [Install the plugin](https://josbeir.github.io/cakephp-interact/installation.html)
 - [Configuration](https://josbeir.github.io/cakephp-interact/configuration.html)
 - [Build your first island](https://josbeir.github.io/cakephp-interact/getting-started.html)
+- [Use Alpine with Interact](https://josbeir.github.io/cakephp-interact/guide/alpine.html)
 - [Island conventions](https://josbeir.github.io/cakephp-interact/guide/conventions.html)
 - [Explore the demo](https://josbeir.github.io/cakephp-interact/demo.html)
 - [Look up the PHP API](https://josbeir.github.io/cakephp-interact/api.html)

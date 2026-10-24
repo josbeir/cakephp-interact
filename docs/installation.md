@@ -6,7 +6,8 @@ description: Install the development plugin from Packagist in a CakePHP applicat
 # Installation
 
 You need **PHP 8.5**, a **CakePHP 6 development application**, and Composer.
-The standard package includes the browser runtime; Node and npm are not required.
+The standard package includes the browser runtime with Alpine; Node and npm are
+not required.
 Interact is available on
 [Packagist](https://packagist.org/packages/josbeir/cakephp-interact) as `dev-main`
 only. There is no stable release yet, and the API is experimental.
@@ -33,6 +34,10 @@ these steps do not make an existing CakePHP 5 application compatible.
 Composer installs the prebuilt `webroot/js/runtime.js` and its third-party
 license notices with the PHP plugin. The runtime includes Alpine CSP and Alpine
 Morph. The helper queues this script automatically; no JavaScript build is needed.
+
+Alpine is ready for application templates: use `x-data`, `@click`, `:class`,
+`x-show`, and other Alpine directives alongside Interact. See
+[Alpine and Interact](/guide/alpine) for a practical introduction.
 
 Composer updates supply the matching runtime alongside the PHP source. Deploy
 the included `webroot/` assets with the package and serve them as described below.
@@ -117,8 +122,10 @@ it with same-origin update requests. For protected route scopes, read
 Use Alpine 3.17.4 or later in the 3.x series. Interact uses Alpine’s native
 expression evaluation API to keep submission promises and failures observable.
 
-Use this integration when your application already starts Alpine. This optional
-integration needs **Node 24.11+ or Node 26+** and a JavaScript build. Build the npm
+Use this integration when your application already starts Alpine. Both integration
+options support local Alpine behavior and custom `Alpine.data()` registrations;
+the difference is who loads and starts Alpine. This optional integration needs
+**Node 24.11+ or Node 26+** and a JavaScript build. Build the npm
 module in the installed package, then install it from your application's root:
 
 ```sh

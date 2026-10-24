@@ -81,6 +81,8 @@ automatically retried; a failed connection can occur after persistence succeeded
 ## Runtime integration
 
 The Composer bundle starts Alpine CSP and Morph and exposes `window.Alpine`.
+Local state, events, bindings, and transitions use Alpine directly; Interact
+adds `$server` and server-related directives to that instance.
 Application registration scripts run before it through `alpine:init`; see
 [Alpine](/guide/alpine#custom-javascript). An application owning Alpine disables
 `autoScript`, installs the npm plugin, and starts its existing instance once.

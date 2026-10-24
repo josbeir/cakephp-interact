@@ -10,6 +10,11 @@ description: Look up island state, actions, synchronization, activity, errors, a
 `$server` gives Alpine expressions and JavaScript access to an island's state
 and actions. It resolves to the nearest containing island.
 
+Use it inside native Alpine directives: `@click="$server.call('save')"` sends
+an action, while `x-show="$server.loading('save')"` only observes request
+feedback. Alpine owns the event handling and presentation. For local state,
+bindings, and transitions, see [Alpine and Interact](/guide/alpine).
+
 | Member                                     | Description                                           |
 | ------------------------------------------ | ----------------------------------------------------- |
 | [`state`](#state)                          | Props and state, including local edits                |
