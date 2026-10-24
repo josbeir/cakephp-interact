@@ -52,6 +52,35 @@ and arbitrary captured HTML do not execute. The viewer works with both the
 Composer bundle and the npm Alpine integration, including strict script and style
 CSP policies that allow the runtime and its sandboxed frame.
 
+## Viewer appearance
+
+Set CSS custom properties on `:root` or `body` in your application stylesheet.
+They inherit into the viewer's shadow DOM; no JavaScript configuration is needed.
+
+```css
+:root {
+  --interact-debug-width: 40rem;
+  --interact-debug-height: 18rem;
+  --interact-debug-background: #18202f;
+  --interact-debug-color: #e8edf5;
+  --interact-debug-border-color: #3c4960;
+  --interact-debug-accent-color: #a8c7ff;
+  --interact-debug-radius: 10px;
+  --interact-debug-font-family: system-ui, sans-serif;
+  --interact-debug-z-index: 10000;
+  --interact-debug-color-scheme: dark;
+}
+```
+
+All properties are optional. `width` controls the drawer's width, capped to fit the
+viewport; `height` controls its output area, within the drawer's 60vh maximum.
+The color, radius, font, and stacking properties style the drawer and its controls.
+
+The sandboxed dump document does not inherit application styles. Use
+`--interact-debug-color-scheme` (`light`, `dark`, or `light dark`) to select its
+native output theme on the next dump. Omitting it follows the application's
+color scheme. Other viewer properties do not restyle the dump document itself.
+
 ## Configuration
 
 Disable only the viewer to inspect dumps in the browser's Network panel:

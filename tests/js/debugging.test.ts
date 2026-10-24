@@ -265,6 +265,35 @@ describe('native island output', () => {
     },
   );
 
+  it.each([
+    ['light', 'light'],
+    ['dark', 'dark'],
+    ['light dark', 'light dark'],
+    ['light"><script>unsafe</script>', 'dark'],
+  ])(
+    'bridges only supported custom color schemes (%s) into the isolated output',
+    (override, expected) => {
+      const previous = document.documentElement.style.colorScheme;
+      document.documentElement.style.colorScheme = 'dark';
+      new DiagnosticRequest('initial theme').show(output('initial'));
+      const host = document.querySelector<HTMLElement>(
+        'aside[aria-label="Island debug"]',
+      );
+      if (!host) throw new Error('Missing viewer host');
+      host.style.setProperty('--interact-debug-color-scheme', override);
+      try {
+        new DiagnosticRequest('custom theme').show(output('custom'));
+        expect(frame().srcdoc).toContain(
+          `name="color-scheme" content="${expected}"`,
+        );
+        expect(frame().srcdoc).not.toContain('<script>');
+      } finally {
+        host.style.removeProperty('--interact-debug-color-scheme');
+        document.documentElement.style.colorScheme = previous;
+      }
+    },
+  );
+
   it('handles SSE diagnostics separately from public progress and terminal payloads', async () => {
     const receive = vi.fn();
     const messages = [

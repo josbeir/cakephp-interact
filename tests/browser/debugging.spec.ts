@@ -263,3 +263,89 @@ test('the viewer remains usable on a narrow screen with a strict style and scrip
     expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
   }
 });
+
+test('application CSS variables customize the drawer through its shadow DOM under strict CSP', async ({
+  page,
+}) => {
+  await page.route('**/demo.css', async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      body:
+        (await response.text()) +
+        `
+      :root {
+        --interact-debug-width: 420px;
+        --interact-debug-height: 180px;
+        --interact-debug-background: #203040;
+        --interact-debug-color: #e1e2e3;
+        --interact-debug-border-color: #607080;
+        --interact-debug-accent-color: #90a0b0;
+        --interact-debug-radius: 8px;
+        --interact-debug-font-family: Georgia, serif;
+        --interact-debug-z-index: 12345;
+        --interact-debug-color-scheme: light;
+      }
+    `,
+    });
+  });
+  await page.route('**/demo/debugging', async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      headers: {
+        ...response.headers(),
+        'content-security-policy':
+          "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'self'",
+      },
+    });
+  });
+  await page.goto('/demo/debugging');
+  const inspect = page
+    .getByRole('button', { name: 'Inspect island', exact: true })
+    .first();
+  await inspect.click();
+  const viewer = page.getByRole('complementary', { name: 'Island debug' });
+  await expect(viewer).toHaveCSS('width', '420px');
+  await expect(viewer).toHaveCSS('background-color', 'rgb(32, 48, 64)');
+  await expect(viewer).toHaveCSS('color', 'rgb(225, 226, 227)');
+  await expect(viewer).toHaveCSS('border-top-color', 'rgb(96, 112, 128)');
+  await expect(viewer).toHaveCSS('border-radius', '8px');
+  await expect(viewer).toHaveCSS('font-family', 'Georgia, serif');
+  await expect(viewer).toHaveCSS('z-index', '12345');
+  await expect(viewer.locator('[aria-hidden="true"]')).toHaveCSS(
+    'color',
+    'rgb(144, 160, 176)',
+  );
+  await expect(
+    page.getByRole('button', { name: 'Copy island debug' }),
+  ).toHaveCSS('font-family', 'Georgia, serif');
+  const frame = page.getByTitle('Captured island output');
+  await expect(frame).toHaveCSS('height', '180px');
+  await expect(frame).toHaveAttribute(
+    'srcdoc',
+    /name="color-scheme" content="light"/,
+  );
+  await page.evaluate(() =>
+    document.documentElement.style.setProperty(
+      '--interact-debug-width',
+      '390px',
+    ),
+  );
+  await expect(viewer).toHaveCSS('width', '390px');
+  await page.getByRole('button', { name: 'Close island debug' }).click();
+  await page.evaluate(() =>
+    document.documentElement.style.setProperty(
+      '--interact-debug-color-scheme',
+      'dark',
+    ),
+  );
+  await inspect.click();
+  await expect(frame).toHaveAttribute(
+    'srcdoc',
+    /name="color-scheme" content="dark"/,
+  );
+  await expect(
+    page.frameLocator('iframe[title="Captured island output"]').locator('pre'),
+  ).toContainText('global dump');
+});

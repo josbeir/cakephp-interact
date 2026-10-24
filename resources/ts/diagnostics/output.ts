@@ -83,16 +83,18 @@ class OutputViewer {
       display: 'block',
       position: 'fixed',
       inset: 'auto 1rem 1rem auto',
-      width: 'min(48rem, calc(100vw - 2rem))',
+      width: 'var(--interact-debug-width, 48rem)',
+      maxWidth: 'calc(100vw - 2rem)',
       maxHeight: '60vh',
       overflow: 'auto',
-      zIndex: '2147483647',
-      border: '1px solid light-dark(#d5dbe7, #363e50)',
-      borderRadius: '12px',
+      zIndex: 'var(--interact-debug-z-index, 2147483647)',
+      border:
+        '1px solid var(--interact-debug-border-color, light-dark(#d5dbe7, #363e50))',
+      borderRadius: 'var(--interact-debug-radius, 12px)',
       boxShadow: '0 16px 64px #0004, 0 2px 8px #0002',
-      background: 'Canvas',
-      color: 'CanvasText',
-      font: '13px/1.5 system-ui, sans-serif',
+      background: 'var(--interact-debug-background, Canvas)',
+      color: 'var(--interact-debug-color, CanvasText)',
+      font: '13px/1.5 var(--interact-debug-font-family, system-ui, sans-serif)',
     });
     const shadow = this.host.attachShadow({ mode: 'open' });
     const header = document.createElement('div');
@@ -103,7 +105,8 @@ class OutputViewer {
       flexWrap: 'wrap',
       gap: '12px',
       padding: '12px 16px',
-      background: 'light-dark(#f7f8fc, #1c2331)',
+      background:
+        'var(--interact-debug-background, light-dark(#f7f8fc, #1c2331))',
     });
     const heading = document.createElement('div');
     Object.assign(heading.style, {
@@ -118,8 +121,9 @@ class OutputViewer {
       font: '600 12px ui-monospace, monospace',
       padding: '4px 5px',
       borderRadius: '6px',
-      color: 'light-dark(#6550c5, #b7abff)',
-      background: 'light-dark(#eeebff, #302b49)',
+      color: 'var(--interact-debug-accent-color, light-dark(#6550c5, #b7abff))',
+      background:
+        'var(--interact-debug-background, light-dark(#eeebff, #302b49))',
     });
     const title = document.createElement('strong');
     title.textContent = 'Island debug';
@@ -141,8 +145,9 @@ class OutputViewer {
       justifyContent: 'space-between',
       gap: '12px',
       padding: '8px 16px',
-      borderBlock: '1px solid light-dark(#e8ebf2, #2b3344)',
-      color: 'light-dark(#667085, #a2aec3)',
+      borderBlock:
+        '1px solid var(--interact-debug-border-color, light-dark(#e8ebf2, #2b3344))',
+      color: 'var(--interact-debug-color, light-dark(#667085, #a2aec3))',
       font: '11px/1.5 ui-monospace, monospace',
     });
     this.status.setAttribute('role', 'status');
@@ -160,7 +165,7 @@ class OutputViewer {
     this.frame.setAttribute('referrerpolicy', 'no-referrer');
     Object.assign(this.frame.style, {
       width: '100%',
-      height: 'min(24rem, 40vh)',
+      height: 'var(--interact-debug-height, min(24rem, 40vh))',
       verticalAlign: 'top',
       border: '0',
       background: 'Canvas',
@@ -197,7 +202,15 @@ class OutputViewer {
     this.copyButton.title = this.copyButton.disabled
       ? 'Copy requires a secure browser context'
       : 'Copy captured output';
-    const inherited = getComputedStyle(document.documentElement).colorScheme;
+    if (!this.host.isConnected) document.body.append(this.host);
+    const override = getComputedStyle(this.host)
+      .getPropertyValue('--interact-debug-color-scheme')
+      .trim();
+    const inherited = ['light', 'dark', 'light dark', 'dark light'].includes(
+      override,
+    )
+      ? override
+      : getComputedStyle(document.documentElement).colorScheme;
     const scheme =
       inherited.includes('dark') && !inherited.includes('light')
         ? 'dark'
@@ -212,7 +225,6 @@ class OutputViewer {
       `<!doctype html><meta name="color-scheme" content="${scheme}"><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; base-uri &#39;none&#39;; form-action &#39;none&#39;">` +
       pre.outerHTML;
     this.controls();
-    if (!this.host.isConnected) document.body.append(this.host);
   }
 
   /** Release content and invalidate in-flight requests when the document changes. */
@@ -256,11 +268,12 @@ function control(label: string, text: string): HTMLButtonElement {
   Object.assign(button.style, {
     minHeight: '32px',
     padding: '5px 10px',
-    border: '1px solid light-dark(#d5dbe7, #3b4458)',
+    border:
+      '1px solid var(--interact-debug-border-color, light-dark(#d5dbe7, #3b4458))',
     borderRadius: '6px',
-    background: 'light-dark(#fff, #252e3e)',
+    background: 'var(--interact-debug-background, light-dark(#fff, #252e3e))',
     color: 'inherit',
-    font: '500 12px/1.5 system-ui, sans-serif',
+    font: '500 12px/1.5 var(--interact-debug-font-family, system-ui, sans-serif)',
     cursor: 'pointer',
   });
   return button;
