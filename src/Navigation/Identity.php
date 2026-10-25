@@ -35,6 +35,7 @@ class Identity
             $context->endpoint,
             $identity->urlPrefix,
             $context->binding(),
+            ...($identity->subscriptionEndpoint === null ? [] : [$identity->subscriptionEndpoint]),
         ];
 
         return hash_hmac('sha256', json_encode($values, JSON_THROW_ON_ERROR), Security::getSalt());

@@ -63,6 +63,11 @@ class ResponseBuilder
                 'key' => $identity->key,
                 'state' => $state,
                 'routing' => $identity->routing->defaults,
+                ...(
+                    $identity->subscriptionEndpoint === null
+                        ? []
+                        : ['subscriptionEndpoint' => $identity->subscriptionEndpoint]
+                ),
                 ...($identity->relation instanceof Relation ? ['relation' => $identity->relation->data()] : []),
                 ...($identity->pagePath === null ? [] : ['pagePath' => $identity->pagePath]),
                 ...($identity->urlPrefix === null ? [] : ['urlPrefix' => $identity->urlPrefix]),

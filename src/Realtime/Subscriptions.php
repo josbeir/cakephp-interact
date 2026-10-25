@@ -86,7 +86,10 @@ class Subscriptions
                 $context->binding(),
                 $context->scope,
             ),
-            'endpoint' => $context->subscriptionEndpoint ?? Router::url(['_name' => 'interact:subscribe']),
+            'endpoint' =>
+                $identity->subscriptionEndpoint
+                ?? $context->subscriptionEndpoint
+                ?? Router::url(['_name' => 'interact:subscribe']),
             'subscriptions' => $subscriptions,
         ];
     }

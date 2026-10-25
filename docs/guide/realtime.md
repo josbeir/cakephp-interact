@@ -157,7 +157,10 @@ take effect on reauthorization or grant expiry; immediate revocation is not prom
 For protected routing scopes, connect both `InteractController::update()` and
 `InteractController::subscribe()` under the application's middleware, using the
 same `interactScope`. Set the helper's `subscriptionEndpoint` alongside its custom
-`endpoint`. See [security](/security#application-middleware-remains-authoritative).
+`endpoint`. The custom subscription endpoint is retained in signed identity across
+updates and lazy initialization; browser payloads cannot replace it. New nested
+islands inherit their parent's subscription endpoint. See
+[security](/security#application-middleware-remains-authoritative).
 
 <span id="other-providers"></span>
 

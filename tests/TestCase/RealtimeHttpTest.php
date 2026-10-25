@@ -86,6 +86,46 @@ class RealtimeHttpTest extends HttpTestCase
         static::assertArrayNotHasKey('snapshot', Values::map(Hash::get($payload, 'islands.' . $mount['id'])));
     }
 
+    public function testCustomScopedSubscriptionEndpointSurvivesSynchronizationAndRenderlessActions(): void
+    {
+        $mount = $this->mounted(url: '/realtime/scoped');
+        $metadata = $this->metadata();
+        static::assertSame('/realtime/subscribe', $metadata['endpoint']);
+        $snapshot = $mount['snapshot'];
+        foreach ([null, 'notify', null] as $action) {
+            $this->requestAsJson();
+            $this->configRequest(['headers' => ['X-CSRF-Token' => $this->csrf]]);
+            $this->post('/realtime/update', json_encode([
+                'version' => 1,
+                'snapshot' => $snapshot,
+                'action' => $action,
+                'subscriptionEndpoint' => '/forged/subscribe',
+            ], JSON_THROW_ON_ERROR));
+            $this->assertResponseOk();
+            $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
+            static::assertSame('/realtime/subscribe', Hash::get($payload, 'realtime.endpoint'));
+            if ($action === 'notify') {
+                static::assertNull($payload['html']);
+            }
+
+            $snapshot = $this->nextSnapshot();
+            $metadata = Values::map($payload['realtime']);
+        }
+
+        $this->requestAsJson();
+        $this->configRequest(['headers' => ['X-CSRF-Token' => $this->csrf]]);
+        $this->post('/realtime/subscribe', json_encode([
+            'version' => 1,
+            'leases' => [$mount['id'] => $metadata['lease']],
+        ], JSON_THROW_ON_ERROR));
+        $this->assertResponseOk();
+        $this->assertResponseContains('"driver":"mercure"');
+        $this->assertResponseNotContains('Subscription authorization failed.');
+        $this->subscribe([$mount['id'] => $metadata['lease']]);
+        $this->assertResponseContains('"grant":null');
+        $this->assertResponseContains('Subscription authorization failed.');
+    }
+
     public function testRenderlessPublisherShortcutsRetainStateAndDeliverPrivateMessages(): void
     {
         $mount = $this->mounted(url: '/realtime');

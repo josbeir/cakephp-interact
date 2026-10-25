@@ -16,7 +16,7 @@ $currentPath = $this->getRequest()->getUri()->getPath();
         <script src="/js/widgets.js" defer></script>
     <?php endif; ?>
     <link rel="stylesheet" href="/demo.css">
-    <?php if ($currentPath === '/realtime'): ?>
+    <?php if (str_starts_with($currentPath, '/realtime')): ?>
         <link rel="stylesheet" href="/realtime.css">
         <script src="/realtime.js" defer></script>
     <?php endif; ?>

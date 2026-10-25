@@ -3,8 +3,8 @@ import { test, expect } from './fixtures';
 
 test.use({ realtime: true });
 
-async function connected(page: Page, appURL: string) {
-  await page.goto(`${appURL}/realtime`);
+async function connected(page: Page, appURL: string, path = '/realtime') {
+  await page.goto(`${appURL}${path}`);
   await settled(page);
   await expect(
     page.getByText('connected', { exact: true }).first(),
@@ -311,5 +311,38 @@ test('publishes once and leaves action buttons enabled during background reconci
   } finally {
     release();
     await page.unroute('**/_interact/update');
+  }
+});
+
+test('retains custom scoped endpoints through initial refresh, actions, and hub delivery', async ({
+  page,
+  appURL,
+}) => {
+  const endpoints: string[] = [];
+  page.on('request', (request) => {
+    if (
+      request.method() === 'POST' &&
+      new URL(request.url()).pathname.endsWith('/subscribe')
+    )
+      endpoints.push(new URL(request.url()).pathname);
+  });
+  await connected(page, appURL, '/realtime/scoped');
+  await page.getByRole('button', { name: 'Send private notification' }).click();
+  await expect(page.getByLabel('Private notification')).toHaveText(
+    'An update just arrived.',
+  );
+  await page.getByLabel('Draft title').fill('Scoped realtime publication');
+  await page.getByRole('button', { name: 'Save article' }).click();
+  await expect(page.getByLabel('Published title').last()).toHaveText(
+    'Scoped realtime publication',
+  );
+  await settled(page);
+  await page.getByRole('button', { name: 'Send private notification' }).click();
+  await expect(page.getByLabel('Notifications received')).toHaveText('2');
+  expect(endpoints).toEqual(['/realtime/subscribe']);
+  for (const root of await page.locator('[data-interact-realtime]').all()) {
+    const raw = await root.getAttribute('data-interact-realtime');
+    const metadata: unknown = JSON.parse(raw ?? '{}');
+    expect(metadata).toMatchObject({ endpoint: '/realtime/subscribe' });
   }
 });

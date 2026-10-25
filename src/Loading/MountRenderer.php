@@ -69,6 +69,11 @@ class MountRenderer
                 'children' => [],
                 'urlPrefix' => $identity->urlPrefix,
                 'routing' => $identity->routing->defaults,
+                ...(
+                    $identity->subscriptionEndpoint === null
+                        ? []
+                        : ['subscriptionEndpoint' => $identity->subscriptionEndpoint]
+                ),
                 ...($identity->pagePath === null ? [] : ['pagePath' => $identity->pagePath]),
             ],
             $context->binding(),

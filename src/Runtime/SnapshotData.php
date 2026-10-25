@@ -27,6 +27,11 @@ readonly class SnapshotData
 
     public ?string $urlPrefix;
 
+    /**
+     * Server-selected subscription endpoint retained independently of HTTP update context.
+     */
+    public ?string $subscriptionEndpoint;
+
     public RouteContext $routing;
 
     public ?string $pagePath;
@@ -52,8 +57,9 @@ readonly class SnapshotData
      * Validate signed identity, state, and direct-child records before restoring an island.
      *
      * @param array<string, mixed> $data Cryptographically verified, but not yet schema-checked data.
+     * @param self|null $parent Server-owned parent identity when creating a new child mount.
      */
-    public function __construct(array $data)
+    public function __construct(array $data, ?self $parent = null)
     {
         Initialization::assertMounted($data);
 
@@ -61,6 +67,13 @@ readonly class SnapshotData
             throw new InvalidArgumentException('Invalid signed island identity.');
         }
 
+        /** @var mixed $subscriptionEndpoint */
+        $subscriptionEndpoint = $data['subscriptionEndpoint'] ?? $parent?->subscriptionEndpoint;
+        if ($subscriptionEndpoint !== null && (!is_string($subscriptionEndpoint) || $subscriptionEndpoint === '')) {
+            throw new InvalidArgumentException('Invalid signed subscription endpoint.');
+        }
+
+        $this->subscriptionEndpoint = $subscriptionEndpoint;
         $this->renderedErrors = RenderPolicy::renderedErrors($data);
         $data += ['state' => null, 'children' => null, 'uploads' => [], 'routing' => [], 'pagePath' => null];
         $this->routing = new RouteContext($data['routing']);

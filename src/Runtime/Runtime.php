@@ -135,10 +135,11 @@ class Runtime
             'state' => [],
             'children' => [],
             'urlPrefix' => $urlPrefix,
+            'subscriptionEndpoint' => $context->subscriptionEndpoint,
             'routing' => ($this->pageRouting ?? RouteContext::fromRequest($context->request))->defaults,
             'pagePath' => PagePath::resolve($this->pagePath, $context->request),
             ...$binding->identity(),
-        ]);
+        ], $parent?->identity);
         $island->attachPagination(new Pagination($definition, $identity, $context, $this->pageQuery));
         $result = $this->mounts->render($island, $definition, $identity, $context, $loading);
         $childKey = 'key:' . $key;
