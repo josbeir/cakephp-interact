@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TestApp\Island;
+namespace TestApp\Island\Realtime;
 
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Prop;
@@ -17,7 +17,7 @@ use TestApp\Model\Table\ChatMessagesTable;
  * Refreshes read the database, so reconnecting or reloading also recovers missed messages.
  * Public messages are shared; private messages remain scoped to the current session.
  */
-class RealtimeMessagesIsland extends Island
+class MessagesIsland extends Island
 {
     use LocatorAwareTrait;
 

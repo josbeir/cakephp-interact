@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TestApp\Island;
+namespace TestApp\Island\Realtime;
 
 use Interact\Island;
 use Interact\IslandContext;
@@ -14,7 +14,7 @@ use TestApp\Chat\ChatIdentity;
  * Its stable child identity preserves streamed DOM while other parts of the chat render.
  * Reply events and text are authorized for the current session on every lease renewal.
  */
-class RealtimeReplyIsland extends Island
+class ReplyIsland extends Island
 {
     protected ChatIdentity $identity;
 

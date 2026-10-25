@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+use TestApp\Island\Realtime\ChatIsland;
 /**
  * @var \Interact\View\TemplateView $this
  * @var bool $ready
@@ -28,7 +29,7 @@ $this->assign('title', 'Live chat · Interact');
             <span aria-hidden="true">↗</span>
         </a>
     </section>
-    <?= $this->Interact->render('RealtimeChat') ?>
+    <?= $this->Interact->render(ChatIsland::class) ?>
     <?php if (!$ready): ?>
         <aside class="rt-setup rt-panel">
             <h2>Bring another tab into the conversation</h2>

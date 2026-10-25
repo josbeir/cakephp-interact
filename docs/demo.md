@@ -55,9 +55,9 @@ progress events, text chunks, and an HTML completion marker. Other tabs in the s
 session receive it too. Assistant output is a temporary preview; saved messages
 remain available after reloading.
 
-Tested source: [composer island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RealtimeChatIsland.php),
-[feed island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RealtimeMessagesIsland.php),
-[template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/realtime_chat.php).
+Tested source: [composer island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Realtime/ChatIsland.php),
+[feed island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Realtime/MessagesIsland.php),
+[template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/Realtime/chat.php).
 Start with the [two-tab notification walkthrough](/guide/realtime#send-a-notification-to-two-tabs)
 for a smaller example to build in your own application. The [streaming walkthrough](/guide/streaming#stream-a-report-with-progress)
 shows a report action without a realtime provider.
@@ -81,7 +81,7 @@ Matching templates live under `templates/island/`, with page mounts under
 | <span id="lazy-loading"></span>`/loading`<br>Explore loading modes, custom placeholders, and nested preservation                                    | [Page mounts](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/Loading/index.php)                                                                                                                                      |
 | <span id="navigation"></span>`/navigation`<br>Navigate ordinary CakePHP routes while preserving a layout notebook                                   | [Controller](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Controller/NavigationController.php), [page](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/Navigation/index.php)              |
 | <span id="redirects-and-downloads"></span>`/outcomes`<br>Save and redirect, request an authorized download, and navigate explicitly                 | [Actions](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/ActionOutcomesIsland.php), [controller](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Controller/OutcomesController.php)        |
-| <span id="streaming"></span>`/streaming`<br>Stream text, native elements, and progress during one action                                            | [Report island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/StreamingReportIsland.php), [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/streaming_report.php)   |
+| <span id="streaming"></span>`/streaming`<br>Stream text, native elements, and progress during one action                                            | [Report island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Streaming/ReportIsland.php), [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/Streaming/report.php)  |
 | `/page`<br>Update a whole-page island while its layout stays in place                                                                               | [Controller](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Controller/ArticlesController.php)                                                                                                                             |
 
 ## Debugging
@@ -92,8 +92,8 @@ Open `/debugging` from the demo navigation. Edit the message and try **Dump draf
 **Dump then fail** deliberately throws after dumping; **Resume after failure**
 restores normal requests.
 
-The tested example uses [DebuggingIsland](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/DebuggingIsland.php)
-and its [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/debugging.php).
+The tested example uses [PlaygroundIsland](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Debugging/PlaygroundIsland.php)
+and its [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/Debugging/playground.php).
 See [debugging](/guide/debugging) for viewer settings and DebugKit coexistence.
 
 ## Navigation head and CSP examples

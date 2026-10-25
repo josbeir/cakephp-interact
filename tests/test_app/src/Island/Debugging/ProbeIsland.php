@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TestApp\Island;
+namespace TestApp\Island\Debugging;
 
 use Interact\Attribute\Action;
 use Interact\Attribute\Prop;
@@ -21,7 +21,7 @@ use function Cake\Error\debug;
  * This probe owns no persisted resources. Its deliberately unsafe output verifies
  * that diagnostics cannot become executable application markup.
  */
-class DebuggingProbeIsland extends Island
+class ProbeIsland extends Island
 {
     #[Prop]
     public bool $templateDump = false;

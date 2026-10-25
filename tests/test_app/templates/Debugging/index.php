@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+use TestApp\Island\Debugging\PlaygroundIsland;
 /** @var \Interact\View\TemplateView $this */
 $this->assign('title', 'Debugging · Interact');
 ?>
@@ -12,7 +13,7 @@ $this->assign('title', 'Debugging · Interact');
     </p>
 </section>
 <section class="demo-card" aria-label="Debugging playground">
-    <?= $this->Interact->render('Debugging') ?>
+    <?= $this->Interact->render(PlaygroundIsland::class) ?>
 </section>
 <p class="quiet">
     Application debug mode enables capture. Hide or clear the viewer with its controls.

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TestApp\Island;
+namespace TestApp\Island\Debugging;
 
 use Cake\Validation\Validator;
 use Interact\Attribute\Action;
@@ -16,7 +16,7 @@ use function Cake\Error\debug;
  * The message is an editable draft; inspection never saves it. Application validation
  * and an intentional exception make their response behavior visible beside the dumps.
  */
-class DebuggingIsland extends Island
+class PlaygroundIsland extends Island
 {
     #[State(writable: true)]
     public string $message = 'Hello from the island';

@@ -1,5 +1,7 @@
 <?php
 declare(strict_types=1);
+use TestApp\Island\Realtime\MessagesIsland;
+use TestApp\Island\Realtime\ReplyIsland;
 /**
  * @var \Interact\View\TemplateView $this
  * @var string $name
@@ -35,9 +37,9 @@ declare(strict_types=1);
             aria-live="polite"
             x-data="chatMessages"
         >
-            <?= $this->Interact->render('RealtimeMessages', props: ['live' => $live], key: 'chat-messages') ?>
+            <?= $this->Interact->render(MessagesIsland::class, props: ['live' => $live], key: 'chat-messages') ?>
             <?php if ($live): ?>
-                <?= $this->Interact->render('RealtimeReply', key: 'chat-reply') ?>
+                <?= $this->Interact->render(ReplyIsland::class, key: 'chat-reply') ?>
             <?php endif; ?>
         </div>
         <?= $this->Form->create(null, ['x-interact:submit' => '$server.call("send")', 'class' => 'rt-composer']) ?>

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TestApp\Island;
+namespace TestApp\Island\Streaming;
 
 use Interact\Attribute\Action;
 use Interact\Attribute\State;
@@ -14,7 +14,7 @@ use RuntimeException;
  * The listener binds only to loopback, chooses a free port, and has a bounded timeout.
  * It owns no application records or filesystem state.
  */
-class StreamingProbeIsland extends Island
+class ProbeIsland extends Island
 {
     #[State]
     public string $answer = '';

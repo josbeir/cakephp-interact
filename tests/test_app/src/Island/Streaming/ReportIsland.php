@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TestApp\Island;
+namespace TestApp\Island\Streaming;
 
 use Interact\Attribute\Action;
 use Interact\Attribute\State;
@@ -13,7 +13,7 @@ use Interact\Island;
  * The sample deliberately paces its results to make incremental delivery visible.
  * Real applications emit results as their own work produces them.
  */
-class StreamingReportIsland extends Island
+class ReportIsland extends Island
 {
     #[State]
     public string $report = '';

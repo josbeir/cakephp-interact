@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace TestApp\Island;
+namespace TestApp\Island\Realtime;
 
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\View\View;
@@ -21,7 +21,7 @@ use TestApp\Model\Table\ChatMessagesTable;
  * The independent feed receives shared messages without interrupting this draft.
  * A successful send refreshes its local feed even when live delivery is unavailable.
  */
-class RealtimeChatIsland extends Island
+class ChatIsland extends Island
 {
     use LocatorAwareTrait;
 
