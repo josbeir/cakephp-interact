@@ -44,12 +44,20 @@ Use `.hover` to start earlier:
 
 `.hover` starts fetching after 60 ms of hover or keyboard focus. Leaving before that delay cancels the pending prefetch. Prefetched HTML remains inert: no scripts, islands, polling, uploads, or deferred mounts initialize.
 
-A click joins an in-flight mouse-down or hover request. Completed responses are
-retained only when their Cache-Control permits explicit freshness, for at most
-30 seconds, and consumed once. `no-store`, `no-cache`, and responses without
-explicit freshness are not retained: if their prefetch finishes before the
-click, the visit makes a fresh GET. Navigation and island requests invalidate
-unused prefetched pages.
+Mouse-down and its click share one navigation attempt. The click uses that
+attempt's response whether it is still downloading or has already finished,
+including responses with `no-store`, `no-cache`, or no explicit freshness.
+The result stays in memory only for that press and is consumed once. Releasing
+outside the link, dragging it, keyboard input, losing window focus, a changed
+link destination, or removing the link abandons the attempt. A mouse-up without
+a handled click also releases it.
+
+Hover prefetches remain separate: a click or press can join a pending hover
+request. Completed hover responses are retained only when their Cache-Control
+permits explicit freshness, for at most 30 seconds, and consumed once. An
+abandoned press's completed response can remain available under the same
+freshness rules; uncached responses and abandoned pending press requests are
+released. Navigation and island requests invalidate unused prefetched pages.
 
 Use `.no-prefetch` to disable mouse-down and hover prefetching for a link:
 

@@ -1,6 +1,13 @@
 import type { Fetcher } from '../types';
 import { responseNonces } from './nonces';
 
+interface PrefetchEntry {
+  controller: AbortController;
+  promise: Promise<PageResponse>;
+  value?: PageResponse;
+  press?: AbortSignal;
+}
+
 export interface PageResponse {
   html: string;
   url: string;
@@ -9,27 +16,29 @@ export interface PageResponse {
 }
 
 /**
- * Holds bounded, single-use prefetch responses only for explicitly fresh cacheable documents.
+ * Holds bounded hover responses and the GET owned by an active mouse press.
+ * Completed press responses belong only to that gesture; later reuse requires HTTP freshness.
  * Detached HTML never initializes Alpine or owns polling, upload, or lazy-load activity.
  */
 export class PageFetcher {
-  protected readonly entries = new Map<
-    string,
-    {
-      controller: AbortController;
-      promise: Promise<PageResponse>;
-      value?: PageResponse;
-    }
-  >();
+  protected readonly entries = new Map<string, PrefetchEntry>();
 
   constructor(
     protected readonly fetcher: Fetcher = (url, options) => fetch(url, options),
   ) {}
 
-  prefetch(url: string): void {
+  prefetch(url: string, press?: AbortSignal): void {
+    if (press?.aborted) return;
     const previous = this.entries.get(url);
-    if (previous && (!previous.value || previous.value.cacheUntil > Date.now()))
+    if (
+      previous &&
+      (!previous.value ||
+        previous.value.cacheUntil > Date.now() ||
+        (!press && previous.press && !previous.press.aborted))
+    ) {
+      if (press) this.hold(url, previous, press);
       return;
+    }
     this.entries.delete(url);
     while (this.entries.size >= 8) {
       const oldest = this.entries.keys().next().value;
@@ -39,17 +48,18 @@ export class PageFetcher {
       }
     }
     const controller = new AbortController();
-    const entry: {
-      controller: AbortController;
-      promise: Promise<PageResponse>;
-      value?: PageResponse;
-    } = { controller, promise: this.fetch(url, controller.signal) };
+    const entry: PrefetchEntry = {
+      controller,
+      promise: this.fetch(url, controller.signal),
+    };
     this.entries.set(url, entry);
+    if (press) this.hold(url, entry, press);
     void entry.promise.then(
       (value) => {
         if (this.entries.get(url) !== entry) return;
-        if (value.cacheUntil > Date.now()) entry.value = value;
-        else this.entries.delete(url);
+        entry.value = value;
+        if (value.cacheUntil <= Date.now() && !entry.press)
+          this.entries.delete(url);
       },
       () => {
         if (this.entries.get(url) === entry) this.entries.delete(url);
@@ -57,11 +67,20 @@ export class PageFetcher {
     );
   }
 
-  async take(url: string, signal: AbortSignal): Promise<PageResponse> {
+  async take(
+    url: string,
+    signal: AbortSignal,
+    press?: AbortSignal,
+  ): Promise<PageResponse> {
     const entry = this.entries.get(url);
-    this.entries.delete(url);
-    if (!entry || (entry.value && entry.value.cacheUntil <= Date.now()))
+    const owned =
+      press !== undefined && !press.aborted && entry?.press === press;
+    if (
+      !entry ||
+      (entry.value && entry.value.cacheUntil <= Date.now() && !owned)
+    )
       return this.fetch(url, signal);
+    this.entries.delete(url);
     const abort = () => entry.controller.abort();
     signal.addEventListener('abort', abort, { once: true });
     try {
@@ -75,6 +94,24 @@ export class PageFetcher {
   clear(): void {
     for (const entry of this.entries.values()) entry.controller.abort();
     this.entries.clear();
+  }
+
+  /** Keep early responses for their originating gesture and release abandoned work. */
+  protected hold(url: string, entry: PrefetchEntry, press: AbortSignal): void {
+    if (entry.press === press) return;
+    entry.press = press;
+    press.addEventListener(
+      'abort',
+      () => {
+        if (this.entries.get(url) !== entry || entry.press !== press) return;
+        delete entry.press;
+        if (!entry.value || entry.value.cacheUntil <= Date.now()) {
+          this.entries.delete(url);
+          entry.controller.abort();
+        }
+      },
+      { once: true },
+    );
   }
 
   protected async fetch(

@@ -1,6 +1,10 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: 'wait' });
+});
+
 /** Render one real navigation link outside x-data using the existing demo document. */
 async function prefetchLink(page: Page, suffix = ''): Promise<Locator> {
   await page.route('**/navigation', async (route) => {
@@ -21,6 +25,73 @@ async function prefetchLink(page: Page, suffix = ''): Promise<Locator> {
 }
 
 for (const surface of ['Composer', 'application-owned Alpine']) {
+  for (const policy of ['no-store', 'no-cache', '']) {
+    test(`${surface}: a completed ${policy || 'unversioned'} mouse-down response serves the same click once`, async ({
+      page,
+    }) => {
+      if (surface === 'application-owned Alpine') {
+        await page.route('**/interact/js/runtime.js', (route) =>
+          route.fulfill({
+            path: 'tests/test_app/webroot/js/configuration.js',
+            contentType: 'text/javascript',
+          }),
+        );
+      }
+      const link = await prefetchLink(page);
+      const notebook = page.locator(
+        '[x-interact\\:persist="notebook"] [data-interact-id]',
+      );
+      const identity = await notebook.getAttribute('data-interact-id');
+      let requests = 0;
+      await page.route('**/navigation/details', async (route) => {
+        requests++;
+        const response = await route.fetch();
+        await route.fulfill({
+          response,
+          headers: { ...response.headers(), 'cache-control': policy },
+        });
+      });
+      await page.clock.install();
+      await link.hover();
+      const fetched = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === '/navigation/details',
+      );
+      await page.mouse.down();
+      expect(await (await fetched).finished()).toBeNull();
+      // Flush response handling before releasing the button; no real-time sleep.
+      await page.clock.runFor(100);
+      await expect(page).toHaveURL('/navigation');
+      await expect(
+        page.getByRole('heading', { name: 'Overview', exact: true }),
+      ).toBeVisible();
+      expect(requests).toBe(1);
+      await page.clock.resume();
+      await page.mouse.up();
+      await expect(
+        page.getByRole('heading', { name: 'Details', exact: true }),
+      ).toBeVisible();
+      await expect(notebook).toHaveAttribute(
+        'data-interact-id',
+        identity ?? 'missing',
+      );
+      expect(requests).toBe(1);
+      // A later activation must fetch afresh, even though the URL is the same.
+      await page
+        .getByRole('navigation', { name: 'Navigation example' })
+        .getByRole('link', { name: 'Details', exact: true })
+        .focus();
+      await page
+        .getByRole('navigation', { name: 'Navigation example' })
+        .getByRole('link', { name: 'Details', exact: true })
+        .press('Enter');
+      await expect.poll(() => requests).toBe(2);
+      await expect(
+        page.getByRole('heading', { name: 'Details', exact: true }),
+      ).toBeVisible();
+    });
+  }
+
   test(`${surface}: mouse-down starts one inert request that click joins`, async ({
     page,
   }) => {
