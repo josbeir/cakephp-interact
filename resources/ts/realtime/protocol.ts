@@ -7,6 +7,21 @@ import type {
   Subscription,
 } from './types';
 
+/** Encode the subscription endpoint's versioned lease record. */
+export function authorizationBody(leases: ReadonlyMap<string, string>): string {
+  return JSON.stringify({ version: 1, leases: Object.fromEntries(leases) });
+}
+
+/** Match both server request limits, including JSON escaping and UTF-8 bytes. */
+export function authorizationFits(
+  leases: ReadonlyMap<string, string>,
+): boolean {
+  return (
+    leases.size <= 64 &&
+    new TextEncoder().encode(authorizationBody(leases)).length <= 1_048_576
+  );
+}
+
 /** Exact topic validation mirrors the publishing boundary, including wildcard rejection. */
 export function topic(value: unknown): value is string {
   return (

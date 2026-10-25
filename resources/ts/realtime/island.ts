@@ -60,6 +60,11 @@ export class RealtimeIsland implements RealtimeOwner {
     }
   }
 
+  /** Retain renewed proofs when a compatible layout survives navigation. */
+  refreshContext(csrf: string): void {
+    if (this.membership) this.update(this.membership.current(), csrf);
+  }
+
   /** Deliver each declared behavior once even when event filters overlap. */
   receive(message: PushMessage, matches: Subscription[]): void {
     if (this.disposed) return;

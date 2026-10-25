@@ -202,6 +202,37 @@ class RealtimeTest extends TestCase
         static::assertArrayHasKey('error', Values::map(Hash::get($mismatch, 'islands.other')));
     }
 
+    public function testNumericTopicsRemainStringsWhenDeduplicatingAcrossIslands(): void
+    {
+        $tokens = [];
+        foreach (['123', '123', '0', '0123'] as $index => $topic) {
+            $mount = $this->runtime->mount(
+                'RealtimeFixture',
+                ['recordId' => $index, 'topic' => $topic],
+                'numeric-' . $index,
+                $this->context,
+            );
+            static::assertNotNull($mount->realtime);
+            $tokens[$mount->id] = $mount->realtime['lease'];
+        }
+
+        $provider = new MercureProvider(
+            new MockPublisher(),
+            new FirebaseTokenFactory(str_repeat('k', 32), defaultClaims: ['iss' => 'issuer', 'aud' => 'audience']),
+            '/hub',
+        );
+        $body = $this->authorize($provider, $tokens);
+        static::assertSame(['123', '0', '0123'], Hash::get($body, 'grant.data.topics'));
+    }
+
+    public function testEmptyProviderConfigurationSerializesAsARecord(): void
+    {
+        static::assertSame(
+            '{"driver":"custom","data":{},"expires":1234}',
+            json_encode(new Grant('custom', [], 1234)->data(), JSON_THROW_ON_ERROR),
+        );
+    }
+
     public function testSubscriptionLeasesCannotAuthorizeOrdinaryActions(): void
     {
         $mount = $this->runtime->mount('RealtimeFixture', ['recordId' => 7], 'first', $this->context);

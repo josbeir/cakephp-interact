@@ -450,8 +450,9 @@ request began after the invalidation clears stale status; a renderless action do
 ## Connection sharing and recovery
 
 Islands in the same tab and authorization scope share provider connections across
-their topics, with up to 64 islands per connection. Larger pages open additional
-connections automatically. Removing a connection's final subscriber closes it.
+their topics, with up to 64 islands per connection. Larger pages or lease payloads
+open additional connections automatically. Removing a connection's final subscriber
+closes it.
 Different tabs retain separate connections. Reconnection can refresh saved content,
 but notifications and display messages are best effort; store anything that must
 survive missed messages.
@@ -461,6 +462,10 @@ survive missed messages.
 The sharing scope is one Alpine installation, subscription endpoint, and CSRF
 context. Changing declarations renews authorization and reopens the connection;
 compatible persisted layout islands retain ownership across navigation.
+
+Groups also respect the 1 MiB authorization request limit and rebalance when
+accepted or renewed leases grow. A lease that exceeds this limit by itself reports
+an error through `$server.realtime` without sending an oversized request.
 
 Transports own reconnection. The included Mercure adapter and custom WebSocket
 example use bounded backoff and jitter. Connecting or reconnecting invalidates

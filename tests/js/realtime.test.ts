@@ -2,6 +2,7 @@ import Alpine from '@alpinejs/csp';
 import { readMetadata } from '../../resources/ts/transport/metadata';
 import { IslandClient } from '../../resources/ts/client';
 import { registerNavigation } from '../../resources/ts/navigation/registry';
+import { record } from '../../resources/ts/state/values';
 import {
   afterEach,
   beforeEach,
@@ -14,6 +15,8 @@ import { RealtimeCoordinator } from '../../resources/ts/realtime/coordinator';
 import { RealtimeConnection } from '../../resources/ts/realtime/connection';
 import { RealtimeIsland } from '../../resources/ts/realtime/island';
 import {
+  authorizationBody,
+  authorizationFits,
   pushMessage,
   realtimeGrant,
   realtimeMetadata,
@@ -79,6 +82,19 @@ function authorization(ids: string[], changes: Record<string, unknown> = {}) {
   );
 }
 
+function requestBody(init: RequestInit | undefined): string {
+  if (typeof init?.body !== 'string')
+    throw new Error('Expected a JSON subscription request.');
+  return init.body;
+}
+
+function requestLeases(init: RequestInit | undefined) {
+  const payload: unknown = JSON.parse(requestBody(init));
+  if (!record(payload) || !record(payload.leases))
+    throw new Error('Missing subscription leases.');
+  return payload.leases;
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
@@ -92,6 +108,19 @@ afterEach(() => {
 });
 
 describe('realtime protocol boundaries', () => {
+  it('measures the complete authorization envelope in UTF-8 bytes', () => {
+    const overhead = authorizationBody(new Map([['one', '']])).length;
+    const lease = 'a'.repeat(1_048_576 - overhead);
+    expect(authorizationFits(new Map([['one', lease]]))).toBe(true);
+    expect(authorizationFits(new Map([['one', `${lease}a`]]))).toBe(false);
+    expect(authorizationFits(new Map([['one', 'é'.repeat(524_288)]]))).toBe(
+      false,
+    );
+    expect(authorizationFits(new Map([['one', '"'.repeat(524_288)]]))).toBe(
+      false,
+    );
+  });
+
   it('validates declarations, scope endpoints, expiry, and display-only messages', () => {
     expect(realtimeMetadata(metadata)).toBe(true);
     expect(
@@ -157,15 +186,7 @@ describe('shared connection lifecycle', () => {
   it('bounds authorization batches without interrupting full groups and reuses released capacity', async () => {
     const batches: string[][] = [];
     const fetcher = vi.fn<typeof fetch>(async (_input, init) => {
-      if (typeof init?.body !== 'string')
-        throw new Error('Expected a JSON subscription request.');
-      const payload: unknown = JSON.parse(init.body);
-      if (!payload || typeof payload !== 'object' || !('leases' in payload))
-        throw new Error('Missing subscription leases.');
-      const leases = payload.leases;
-      if (!leases || typeof leases !== 'object')
-        throw new Error('Invalid subscription leases.');
-      const ids = Object.keys(leases);
+      const ids = Object.keys(requestLeases(init));
       batches.push(ids);
       return ids.length > 64
         ? new Response(null, { status: 400 })
@@ -243,6 +264,190 @@ describe('shared connection lifecycle', () => {
     expect(batches.at(-1)).toHaveLength(64);
     expect(batches.at(-1)).toContain('reused');
     expect(batches.at(-1)).not.toContain('island-64');
+  });
+
+  it('partitions state-heavy islands and moves accepted leases that outgrow their group', async () => {
+    const batches: Record<string, unknown>[] = [];
+    const fetcher = vi.fn<typeof fetch>(async (_input, init) => {
+      const leases = requestLeases(init);
+      batches.push(leases);
+      expect(
+        new TextEncoder().encode(requestBody(init)).length,
+      ).toBeLessThanOrEqual(1_048_576);
+      return authorization(Object.keys(leases), {
+        islands: Object.fromEntries(
+          Object.entries(leases).map(([id, lease]) => [
+            id,
+            { lease, subscriptions: metadata.subscriptions },
+          ]),
+        ),
+      });
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const streams: { callbacks: TransportCallbacks; close: () => void }[] = [];
+    const coordinator = new RealtimeCoordinator({
+      transports: {
+        test: (_grant, callbacks) => {
+          const close = vi.fn();
+          streams.push({ callbacks, close });
+          callbacks.status('connected');
+          return close;
+        },
+      },
+    });
+    const members = ['one', 'two', 'three'].map(owner);
+    const memberships = members.map((member) => {
+      const membership = coordinator.join(
+        member,
+        { ...metadata, lease: 'a'.repeat(410_000) },
+        'csrf',
+      );
+      disposers.push(() => membership.dispose());
+      return membership;
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(batches.map(Object.keys)).toEqual([['one', 'two'], ['three']]);
+    memberships[0]?.update({ ...metadata, lease: 'b'.repeat(700_000) });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(batches.slice(2).map(Object.keys)).toEqual([['two'], ['one']]);
+    expect(streams[1]?.close).not.toHaveBeenCalled();
+    expect(
+      members.every((member) => member.feedback.status === 'connected'),
+    ).toBe(true);
+    for (const stream of streams) stream.callbacks.receive(message);
+    for (const member of members) expect(member.receive).toHaveBeenCalledOnce();
+    memberships[0]?.dispose();
+    expect(streams.at(-1)?.close).toHaveBeenCalledOnce();
+    expect(streams[1]?.close).not.toHaveBeenCalled();
+  });
+
+  it('rebalances groups when background renewal enlarges their proofs', async () => {
+    const batches: string[][] = [];
+    const lease = 'r'.repeat(600_000);
+    const fetcher = vi.fn<typeof fetch>(async (_input, init) => {
+      const ids = Object.keys(requestLeases(init));
+      batches.push(ids);
+      expect(
+        new TextEncoder().encode(requestBody(init)).length,
+      ).toBeLessThanOrEqual(1_048_576);
+      return authorization(ids, {
+        islands: Object.fromEntries(
+          ids.map((id) => [
+            id,
+            { lease, subscriptions: metadata.subscriptions },
+          ]),
+        ),
+      });
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const transport = vi.fn((_grant, callbacks: TransportCallbacks) => {
+      callbacks.status('connected');
+      return vi.fn();
+    });
+    const coordinator = new RealtimeCoordinator({
+      transports: { test: transport },
+    });
+    const members = ['one', 'two'].map(owner);
+    const memberships = members.map((member) => {
+      const membership = coordinator.join(
+        member,
+        { ...metadata, lease: 'a'.repeat(200_000) },
+        'csrf',
+      );
+      disposers.push(() => membership.dispose());
+      return membership;
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(batches).toEqual([['one', 'two'], ['two'], ['one']]);
+    expect(transport).toHaveBeenCalledTimes(2);
+    for (const membership of memberships)
+      expect(membership.current().lease).toBe(lease);
+    expect(
+      members.every((member) => member.feedback.status === 'connected'),
+    ).toBe(true);
+  });
+
+  it('isolates a proof that cannot fit by itself without retrying an oversized request', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => authorization(['small']));
+    vi.stubGlobal('fetch', fetcher);
+    const coordinator = new RealtimeCoordinator({
+      transports: {
+        test: (_grant, callbacks) => {
+          callbacks.status('connected');
+          return vi.fn();
+        },
+      },
+    });
+    const large = owner('large');
+    const small = owner('small');
+    for (const member of [large, small]) {
+      const membership = coordinator.join(
+        member,
+        {
+          ...metadata,
+          lease: member === large ? 'a'.repeat(1_048_576) : 'small',
+        },
+        'csrf',
+      );
+      disposers.push(() => membership.dispose());
+    }
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(large.feedback).toMatchObject({
+      status: 'error',
+      error: 'Realtime authorization request is too large.',
+    });
+    expect(small.feedback.status).toBe('connected');
+  });
+
+  it('reauthorizes newer accepted state instead of overwriting it with an in-flight renewal', async () => {
+    let finish: ((response: Response) => void) | undefined;
+    const fetcher = vi
+      .fn<typeof fetch>(async () => authorization(['one']))
+      .mockImplementationOnce(async () => authorization(['one']))
+      .mockImplementationOnce(
+        () =>
+          new Promise<Response>((resolve) => {
+            finish = resolve;
+          }),
+      )
+      .mockImplementationOnce(async () =>
+        authorization(['one'], {
+          islands: {
+            one: {
+              lease: 'accepted-renewal',
+              subscriptions: metadata.subscriptions,
+            },
+          },
+        }),
+      );
+    vi.stubGlobal('fetch', fetcher);
+    const one = owner('one');
+    const connection = new RealtimeConnection(
+      '/subscribe',
+      'csrf',
+      new Map([['test', () => vi.fn()]]),
+    );
+    disposers.push(() => connection.dispose());
+    connection.update(one, metadata);
+    await vi.advanceTimersByTimeAsync(240_000);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    connection.update(one, { ...metadata, lease: 'accepted-action' });
+    finish?.(
+      authorization(['one'], {
+        islands: { one: { lease: 'obsolete-renewal', subscriptions: [] } },
+        grant: null,
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(requestLeases(fetcher.mock.calls[2]?.[1])).toEqual({
+      one: 'accepted-action',
+    });
+    await vi.advanceTimersByTimeAsync(240_000);
+    expect(requestLeases(fetcher.mock.calls[3]?.[1])).toEqual({
+      one: 'accepted-renewal',
+    });
   });
 
   it('batches leases, shares a connection, filters events, deduplicates, and reference-counts disposal', async () => {
@@ -709,6 +914,51 @@ describe('bootstrap and client lifecycle integration', () => {
     document.body.append(element);
     return element;
   }
+
+  it('retains background-renewed leases across compatible layout visits and CSRF changes', async () => {
+    const element = root();
+    const subscriptions = metadata.subscriptions.map((subscription) => ({
+      ...subscription,
+      mode: 'event' as const,
+    }));
+    element.dataset.interactRealtime = JSON.stringify({
+      ...metadata,
+      subscriptions,
+    });
+    let proof = metadata.lease;
+    const fetcher = vi.fn<typeof fetch>(async (_input, init) => {
+      expect(requestLeases(init)).toEqual({ one: proof });
+      proof = `renewed-${fetcher.mock.calls.length}`;
+      return authorization(['one'], {
+        islands: { one: { lease: proof, subscriptions } },
+      });
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const transport = vi.fn((_grant, callbacks: TransportCallbacks) => {
+      callbacks.status('connected');
+      return vi.fn();
+    });
+    const coordinator = new RealtimeCoordinator({
+      transports: { test: transport },
+    });
+    const client = new IslandClient(element, () => {}, Alpine.reactive);
+    disposers.push(() => client.dispose());
+    client.attachRealtime(coordinator);
+    await vi.advanceTimersByTimeAsync(300_001);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    client.refreshContext(element);
+    await vi.advanceTimersByTimeAsync(180_000);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    const incoming = document.createElement('section');
+    incoming.dataset.interactCsrf = 'new-csrf';
+    client.refreshContext(incoming);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetcher).toHaveBeenCalledTimes(4);
+    expect(fetcher.mock.calls[3]?.[1]?.headers).toMatchObject({
+      'X-CSRF-Token': 'new-csrf',
+    });
+    expect(client.bridge.realtime.status).toBe('connected');
+  });
 
   it('reads valid subscription metadata and rejects malformed or pending subscription owners', () => {
     const element = root();

@@ -64,7 +64,7 @@ class SubscriptionHandler
 
                 $results[$id] = $result;
                 foreach ($result['subscriptions'] as $subscription) {
-                    $topics[$subscription['topic']] = true;
+                    $topics[$subscription['topic']] = $subscription['topic'];
                 }
             } catch (HttpException|InvalidSnapshotException|InvalidArgumentException $exception) {
                 if ($exception instanceof HttpException && $exception->getCode() >= 500) {
@@ -75,7 +75,7 @@ class SubscriptionHandler
             }
         }
 
-        $grant = $topics === [] ? null : $this->authorizer->authorize(array_keys($topics), $this->leases->expires());
+        $grant = $topics === [] ? null : $this->authorizer->authorize(array_values($topics), $this->leases->expires());
 
         return $response->withType('application/json')
             ->withHeader('Cache-Control', 'no-store')

@@ -146,7 +146,7 @@ export class IslandClient {
   refreshContext(incoming: HTMLElement): void {
     this.metadata.csrf = incoming.dataset.interactCsrf ?? '';
     this.root.dataset.interactCsrf = this.metadata.csrf;
-    this.realtime?.update(this.metadata.realtime, this.metadata.csrf);
+    this.realtime?.refreshContext(this.metadata.csrf);
   }
 
   /**

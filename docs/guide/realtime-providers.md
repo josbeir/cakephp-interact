@@ -213,8 +213,9 @@ state and browser storage.
 ## Lifecycle and testing
 
 The coordinator batches island leases and shares connections across topics in
-the same tab and authorization scope, with up to 64 islands per connection. It
-renews grants before expiry and replaces the transport when permissions change.
+the same tab and authorization scope, with up to 64 islands and 1 MiB per
+authorization request. It renews grants before expiry and replaces the transport
+when permissions change.
 Reauthorization failures and grant expiry end access; immediate permission
 revocation remains provider-specific.
 

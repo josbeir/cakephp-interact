@@ -1,5 +1,11 @@
 import { record } from '../state/values';
-import { pushMessage, realtimeGrant, subscriptions } from './protocol';
+import {
+  authorizationBody,
+  authorizationFits,
+  pushMessage,
+  realtimeGrant,
+  subscriptions,
+} from './protocol';
 import type {
   RealtimeMetadata,
   RealtimeOwner,
@@ -29,10 +35,14 @@ export class RealtimeConnection {
   private readonly seen = new Set<string>();
   private readonly lifetime = new AbortController();
 
+  /** Let the coordinator regroup renewed proofs before opening their combined grant. */
   constructor(
     private readonly endpoint: string,
     private readonly csrf: string,
     private readonly transports: ReadonlyMap<string, RealtimeTransport>,
+    private readonly renewed: (
+      metadata: ReadonlyMap<string, RealtimeMetadata>,
+    ) => void = () => {},
   ) {}
 
   /** Register a member, reconnecting only when the effective declarations change. */
@@ -43,6 +53,7 @@ export class RealtimeConnection {
       !previous ||
       JSON.stringify(previous.metadata.subscriptions) !==
         JSON.stringify(metadata.subscriptions) ||
+      (this.requesting && previous.metadata.lease !== metadata.lease) ||
       owner.feedback.status === 'error'
     )
       this.schedule();
@@ -84,12 +95,16 @@ export class RealtimeConnection {
       return;
     }
     const generation = this.generation;
-    this.requesting = true;
-    const leases: Record<string, string> = {};
+    const leases = new Map<string, string>();
     for (const [id, member] of this.members) {
-      leases[id] = member.metadata.lease;
+      leases.set(id, member.metadata.lease);
       if (!this.close) member.owner.feedback.status = 'connecting';
     }
+    if (!authorizationFits(leases)) {
+      this.fail('Realtime authorization request is too large.');
+      return;
+    }
+    this.requesting = true;
     try {
       const response = await fetch(this.endpoint, {
         method: 'POST',
@@ -102,7 +117,7 @@ export class RealtimeConnection {
         credentials: 'same-origin',
         redirect: 'error',
         signal: this.lifetime.signal,
-        body: JSON.stringify({ version: 1, leases }),
+        body: authorizationBody(leases),
       });
       if (!response.ok) throw new Error('Realtime authorization failed.');
       const value: unknown = await response.json();
@@ -134,6 +149,10 @@ export class RealtimeConnection {
           member.owner.feedback.stale = false;
         }
       }
+      this.renewed(
+        new Map([...this.members].map(([id, member]) => [id, member.metadata])),
+      );
+      if (generation !== this.generation) return;
       this.disconnect();
       clearTimeout(this.expiry);
       if (value.grant === null) return;

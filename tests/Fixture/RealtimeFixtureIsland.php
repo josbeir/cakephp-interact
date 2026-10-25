@@ -27,6 +27,9 @@ class RealtimeFixtureIsland extends Island
     #[Prop]
     public int $recordId;
 
+    #[Prop]
+    public ?string $topic = null;
+
     #[State(writable: true)]
     public string $draft = '';
 
@@ -90,7 +93,7 @@ class RealtimeFixtureIsland extends Island
     {
         static::$trace[] = 'subscriptions';
 
-        return $this->subscribed ? [Subscription::refresh('records/' . $this->recordId)] : [];
+        return $this->subscribed ? [Subscription::refresh($this->topic ?? 'records/' . $this->recordId)] : [];
     }
 
     /**

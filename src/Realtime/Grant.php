@@ -5,6 +5,7 @@ namespace Interact\Realtime;
 
 use Interact\Runtime\Values;
 use InvalidArgumentException;
+use stdClass;
 
 /**
  * Exports short-lived connection credentials to the corresponding browser adapter.
@@ -31,10 +32,14 @@ readonly class Grant
     /**
      * Export the common grant boundary without interpreting provider credentials.
      *
-     * @return array{driver: string, data: array<string, mixed>, expires: int}
+     * @return array{driver: string, data: array<string, mixed>|stdClass, expires: int}
      */
     public function data(): array
     {
-        return ['driver' => $this->driver, 'data' => $this->data, 'expires' => $this->expires];
+        return [
+            'driver' => $this->driver,
+            'data' => $this->data === [] ? (object)[] : $this->data,
+            'expires' => $this->expires,
+        ];
     }
 }
