@@ -10,7 +10,7 @@ and browser tests. It combines the features documented in the guides and API pag
 
 ## Run the demo
 
-Use PHP 8.5 with SQLite support and Node 24.11+ or Node 26+.
+Use PHP 8.5 with SQLite support, Node 24.11+ or Node 26+, and Docker.
 
 ```sh
 composer install
@@ -24,8 +24,8 @@ is for demonstration; applications supply their own authentication.
 
 ## Realtime demo
 
-With Docker available, run `npm run demo:realtime` instead of `composer preview`,
-then open **http://127.0.0.1:8765/realtime** in two tabs. The launcher provisions an
+`composer preview` includes realtime support. Open
+**http://127.0.0.1:8765/realtime** in two tabs. The launcher provisions an
 isolated FrankenPHP container with PHP 8.5, CakePHP, and its built-in Mercure 1.x
 hub on port 8765. The first run builds the image; later runs reuse Docker’s cache.
 The launcher removes the container on exit and retains the demo database. Stop any existing preview on port 8765 first.
@@ -38,7 +38,8 @@ or second tunnel is needed.
 The container invokes CakePHP's `server --frankenphp` command. The demo's
 `ServerCommand` enables `--mercure` and disables SSE compression. This runs ordinary
 PHP requests without worker mode. The image pins FrankenPHP 1.13.3 and installs
-CakePHP's required Intl extension. `composer preview` remains the plain PHP preview.
+CakePHP's required Intl extension. The same launcher starts isolated app/hub
+instances for the browser tests.
 
 <span id="realtime"></span>
 The chat room stores messages in SQLite and refreshes an independent feed in every
@@ -52,8 +53,7 @@ Private history and subscriptions are authorized independently of the shared roo
 “Ask demo assistant” streams a scripted reply into the same conversation, with
 progress events, text chunks, and an HTML completion marker. Other tabs in the same
 session receive it too. Assistant output is a temporary preview; saved messages
-remain available after reloading. The assistant requires the realtime launcher; ordinary and
-private messages can still be saved in the plain preview.
+remain available after reloading.
 
 Tested source: [composer island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RealtimeChatIsland.php),
 [feed island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RealtimeMessagesIsland.php),

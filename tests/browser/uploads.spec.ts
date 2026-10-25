@@ -324,6 +324,7 @@ test('a batch respects the field count and failed excess files can be retried af
 
 test('PHP body-size rejection remains specific when the multipart envelope is discarded', async ({
   page,
+  appServer,
 }) => {
   await page.goto('/uploads');
   const result = await page
@@ -355,6 +356,7 @@ test('PHP body-size rejection remains specific when the multipart envelope is di
       return { status: response.status, body: await response.json() };
     });
   expect(result.status).toBe(413);
+  await expect.poll(() => appServer.logs()).toContain('POST Content-Length');
   expect(result.body).toMatchObject({
     version: 1,
     error: {

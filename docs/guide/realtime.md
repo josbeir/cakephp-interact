@@ -219,12 +219,11 @@ memory, outside `$server.state` and persistent browser storage.
 
 ## Demo and testing
 
-Run `npm run demo:realtime` with Docker available, then open `/realtime` in two tabs.
+Run `composer preview` with Docker available, then open `/realtime` in two tabs.
 The launcher serves CakePHP and the built-in Mercure hub together in a pinned
 FrankenPHP container, so `ngrok http 8765` can share both through one URL.
-The ordinary PHP server and `composer preview` remain available without Mercure.
 
 PHP unit tests use controlled publishing and real token generation. Runtime tests
-use fake timers and controlled SSE boundaries. Realtime Playwright suites start
-isolated hubs and PHP applications through the shared fixture API, failing clearly
+use fake timers and controlled SSE boundaries. Playwright suites start
+isolated FrankenPHP app/hub containers through the shared fixture API, failing clearly
 when Docker or the pinned image is unavailable. See [contributing](/contributing).

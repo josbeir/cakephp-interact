@@ -66,10 +66,11 @@ TypeScript compatibility aliases or second compiler installations.
 
 Playwright exercises the real CakePHP application in Chromium, Firefox, and
 WebKit with three parallel workers. Import `test` and `expect` from
-`tests/browser/fixtures.ts`; its worker-scoped fixture boots PHP on an OS-assigned
-port with separate SQLite, session, cache, and upload storage. Workers stop their server
-and remove temporary storage on teardown; PHP diagnostics remain in
-`test-results/worker-*.log`. Browser tests do not use a running demo preview.
+`tests/browser/fixtures.ts`; its worker-scoped fixture starts a FrankenPHP container
+with bundled Mercure on a free loopback port. Each worker has separate SQLite,
+session, cache, and upload storage. Teardown removes the container and temporary
+storage; combined app/hub diagnostics remain in `test-results/worker-*.log`.
+Docker is required. Browser tests create their own app instances.
 
 Use Playwright's native filters and worker override for focused runs:
 
@@ -173,20 +174,26 @@ editor at `/renderless` through SQLite integration tests and all three browsers.
 
 ## Realtime integration
 
-Realtime browser specs use the shared fixture API with `test.use({ realtime: true })`.
-They start a pinned standalone Mercure 1.x Docker image per worker, with independent
-ports, signing keys, storage, and logs. PHP application servers and their existing
-SQLite/session/upload isolation remain unchanged. Other browser specs do not start hubs.
+Browser specs use one FrankenPHP container per worker, with the bundled Mercure hub
+on the same origin as CakePHP. The demo and tests share the PHP launcher in `scripts/preview.php`
+and the pinned image in `tests/test_app/Dockerfile`. Symfony Process, installed as a
+development dependency, handles Docker command execution. Test setup builds the image
+once, then workers receive independent ports, signing keys, SQLite databases,
+sessions, and upload storage.
 
 ```sh
-npm run test:browser -- tests/browser/realtime.spec.ts
-npm run demo:realtime
+npm run test:browser
+composer preview
 ```
 
 Docker must be running and permitted to create loopback-bound containers. Missing
-infrastructure fails explicitly. CI pre-pulls the pinned image; fixtures collect hub
-logs and remove their containers/storage on teardown. `scripts/mercure.mjs` owns test hub
-lifecycle. The demo launcher instead builds the pinned FrankenPHP image in
-`tests/test_app/Dockerfile`, serving CakePHP and Mercure together on port 8765.
-See [Demo](/demo#realtime-demo) for ngrok sharing. The test hub's wildcard CORS and demonstration
-identity endpoints are local fixtures; applications configure their own origins and identity.
+infrastructure fails explicitly. Fixtures retain combined application/hub logs and
+remove their containers and temporary storage on teardown. The reconnect test
+restarts the app and bundled hub together while preserving that worker's storage.
+FrankenPHP also serves concurrent requests during action streaming, so the session
+release test uses the same app instead of a second PHP server. Its controlled TCP
+gate is released from inside the container.
+
+The demo uses port 8765; tests reserve free loopback ports. See
+[Demo](/demo#realtime-demo) for ngrok sharing. Demonstration identity endpoints are
+local fixtures; applications supply their own authentication.

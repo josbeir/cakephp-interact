@@ -34,7 +34,7 @@ $this->assign('title', 'Live chat · Interact');
         <aside class="rt-setup rt-panel">
             <h2>Bring another tab into the conversation</h2>
             <p>Messages save here already. To receive them live in other tabs, start the preview with Docker:</p>
-            <pre><code>npm run demo:realtime</code></pre>
+            <pre><code>composer preview</code></pre>
         </aside>
     <?php endif; ?>
 </div>

@@ -180,11 +180,11 @@ class RealtimeHttpTest extends HttpTestCase
         $this->assertResponseCode(400);
     }
 
-    public function testOrdinaryPreviewCanSendAndReloadWithoutRealtimeInfrastructure(): void
+    public function testChatCanSendAndReloadWithoutRealtimeInfrastructure(): void
     {
         putenv('MERCURE_URL');
         $mount = $this->mounted(url: '/realtime');
-        $this->assertResponseContains('npm run demo:realtime');
+        $this->assertResponseContains('composer preview');
         $this->assertResponseNotContains('data-interact-realtime=');
         $this->assertResponseNotContains('Ask demo assistant');
         $this->update([

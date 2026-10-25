@@ -1,8 +1,6 @@
 import type { Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 
-test.use({ realtime: true });
-
 async function connected(page: Page, appURL: string, path = '/realtime') {
   await page.goto(`${appURL}${path}`);
   await settled(page);
@@ -39,7 +37,6 @@ async function settled(page: Page) {
 test('shares one Mercure connection across independent islands and exact topics', async ({
   page,
   appURL,
-  mercureHub,
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -47,7 +44,7 @@ test('shares one Mercure connection across independent islands and exact topics'
   page.on('request', (request) => {
     if (
       request.method() === 'GET' &&
-      request.url().startsWith(mercureHub?.url ?? 'missing')
+      request.url().startsWith(`${appURL}/.well-known/mercure`)
     )
       subscriptions.push(request.url());
   });
@@ -206,12 +203,11 @@ test('isolates private user topics and rejects forged and unauthorized subscript
   });
 });
 
-test('recovers the shared subscription after the independent hub restarts', async ({
+test('recovers the shared subscription after FrankenPHP and its bundled hub restart', async ({
   page,
   appURL,
-  mercureHub,
+  appServer,
 }) => {
-  if (!mercureHub) throw new Error('Missing real Mercure hub.');
   await connected(page, appURL);
   const reconciled = page.waitForResponse(
     (response) => response.url().endsWith('/_interact/update') && response.ok(),
@@ -219,9 +215,9 @@ test('recovers the shared subscription after the independent hub restarts', asyn
   const reconnected = page.waitForResponse(
     (response) =>
       response.request().method() === 'GET' &&
-      response.url().startsWith(mercureHub.url),
+      response.url().startsWith(`${appURL}/.well-known/mercure`),
   );
-  await mercureHub.restart();
+  await appServer.restart();
   await reconnected;
   await reconciled;
   await settled(page);
@@ -356,10 +352,8 @@ test('retains custom scoped endpoints through initial refresh, actions, and hub 
 test('sends and validates messages even when the browser cannot connect to the hub', async ({
   page,
   appURL,
-  mercureHub,
 }) => {
-  if (!mercureHub) throw new Error('Missing real Mercure hub.');
-  await page.route(`${mercureHub.url}**`, (route) => route.abort());
+  await page.route(`${appURL}/.well-known/mercure**`, (route) => route.abort());
   await page.goto(`${appURL}/realtime`);
   const message = page.getByLabel('Message', { exact: true });
   const send = page.getByRole('button', { name: 'Send message' });

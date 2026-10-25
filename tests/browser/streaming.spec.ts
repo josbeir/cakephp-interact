@@ -1,25 +1,22 @@
-import { connect } from 'node:net';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { expect, test } from './fixtures';
 
 /** Release the PHP action only after the browser has observed its incremental output. */
-async function release(address: string): Promise<void> {
-  const separator = address.lastIndexOf(':');
-  await new Promise<void>((resolve, reject) => {
-    const socket = connect({
-      host: address.slice(0, separator),
-      port: Number(address.slice(separator + 1)),
-    });
-    socket.once('error', reject);
-    socket.once('connect', () => {
-      socket.end();
-      resolve();
-    });
-  });
+async function release(container: string, address: string): Promise<void> {
+  await promisify(execFile)('docker', [
+    'exec',
+    container,
+    'php',
+    '-r',
+    '$connection = stream_socket_client($argv[1]); if ($connection === false) { exit(1); } fclose($connection);',
+    `tcp://${address}`,
+  ]);
 }
 
 test('receives text, escaped elements, and progress before completion while releasing the session', async ({
   page,
-  peerURL,
+  appServer,
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -37,14 +34,13 @@ test('receives text, escaped elements, and progress before completion while rele
     await expect(page.getByRole('listitem')).toHaveText('<escaped>');
     await expect(page.locator('pre script')).toHaveCount(0);
     await expect(button).toBeDisabled();
-    // Another PHP process shares this worker's session directory and browser cookies.
-    const concurrent = await page.request.get(
-      `${peerURL}/demo/streaming-session`,
-      { timeout: 5000 },
-    );
+    // Another FrankenPHP thread serves the same session while the stream remains open.
+    const concurrent = await page.request.get('/demo/streaming-session', {
+      timeout: 5000,
+    });
     expect(await concurrent.json()).toEqual(identity);
   } finally {
-    await release(address);
+    await release(appServer.name, address);
   }
   await expect(page.locator('pre')).toHaveText('Complete');
   await expect(button).toBeEnabled();
