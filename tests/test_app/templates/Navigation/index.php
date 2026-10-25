@@ -9,6 +9,14 @@ use function Cake\Core\h;
  */
 $this->assign('title', $page . ' · Navigation · Interact');
 $this->append('script', '<meta name="description" content="' . (string)h($page) . ' navigation example">');
+// Page styles are removed when absent; a stable id explicitly retains the shared accent.
+$this->Html->css($page === 'Overview' ? 'navigation-overview' : 'navigation-details', ['block' => 'script']);
+if ($page === 'Overview') {
+    $this->append('script', $this->Html->tag('style', '.navigation-head-example { padding: 1rem; }', [
+        'id' => 'navigation-shared-accent',
+        'x-interact:asset' => 'persist',
+    ]));
+}
 $edition = (string)$this->getRequest()->getQuery('edition', 'shared');
 $loading = $this->getRequest()->getQuery('manual') === '1' ? 'manual' : 'eager';
 ?>
@@ -33,6 +41,11 @@ $loading = $this->getRequest()->getQuery('manual') === '1' ? 'manual' : 'eager';
             <a href="/navigation" x-interact:navigate.preserve-scroll>Overview</a>
             <a href="/navigation/details" x-interact:navigate.hover.preserve-scroll>Details</a>
         </nav>
+        <section class="navigation-head-example" aria-label="Page styles">
+            <strong><?= (string)h($page) ?> styles</strong>
+            <p>The page stylesheet changes with these tabs. Its predecessor is removed; the shared padding persists by its style id.</p>
+            <a href="/navigation/nonces" x-interact:navigate>Try rotating CSP nonces</a>
+        </section>
         <h2>Page-owned state</h2>
         <p class="card-description">
             Add five to the counter, then switch between Overview and Details.

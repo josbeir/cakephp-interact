@@ -1,17 +1,21 @@
 import { record } from '../state/values';
+import { mapNonces, parseDocument } from './nonces';
 
 export interface DocumentIdentity {
   version: string;
   application: string;
   session: string;
   policy: string;
+  nonceCount?: number;
 }
 
 /** Read runtime-owned compatibility data without treating it as an authorization capability. */
 export function documentIdentity(
   document: Document,
 ): DocumentIdentity | undefined {
-  const markers = document.querySelectorAll('meta[name="interact-navigation"]');
+  const markers = document.head.querySelectorAll(
+    'meta[name="interact-navigation"]',
+  );
   if (markers.length !== 1) return;
   try {
     const value: unknown = JSON.parse(
@@ -22,7 +26,11 @@ export function documentIdentity(
       typeof value.version !== 'string' ||
       typeof value.application !== 'string' ||
       typeof value.session !== 'string' ||
-      typeof value.policy !== 'string'
+      typeof value.policy !== 'string' ||
+      (value.nonceCount !== undefined &&
+        (typeof value.nonceCount !== 'number' ||
+          !Number.isSafeInteger(value.nonceCount) ||
+          value.nonceCount < 0))
     )
       return;
     return {
@@ -30,6 +38,9 @@ export function documentIdentity(
       application: value.application,
       session: value.session,
       policy: value.policy,
+      ...(typeof value.nonceCount === 'number'
+        ? { nonceCount: value.nonceCount }
+        : {}),
     };
   } catch {
     return;
@@ -37,14 +48,18 @@ export function documentIdentity(
 }
 
 /** Parse full HTML without running scripts; incompatible document policies require a native visit. */
-export function incomingDocument(html: string, current: Document): Document {
+export function incomingDocument(
+  html: string,
+  current: Document,
+  nonces: readonly string[] = [],
+): Document {
   if (
     !/<!doctype\s+html[\s>]/i.test(html) ||
     !/<html[\s>]/i.test(html) ||
     !/<body[\s>]/i.test(html)
   )
     throw new Error('Navigation requires a complete HTML document.');
-  const next = new DOMParser().parseFromString(html, 'text/html');
+  const { document: next, originals } = parseDocument(html, current, nonces);
   const before = documentIdentity(current);
   const after = documentIdentity(next);
   if (
@@ -57,6 +72,7 @@ export function incomingDocument(html: string, current: Document): Document {
     next.querySelector('base, meta[http-equiv]')
   )
     throw new Error('The destination requires a fresh browser document.');
+  mapNonces(next, current, nonces, originals);
   return next;
 }
 

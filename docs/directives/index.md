@@ -30,5 +30,6 @@ handles the event and Interact sends the PHP action request.
 
 - [`x-interact:navigate`](/directives/navigate) visits ordinary CakePHP pages.
 - [`x-interact:persist`](/directives/persist) retains explicit layout regions between visits.
+- [`x-interact:asset`](/directives/asset) controls head asset reloads and persistent styles.
 
 [`x-interact:stream`](/directives/stream) declares display targets for incremental action output.

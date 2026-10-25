@@ -1,4 +1,5 @@
 import { destination } from '../effects/browser';
+import { headEntries, stylesheet, trackedAssets } from './head';
 
 function executable(script: HTMLScriptElement): boolean {
   const type = script.type.trim().toLowerCase();
@@ -22,18 +23,32 @@ function key(script: HTMLScriptElement, base: string): string {
   ]);
 }
 
+/** Preserve a relative resource's resolved URL when history changes the document base. */
+function stableUrls(node: Element, source: Element, base: string): void {
+  for (const name of ['src', 'href']) {
+    const value = source.getAttribute(name);
+    if (value !== null && !/^(?:[a-z][\w+.-]*:|\/)/i.test(value))
+      node.setAttribute(name, new URL(value, base).href);
+  }
+}
+
 /**
- * Loads new external assets once under the original document's security policy.
- * Scripts register integrations before incoming Alpine initialization; page work uses lifecycle events.
+ * Reconciles server-declared head elements under the original document's security policy.
+ * Styles stage before commit; scripts execute once before incoming Alpine initialization.
  */
 export class PageAssets {
-  protected readonly scripts = new Set<string>();
+  protected readonly scripts = new Map<string, HTMLScriptElement>();
+  protected managed: Set<Element>;
 
-  constructor(protected readonly document: Document) {
+  constructor(
+    protected readonly document: Document,
+    protected readonly attribute = 'x-interact:asset',
+  ) {
+    this.managed = new Set(document.head.children);
     for (const script of document.querySelectorAll<HTMLScriptElement>(
       'script[src]',
     ))
-      this.scripts.add(key(script, document.baseURI));
+      this.scripts.set(key(script, document.baseURI), script);
   }
 
   async prepare(
@@ -41,6 +56,17 @@ export class PageAssets {
     url: string,
     signal: AbortSignal,
   ): Promise<() => void> {
+    const base = this.document.baseURI;
+    const before = headEntries(
+      [...this.managed].filter(
+        (node) => node.parentNode === this.document.head,
+      ),
+      base,
+      this.attribute,
+    );
+    const after = headEntries(next.head.children, url, this.attribute);
+    if (trackedAssets(before) !== trackedAssets(after))
+      throw new Error('Tracked head assets require native navigation.');
     const scripts = [
       ...next.querySelectorAll<HTMLScriptElement>('script'),
     ].filter(executable);
@@ -50,7 +76,16 @@ export class PageAssets {
       )
     )
       throw new Error('Executable inline scripts require native navigation.');
-    const staged: { link: HTMLLinkElement; media: string }[] = [];
+
+    // Buckets with cursors preserve duplicate declarations without repeated head scans.
+    const matches = new Map<string, { nodes: Element[]; index: number }>();
+    for (const { node, signature } of before) {
+      const bucket = matches.get(signature);
+      if (bucket) bucket.nodes.push(node);
+      else matches.set(signature, { nodes: [node], index: 0 });
+    }
+    const desired: Element[] = [];
+    const staged: { link: HTMLLinkElement; media: string | null }[] = [];
     const loading = new AbortController();
     const discard = () => {
       loading.abort();
@@ -59,32 +94,33 @@ export class PageAssets {
     signal.addEventListener('abort', discard, { once: true });
     try {
       signal.throwIfAborted();
-      for (const link of next.head.querySelectorAll<HTMLLinkElement>(
-        'link[rel="stylesheet"]',
-      )) {
-        const href = new URL(link.getAttribute('href') ?? '', url).href;
-        link.href = href;
-        const existing = [
-          ...this.document.head.querySelectorAll<HTMLLinkElement>(
-            'link[rel="stylesheet"]',
-          ),
-        ].some(
-          (node) =>
-            node.href === href &&
-            node.integrity === link.integrity &&
-            node.media === link.media,
-        );
-        if (existing) continue;
-        const clone = link.cloneNode(true);
-        if (!(clone instanceof HTMLLinkElement) || !destination(href))
-          throw new Error('Invalid stylesheet.');
-        const media = link.media;
-        clone.media = 'not all';
-        staged.push({ link: clone, media });
+      for (const { node, signature } of after) {
+        const bucket = matches.get(signature);
+        const existing = bucket?.nodes[bucket.index];
+        if (existing && bucket) {
+          bucket.index++;
+          desired.push(existing);
+          continue;
+        }
+        const clone = node.cloneNode(true);
+        if (!(clone instanceof Element))
+          throw new Error('Invalid head element.');
+        if (stylesheet(clone)) {
+          clone.href = new URL(clone.getAttribute('href') ?? '', url).href;
+          if (!destination(clone.href)) throw new Error('Invalid stylesheet.');
+          const media = clone.getAttribute('media');
+          clone.media = 'not all';
+          staged.push({ link: clone, media });
+        }
+        desired.push(clone);
       }
-      // Append in document order, while independent styles download together.
+      // Downloads overlap; no staged style participates in the active cascade yet.
       await Promise.all(
-        staged.map(({ link }) => this.load(link, loading.signal)),
+        staged.map(({ link }) =>
+          link.hasAttribute('disabled') || link.relList.contains('alternate')
+            ? Promise.resolve()
+            : this.load(link, loading.signal),
+        ),
       );
       for (const script of scripts) {
         if (!script.hasAttribute('src') || script.noModule) continue;
@@ -93,34 +129,63 @@ export class PageAssets {
         const clone = this.document.createElement('script');
         for (const attribute of script.attributes)
           clone.setAttribute(attribute.name, attribute.value);
+        clone.nonce = script.nonce;
         clone.src = new URL(script.getAttribute('src') ?? '', url).href;
         if (!destination(clone.src))
           throw new Error('Invalid script destination.');
         clone.async = false;
         await this.load(clone, loading.signal);
-        this.scripts.add(identity);
+        this.scripts.set(identity, clone);
+      }
+      // Use already executed script elements, rather than inserting fresh executable clones.
+      const used = new Set(desired);
+      for (const [index, node] of desired.entries()) {
+        if (
+          node instanceof HTMLScriptElement &&
+          node.hasAttribute('src') &&
+          executable(node)
+        ) {
+          const loaded = this.scripts.get(key(node, url));
+          if (loaded && !used.has(loaded)) {
+            desired[index] = loaded;
+            used.add(loaded);
+          }
+        }
       }
       signal.throwIfAborted();
       return () => {
+        signal.throwIfAborted();
         signal.removeEventListener('abort', discard);
-        for (const { link, media } of staged) link.media = media;
+        const ids = new Set(after.map(({ node }) => node.id).filter(Boolean));
+        const retained = before
+          .filter(
+            ({ node, policy }) => policy === 'persist' && !ids.has(node.id),
+          )
+          .map(({ node }) => node);
+        const ordered = [...retained, ...desired];
+        for (const node of retained) stableUrls(node, node, base);
+        for (const [index, node] of desired.entries()) {
+          const source = after[index]?.node;
+          if (source) stableUrls(node, source, url);
+        }
+        const keep = new Set(ordered);
+        for (const node of this.managed) if (!keep.has(node)) node.remove();
+        // Move only out-of-order nodes; runtime-injected head nodes follow the server declarations.
+        let cursor = this.document.head.firstElementChild;
+        for (const node of ordered) {
+          if (node === cursor) cursor = cursor.nextElementSibling;
+          else this.document.head.insertBefore(node, cursor);
+        }
+        for (const { link, media } of staged) {
+          if (media === null) link.removeAttribute('media');
+          else link.media = media;
+        }
+        this.managed = keep;
       };
     } catch (cause: unknown) {
       signal.removeEventListener('abort', discard);
       discard();
       throw cause;
-    }
-  }
-
-  /** Synchronize metadata and inline styles; loaded external assets retain document lifetime. */
-  head(next: Document): void {
-    const keep = (node: Element) =>
-      node.matches('script[src], link[rel="stylesheet"]');
-    for (const node of [...this.document.head.children])
-      if (!keep(node)) node.remove();
-    for (const node of next.head.children) {
-      if (node.matches('script[src], link[rel="stylesheet"]')) continue;
-      this.document.head.append(node.cloneNode(true));
     }
   }
 
