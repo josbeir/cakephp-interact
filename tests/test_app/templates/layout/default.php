@@ -98,9 +98,5 @@ $currentPath = $this->getRequest()->getUri()->getPath();
         <main id="main" class="page-shell">
             <?= $this->fetch('content') ?>
         </main>
-        <footer class="site-footer">
-            <span>CakePHP Interact</span>
-            <span>PHP 8.5 · CakePHP 6</span>
-        </footer>
     </body>
 </html>

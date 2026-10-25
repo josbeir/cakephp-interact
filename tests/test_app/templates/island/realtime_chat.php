@@ -16,8 +16,8 @@ declare(strict_types=1);
     <section class="rt-panel rt-chat-panel" aria-label="Shared chat">
         <div class="rt-panel-heading">
             <div>
-                <span class="rt-kicker">The common room</span>
-                <h2>Say hello.</h2>
+                <h2>The common room</h2>
+                <p class="rt-history-note">Saved history · Latest 50 messages</p>
             </div>
             <?php if ($live): ?>
                 <span class="rt-connection" :data-status="$server.realtime.status">
@@ -40,18 +40,17 @@ declare(strict_types=1);
                 <?= $this->Interact->render('RealtimeReply', key: 'chat-reply') ?>
             <?php endif; ?>
         </div>
-        <p class="rt-history-note">Saved history · Latest 50 messages visible to you</p>
         <?= $this->Form->create(null, ['x-interact:submit' => '$server.call("send")', 'class' => 'rt-composer']) ?>
-            <?= $this->Form->control('name', [
-                'label' => 'Your name',
-                'value' => $name,
-                'x-interact:model' => 'name',
-                'maxlength' => 40,
-                'autocomplete' => 'nickname',
-                ':aria-invalid' => '!!$server.errors.name',
-                'aria-describedby' => 'chat-name-error',
-            ]) ?>
             <div class="rt-compose-row">
+                <?= $this->Form->control('name', [
+                    'label' => 'Your name',
+                    'value' => $name,
+                    'x-interact:model' => 'name',
+                    'maxlength' => 40,
+                    'autocomplete' => 'nickname',
+                    ':aria-invalid' => '!!$server.errors.name',
+                    'aria-describedby' => 'chat-name-error',
+                ]) ?>
                 <?= $this->Form->control('message', [
                     'label' => 'Message',
                     'value' => $message,
@@ -99,13 +98,10 @@ declare(strict_types=1);
                         Ask demo assistant
                     </button>
                 <?php endif; ?>
+                <p class="rt-compose-hint" id="chat-hint">
+                    Enter to send. Private messages stay in your tabs.
+                </p>
             </div>
-            <p class="rt-compose-hint" id="chat-hint">
-                Enter to send. “Only my tabs” keeps a message private to this browser session.
-                <?php if ($live): ?>
-                    The demo assistant streams a scripted reply into the conversation.
-                <?php endif; ?>
-            </p>
             <p class="rt-activity" role="status" x-text="activity"></p>
             <p
                 class="rt-delivery-note"

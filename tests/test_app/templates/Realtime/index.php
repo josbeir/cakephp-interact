@@ -7,16 +7,15 @@ declare(strict_types=1);
 $this->assign('title', 'Live chat · Interact');
 ?>
 <div class="rt-page">
-    <section class="rt-hero">
+    <section class="page-intro rt-hero">
         <div class="rt-hero-copy">
             <p class="eyebrow">
                 <span class="rt-hero-dot" aria-hidden="true"></span>
-                Realtime / A working example
+                Realtime
             </p>
-            <h1>A little room to say hello<span>.</span></h1>
+            <h1>Live chat<span>.</span></h1>
             <p class="intro-copy">
-                Pick a name, send a message. Open another tab or share this page
-                with a friend and watch the conversation arrive live.
+                Send a message. Open another tab and watch it arrive live.
             </p>
         </div>
         <a

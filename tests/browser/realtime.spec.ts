@@ -56,6 +56,23 @@ test('shares one Mercure connection across independent islands and exact topics'
   const available = await page.locator('.rt-page').boundingBox();
   if (!panel || !available) throw new Error('Missing chat layout.');
   expect(Math.abs(panel.width - available.width)).toBeLessThanOrEqual(1);
+  const viewport = page.viewportSize();
+  if (!viewport) throw new Error('Missing viewport.');
+  const bottomSpace = viewport.height - panel.y - panel.height;
+  expect(bottomSpace).toBeGreaterThan(0);
+  expect(bottomSpace).toBeLessThanOrEqual(32);
+  const messageField = await page
+    .getByLabel('Message', { exact: true })
+    .boundingBox();
+  const sendButton = await page
+    .getByRole('button', { name: 'Send message' })
+    .boundingBox();
+  if (!messageField || !sendButton)
+    throw new Error('Missing composer controls.');
+  expect(Math.abs(messageField.height - sendButton.height)).toBeLessThanOrEqual(
+    1,
+  );
+  expect(Math.abs(messageField.y - sendButton.y)).toBeLessThanOrEqual(1);
   expect(subscriptions).toHaveLength(1);
   const topics = new URL(subscriptions[0] ?? '').searchParams
     .getAll('match')

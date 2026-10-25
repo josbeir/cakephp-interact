@@ -11,8 +11,7 @@ use function Cake\Core\h;
     <div class="rt-history">
         <?php if ($messages->isEmpty()): ?>
             <div class="rt-chat-empty">
-                <span aria-hidden="true">↗</span>
-                <h3>Every conversation starts with hello.</h3>
+                <h3>No messages yet.</h3>
                 <p>
                     <?php if ($live): ?>
                         Send the first message below. Open a second tab to see it arrive there too.
@@ -24,16 +23,13 @@ use function Cake\Core\h;
         <?php endif; ?>
         <?php foreach ($messages as $entry): ?>
             <article class="rt-chat-message" id="chat-message-<?= (string)$entry->get('id') ?>">
-                <span class="rt-avatar" aria-hidden="true">
-                    <?= (string)h(mb_strtoupper(mb_substr((string)$entry->get('name'), 0, 1))) ?>
-                </span>
-                <div class="rt-message-body">
+                <header class="rt-message-meta">
                     <strong><?= (string)h($entry->get('name')) ?></strong>
                     <?php if ($entry->get('recipient') !== null): ?>
                         <span class="rt-private-badge">Only your tabs</span>
                     <?php endif; ?>
-                    <p><?= (string)h($entry->get('message')) ?></p>
-                </div>
+                </header>
+                <p><?= (string)h($entry->get('message')) ?></p>
             </article>
         <?php endforeach; ?>
     </div>
