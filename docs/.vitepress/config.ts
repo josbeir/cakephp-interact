@@ -113,7 +113,6 @@ export default defineConfig({
             { text: 'File uploads', link: '/guide/uploads' },
             { text: 'Streaming', link: '/guide/streaming' },
             { text: 'Realtime', link: '/guide/realtime' },
-            { text: 'Realtime providers', link: '/guide/realtime-providers' },
             { text: 'Error handling', link: '/guide/failures' },
             { text: 'Debugging', link: '/guide/debugging' },
           ],
@@ -143,6 +142,7 @@ export default defineConfig({
           text: 'Advanced',
           collapsed: true,
           items: [
+            { text: 'Realtime providers', link: '/guide/realtime-providers' },
             { text: 'Testing islands', link: '/guide/testing' },
             { text: 'Rendering and helpers', link: '/reference/rendering' },
             { text: 'Requests and DOM updates', link: '/reference/browser' },

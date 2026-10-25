@@ -171,9 +171,10 @@ Implement `BroadcasterInterface` for PHP delivery and
 transport under the grant's driver name. Interact supplies the publisher shortcuts,
 authorization endpoint, leases, connection sharing, and island delivery policies.
 
-The [custom WebSocket provider guide](/guide/realtime-providers) includes a complete
-PHP adapter, CakePHP container registration, the gateway's required protocol, and a
-tested browser transport with authentication, reconnection, and cleanup.
+See [Realtime providers](/guide/realtime-providers) in Advanced for a complete
+WebSocket example: a PHP adapter, CakePHP container registration, the gateway's
+required protocol, and a tested browser transport with authentication,
+reconnection, and cleanup.
 
 ## Configure Mercure
 
