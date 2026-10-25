@@ -98,10 +98,12 @@ class WebSocketProviderExampleTest extends TestCase
             $container->addShared($contract, static fn(): WebSocketProvider => $provider);
         }
 
+        /** @var mixed $previous */
         $previous = Configure::read('Interact.realtime');
         Configure::delete('Interact.realtime');
         try {
             new RealtimeServices()->register($container);
+            /** @var mixed $publisher */
             $publisher = $container->get(PublisherInterface::class);
             static::assertInstanceOf(PublisherInterface::class, $publisher);
             static::assertSame($provider, $container->get(SubscriptionAuthorizerInterface::class));

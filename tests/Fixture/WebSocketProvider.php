@@ -51,6 +51,7 @@ class WebSocketProvider implements BroadcasterInterface, SubscriptionAuthorizerI
     public function authorize(array $topics, int $expires): Grant
     {
         $response = $this->post('/subscriptions', ['topics' => $topics, 'expires' => $expires]);
+        /** @var mixed $data */
         $data = $response->getJson();
         if (!is_array($data) || !is_string($data['token'] ?? null) || $data['token'] === '') {
             throw new RuntimeException('The WebSocket gateway returned an invalid subscription token.');
