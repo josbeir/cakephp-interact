@@ -3,19 +3,19 @@ declare(strict_types=1);
 
 namespace TestApp\Island;
 
-use Cake\Http\Exception\ForbiddenException;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Prop;
 use Interact\Island;
 use Interact\IslandContext;
 use Interact\Realtime\Subscription;
+use TestApp\Chat\ChatIdentity;
 use TestApp\Model\Table\ChatMessagesTable;
 
 /**
  * Renders saved chat history independently of the composer's writable draft.
  *
  * Refreshes read the database, so reconnecting or reloading also recovers missed messages.
- * This demo room is shared by all authorized demo users.
+ * Public messages are shared; private messages remain scoped to the current session.
  */
 class RealtimeMessagesIsland extends Island
 {
@@ -24,16 +24,14 @@ class RealtimeMessagesIsland extends Island
     #[Prop]
     public bool $live = false;
 
+    protected ChatIdentity $identity;
+
     /**
      * Recheck demo access before reading messages or issuing a subscription lease.
      */
     public function authorize(IslandContext $context): void
     {
-        /** @var mixed $identity */
-        $identity = $context->request->getAttribute('identity');
-        if (!is_array($identity) || ($identity['role'] ?? null) !== 'editor') {
-            throw new ForbiddenException('Chat access is not allowed.');
-        }
+        $this->identity = ChatIdentity::authorize($context);
     }
 
     /**
@@ -43,7 +41,13 @@ class RealtimeMessagesIsland extends Island
      */
     public function subscriptions(IslandContext $context): array
     {
-        return $this->live ? [Subscription::refresh('demo/chat', event: 'message-sent')] : [];
+        return (
+            $this->live
+                ? [
+                    Subscription::refresh('demo/chat', event: 'message-sent'),
+                    Subscription::refresh($this->identity->topic(), event: 'message-sent'),
+                ] : []
+        );
     }
 
     /**
@@ -55,6 +59,6 @@ class RealtimeMessagesIsland extends Island
     {
         $messages = $this->fetchTable(ChatMessagesTable::class);
 
-        return ['messages' => $messages->find('recent')->all()];
+        return ['messages' => $messages->find('recent', recipient: $this->identity->recipient)->all()];
     }
 }

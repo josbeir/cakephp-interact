@@ -46,10 +46,14 @@ subscribed tab. Type in one tab while sending from another: incoming messages ar
 without disturbing your draft. Your own sends also refresh the feed through the
 normal response, so the chat remains usable without a live connection. Reloading
 restores the latest 50 messages. The room is shared by everyone visiting the demo;
-private notifications use separate user-specific topics.
+“Only my tabs” sends a private message scoped to the current browser session.
+Private history and subscriptions are authorized independently of the shared room.
 
-The side panels demonstrate a private notification and a streamed chat recap with
-progress, text logs, and an HTML result. These panels require the realtime launcher.
+“Ask demo assistant” streams a scripted reply into the same conversation, with
+progress events, text chunks, and an HTML completion marker. Other tabs in the same
+session receive it too. Assistant output is a temporary preview; saved messages
+remain available after reloading. The assistant requires the realtime launcher; ordinary and
+private messages can still be saved in the plain preview.
 
 Tested source: [composer island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RealtimeChatIsland.php),
 [feed island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RealtimeMessagesIsland.php),

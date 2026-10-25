@@ -3,12 +3,13 @@ declare(strict_types=1);
 /**
  * @var \Interact\View\TemplateView $this
  * @var string $name
+ * @var bool $private
  * @var string $message
  * @var bool $live
  */
 ?>
 <div
-    class="rt-console<?= $live ? '' : ' rt-console-local' ?>"
+    class="rt-console"
     x-data="chatDemo"
     @interact:push.window="
         $event.target === $el.closest('[data-interact-id]') && receive($event.detail)
@@ -20,9 +21,28 @@ declare(strict_types=1);
                 <span class="rt-kicker">The common room</span>
                 <h2>Say hello.</h2>
             </div>
-            <span class="rt-room-label">Shared conversation</span>
+            <?php if ($live): ?>
+                <span class="rt-connection" :data-status="$server.realtime.status">
+                    <span class="rt-status-dot" aria-hidden="true"></span>
+                    <strong x-text="$server.realtime.status"></strong>
+                </span>
+            <?php else: ?>
+                <span class="rt-connection">Local preview</span>
+            <?php endif; ?>
         </div>
-        <?= $this->Interact->render('RealtimeMessages', props: ['live' => $live], key: 'chat-messages') ?>
+        <div
+            class="rt-conversation"
+            role="log"
+            aria-label="Chat messages"
+            aria-live="polite"
+            x-data="chatMessages"
+        >
+            <?= $this->Interact->render('RealtimeMessages', props: ['live' => $live], key: 'chat-messages') ?>
+            <?php if ($live): ?>
+                <?= $this->Interact->render('RealtimeReply', key: 'chat-reply') ?>
+            <?php endif; ?>
+        </div>
+        <p class="rt-history-note">Saved history · Latest 50 messages visible to you</p>
         <?= $this->Form->create(null, ['x-interact:submit' => '$server.call("send")', 'class' => 'rt-composer']) ?>
             <?= $this->Form->control('name', [
                 'label' => 'Your name',
@@ -66,9 +86,29 @@ declare(strict_types=1);
                 role="alert"
                 x-text="$server.error ? $server.error.message : ''"
             ></p>
+            <div class="rt-composer-options">
+                <label class="rt-private-option">
+                    <input type="checkbox" x-interact:model="private"<?= $private ? ' checked' : '' ?>>
+                    Only my tabs
+                </label>
+                <?php if ($live): ?>
+                    <button
+                        type="button"
+                        class="rt-assistant-button"
+                        @click="$server.call('reply')"
+                        :disabled="$server.pending('reply')"
+                    >
+                        Ask demo assistant
+                    </button>
+                <?php endif; ?>
+            </div>
             <p class="rt-compose-hint" id="chat-hint">
-                Press Enter to send. Everyone with this demo link can see the conversation.
+                Enter to send. “Only my tabs” keeps a message private to this browser session.
+                <?php if ($live): ?>
+                    The demo assistant streams a scripted reply into the conversation.
+                <?php endif; ?>
             </p>
+            <p class="rt-activity" role="status" x-text="activity"></p>
             <p
                 class="rt-delivery-note"
                 role="status"
@@ -79,81 +119,4 @@ declare(strict_types=1);
             </p>
         <?= $this->Form->end() ?>
     </section>
-    <?php if ($live): ?>
-        <aside class="rt-tools" aria-label="More realtime examples">
-            <section class="rt-panel rt-inbox-panel" aria-label="Private inbox">
-                <div class="rt-panel-heading">
-                    <div>
-                        <span class="rt-kicker">Private events</span>
-                        <h2>A private nudge</h2>
-                    </div>
-                    <span
-                        class="rt-counter"
-                        x-text="notificationCount"
-                        aria-label="Notifications received"
-                    >0</span>
-                </div>
-                <div class="rt-inbox-empty" x-show="notificationCount === 0">
-                    <span class="rt-inbox-icon" aria-hidden="true">↘</span>
-                    <strong>A little quiet in here.</strong>
-                    <p>Send a private update to this workspace and its other open tabs.</p>
-                </div>
-                <div class="rt-inbox-message" x-show="notificationCount > 0" x-cloak>
-                    <span class="rt-message-icon" aria-hidden="true">✓</span>
-                    <div>
-                        <strong>Workspace update</strong>
-                        <p
-                            role="status"
-                            aria-label="Private notification"
-                            x-text="notification"
-                        ></p>
-                        <small>Private · Delivered live</small>
-                    </div>
-                </div>
-                <button
-                    type="button"
-                    class="rt-wide-button"
-                    @click="$server.call('notify')"
-                    :disabled="$server.pending('notify')"
-                >
-                    Send private notification
-                    <span aria-hidden="true">↗</span>
-                </button>
-            </section>
-
-            <section class="rt-panel rt-report-panel" aria-label="Live report">
-                <div class="rt-panel-heading">
-                    <div>
-                        <span class="rt-kicker">Streamed output</span>
-                        <h2>A live chat recap</h2>
-                    </div>
-                    <span class="rt-report-percent" x-text="progress + '%'">0%</span>
-                </div>
-                <p class="rt-panel-copy">
-                    Each stage arrives while the report runs. Your other tabs receive the same progress.
-                </p>
-                <div
-                    class="rt-progress"
-                    role="progressbar"
-                    aria-label="Report progress"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    :aria-valuenow="progress"
-                >
-                    <span :style="{ width: progress + '%' }"></span>
-                </div>
-                <pre class="rt-report-log" x-interact:stream="realtime-output">Ready when you are.</pre>
-                <ul class="rt-report-results" x-interact:stream.html="realtime-rows"></ul>
-                <button
-                    type="button"
-                    class="rt-wide-button"
-                    @click="$server.call('output')"
-                    :disabled="$server.pending('output')"
-                >
-                    Generate report
-                    <span aria-hidden="true">↗</span>
-                </button>
-            </section>
-        </aside>
-    <?php endif; ?>
 </div>

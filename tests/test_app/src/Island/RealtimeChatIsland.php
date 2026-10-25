@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace TestApp\Island;
 
-use Cake\Http\Exception\ForbiddenException;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\View\View;
 use Exception;
@@ -13,10 +12,11 @@ use Interact\Island;
 use Interact\IslandContext;
 use Interact\Realtime\PublisherInterface;
 use Interact\Realtime\Subscription;
+use TestApp\Chat\ChatIdentity;
 use TestApp\Model\Table\ChatMessagesTable;
 
 /**
- * Owns a message draft, explicit persistence, and the demo's private notification tools.
+ * Owns the shared composer, explicit message persistence, and scripted assistant requests.
  *
  * The independent feed receives shared messages without interrupting this draft.
  * A successful send refreshes its local feed even when live delivery is unavailable.
@@ -31,12 +31,15 @@ class RealtimeChatIsland extends Island
     #[State(writable: true)]
     public string $message = '';
 
+    #[State(writable: true)]
+    public bool $private = false;
+
     #[State]
     public bool $deliveryIssue = false;
 
     protected ChatMessagesTable $messages;
 
-    protected int $userId;
+    protected ChatIdentity $identity;
 
     /**
      * Allow the ordinary preview to send messages without optional hub infrastructure.
@@ -58,13 +61,7 @@ class RealtimeChatIsland extends Island
      */
     public function authorize(IslandContext $context): void
     {
-        /** @var mixed $identity */
-        $identity = $context->request->getAttribute('identity');
-        if (!is_array($identity) || ($identity['role'] ?? null) !== 'editor' || !is_int($identity['id'] ?? null)) {
-            throw new ForbiddenException('Chat access is not allowed.');
-        }
-
-        $this->userId = $identity['id'];
+        $this->identity = ChatIdentity::authorize($context);
     }
 
     /**
@@ -76,7 +73,7 @@ class RealtimeChatIsland extends Island
     }
 
     /**
-     * Receive private notifications and streamed output independently of the public chat feed.
+     * Receive private message events without interrupting the composer draft.
      *
      * @return list<Subscription> Topics selected from the freshly authorized identity.
      */
@@ -86,11 +83,7 @@ class RealtimeChatIsland extends Island
             return [];
         }
 
-        return [
-            Subscription::listen('users/' . $this->userId . '/notifications'),
-            Subscription::stream('users/' . $this->userId . '/output'),
-            Subscription::listen('users/' . $this->userId . '/output', event: 'report-progress'),
-        ];
+        return [Subscription::listen($this->identity->topic(), event: 'message-sent')];
     }
 
     /**
@@ -102,7 +95,8 @@ class RealtimeChatIsland extends Island
         $message = $this->messages->newEntity([
             'name' => trim($this->name),
             'message' => trim($this->message),
-        ], ['fields' => ['name', 'message']]);
+            'recipient' => $this->private ? $this->identity->recipient : null,
+        ], ['fields' => ['name', 'message', 'recipient']]);
         if (!$this->messages->save($message)) {
             $this->setErrors($message->getErrors() ?: ['message' => ['Unable to save the message. Try again.']]);
 
@@ -113,7 +107,9 @@ class RealtimeChatIsland extends Island
         $this->deliveryIssue = false;
         $this->dispatch('chat-sent', ['id' => $message->get('id')]);
         try {
-            $this->publisher?->publishEvent('demo/chat', 'message-sent', ['id' => $message->get('id')]);
+            $this->publisher?->publishEvent($this->private ? $this->identity->topic() : 'demo/chat', 'message-sent', [
+                'id' => $message->get('id'),
+            ]);
         } catch (Exception) {
             // The message is already saved. Never invite a duplicate send because delivery failed.
             $this->deliveryIssue = true;
@@ -121,36 +117,29 @@ class RealtimeChatIsland extends Island
     }
 
     /**
-     * Notify this user's other tabs without rendering a view.
+     * Stream a scripted assistant reply to this session's tabs using text, events, and HTML.
      */
     #[Action(render: false)]
-    public function notify(): void
+    public function reply(): void
     {
-        $this->publisher?->publishEvent('users/' . $this->userId . '/notifications', 'notification', [
-            'text' => 'An update just arrived.',
-        ]);
-    }
-
-    /**
-     * Send escaped text and a rendered conversation recap through shared hub delivery.
-     */
-    #[Action(render: false)]
-    public function output(): void
-    {
-        $topic = 'users/' . $this->userId . '/output';
-        $steps = ['Messages loaded.', 'Access checked.', 'Recap assembled.', 'Report ready.'];
-        foreach ($steps as $index => $step) {
-            $this->publisher?->publishText($topic, 'report-output', 'realtime-output', $step . "\n", [
-                'replace' => $index === 0,
-            ]);
-            $this->publisher?->publishEvent($topic, 'report-progress', ['percent' => ($index + 1) * 25]);
-            usleep(120_000);
+        $topic = $this->identity->topic() . '/reply';
+        $chunks = [
+            'Hello! I’m the demo assistant. ',
+            'This reply arrives in pieces, while the server is still working. ',
+            'Your other tabs receive the same text and progress. ',
+            'No AI service is involved — just a scripted reply over your shared connection.',
+        ];
+        $this->publisher?->publishEvent($topic, 'reply-progress', ['percent' => 0]);
+        foreach ($chunks as $index => $chunk) {
+            $this->publisher?->publishText($topic, 'reply-text', 'chat-reply', $chunk, ['replace' => $index === 0]);
+            usleep(200_000);
+            $this->publisher?->publishEvent($topic, 'reply-progress', ['percent' => ($index + 1) * 25]);
         }
 
-        $html = new View()->element('Realtime/report_result', [
-            'count' => $this->messages->find('recent')->all()->count(),
+        $html = new View()->element('Realtime/reply_status', [
+            'count' => $this->messages->find('recent', recipient: $this->identity->recipient)->all()->count(),
         ]);
-        $this->publisher?->publishHtml($topic, 'report-output', 'realtime-rows', $html, ['replace' => true]);
+        $this->publisher?->publishHtml($topic, 'reply-status', 'chat-reply-status', $html, ['replace' => true]);
     }
 
     /**

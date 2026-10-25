@@ -21,7 +21,7 @@ async function settled(page: Page) {
         .locator('[data-interact-id]')
         .evaluateAll(
           (roots) =>
-            roots.length === 2 &&
+            roots.length === 3 &&
             roots.every(
               (root) =>
                 root instanceof HTMLElement &&
@@ -53,27 +53,34 @@ test('shares one Mercure connection across independent islands and exact topics'
   });
   await connected(page, appURL);
   await expect(page.getByText('connected', { exact: true })).toHaveCount(1);
+  const panel = await page
+    .getByLabel('Shared chat', { exact: true })
+    .boundingBox();
+  const available = await page.locator('.rt-page').boundingBox();
+  if (!panel || !available) throw new Error('Missing chat layout.');
+  expect(Math.abs(panel.width - available.width)).toBeLessThanOrEqual(1);
   expect(subscriptions).toHaveLength(1);
-  expect(
-    new URL(subscriptions[0] ?? '').searchParams.getAll('match').sort(),
-  ).toEqual(['demo/chat', 'users/1/notifications', 'users/1/output']);
-  await page
-    .getByRole('button', { name: 'Send private notification' })
-    .first()
-    .click();
-  await expect(page.getByLabel('Private notification').first()).toHaveText(
-    'An update just arrived.',
-  );
-  await expect(page.getByLabel('Private notification').last()).toHaveText(
-    'An update just arrived.',
-  );
-  await page.getByRole('button', { name: 'Generate report' }).first().click();
-  await expect(page.locator('pre').first()).toContainText('Report ready.');
+  const topics = new URL(subscriptions[0] ?? '').searchParams
+    .getAll('match')
+    .sort();
+  expect(topics).toHaveLength(3);
+  expect(topics[0]).toBe('demo/chat');
+  expect(topics[1]).toMatch(/^demo\/private\/[a-f0-9]{64}$/);
+  expect(topics[2]).toBe(`${topics[1]}/reply`);
+  await page.getByLabel('Only my tabs', { exact: true }).check();
+  await page.getByLabel('Message', { exact: true }).fill('A private hello');
+  await page.getByRole('button', { name: 'Send message' }).click();
+  await expect(page.getByRole('log')).toContainText('A private hello');
   await expect(
-    page.locator('li').filter({ hasText: 'Conversation recap' }),
-  ).toHaveCount(1);
+    page.getByRole('status').filter({ hasText: 'Private message received' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Ask demo assistant' }).click();
+  await expect(page.getByLabel('Assistant message')).toContainText(
+    'No AI service is involved',
+  );
+  await expect(page.getByText(/Reply complete ·/)).toBeVisible();
   await expect(
-    page.getByRole('progressbar', { name: 'Report progress' }),
+    page.getByRole('progressbar', { name: 'Reply progress' }),
   ).toHaveAttribute('aria-valuenow', '100');
   expect(subscriptions).toHaveLength(1);
   expect(errors).toEqual([]);
@@ -156,28 +163,33 @@ test('isolates private user topics and rejects forged and unauthorized subscript
       headers: { 'X-CSRF-Token': otherCsrf ?? '' },
     });
     await connected(other, appURL);
-    const grants: string[] = [];
-    other.on('request', (request) => {
-      if (request.url().includes('match=')) grants.push(request.url());
-    });
+    await page.getByLabel('Only my tabs', { exact: true }).check();
     await page
-      .getByRole('button', { name: 'Send private notification' })
-      .first()
-      .click();
-    await expect(page.getByLabel('Private notification').first()).toHaveText(
-      'An update just arrived.',
+      .getByLabel('Message', { exact: true })
+      .fill('Keep this within my tabs');
+    await page.getByRole('button', { name: 'Send message' }).click();
+    await expect(page.getByRole('log')).toContainText(
+      'Keep this within my tabs',
     );
-    await expect(other.getByLabel('Private notification').first()).toHaveText(
-      '',
+    await expect(other.getByRole('log')).not.toContainText(
+      'Keep this within my tabs',
     );
+    await other.reload();
+    await settled(other);
+    await expect(other.getByRole('log')).not.toContainText(
+      'Keep this within my tabs',
+    );
+    await other.getByLabel('Only my tabs', { exact: true }).check();
     await other
-      .getByRole('button', { name: 'Send private notification' })
-      .first()
-      .click();
-    await expect(other.getByLabel('Private notification').first()).toHaveText(
-      'An update just arrived.',
+      .getByLabel('Message', { exact: true })
+      .fill('A different private note');
+    await other.getByRole('button', { name: 'Send message' }).click();
+    await expect(other.getByRole('log')).toContainText(
+      'A different private note',
     );
-    expect(grants.every((url) => !url.includes('users%2F1'))).toBe(true);
+    await expect(page.getByRole('log')).not.toContainText(
+      'A different private note',
+    );
   } finally {
     await context.close();
   }
@@ -216,16 +228,15 @@ test('recovers the shared subscription after the independent hub restarts', asyn
   await expect(
     page.getByText('connected', { exact: true }).first(),
   ).toBeVisible();
+  await page.getByLabel('Only my tabs', { exact: true }).check();
   await page
-    .getByRole('button', { name: 'Send private notification' })
-    .first()
-    .click();
-  await expect(page.getByLabel('Private notification').last()).toHaveText(
-    'An update just arrived.',
-  );
+    .getByLabel('Message', { exact: true })
+    .fill('Private after reconnect');
+  await page.getByRole('button', { name: 'Send message' }).click();
+  await expect(page.getByRole('log')).toContainText('Private after reconnect');
 });
 
-test('retains the inbox through sending and initializes it through enhanced navigation on mobile', async ({
+test('keeps the streamed reply through validation and initializes chat through enhanced navigation on mobile', async ({
   page,
   appURL,
 }, testInfo) => {
@@ -236,29 +247,23 @@ test('retains the inbox through sending and initializes it through enhanced navi
   await page.getByRole('button', { name: 'Menu', exact: true }).click();
   await page.getByRole('link', { name: 'Realtime', exact: true }).click();
   await settled(page);
-  const notify = page.getByRole('button', {
-    name: 'Send private notification',
-  });
-  await notify.click();
-  await expect(page.getByLabel('Notifications received')).toHaveText('1');
+  await page.getByRole('button', { name: 'Ask demo assistant' }).click();
+  await expect(page.getByLabel('Assistant message')).toContainText(
+    'No AI service is involved',
+  );
+  await page.getByRole('button', { name: 'Send message' }).click();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Write a message first.' }),
+  ).toBeVisible();
+  await expect(page.getByLabel('Assistant message')).toContainText(
+    'No AI service is involved',
+  );
   await page.getByLabel('Message', { exact: true }).fill('Hello from mobile');
   await page.getByRole('button', { name: 'Send message' }).click();
   await expect(page.getByRole('log')).toContainText('Hello from mobile');
-  await expect(page.getByLabel('Notifications received')).toHaveText('1');
-  await expect(page.getByLabel('Private notification')).toHaveText(
-    'An update just arrived.',
+  await expect(page.getByLabel('Assistant message')).toContainText(
+    'No AI service is involved',
   );
-  await notify.click();
-  await expect(page.getByLabel('Notifications received')).toHaveText('2');
-  await page
-    .getByLabel('Message', { exact: true })
-    .fill('Another mobile hello');
-  const publish = page.getByRole('button', { name: 'Send message' });
-  const before = await publish.boundingBox();
-  await publish.click();
-  await settled(page);
-  const after = await publish.boundingBox();
-  expect(before?.y).toBe(after?.y);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -300,11 +305,7 @@ test('sends once and leaves action buttons enabled during background reconciliat
       .fill('One explicit message');
     await page.getByRole('button', { name: 'Send message' }).click();
     await expect.poll(() => refreshes).toBeGreaterThanOrEqual(1);
-    for (const name of [
-      'Send message',
-      'Send private notification',
-      'Generate report',
-    ]) {
+    for (const name of ['Send message', 'Ask demo assistant']) {
       await expect(page.getByRole('button', { name })).toBeEnabled();
     }
     expect(sends).toBe(1);
@@ -331,10 +332,7 @@ test('retains custom scoped endpoints through initial refresh, actions, and hub 
       endpoints.push(new URL(request.url()).pathname);
   });
   await connected(page, appURL, '/realtime/scoped');
-  await page.getByRole('button', { name: 'Send private notification' }).click();
-  await expect(page.getByLabel('Private notification')).toHaveText(
-    'An update just arrived.',
-  );
+  await page.getByLabel('Only my tabs', { exact: true }).check();
   await page
     .getByLabel('Message', { exact: true })
     .fill('Hello from the scoped chat');
@@ -343,8 +341,10 @@ test('retains custom scoped endpoints through initial refresh, actions, and hub 
     'Hello from the scoped chat',
   );
   await settled(page);
-  await page.getByRole('button', { name: 'Send private notification' }).click();
-  await expect(page.getByLabel('Notifications received')).toHaveText('2');
+  await page.getByRole('button', { name: 'Ask demo assistant' }).click();
+  await expect(page.getByLabel('Assistant message')).toContainText(
+    'No AI service is involved',
+  );
   expect(endpoints).toEqual(['/realtime/subscribe']);
   for (const root of await page.locator('[data-interact-realtime]').all()) {
     const raw = await root.getAttribute('data-interact-realtime');
@@ -419,5 +419,56 @@ test('keeps a newer message draft when an earlier send finishes', async ({
   } finally {
     release();
     await page.unroute('**/_interact/update');
+  }
+});
+
+test('shares private chat and streamed replies with the same session while excluding another session', async ({
+  page,
+  context,
+  browser,
+  appURL,
+}) => {
+  await connected(page, appURL);
+  const sibling = await context.newPage();
+  await connected(sibling, appURL);
+  const otherContext = await browser.newContext();
+  try {
+    const other = await otherContext.newPage();
+    await connected(other, appURL);
+    await sibling
+      .getByLabel('Message', { exact: true })
+      .fill('A draft in my other tab');
+    await page.getByLabel('Only my tabs', { exact: true }).check();
+    await page
+      .getByLabel('Message', { exact: true })
+      .fill('Private across my tabs');
+    await page.getByRole('button', { name: 'Send message' }).click();
+    await expect(sibling.getByRole('log')).toContainText(
+      'Private across my tabs',
+    );
+    await expect(sibling.getByLabel('Message', { exact: true })).toHaveValue(
+      'A draft in my other tab',
+    );
+    await expect(other.getByRole('log')).not.toContainText(
+      'Private across my tabs',
+    );
+    await page.getByRole('button', { name: 'Ask demo assistant' }).click();
+    await expect(sibling.getByLabel('Assistant message')).toContainText(
+      'No AI service is involved',
+    );
+    await expect(sibling.getByRole('progressbar')).toHaveAttribute(
+      'aria-valuenow',
+      '100',
+    );
+    await expect(
+      other.getByLabel('Demo assistant reply', { exact: true }),
+    ).toBeHidden();
+    await sibling.reload();
+    await settled(sibling);
+    await expect(sibling.getByRole('log')).toContainText(
+      'Private across my tabs',
+    );
+  } finally {
+    await otherContext.close();
   }
 });

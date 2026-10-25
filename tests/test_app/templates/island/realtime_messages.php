@@ -8,18 +8,7 @@ use function Cake\Core\h;
  */
 ?>
 <div class="rt-feed" @chat-sent.window="$server.sync()">
-    <div class="rt-feed-heading">
-        <span>Latest messages</span>
-        <?php if ($live): ?>
-            <span class="rt-connection" :data-status="$server.realtime.status">
-                <span class="rt-status-dot" aria-hidden="true"></span>
-                <strong x-text="$server.realtime.status"></strong>
-            </span>
-        <?php else: ?>
-            <span class="rt-connection">Local preview</span>
-        <?php endif; ?>
-    </div>
-    <div class="rt-messages" role="log" aria-label="Chat messages" aria-live="polite" x-data="chatMessages">
+    <div class="rt-history">
         <?php if ($messages->isEmpty()): ?>
             <div class="rt-chat-empty">
                 <span aria-hidden="true">↗</span>
@@ -40,12 +29,14 @@ use function Cake\Core\h;
                 </span>
                 <div class="rt-message-body">
                     <strong><?= (string)h($entry->get('name')) ?></strong>
+                    <?php if ($entry->get('recipient') !== null): ?>
+                        <span class="rt-private-badge">Only your tabs</span>
+                    <?php endif; ?>
                     <p><?= (string)h($entry->get('message')) ?></p>
                 </div>
             </article>
         <?php endforeach; ?>
     </div>
-    <p class="rt-history-note">Saved history · Latest 50 messages</p>
     <p
         class="rt-error"
         role="alert"

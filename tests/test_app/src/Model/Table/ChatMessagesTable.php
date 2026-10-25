@@ -12,7 +12,7 @@ use Cake\Validation\Validator;
  * Stores the demo's shared conversation and bounds the history shown to visitors.
  *
  * Messages are application data, independent of the hub's transient delivery history.
- * The shared demo room is public to demo users; private notifications use separate topics.
+ * Public messages are shared; private messages are scoped to a freshly authorized recipient.
  */
 class ChatMessagesTable extends Table
 {
@@ -32,11 +32,23 @@ class ChatMessagesTable extends Table
      *
      * @return \Cake\ORM\Query\SelectQuery<\Cake\ORM\Entity>
      */
-    public function findRecent(SelectQuery $query): SelectQuery
+    public function findRecent(SelectQuery $query, string $recipient): SelectQuery
     {
-        $latest = $this->find()->select(['id'])->orderByDesc('id')->limit(50);
+        $latest = $this->find('visibleTo', recipient: $recipient)->select(['id'])->orderByDesc('id')->limit(50);
 
         return $query->where(['ChatMessages.id IN' => $latest])->orderByAsc('ChatMessages.id');
+    }
+
+    /**
+     * Scope public and private history before limiting, counting, or rendering it.
+     *
+     * @param \Cake\ORM\Query\SelectQuery<\Cake\ORM\Entity> $query
+     *
+     * @return \Cake\ORM\Query\SelectQuery<\Cake\ORM\Entity>
+     */
+    public function findVisibleTo(SelectQuery $query, string $recipient): SelectQuery
+    {
+        return $query->where(['OR' => ['ChatMessages.recipient IS' => null, 'ChatMessages.recipient' => $recipient]]);
     }
 
     /**

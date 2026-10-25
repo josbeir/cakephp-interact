@@ -21,15 +21,18 @@
       };
     });
     window.Alpine.data('chatDemo', () => ({
-      notification: '',
-      notificationCount: 0,
+      activity: '',
+      receive(message) {
+        if (message.event === 'message-sent')
+          this.activity = 'Private message received in your tabs.';
+      },
+    }));
+    window.Alpine.data('chatReply', () => ({
+      active: false,
       progress: 0,
       receive(message) {
-        if (message.event === 'notification') {
-          this.notification = message.detail.text;
-          this.notificationCount++;
-        }
-        if (message.event === 'report-progress') {
+        if (message.event === 'reply-progress') {
+          this.active = true;
           this.progress = message.detail.percent;
         }
       },

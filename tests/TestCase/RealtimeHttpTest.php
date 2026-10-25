@@ -81,7 +81,10 @@ class RealtimeHttpTest extends HttpTestCase
             flags: JSON_THROW_ON_ERROR,
         ));
         static::assertSame(['subscribe'], Hash::get($claims, 'authorization_details.0.actions'));
-        static::assertSame('users/1/notifications', Hash::get($claims, 'authorization_details.0.topics.0.match'));
+        static::assertMatchesRegularExpression(
+            '/^demo\/private\/[a-f0-9]{64}$/',
+            (string)Hash::get($claims, 'authorization_details.0.topics.0.match'),
+        );
         $this->assertResponseNotContains('forbidden/topic');
         static::assertArrayNotHasKey('snapshot', Values::map(Hash::get($payload, 'islands.' . $mount['id'])));
     }
@@ -92,7 +95,7 @@ class RealtimeHttpTest extends HttpTestCase
         $metadata = $this->metadata();
         static::assertSame('/realtime/subscribe', $metadata['endpoint']);
         $snapshot = $mount['snapshot'];
-        foreach ([null, 'notify', null] as $action) {
+        foreach ([null, 'reply', null] as $action) {
             $this->requestAsJson();
             $this->configRequest(['headers' => ['X-CSRF-Token' => $this->csrf]]);
             $this->post('/realtime/update', json_encode([
@@ -104,7 +107,7 @@ class RealtimeHttpTest extends HttpTestCase
             $this->assertResponseOk();
             $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
             static::assertSame('/realtime/subscribe', Hash::get($payload, 'realtime.endpoint'));
-            if ($action === 'notify') {
+            if ($action === 'reply') {
                 static::assertNull($payload['html']);
             }
 
@@ -129,18 +132,23 @@ class RealtimeHttpTest extends HttpTestCase
     public function testRenderlessPublisherShortcutsRetainStateAndDeliverPrivateMessages(): void
     {
         $mount = $this->mounted(url: '/realtime');
-        $this->update(['snapshot' => $mount['snapshot'], 'action' => 'notify']);
+        $this->update([
+            'snapshot' => $mount['snapshot'],
+            'action' => 'send',
+            'updates' => ['message' => 'Just my tabs', 'private' => true],
+        ]);
         $this->assertResponseOk();
         $this->assertResponseContains('"html":null');
-        $this->update(['snapshot' => $this->nextSnapshot(), 'action' => 'output']);
+        $this->update(['snapshot' => $this->nextSnapshot(), 'action' => 'reply']);
         $this->assertResponseOk();
         $updates = $this->publisher->getUpdates();
-        static::assertCount(10, $updates);
+        static::assertCount(11, $updates);
         static::assertTrue($updates[0]->isPrivate());
-        static::assertSame(['users/1/notifications'], $updates[0]->getTopics());
-        static::assertStringContainsString('An update just arrived.', $updates[0]->getData());
-        static::assertStringContainsString('"html":false', $updates[1]->getData());
-        static::assertStringContainsString('"html":true', $updates[9]->getData());
+        static::assertMatchesRegularExpression('/^demo\/private\/[a-f0-9]{64}$/', $updates[0]->getTopics()[0]);
+        static::assertSame([$updates[0]->getTopics()[0] . '/reply'], $updates[1]->getTopics());
+        static::assertStringContainsString('message-sent', $updates[0]->getData());
+        static::assertStringContainsString('"html":false', $updates[2]->getData());
+        static::assertStringContainsString('"html":true', $updates[10]->getData());
     }
 
     public function testPermissionChangesAndSnapshotSubstitutionCannotRenewSubscriptions(): void
@@ -178,7 +186,7 @@ class RealtimeHttpTest extends HttpTestCase
         $mount = $this->mounted(url: '/realtime');
         $this->assertResponseContains('npm run demo:realtime');
         $this->assertResponseNotContains('data-interact-realtime=');
-        $this->assertResponseNotContains('Send private notification');
+        $this->assertResponseNotContains('Ask demo assistant');
         $this->update([
             'snapshot' => $mount['snapshot'],
             'action' => 'send',
@@ -221,6 +229,23 @@ class RealtimeHttpTest extends HttpTestCase
         $this->assertResponseContains('&lt;b&gt;Ada&lt;/b&gt;');
         $this->assertResponseContains('Hello &lt;script&gt;bad()&lt;/script&gt;');
         $this->assertResponseNotContains('<script>bad()</script>');
+    }
+
+    public function testPrivateHistoryCannotBeReadByAnotherIdentityInTheSameSession(): void
+    {
+        $mount = $this->mounted(url: '/realtime');
+        $this->update([
+            'snapshot' => $mount['snapshot'],
+            'action' => 'send',
+            'updates' => ['message' => 'A saved private note', 'private' => true],
+        ]);
+        $this->assertResponseOk();
+        $this->get('/realtime');
+        $this->assertResponseContains('A saved private note');
+        $this->assertResponseContains('Only your tabs');
+        $this->session(['demo.userId' => 2]);
+        $this->get('/realtime');
+        $this->assertResponseNotContains('A saved private note');
     }
 
     public function testFailedPublicationStillAcknowledgesTheSavedMessageAndRefreshesTheLocalFeed(): void
