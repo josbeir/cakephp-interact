@@ -9,12 +9,9 @@ export type {
   TransportCallbacks,
 } from './realtime/types';
 import type { Alpine } from 'alpinejs';
-import { NavigationController } from './navigation/controller';
-import { navigationBinding, navigationSelector } from './navigation/alpine';
-import { IslandClient } from './client';
-import { Relationships } from './composition/relationships';
+import { installNavigation, navigationBinding } from './navigation/alpine';
+import { registerIslands } from './alpine';
 import { registerBindings } from './bindings/alpine';
-import { morphRoot } from './dom/morph';
 import { timingDefaults } from './configuration';
 import type { InteractOptions } from './configuration';
 export type { InteractOptions } from './configuration';
@@ -79,53 +76,11 @@ function installConfigured(Alpine: Alpine, options: InteractOptions): void {
   );
   installed.add(Alpine);
   Alpine.plugin(morph);
-  Alpine.data('interact', () => ({}));
-  const clients = new WeakMap<HTMLElement, IslandClient>();
-  const relationships = new Relationships(Alpine, (root) => clients.get(root));
-  // Morph clones evaluate presentation bindings using the existing owner, without registering a second client.
-  Alpine.interceptClone((from, to) => {
-    const client = from instanceof HTMLElement ? clients.get(from) : undefined;
-    if (client && to instanceof HTMLElement) clients.set(to, client);
-  });
-  Alpine.interceptInit(
-    Alpine.skipDuringClone((element) => {
-      if (
-        !(element instanceof HTMLElement) ||
-        !element.hasAttribute('data-interact-id') ||
-        clients.has(element)
-      )
-        return;
-      const client = new IslandClient(
-        element,
-        morphRoot(Alpine),
-        Alpine.reactive,
-        undefined,
-        undefined,
-        undefined,
-        defaults,
-      );
-      clients.set(element, client);
-      relationships.register(client);
-      client.attachRealtime(realtime);
-      const effect = Alpine.effect(() => client.flushRealtime());
-      Alpine.onElRemoved(element, () => {
-        Alpine.release(effect);
-        client.dispose();
-      });
-    }),
-  );
-  const navigation = new NavigationController(
+  const clients = registerIslands(Alpine, realtime, defaults);
+  const navigation = installNavigation(
     Alpine,
     (root, incoming) => clients.get(root)?.refreshContext(incoming),
-    undefined,
-    undefined,
     defaults,
-  );
-  Alpine.addInitSelector(() =>
-    navigationSelector(Alpine.prefixed('interact:navigate')),
-  );
-  Alpine.addInitSelector(
-    () => `[${Alpine.prefixed('interact:persist').replaceAll(':', '\\:')}]`,
   );
   registerBindings(
     Alpine,

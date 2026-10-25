@@ -5,6 +5,7 @@ import { pollBinding } from './poll';
 import { customModel } from './custom-model';
 import { bindIslandEvent } from './on';
 import { identifier } from '../streaming/messages';
+import { bindStream } from '../streaming/alpine';
 import { defaultTiming } from '../configuration';
 import type { TimingDefaults } from '../configuration';
 
@@ -95,34 +96,7 @@ export function registerBindings(
           }
         } else if (value === 'stream') {
           cleanup(
-            client.streams.bind(
-              element,
-              expression,
-              modifiers,
-              Alpine.prefixed(''),
-              (fragment, replace) => {
-                Alpine.mutateDom(() => {
-                  if (replace) {
-                    const previous = document.createElement('div');
-                    previous.append(...element.childNodes);
-                    Alpine.destroyTree(previous);
-                    element.replaceChildren();
-                  }
-                  if (
-                    fragment.childNodes.length === 1 &&
-                    fragment.firstChild instanceof Text &&
-                    element.lastChild instanceof Text
-                  ) {
-                    element.lastChild.appendData(fragment.firstChild.data);
-                    return;
-                  }
-                  const children = [...fragment.children];
-                  element.append(fragment);
-                  for (const child of children)
-                    if (child instanceof HTMLElement) Alpine.initTree(child);
-                });
-              },
-            ),
+            bindStream(Alpine, client.streams, element, expression, modifiers),
           );
         } else if (value === 'ignore') {
           if (element === client.root || modifiers.length || expression.trim())
