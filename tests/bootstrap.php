@@ -13,6 +13,6 @@ Router::reload();
 Router::fullBaseUrl('http://localhost');
 Router::createRouteBuilder('/')->connect(
     '/_interact/update',
-    ['plugin' => 'Interact', 'controller' => 'Update', 'action' => 'update'],
+    ['plugin' => 'Interact', 'controller' => 'Interact', 'action' => 'update'],
     ['_name' => 'interact:update'],
 );
