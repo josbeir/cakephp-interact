@@ -449,10 +449,12 @@ request began after the invalidation clears stale status; a renderless action do
 
 ## Connection sharing and recovery
 
-Islands in the same tab and authorization scope share one provider connection
-across their topics. Removing the final subscriber closes it. Different tabs
-retain separate connections. Reconnection can refresh saved content, but notifications
-and display messages are best effort; store anything that must survive missed messages.
+Islands in the same tab and authorization scope share provider connections across
+their topics, with up to 64 islands per connection. Larger pages open additional
+connections automatically. Removing a connection's final subscriber closes it.
+Different tabs retain separate connections. Reconnection can refresh saved content,
+but notifications and display messages are best effort; store anything that must
+survive missed messages.
 
 ::: details Connection lifecycle
 

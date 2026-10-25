@@ -154,6 +154,97 @@ describe('realtime protocol boundaries', () => {
 });
 
 describe('shared connection lifecycle', () => {
+  it('bounds authorization batches without interrupting full groups and reuses released capacity', async () => {
+    const batches: string[][] = [];
+    const fetcher = vi.fn<typeof fetch>(async (_input, init) => {
+      if (typeof init?.body !== 'string')
+        throw new Error('Expected a JSON subscription request.');
+      const payload: unknown = JSON.parse(init.body);
+      if (!payload || typeof payload !== 'object' || !('leases' in payload))
+        throw new Error('Missing subscription leases.');
+      const leases = payload.leases;
+      if (!leases || typeof leases !== 'object')
+        throw new Error('Invalid subscription leases.');
+      const ids = Object.keys(leases);
+      batches.push(ids);
+      return ids.length > 64
+        ? new Response(null, { status: 400 })
+        : authorization(ids);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const streams: { callbacks: TransportCallbacks; close: () => void }[] = [];
+    const transport = vi.fn((_grant, callbacks: TransportCallbacks) => {
+      const close = vi.fn();
+      streams.push({ callbacks, close });
+      callbacks.status('connected');
+      return close;
+    });
+    const coordinator = new RealtimeCoordinator({
+      transports: { test: transport },
+    });
+    const members = Array.from({ length: 129 }, (_, id) =>
+      owner(`island-${id}`),
+    );
+    const join = (member: ReturnType<typeof owner>) => {
+      const membership = coordinator.join(member, metadata, 'csrf');
+      disposers.push(() => membership.dispose());
+      return membership;
+    };
+    const memberships = members.slice(0, 64).map(join);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(batches.map((batch) => batch.length)).toEqual([64]);
+    memberships.push(...members.slice(64).map(join));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(batches.map((batch) => batch.length)).toEqual([64, 64, 1]);
+    expect(streams[0]?.close).not.toHaveBeenCalled();
+    expect(transport).toHaveBeenCalledTimes(3);
+    expect(
+      members.every((member) => member.feedback.status === 'connected'),
+    ).toBe(true);
+    for (const stream of streams) stream.callbacks.receive(message);
+    for (const member of members) expect(member.receive).toHaveBeenCalledOnce();
+
+    // A new island joins the final group without replacing the two full grants.
+    const extra = owner('extra');
+    const extraMembership = coordinator.join(extra, metadata, 'csrf');
+    disposers.push(() => extraMembership.dispose());
+    await vi.advanceTimersByTimeAsync(0);
+    expect(batches.at(-1)).toEqual(['island-128', 'extra']);
+    expect(streams[0]?.close).not.toHaveBeenCalled();
+    expect(streams[1]?.close).not.toHaveBeenCalled();
+    expect(streams[2]?.close).toHaveBeenCalledOnce();
+
+    // Emptying one group leaves its neighbors connected and removes its registry entry.
+    for (const membership of memberships.slice(0, 64)) membership.dispose();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(streams[0]?.close).toHaveBeenCalledOnce();
+    expect(streams[1]?.close).not.toHaveBeenCalled();
+    expect(streams[3]?.close).not.toHaveBeenCalled();
+    const replacement = owner('replacement');
+    const replacementMembership = coordinator.join(
+      replacement,
+      metadata,
+      'csrf',
+    );
+    disposers.push(() => replacementMembership.dispose());
+    await vi.advanceTimersByTimeAsync(0);
+    expect(batches.at(-1)).toEqual(['island-128', 'extra', 'replacement']);
+    expect(streams[1]?.close).not.toHaveBeenCalled();
+    streams.at(-1)?.callbacks.receive({ ...message, id: 'next' });
+    expect(extra.receive).toHaveBeenCalledOnce();
+    expect(replacement.receive).toHaveBeenCalledOnce();
+
+    // Released slots in a remaining group are filled before another connection opens.
+    memberships[64]?.dispose();
+    const reused = owner('reused');
+    const reusedMembership = coordinator.join(reused, metadata, 'csrf');
+    disposers.push(() => reusedMembership.dispose());
+    await vi.advanceTimersByTimeAsync(0);
+    expect(batches.at(-1)).toHaveLength(64);
+    expect(batches.at(-1)).toContain('reused');
+    expect(batches.at(-1)).not.toContain('island-64');
+  });
+
   it('batches leases, shares a connection, filters events, deduplicates, and reference-counts disposal', async () => {
     const fetcher = vi.fn<typeof fetch>(async () =>
       authorization(['one', 'two']),

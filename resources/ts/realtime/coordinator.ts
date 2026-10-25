@@ -7,20 +7,23 @@ import type {
   RealtimeTransport,
 } from './types';
 
+interface ConnectionGroup {
+  connection: RealtimeConnection;
+  owners: Set<string>;
+}
+
 /**
  * Owns transport registration and connection sharing within one Alpine installation.
  *
- * Tabs and middleware endpoints retain separate authorization. No connection registry
- * or provider credential is stored globally or in persistent browser storage.
+ * Groups respect the authorization endpoint's 64-island batch limit. Tabs and middleware
+ * endpoints retain separate authorization. No connection registry or provider credential
+ * is stored globally or in persistent browser storage.
  */
 export class RealtimeCoordinator {
   private readonly transports = new Map<string, RealtimeTransport>([
     ['mercure', mercureTransport],
   ]);
-  private readonly connections = new Map<
-    string,
-    { connection: RealtimeConnection; owners: Set<string> }
-  >();
+  private readonly connections = new Map<string, Set<ConnectionGroup>>();
 
   constructor(options: RealtimeOptions = {}) {
     for (const [name, transport] of Object.entries(options.transports ?? {}))
@@ -42,13 +45,15 @@ export class RealtimeCoordinator {
   ): { update(metadata: RealtimeMetadata): void; dispose(): void } {
     const endpoint = new URL(metadata.endpoint, window.location.href).href;
     const key = JSON.stringify([endpoint, csrf]);
-    let group = this.connections.get(key);
+    const groups = this.connections.get(key) ?? new Set<ConnectionGroup>();
+    let group = [...groups].find((entry) => entry.owners.size < 64);
     if (!group) {
       group = {
         connection: new RealtimeConnection(endpoint, csrf, this.transports),
         owners: new Set(),
       };
-      this.connections.set(key, group);
+      groups.add(group);
+      this.connections.set(key, groups);
     }
     const selected = group;
     selected.owners.add(owner.id);
@@ -56,11 +61,12 @@ export class RealtimeCoordinator {
     return {
       update: (next) => selected.connection.update(owner, next),
       dispose: () => {
+        if (!selected.owners.delete(owner.id)) return;
         selected.connection.remove(owner.id);
-        selected.owners.delete(owner.id);
         if (!selected.owners.size) {
           selected.connection.dispose();
-          this.connections.delete(key);
+          groups.delete(selected);
+          if (!groups.size) this.connections.delete(key);
         }
       },
     };
