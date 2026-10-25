@@ -41,7 +41,7 @@ export function nativeVisit(url: string, replace: boolean): void {
  */
 export class NavigationController implements NavigationService {
   readonly activity: NavigationActivity;
-  protected readonly assets = new PageAssets(document);
+  protected readonly assets: PageAssets;
   protected readonly pages: PageFetcher;
   protected readonly history: NavigationHistory | undefined;
   protected readonly unregister: () => void;
@@ -66,6 +66,7 @@ export class NavigationController implements NavigationService {
     fetcher?: Fetcher,
     defaults: TimingDefaults = defaultTiming,
   ) {
+    this.assets = new PageAssets(document, Alpine.prefixed('interact:asset'));
     this.pages = new PageFetcher(fetcher);
     this.activity = new NavigationActivity(
       Alpine.reactive,
@@ -87,6 +88,10 @@ export class NavigationController implements NavigationService {
           history: false,
         });
     });
+  }
+
+  assetAttribute(): string {
+    return this.Alpine.prefixed('interact:asset');
   }
 
   epoch(): number {
@@ -140,8 +145,12 @@ export class NavigationController implements NavigationService {
     try {
       const response = await this.pages.take(next.href, request.signal, press);
       this.current(request, generation);
-      const incoming = incomingDocument(response.html, document);
-      const activate = await this.assets.prepare(
+      const incoming = incomingDocument(
+        response.html,
+        document,
+        response.nonces,
+      );
+      const commitHead = await this.assets.prepare(
         incoming,
         response.url,
         request.signal,
@@ -177,8 +186,7 @@ export class NavigationController implements NavigationService {
         }
         this.Alpine.destroyTree(document.body);
         this.history?.commit(final, options.replace ?? false, entry);
-        this.assets.head(incoming);
-        activate();
+        commitHead();
         copyAttributes(incoming.documentElement, document.documentElement);
         document.documentElement.setAttribute('aria-busy', 'true');
         copyAttributes(incoming.body, document.body);

@@ -62,18 +62,17 @@ it('loads styles before activating them and runs each new external script only o
   expect(
     document.querySelector('script[type="module"]')?.getAttribute('src'),
   ).toBe(new URL('/area/module.js', window.location.href).href);
-  assets.head(next);
   expect(document.title).toBe('Destination');
   expect(document.querySelector('meta[name="old"]')).toBeNull();
   expect(
     document.querySelector('meta[name="description"]')?.getAttribute('content'),
   ).toBe('new');
-  await assets.prepare(
+  const repeat = await assets.prepare(
     next,
     new URL('/area/page', window.location.href).href,
     signal,
   );
-  assets.head(next);
+  repeat();
   expect(appended).toHaveLength(2);
   expect(document.querySelectorAll('style')).toHaveLength(1);
   expect(document.querySelectorAll('script[src="/runtime.js"]')).toHaveLength(
@@ -494,7 +493,7 @@ it('retains stylesheet media and integrity contracts, ignores inert and legacy-o
   );
 });
 
-it('replaces inline page styles when visiting another page, returning, and leaving styled pages', () => {
+it('replaces inline page styles when visiting another page, returning, and leaving styled pages', async () => {
   document.body.innerHTML = '<main id="style-target">Persistent content</main>';
   const target = document.getElementById('style-target');
   if (!target) throw new Error('Missing styled content.');
@@ -506,11 +505,23 @@ it('replaces inline page styles when visiting another page, returning, and leavi
     [blue, 'rgb(0, 0, 255)'],
     [red, 'rgb(255, 0, 0)'],
   ] as const) {
-    assets.head(page);
+    (
+      await assets.prepare(
+        page,
+        window.location.href,
+        new AbortController().signal,
+      )
+    )();
     expect(document.querySelectorAll('style')).toHaveLength(1);
     expect(window.getComputedStyle(target).color).toBe(color);
   }
-  assets.head(parsed('<title>Unstyled page</title>'));
+  (
+    await assets.prepare(
+      parsed('<title>Unstyled page</title>'),
+      window.location.href,
+      new AbortController().signal,
+    )
+  )();
   expect(document.querySelector('style')).toBeNull();
   expect(document.body.contains(target)).toBe(true);
   document.body.replaceChildren();

@@ -12,10 +12,8 @@ use Cake\Http\MiddlewareQueue;
 use Cake\Routing\Middleware\RoutingMiddleware;
 use Cake\Routing\RouteBuilder;
 use Interact\InteractPlugin;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
 use TestApp\Middleware\DemoIdentityMiddleware;
+use TestApp\Middleware\DemoSecurityMiddleware;
 
 /**
  * Boots the real CakePHP demo used for HTTP integration, browser acceptance, and installation
@@ -50,15 +48,7 @@ class Application extends BaseApplication
 
         return $middlewareQueue->add(new ErrorHandlerMiddleware($errorConfig, $this))
             ->add(new RoutingMiddleware($this))
-            ->add(
-                static fn(
-                    ServerRequestInterface $request,
-                    RequestHandlerInterface $handler,
-                ): ResponseInterface => $handler->handle($request)->withHeader(
-                    'Content-Security-Policy',
-                    "script-src 'self'; object-src 'none'; base-uri 'self'",
-                ),
-            )
+            ->add(new DemoSecurityMiddleware())
             ->add(new BodyParserMiddleware())
             ->add(new CsrfProtectionMiddleware(['cookieName' => self::CSRF_COOKIE, 'httponly' => true]))
             ->add(new DemoIdentityMiddleware());

@@ -1,5 +1,6 @@
 import type { NavigationController } from './controller';
 import { linkDestination, updateCurrent } from './links';
+import { assetPolicy } from './head';
 
 const navigationModifiers = [
   'hover',
@@ -32,6 +33,15 @@ export function navigationBinding(
   modifiers: string[],
   expression: string,
 ): () => void {
+  if (value === 'asset') {
+    assetPolicy(element, controller.assetAttribute());
+    if (
+      modifiers.length ||
+      (expression !== 'reload' && expression !== 'persist')
+    )
+      throw new Error('Invalid head asset policy.');
+    return () => {};
+  }
   if (value === 'persist') {
     if (modifiers.length || !expression.trim())
       throw new Error(

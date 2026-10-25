@@ -1,4 +1,5 @@
 import type { Fetcher } from '../types';
+import { responseNonces } from './nonces';
 
 interface PrefetchEntry {
   controller: AbortController;
@@ -11,6 +12,7 @@ export interface PageResponse {
   html: string;
   url: string;
   cacheUntil: number;
+  nonces: readonly string[];
 }
 
 /**
@@ -149,6 +151,7 @@ export class PageFetcher {
       html: await response.text(),
       url: final.href,
       cacheUntil: Date.now() + ttl * 1000,
+      nonces: responseNonces(response.headers),
     };
   }
 }
