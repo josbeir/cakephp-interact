@@ -60,6 +60,7 @@ class FrankenPhp
         $secret = bin2hex(random_bytes(32));
         $audience = 'https://interact.demo/.well-known/mercure';
         $environment = [
+            'INTERACT_DEMO_TMP' => '/tmp/interact-demo',
             'MERCURE_URL' => 'http://127.0.0.1:8765/.well-known/mercure',
             'MERCURE_PUBLIC_URL' => '/.well-known/mercure',
             'MERCURE_JWT_SECRET' => $secret,
@@ -81,7 +82,7 @@ class FrankenPhp
             '--volume',
             $this->root . ':/app:ro',
             '--volume',
-            $storage . ':/app/build/tmp',
+            $storage . ':/tmp/interact-demo',
         ];
         if (function_exists('posix_getuid') && function_exists('posix_getgid')) {
             $arguments[] = '--user';
