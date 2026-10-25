@@ -102,9 +102,8 @@ HTML once and cleans up replaced content.
 
 ## streamEvent()
 
-`streamEvent(string $name, array $detail = []): void` immediately dispatches the
-bubbling `interact:stream` DOM event from the island root. Its detail is
-`{ name, detail }`; values must be JSON-compatible.
+`streamEvent(string $name, array $detail = []): void` immediately delivers a named
+event to listeners in the island. Values must be JSON-compatible.
 
 ```php
 $this->streamEvent('progress', ['percent' => 50]);
@@ -113,15 +112,17 @@ $this->streamEvent('progress', ['percent' => 50]);
 ```html
 <div
   x-data="{ percent: 0 }"
-  @interact:stream.window="$event.target === $el.closest('[data-interact-id]') && (percent = $event.detail.detail.percent)"
+  x-interact:on:progress="percent = $event.detail.percent"
 >
   <progress max="100" :value="percent" aria-label="Progress"></progress>
 </div>
 ```
 
-The event bubbles from the island root. A listener inside that root uses `.window`
-and filters the event target to its own island, as above. An ancestor outside the
-island can listen directly. Use the event name to distinguish progress messages. Ordinary
+[`x-interact:on:event`](/directives/on) handles ownership, name matching, and
+cleanup. `$event.detail` contains the payload; `$message` contains the original
+`{ name, detail }` envelope. The same syntax receives [realtime notifications](/guide/realtime#listen-with-alpine).
+Advanced observers can still listen to the bubbling `interact:stream` event from
+the island root; its detail remains `{ name, detail }`. Ordinary
 [`dispatch()`](/guide/events#dispatch) effects still wait for the successful
 final result.
 
@@ -223,8 +224,9 @@ reactive state. Use your provider's client and cleanup method in the same lifecy
 authentication, authorized topics, and reconnection belong to that integration.
 
 The receiver also accepts `replace: true`, HTML for explicit `.html` targets, and
-`type: 'event'` messages with `name` and JSON record `detail`. Event messages emit
-`interact:stream` from the island root. The npm package exports `StreamMessage`
+`type: 'event'` messages with `name` and JSON record `detail`. Event messages reach
+[`x-interact:on:event`](/directives/on) listeners in the island. The raw
+`interact:stream` event remains available to advanced observers. The npm package exports `StreamMessage`
 and `IslandBridge` for typed adapters; see the [message contract](/reference/server#receivestream).
 
 These are provisional display updates. Signed state, validation, request activity,

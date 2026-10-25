@@ -115,7 +115,7 @@ abstract class Island
     }
 
     /**
-     * Emit immediate JSON-compatible progress data through the interact:stream browser event.
+     * Deliver immediate JSON-compatible progress data to x-interact:on:event listeners.
      *
      * @param array<string, mixed> $detail Browser-visible progress data, never signed state.
      * @throws LogicException Outside an active streaming action.

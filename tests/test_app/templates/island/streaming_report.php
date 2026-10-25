@@ -10,11 +10,7 @@ use function Cake\Core\h;
 <div
     class="stream-workspace"
     x-data="{ percent: 0 }"
-    @interact:stream.window="
-        $event.target === $el.closest('[data-interact-id]') &&
-        $event.detail.name === 'progress' &&
-        (percent = $event.detail.detail.percent)
-    "
+    x-interact:on:progress="percent = $event.detail.percent"
 >
     <div class="stream-toolbar">
         <div class="stream-title">

@@ -5,11 +5,9 @@ declare(strict_types=1);
 <article
     class="rt-chat-message rt-assistant-message"
     aria-label="Demo assistant reply"
-    x-data="chatReply"
-    x-show="active"
-    @interact:push.window="
-        $event.target === $el.closest('[data-interact-id]') && receive($event.detail)
-    "
+    x-data="{ progress: null }"
+    x-show="progress !== null"
+    x-interact:on:reply-progress="progress = $event.detail.percent"
     x-cloak
 >
     <span class="rt-avatar" aria-hidden="true">✳</span>

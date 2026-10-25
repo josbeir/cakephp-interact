@@ -110,7 +110,8 @@ remain explicit in each interaction.
 
 Article saves persist in `build/tmp/demo.sqlite`. To reset the data, stop the
 server and tests, then delete that file. It is recreated on the next request.
-`composer preview` disables OPcache so edits appear immediately.
+`composer preview` enables OPcache and checks PHP file timestamps on every request,
+so local edits appear immediately.
 
 See [Contributing](/contributing) for test commands and [Troubleshooting](/troubleshooting)
 for asset or update failures.

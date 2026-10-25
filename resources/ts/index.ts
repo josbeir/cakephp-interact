@@ -35,6 +35,7 @@ export type {
 export type { NavigationStore } from './navigation/activity';
 export type { NavigationDetail } from './navigation/controller';
 export type { StreamMessage } from './streaming/messages';
+export type { IslandEventMessage } from './bindings/on';
 export type {
   RequestLifecycleDetail,
   RequestKind,

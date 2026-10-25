@@ -10,10 +10,8 @@ declare(strict_types=1);
 ?>
 <div
     class="rt-console"
-    x-data="chatDemo"
-    @interact:push.window="
-        $event.target === $el.closest('[data-interact-id]') && receive($event.detail)
-    "
+    x-data="{ activity: '' }"
+    x-interact:on:message-sent="activity = 'Private message received in your tabs.'"
 >
     <section class="rt-panel rt-chat-panel" aria-label="Shared chat">
         <div class="rt-panel-heading">

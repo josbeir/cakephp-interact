@@ -125,6 +125,7 @@ export default defineConfig({
             { text: 'x-interact:submit', link: '/directives/submit' },
             { text: 'x-interact:poll', link: '/directives/poll' },
             { text: 'x-interact:stream', link: '/directives/stream' },
+            { text: 'x-interact:on', link: '/directives/on' },
             { text: 'x-interact:ignore', link: '/directives/ignore' },
             { text: 'x-interact:navigate', link: '/directives/navigate' },
             { text: 'x-interact:persist', link: '/directives/persist' },

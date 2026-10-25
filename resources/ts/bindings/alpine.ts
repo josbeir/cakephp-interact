@@ -3,6 +3,8 @@ import type { IslandClient } from '../client';
 import { modelBinding } from './model';
 import { pollBinding } from './poll';
 import { customModel } from './custom-model';
+import { bindIslandEvent } from './on';
+import { identifier } from '../streaming/messages';
 import { defaultTiming } from '../configuration';
 import type { TimingDefaults } from '../configuration';
 
@@ -40,7 +42,20 @@ export function registerBindings(
           return;
         }
         const client = resolve(element);
-        if (value === 'model') {
+        if (value === 'on' || value?.startsWith('on:')) {
+          const name = value.slice(3);
+          if (!identifier(name) || modifiers.length || !expression.trim())
+            throw new Error(
+              'x-interact:on:event requires a literal event name and a non-empty Alpine expression without modifiers.',
+            );
+          cleanup(
+            bindIslandEvent(client.root, element, name, ($event, $message) =>
+              Alpine.evaluateRaw<unknown>(element, expression, {
+                scope: { $event, $message },
+              }),
+            ),
+          );
+        } else if (value === 'model') {
           if (
             element.hasAttribute(Alpine.prefixed('model')) ||
             [...element.attributes].some((attribute) =>
@@ -143,7 +158,7 @@ export function registerBindings(
           );
         } else
           throw new Error(
-            'Unknown x-interact directive. Use model, submit, poll, stream, ignore, navigate, persist, or asset.',
+            'Unknown x-interact directive. Use model, submit, poll, stream, on:event, ignore, navigate, persist, or asset.',
           );
       },
     ),

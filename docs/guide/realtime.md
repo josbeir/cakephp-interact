@@ -31,8 +31,12 @@ never replace signed state or invoke PHP actions themselves.
 | Declaration                                    | Behavior                                            |
 | ---------------------------------------------- | --------------------------------------------------- |
 | `Subscription::refresh($topic, event: $event)` | Mark the island stale and synchronize when safe     |
-| `Subscription::listen($topic, event: $event)`  | Emit `interact:push` from the island root           |
+| `Subscription::listen($topic, event: $event)`  | Deliver named events to `x-interact:on:event`       |
 | `Subscription::stream($topic, event: $event)`  | Deliver display messages to existing stream targets |
+
+Use `refresh()` for server-rendered changes without JavaScript. Use `stream()`
+with named text/HTML targets for incremental output. Choose `listen()` when the
+application needs a custom Alpine reaction.
 
 The event filter is optional. Topics match exactly; wildcard subscriptions are not
 supported. All modes default to `private: true`; use `private: false` for public
@@ -79,24 +83,30 @@ outbox delivery belong to application storage and services.
 
 ## Listen with Alpine
 
-`interact:push` bubbles from the receiving island root. Inside an island template,
-use a window listener filtered to that root:
+Use [`x-interact:on:event`](/directives/on) to react to a published event in the
+receiving island. The directive matches the event name and supplies the payload
+directly as `$event.detail`:
 
 ```html
 <div
   x-data="{ notification: '' }"
-  @interact:push.window="
-    $event.target === $el.closest('[data-interact-id]') &&
-    (notification = $event.detail.detail.text)
-  "
+  x-interact:on:notification="notification = $event.detail.text"
 >
   <p role="status" x-text="notification"></p>
 </div>
 ```
 
-Event detail contains `id`, `topic`, `event`, and `detail`. An Alpine listener may
-explicitly call `$server.call()` when application PHP behavior is needed; authorize
-and validate those arguments normally. Notifications do not themselves invoke PHP.
+Declare `Subscription::listen($topic, event: 'notification')` and publish with
+`$publisher->publishEvent($topic, 'notification', ['text' => 'Your report is ready.'])`.
+The same listener syntax receives [streamed events](/guide/streaming#streamevent).
+Listeners belong to their nearest island; no window listener or ownership check
+is needed. `$message` provides the original envelope, including the push's `id`,
+`topic`, `event`, and `detail`, when application logic needs metadata.
+
+An expression may explicitly call `$server.call()` when application PHP behavior
+is needed; authorize and validate those arguments normally. Notifications do not
+themselves invoke PHP. Advanced observers can still use the bubbling `interact:push`
+event from the receiving island root; its detail retains the original envelope.
 
 For display subscriptions, keep existing `x-interact:stream` and
 `x-interact:stream.html` targets. Their ownership and display-only restrictions

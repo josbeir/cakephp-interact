@@ -33,3 +33,5 @@ handles the event and Interact sends the PHP action request.
 - [`x-interact:asset`](/directives/asset) controls head asset reloads and persistent styles.
 
 [`x-interact:stream`](/directives/stream) declares display targets for incremental action output.
+[`x-interact:on:event`](/directives/on) handles named realtime and streamed events
+inside their owning island, with the application payload in `$event.detail`.

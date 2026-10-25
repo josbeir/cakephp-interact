@@ -1,6 +1,81 @@
 import { expect, test } from './fixtures';
 import { islandId, targetsIsland } from './requests';
 
+test('named event listeners isolate islands and clean up conditional and morphed elements', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/playground');
+  const first = page.getByRole('region', {
+    name: 'First counter',
+    exact: true,
+  });
+  const second = page.getByRole('region', {
+    name: 'Second counter',
+    exact: true,
+  });
+  for (const region of [first, second]) {
+    await region.evaluate((element) => {
+      element.insertAdjacentHTML(
+        'beforeend',
+        `
+        <section x-data="{ count: 0, visible: true }">
+          <button @click="visible = !visible">Toggle event listener</button>
+          <template x-if="visible">
+            <span x-interact:on:notification="count = count + $event.detail.amount"></span>
+          </template>
+          <output aria-label="Received notifications" x-text="count"></output>
+        </section>
+      `,
+      );
+    });
+    await expect(region.getByLabel('Received notifications')).toHaveText('0');
+  }
+  const deliver = async (source: 'push' | 'stream') => {
+    await first.evaluate((element, source) => {
+      const root = element.closest('[data-interact-id]');
+      if (!root) throw new Error('Missing island root.');
+      root.dispatchEvent(
+        new CustomEvent(`interact:${source}`, {
+          bubbles: true,
+          detail:
+            source === 'push'
+              ? {
+                  id: 'notification-1',
+                  topic: 'inbox',
+                  event: 'notification',
+                  detail: { amount: 1 },
+                }
+              : { name: 'notification', detail: { amount: 1 } },
+        }),
+      );
+    }, source);
+  };
+  await deliver('push');
+  await deliver('stream');
+  await expect(first.getByLabel('Received notifications')).toHaveText('2');
+  await expect(second.getByLabel('Received notifications')).toHaveText('0');
+  await first.getByRole('button', { name: 'Toggle event listener' }).click();
+  await expect(first.locator('[x-interact\\:on\\:notification]')).toHaveCount(
+    0,
+  );
+  await deliver('push');
+  await expect(first.getByLabel('Received notifications')).toHaveText('2');
+  await first.getByRole('button', { name: 'Toggle event listener' }).click();
+  await expect(first.locator('[x-interact\\:on\\:notification]')).toHaveCount(
+    1,
+  );
+  await deliver('stream');
+  await expect(first.getByLabel('Received notifications')).toHaveText('3');
+  await first.getByRole('button', { name: 'Add five' }).click();
+  await expect(first.locator('.counter-value')).toHaveText('Count: 5');
+  await expect(first.getByLabel('Received notifications')).toHaveCount(0);
+  await deliver('push');
+  await expect(second.getByLabel('Received notifications')).toHaveText('0');
+  expect(errors).toEqual([]);
+});
+
 test('submission expressions use local Alpine scope and the native event with typed arguments', async ({
   page,
 }) => {

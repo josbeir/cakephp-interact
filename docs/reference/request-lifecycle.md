@@ -121,7 +121,8 @@ URL restoration is a separate `restore` task and never replays an action.
 
 A finite SSE response has one request lifecycle. Its HTTP status can be 200 while
 the accepted terminal result produces `outcome: 'validation'`. Provisional stream
-messages continue through [`interact:stream`](/guide/streaming#streamevent).
+events reach [`x-interact:on:event`](/directives/on) listeners independently of
+the terminal request result.
 
 Disposal, redirects, and a previous failure can discard queued work. Such work
 finishes as cancelled without duplicating `interact:error`. Active browser

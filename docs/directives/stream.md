@@ -18,6 +18,9 @@ Content is appended as literal text. Use `replace: true` in PHP to replace it.
 Multiple matching targets in the owning island receive the same update; child
 islands retain their own scope. Missing targets are ignored.
 
+Realtime `Subscription::stream()` deliveries use these same targets. For custom
+Alpine reactions to streamed or realtime events, use [`x-interact:on:event`](/directives/on).
+
 ## HTML elements
 
 ```html

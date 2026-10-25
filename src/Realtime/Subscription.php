@@ -43,7 +43,7 @@ readonly class Subscription
     }
 
     /**
-     * Deliver matching notifications through the interact:push browser event.
+     * Deliver matching notifications to the island's x-interact:on:event listeners.
      */
     public static function listen(string $topic, ?string $event = null, bool $private = true): static
     {
