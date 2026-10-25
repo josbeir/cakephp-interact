@@ -8,6 +8,7 @@ use Interact\Composition\Relation;
 use Interact\Discovery\Definition;
 use Interact\Island;
 use Interact\IslandContext;
+use Interact\Realtime\Subscriptions;
 use Interact\Security\SnapshotCodec;
 use Interact\Upload\UploadManager;
 
@@ -27,7 +28,16 @@ class ResponseBuilder
         protected readonly State $state,
         protected readonly UploadManager $uploads,
         protected readonly RenderStack $stack,
+        protected ?Subscriptions $subscriptions = null,
     ) {
+    }
+
+    /**
+     * Enable subscription metadata for subsequent accepted responses.
+     */
+    public function attachSubscriptions(?Subscriptions $subscriptions): void
+    {
+        $this->subscriptions = $subscriptions;
     }
 
     /**
@@ -53,6 +63,11 @@ class ResponseBuilder
                 'key' => $identity->key,
                 'state' => $state,
                 'routing' => $identity->routing->defaults,
+                ...(
+                    $identity->subscriptionEndpoint === null
+                        ? []
+                        : ['subscriptionEndpoint' => $identity->subscriptionEndpoint]
+                ),
                 ...($identity->relation instanceof Relation ? ['relation' => $identity->relation->data()] : []),
                 ...($identity->pagePath === null ? [] : ['pagePath' => $identity->pagePath]),
                 ...($identity->urlPrefix === null ? [] : ['urlPrefix' => $identity->urlPrefix]),
@@ -73,6 +88,7 @@ class ResponseBuilder
         }
 
         $values = [
+            'realtime' => $this->subscriptions?->metadata($island, $definition, $identity, $context, $state),
             'url' => $this->state->urlMetadata($definition, $identity->urlPrefix),
             'state' => $state,
             'uploads' => $uploads['metadata'],

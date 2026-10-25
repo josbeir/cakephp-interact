@@ -73,7 +73,7 @@ class IslandIsolationTest extends TestCase
                 $this->connectStage('PluginRoutes');
                 $routes->connect(
                     '/_interact/update',
-                    ['controller' => 'Update', 'action' => 'update'],
+                    ['controller' => 'Interact', 'action' => 'update'],
                     ['_name' => 'interact:update'],
                 );
 

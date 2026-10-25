@@ -1,4 +1,5 @@
 import { record } from './state/values';
+import type { RealtimeOptions } from './realtime/types';
 
 /** Whole-millisecond scheduling and feedback defaults captured by one installation. */
 export interface TimingDefaults {
@@ -9,6 +10,7 @@ export interface TimingDefaults {
 
 /** Optional JavaScript overrides; explicit control and bridge settings take precedence. */
 export interface InteractOptions {
+  realtime?: RealtimeOptions;
   defaults?: Partial<TimingDefaults>;
 }
 
@@ -23,7 +25,10 @@ export const defaultTiming: TimingDefaults = Object.freeze({
  * @throws Error When options contain unknown keys, invalid types, or out-of-range timings.
  */
 export function timingDefaults(value: unknown = {}): TimingDefaults {
-  if (!record(value) || Object.keys(value).some((key) => key !== 'defaults'))
+  if (
+    !record(value) ||
+    Object.keys(value).some((key) => key !== 'defaults' && key !== 'realtime')
+  )
     throw new Error('Invalid Interact configuration.');
   const defaults = 'defaults' in value ? value.defaults : {};
   if (

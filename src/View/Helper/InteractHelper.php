@@ -31,6 +31,7 @@ class InteractHelper extends Helper
         'autoScript' => true,
         'scope' => 'default',
         'endpoint' => null,
+        'subscriptionEndpoint' => null,
         'document' => true,
     ];
 
@@ -144,11 +145,14 @@ class InteractHelper extends Helper
 
         /** @var mixed $endpoint */
         $endpoint = $this->getConfig('endpoint');
+        /** @var mixed $subscriptionEndpoint */
+        $subscriptionEndpoint = $this->getConfig('subscriptionEndpoint');
 
         return $this->context = new IslandContext(
             $this->getView()->getRequest(),
             (string)$this->getConfig('scope'),
             is_string($endpoint) ? $endpoint : Router::url(['_name' => 'interact:update']),
+            is_string($subscriptionEndpoint) ? $subscriptionEndpoint : null,
         );
     }
 }

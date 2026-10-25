@@ -67,6 +67,7 @@ export class DiagnosticRequest {
  */
 class OutputViewer {
   private readonly host = document.createElement('aside');
+  private readonly shadow = this.host.attachShadow({ mode: 'open' });
   private readonly frame = document.createElement('iframe');
   private readonly status = document.createElement('p');
   private readonly summary = document.createElement('span');
@@ -75,6 +76,8 @@ class OutputViewer {
   private sequence = 0;
   private output = '';
   private truncated = false;
+  private frameLoading = false;
+  private pendingDocument: string | undefined;
 
   constructor(private readonly state: { sequence: number }) {
     this.host.setAttribute('aria-label', 'Island debug');
@@ -96,7 +99,6 @@ class OutputViewer {
       color: 'var(--interact-debug-color, CanvasText)',
       font: '13px/1.5 var(--interact-debug-font-family, system-ui, sans-serif)',
     });
-    const shadow = this.host.attachShadow({ mode: 'open' });
     const header = document.createElement('div');
     Object.assign(header.style, {
       display: 'flex',
@@ -174,7 +176,11 @@ class OutputViewer {
       this.frame.hidden = !this.frame.hidden;
       this.controls();
     });
-    shadow.append(header, metadata, this.frame);
+    this.frame.addEventListener('load', () => {
+      this.frameLoading = false;
+      this.paint();
+    });
+    this.shadow.append(header, metadata);
     document.addEventListener('interact:navigating', () => this.clear());
   }
 
@@ -221,10 +227,20 @@ class OutputViewer {
     this.frame.style.colorScheme = scheme;
     const pre = document.createElement('pre');
     pre.textContent = outputText(this.output);
-    this.frame.srcdoc =
+    this.pendingDocument =
       `<!doctype html><meta name="color-scheme" content="${scheme}"><meta http-equiv="Content-Security-Policy" content="default-src &#39;none&#39;; base-uri &#39;none&#39;; form-action &#39;none&#39;">` +
       pre.outerHTML;
+    this.paint();
+    if (!this.frame.isConnected) this.shadow.append(this.frame);
     this.controls();
+  }
+
+  /** Serialize frame navigations and retain only the latest cumulative document while loading. */
+  private paint(): void {
+    if (this.frameLoading || this.pendingDocument === undefined) return;
+    this.frameLoading = true;
+    this.frame.srcdoc = this.pendingDocument;
+    this.pendingDocument = undefined;
   }
 
   /** Release content and invalidate in-flight requests when the document changes. */
@@ -232,7 +248,10 @@ class OutputViewer {
     this.sequence = ++this.state.sequence;
     this.output = '';
     this.truncated = false;
-    this.frame.srcdoc = '';
+    this.frame.remove();
+    this.frameLoading = false;
+    this.pendingDocument = undefined;
+    this.frame.removeAttribute('srcdoc');
     this.status.textContent = '';
     this.summary.textContent = '';
     this.host.remove();

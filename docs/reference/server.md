@@ -297,3 +297,16 @@ Targets obey [`x-interact:stream`](/directives/stream) ownership and mode checks
 Unknown or invalid messages throw. Calls after disposal are ignored. This method
 accepts provisional display messages; normal requests exclusively own signed state
 and terminal results. Applications own subscription authorization and cleanup.
+
+## realtime
+
+`$server.realtime` exposes managed subscription feedback without provider credentials:
+
+| Member   | Meaning                                                           |
+| -------- | ----------------------------------------------------------------- |
+| `status` | `disabled`, `connecting`, `connected`, `reconnecting`, or `error` |
+| `stale`  | A matching change is waiting for an authoritative render          |
+| `error`  | Safe connection/subscription feedback, or `null`                  |
+
+Connection failures do not pause ordinary island actions. Automatic refresh requests
+retain normal request feedback and failure handling. See [realtime subscriptions](/guide/realtime).

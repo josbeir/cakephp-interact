@@ -255,7 +255,7 @@ test('a failed transfer requires an explicit retry and does not automatically sa
   expect(saves).toBe(1);
 });
 
-test('the field size ceiling rejects files below the PHP ceiling without starting a transfer', async ({
+test('the field size ceiling rejects oversized files without starting a transfer', async ({
   page,
 }) => {
   let transfers = 0;
@@ -263,18 +263,20 @@ test('the field size ceiling rejects files below the PHP ceiling without startin
     if (transfer(request)) transfers++;
   });
   await page.goto('/uploads');
-  await page.getByLabel('Main document', { exact: true }).setInputFiles({
-    name: 'large.txt',
-    mimeType: 'text/plain',
-    buffer: Buffer.alloc(1024 * 1024 + 1),
-  });
-  await expect(page.getByRole('alert')).toContainText(
-    'Choose a file no larger than 1 MiB.',
-  );
-  await expect(
-    page.getByRole('list', { name: 'Main document transfers', exact: true }),
-  ).toContainText('failed');
-  expect(transfers).toBe(0);
+  for (const size of [1024 * 1024 + 1, 12 * 1024 * 1024]) {
+    await page.getByLabel('Main document', { exact: true }).setInputFiles({
+      name: 'large.txt',
+      mimeType: 'text/plain',
+      buffer: Buffer.alloc(size),
+    });
+    await expect(page.getByRole('alert')).toContainText(
+      'Choose a file no larger than 1 MiB.',
+    );
+    await expect(
+      page.getByRole('list', { name: 'Main document transfers', exact: true }),
+    ).toContainText('failed');
+    expect(transfers).toBe(0);
+  }
   await choose(page, 'smaller.txt');
   await expect(page.getByRole('alert', { includeHidden: true })).toBeEmpty();
 });
@@ -324,38 +326,38 @@ test('a batch respects the field count and failed excess files can be retried af
 
 test('PHP body-size rejection remains specific when the multipart envelope is discarded', async ({
   page,
+  appServer,
 }) => {
   await page.goto('/uploads');
-  const result = await page
+  const { endpoint, csrf, snapshot } = await page
     .locator('[data-interact-id]')
-    .evaluate(async (root: HTMLElement) => {
+    .evaluate((root: HTMLElement) => {
       const endpoint = root.dataset.interactEndpoint;
       const csrf = root.dataset.interactCsrf;
       if (!endpoint || !csrf) throw new Error('Missing upload metadata');
-      const body = new FormData();
-      body.set(
-        'payload',
-        JSON.stringify({
-          version: 1,
-          snapshot: root.dataset.interactSnapshot,
-          upload: { field: 'document', kind: 'stage' },
-        }),
-      );
-      body.set(
-        'file',
-        new File([new Uint8Array(12 * 1024 * 1024)], 'large.txt', {
-          type: 'text/plain',
-        }),
-      );
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'X-CSRF-Token': csrf, Accept: 'application/json' },
-        body,
-      });
-      return { status: response.status, body: await response.json() };
+      return { endpoint, csrf, snapshot: root.dataset.interactSnapshot };
     });
-  expect(result.status).toBe(413);
-  expect(result.body).toMatchObject({
+  // PHP rejects the envelope before reading its body. Browser uploads can reset
+  // that HTTP/1 connection; use the shared-cookie HTTP client for this server contract.
+  const response = await page.request.post(endpoint, {
+    headers: { 'X-CSRF-Token': csrf, Accept: 'application/json' },
+    multipart: {
+      payload: JSON.stringify({
+        version: 1,
+        snapshot,
+        upload: { field: 'document', kind: 'stage' },
+      }),
+      file: {
+        name: 'large.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.alloc(12 * 1024 * 1024),
+      },
+    },
+  });
+  expect(response.status()).toBe(413);
+  await expect.poll(() => appServer.logs()).toContain('POST Content-Length');
+  const body: unknown = await response.json();
+  expect(body).toMatchObject({
     version: 1,
     error: {
       code: 'upload_too_large',

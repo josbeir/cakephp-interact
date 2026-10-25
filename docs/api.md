@@ -71,3 +71,9 @@ and [actions](/guide/actions).
 ## Testing
 
 [`IslandTestTrait`, fluent interactions, and assertions](/guide/testing).
+
+## Realtime
+
+[`subscriptions()`, `Subscription`, and the publisher shortcuts](/guide/realtime)
+connect authorized islands to an external provider. Subscription-only leases and
+provider credentials remain separate from signed action snapshots.

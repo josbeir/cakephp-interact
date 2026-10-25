@@ -32,9 +32,11 @@ templates/island/Article/
 | `Counter`        | `App\Island\CounterIsland`        | `island/counter.php`        |
 | `article_editor` | `App\Island\ArticleEditorIsland`  | `island/article_editor.php` |
 | `Article/Editor` | `App\Island\Article\EditorIsland` | `island/Article/editor.php` |
+| `Realtime/Chat`  | `App\Island\Realtime\ChatIsland`  | `island/Realtime/chat.php`  |
 
 Template paths in the table are relative to `templates/`. The [demo](/demo)
-uses matching article folders. Application namespaces are read from CakePHP's
+uses matching article, composition, realtime, streaming, and debugging folders.
+Application namespaces are read from CakePHP's
 `App.namespace` configuration.
 
 ```php

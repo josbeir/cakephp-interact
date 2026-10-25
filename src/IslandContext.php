@@ -16,8 +16,12 @@ readonly class IslandContext
     /**
      * Keep route configuration server-owned; never accept an endpoint from update payloads.
      */
-    public function __construct(public ServerRequest $request, public string $scope, public string $endpoint)
-    {
+    public function __construct(
+        public ServerRequest $request,
+        public string $scope,
+        public string $endpoint,
+        public ?string $subscriptionEndpoint = null,
+    ) {
     }
 
     /**

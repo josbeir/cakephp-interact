@@ -8,11 +8,17 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function advancePoll(page: Page, region: Locator, duration = 5000) {
+  // Settle the previous response before advancing timers that require an idle island.
+  await expect(region.locator('xpath=..')).not.toHaveAttribute(
+    'aria-busy',
+    'true',
+  );
   const id = await islandId(region);
   const response = page.waitForResponse((reply) =>
     targetsIsland(reply.request(), id),
   );
-  await page.clock.runFor(duration);
+  // Exercise one overdue poll, regardless of how quickly its HTTP response arrives.
+  await page.clock.fastForward(duration);
   const accepted = await response;
   expect(accepted.status()).toBe(200);
   await expect(region.locator('xpath=..')).not.toHaveAttribute(

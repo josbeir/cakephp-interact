@@ -167,6 +167,9 @@ test('SSE diagnostics accompany progress and final state without becoming public
   expect(await observed).toEqual(['debug-progress']);
   await expect(probe.locator('output')).toHaveText('Inspected');
   await expect(
+    page.locator('iframe[title="Captured island output"]'),
+  ).toHaveAttribute('srcdoc', /before progress/);
+  await expect(
     page.frameLocator('iframe[title="Captured island output"]').locator('pre'),
   ).toContainText('before progress');
   await expect(

@@ -239,7 +239,7 @@ class ActionOutcomeTest extends TestCase
         $updateContext = new IslandContext(
             $context->request->withAttribute('params', [
                 'plugin' => 'Interact',
-                'controller' => 'Update',
+                'controller' => 'Interact',
                 'action' => 'update',
             ]),
             $context->scope,

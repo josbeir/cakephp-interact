@@ -19,6 +19,7 @@ use Interact\Loading\Options;
 use Interact\Loading\PendingMount;
 use Interact\Pagination\PagePath;
 use Interact\Pagination\Pagination;
+use Interact\Realtime\Subscriptions;
 use Interact\Rendering\RendererInterface;
 use Interact\Security\SnapshotCodec;
 use Interact\Streaming\Stream;
@@ -81,6 +82,14 @@ class Runtime
     }
 
     /**
+     * Attach the optional metadata exporter without changing standalone construction.
+     */
+    public function attachSubscriptions(?Subscriptions $subscriptions): void
+    {
+        $this->html->attachSubscriptions($subscriptions);
+    }
+
+    /**
      * Construct, authorize, and render an island, or preserve an existing keyed child.
      *
      * @param array<string, mixed> $props Declared mount props; only reactive inputs may change without a new child key.
@@ -126,10 +135,11 @@ class Runtime
             'state' => [],
             'children' => [],
             'urlPrefix' => $urlPrefix,
+            'subscriptionEndpoint' => $context->subscriptionEndpoint,
             'routing' => ($this->pageRouting ?? RouteContext::fromRequest($context->request))->defaults,
             'pagePath' => PagePath::resolve($this->pagePath, $context->request),
             ...$binding->identity(),
-        ]);
+        ], $parent?->identity);
         $island->attachPagination(new Pagination($definition, $identity, $context, $this->pageQuery));
         $result = $this->mounts->render($island, $definition, $identity, $context, $loading);
         $childKey = 'key:' . $key;

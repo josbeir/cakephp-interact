@@ -1,4 +1,13 @@
 import morph from '@alpinejs/morph';
+import { RealtimeCoordinator } from './realtime/coordinator';
+export type {
+  RealtimeOptions,
+  RealtimeTransport,
+  RealtimeGrant,
+  RealtimeFeedback,
+  PushMessage,
+  TransportCallbacks,
+} from './realtime/types';
 import type { Alpine } from 'alpinejs';
 import { NavigationController } from './navigation/controller';
 import { navigationBinding, navigationSelector } from './navigation/alpine';
@@ -26,6 +35,7 @@ export type {
 export type { NavigationStore } from './navigation/activity';
 export type { NavigationDetail } from './navigation/controller';
 export type { StreamMessage } from './streaming/messages';
+export type { IslandEventMessage } from './bindings/on';
 export type {
   RequestLifecycleDetail,
   RequestKind,
@@ -61,6 +71,12 @@ export function createInteract(
 function installConfigured(Alpine: Alpine, options: InteractOptions): void {
   if (installed.has(Alpine)) return;
   const defaults = timingDefaults(options);
+  const realtime = new RealtimeCoordinator(options.realtime);
+  document.dispatchEvent(
+    new CustomEvent('interact:configure', {
+      detail: { registerTransport: realtime.registerTransport.bind(realtime) },
+    }),
+  );
   installed.add(Alpine);
   Alpine.plugin(morph);
   Alpine.data('interact', () => ({}));
@@ -90,7 +106,12 @@ function installConfigured(Alpine: Alpine, options: InteractOptions): void {
       );
       clients.set(element, client);
       relationships.register(client);
-      Alpine.onElRemoved(element, () => client.dispose());
+      client.attachRealtime(realtime);
+      const effect = Alpine.effect(() => client.flushRealtime());
+      Alpine.onElRemoved(element, () => {
+        Alpine.release(effect);
+        client.dispose();
+      });
     }),
   );
   const navigation = new NavigationController(

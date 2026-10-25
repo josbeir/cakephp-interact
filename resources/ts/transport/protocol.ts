@@ -4,6 +4,7 @@ import { uploadMetadata } from '../uploads/protocol';
 import type { UpdateResponse, Writable } from '../types';
 import { forbidden, record, state } from '../state/values';
 import { diagnosticEnvelope } from '../diagnostics/output';
+import { realtimeMetadata } from '../realtime/protocol';
 
 /**
  * Validate browser-write metadata against the supported native PHP property types.
@@ -37,6 +38,7 @@ export function response(value: unknown): value is UpdateResponse {
   return (
     record(value) &&
     value.version === 1 &&
+    (value.realtime === undefined || realtimeMetadata(value.realtime)) &&
     (value.url === undefined || urlFields(value.url)) &&
     (value.uploads === undefined || uploadMetadata(value.uploads)) &&
     typeof value.id === 'string' &&

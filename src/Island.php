@@ -9,6 +9,7 @@ use Cake\Datasource\RepositoryInterface;
 use Interact\Action\ActionEffects;
 use Interact\Action\Outcome;
 use Interact\Pagination\Pagination;
+use Interact\Realtime\Subscription;
 use Interact\Validation\ErrorNormalizer;
 use InvalidArgumentException;
 use LogicException;
@@ -114,7 +115,7 @@ abstract class Island
     }
 
     /**
-     * Emit immediate JSON-compatible progress data through the interact:stream browser event.
+     * Deliver immediate JSON-compatible progress data to x-interact:on:event listeners.
      *
      * @param array<string, mixed> $detail Browser-visible progress data, never signed state.
      * @throws LogicException Outside an active streaming action.
@@ -188,6 +189,19 @@ abstract class Island
      * @return array<string, mixed> Additional view data, never automatically serialized.
      */
     public function viewData(): array
+    {
+        return [];
+    }
+
+    /**
+     * Declare exact realtime topics after current resource authorization.
+     *
+     * Derive protected topics from authorized props/state or current request identity.
+     * The runtime reevaluates declarations on updates and subscription renewals.
+     *
+     * @return list<Subscription> Request-local subscription declarations.
+     */
+    public function subscriptions(IslandContext $context): array
     {
         return [];
     }

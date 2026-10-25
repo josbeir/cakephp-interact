@@ -202,8 +202,7 @@ nav a[data-interact-active-trail] {
   font-weight: 600;
   white-space: nowrap;
 }
-.page-shell,
-.site-footer {
+.page-shell {
   width: min(1200px, calc(100% - 3rem));
   margin-inline: auto;
 }
@@ -688,16 +687,6 @@ progress::-moz-progress-bar {
 .saved-article h1 {
   overflow-wrap: anywhere;
 }
-.site-footer {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  color: var(--muted);
-  border-top: 1px solid var(--line);
-  font-size: 0.72rem;
-  padding-block: 1.5rem;
-  margin-top: 4rem;
-}
 .sr-only {
   position: absolute;
   width: 1px;
@@ -776,8 +765,7 @@ progress::-moz-progress-bar {
   nav a {
     padding: 0.6rem 0.75rem;
   }
-  .page-shell,
-  .site-footer {
+  .page-shell {
     width: calc(100% - 2rem);
   }
   .page-intro {
@@ -793,11 +781,6 @@ progress::-moz-progress-bar {
   }
   .intro-links {
     gap: 0.8rem;
-  }
-  .site-footer {
-    flex-direction: column;
-    gap: 0.35rem;
-    margin-top: 2.5rem;
   }
 }
 

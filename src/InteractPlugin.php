@@ -21,6 +21,8 @@ use Interact\Http\FailureResponder;
 use Interact\Http\UpdateErrorListener;
 use Interact\Http\UpdateHandler;
 use Interact\Navigation\DocumentMiddleware;
+use Interact\Realtime\RealtimeServices;
+use Interact\Realtime\Subscriptions;
 use Interact\Runtime\Factory;
 use Interact\Runtime\Values;
 use Interact\Security\SnapshotCodec;
@@ -115,9 +117,16 @@ class InteractPlugin extends BasePlugin
         }
 
         new UploadServices()->register($container);
+        new RealtimeServices()->register($container);
         if (!$container->hasDefinition(Factory::class)) {
             $container->addShared(Factory::class)
-                ->addArguments([Registry::class, SnapshotCodec::class, UploadManager::class, Configuration::class]);
+                ->addArguments([
+                    Registry::class,
+                    SnapshotCodec::class,
+                    UploadManager::class,
+                    Configuration::class,
+                    Subscriptions::class,
+                ]);
         }
     }
 
@@ -137,10 +146,21 @@ class InteractPlugin extends BasePlugin
     public function routes(RouteBuilder $routes): void
     {
         $routes->post(
+            '/_interact/subscribe',
+            [
+                'plugin' => 'Interact',
+                'controller' => 'Interact',
+                'action' => 'subscribe',
+                'interactScope' => 'default',
+            ],
+            'interact:subscribe',
+        );
+
+        $routes->post(
             '/_interact/update',
             [
                 'plugin' => 'Interact',
-                'controller' => 'Update',
+                'controller' => 'Interact',
                 'action' => 'update',
                 'interactScope' => 'default',
             ],

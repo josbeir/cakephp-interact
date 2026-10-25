@@ -112,6 +112,7 @@ export default defineConfig({
             { text: 'Validation', link: '/guide/forms' },
             { text: 'File uploads', link: '/guide/uploads' },
             { text: 'Streaming', link: '/guide/streaming' },
+            { text: 'Realtime', link: '/guide/realtime' },
             { text: 'Error handling', link: '/guide/failures' },
             { text: 'Debugging', link: '/guide/debugging' },
           ],
@@ -124,6 +125,7 @@ export default defineConfig({
             { text: 'x-interact:submit', link: '/directives/submit' },
             { text: 'x-interact:poll', link: '/directives/poll' },
             { text: 'x-interact:stream', link: '/directives/stream' },
+            { text: 'x-interact:on', link: '/directives/on' },
             { text: 'x-interact:ignore', link: '/directives/ignore' },
             { text: 'x-interact:navigate', link: '/directives/navigate' },
             { text: 'x-interact:persist', link: '/directives/persist' },
@@ -141,6 +143,7 @@ export default defineConfig({
           text: 'Advanced',
           collapsed: true,
           items: [
+            { text: 'Realtime providers', link: '/guide/realtime-providers' },
             { text: 'Testing islands', link: '/guide/testing' },
             { text: 'Rendering and helpers', link: '/reference/rendering' },
             { text: 'Requests and DOM updates', link: '/reference/browser' },

@@ -41,9 +41,10 @@ function viewer(): ShadowRoot {
   if (!root?.shadowRoot) throw new Error('Missing debug viewer');
   return root.shadowRoot;
 }
-function frame(): HTMLIFrameElement {
+function loadedFrame(): HTMLIFrameElement {
   const result = viewer().querySelector('iframe');
   if (!result) throw new Error('Missing output frame');
+  result.dispatchEvent(new Event('load'));
   return result;
 }
 function button(label: string): HTMLButtonElement {
@@ -85,9 +86,9 @@ describe('native island output', () => {
     const result = await readResponse(json(payload()), 'debug');
     expect(result).toMatchObject({ state: {}, diagnostics: output() });
     expect(document.activeElement).toBe(input);
-    expect(frame().srcdoc).toContain('<pre>dump</pre>');
-    expect(frame().getAttribute('sandbox')).toBe('');
-    expect(frame().srcdoc).toContain('default-src &#39;none&#39;');
+    expect(loadedFrame().srcdoc).toContain('<pre>dump</pre>');
+    expect(loadedFrame().getAttribute('sandbox')).toBe('');
+    expect(loadedFrame().srcdoc).toContain('default-src &#39;none&#39;');
     await readResponse(
       json(
         { ...payload(output('validation')), errors: { value: ['Invalid'] } },
@@ -95,17 +96,17 @@ describe('native island output', () => {
       ),
       'debug',
     );
-    expect(frame().srcdoc).toContain('validation');
+    expect(loadedFrame().srcdoc).toContain('validation');
     await readResponse(
       json({ ...payload(output('renderless')), html: null }),
       'debug',
     );
-    expect(frame().srcdoc).toContain('renderless');
+    expect(loadedFrame().srcdoc).toContain('renderless');
     await readResponse(
       json({ ...payload(output('download')), download: '/report' }),
       'debug',
     );
-    expect(frame().srcdoc).toContain('download');
+    expect(loadedFrame().srcdoc).toContain('download');
     await readResponse(
       json({
         version: 1,
@@ -115,7 +116,7 @@ describe('native island output', () => {
       }),
       'debug',
     );
-    expect(frame().srcdoc).toContain('redirect');
+    expect(loadedFrame().srcdoc).toContain('redirect');
   });
 
   it('rejects malformed diagnostics and mismatched identities before displaying them', async () => {
@@ -140,7 +141,7 @@ describe('native island output', () => {
     ).rejects.toMatchObject({
       failure: { code: 'server_error', message: 'Safe' },
     });
-    expect(frame().srcdoc).toContain('before exception');
+    expect(loadedFrame().srcdoc).toContain('before exception');
     const error = await readFailure(
       json({ ...failed, diagnostics: false }, 500),
     );
@@ -151,7 +152,7 @@ describe('native island output', () => {
         'debug',
       ),
     ).rejects.toThrow();
-    expect(frame().srcdoc).toContain('before exception');
+    expect(loadedFrame().srcdoc).toContain('before exception');
   });
 
   it('keeps one latest request, accumulates its chunks, and supports close, open and clear', () => {
@@ -161,24 +162,44 @@ describe('native island output', () => {
     newer.show(output('new'));
     older.show(output('ignored'));
     newer.show(output(' chunk'));
-    expect(frame().srcdoc).toContain('new chunk');
-    expect(frame().srcdoc).not.toContain('ignored');
+    expect(loadedFrame().srcdoc).toContain('new chunk');
+    expect(loadedFrame().srcdoc).not.toContain('ignored');
     expect(viewer().querySelector('[role="status"]')?.textContent).toContain(
       'newer',
     );
     button('Close island debug').click();
-    expect(frame().hidden).toBe(true);
+    expect(loadedFrame().hidden).toBe(true);
     button('Open island debug').click();
-    expect(frame().hidden).toBe(false);
+    expect(loadedFrame().hidden).toBe(false);
     document.querySelector('aside')?.remove();
     newer.show(output(' reattached'));
-    expect(frame().srcdoc).toContain('reattached');
+    expect(loadedFrame().srcdoc).toContain('reattached');
     button('Clear island debug').click();
     expect(document.querySelector('aside')).toBeNull();
     newer.show(output('discarded after clear'));
     expect(document.querySelector('aside')).toBeNull();
     new DiagnosticRequest('fresh').show(output('fresh'));
-    expect(frame().srcdoc).toContain('fresh');
+    expect(loadedFrame().srcdoc).toContain('fresh');
+  });
+
+  it('serializes rapid stream documents and discards queued output after navigation', () => {
+    const request = new DiagnosticRequest('stream');
+    request.show(output('first'));
+    const target = viewer().querySelector('iframe');
+    if (!target) throw new Error('Missing output frame');
+    request.show(output(' second'));
+    request.show(output(' third'));
+    expect(target.srcdoc).toContain('<pre>first</pre>');
+    target.dispatchEvent(new Event('load'));
+    expect(target.srcdoc).toContain('<pre>first second third</pre>');
+    request.show(output(' discarded'));
+    document.dispatchEvent(new Event('interact:navigating'));
+    target.dispatchEvent(new Event('load'));
+    expect(target.srcdoc).toBe('');
+    expect(document.querySelector('aside')).toBeNull();
+    new DiagnosticRequest('fresh').show(output('fresh'));
+    expect(loadedFrame().srcdoc).toContain('<pre>fresh</pre>');
+    expect(loadedFrame().srcdoc).not.toContain('discarded');
   });
 
   it('clears retained output on navigation and ignores an older in-flight stream', () => {
@@ -193,7 +214,7 @@ describe('native island output', () => {
     const request = new DiagnosticRequest('large');
     request.show(output('x'.repeat(786_432)));
     request.show(output('overflow'));
-    expect(frame().srcdoc).not.toContain('overflow');
+    expect(loadedFrame().srcdoc).not.toContain('overflow');
     expect(viewer().querySelector('[role="status"]')?.textContent).toContain(
       'truncated',
     );
@@ -212,13 +233,15 @@ describe('native island output', () => {
         '<div class="cake-debug"><style>bad</style><script>throw 1</script><span>&lt;img src=x&gt; &amp; value</span><img src="https://invalid.example/pixel"></div>',
       ),
     );
-    expect(frame().srcdoc).toContain('&lt;img src=x&gt; &amp; value');
-    expect(frame().srcdoc).not.toContain('<script');
-    expect(frame().srcdoc).not.toContain('invalid.example');
-    expect(frame().srcdoc).not.toContain('<style');
+    expect(loadedFrame().srcdoc).toContain('&lt;img src=x&gt; &amp; value');
+    expect(loadedFrame().srcdoc).not.toContain('<script');
+    expect(loadedFrame().srcdoc).not.toContain('invalid.example');
+    expect(loadedFrame().srcdoc).not.toContain('<style');
     expect(document.querySelector('img')).toBeNull();
     new DiagnosticRequest('plain').show(output('<script>literal</script>'));
-    expect(frame().srcdoc).toContain('&lt;script&gt;literal&lt;/script&gt;');
+    expect(loadedFrame().srcdoc).toContain(
+      '&lt;script&gt;literal&lt;/script&gt;',
+    );
   });
 
   it('copies readable output and reports clipboard denial without failing requests', async () => {
@@ -255,10 +278,10 @@ describe('native island output', () => {
       document.documentElement.style.colorScheme = scheme;
       try {
         new DiagnosticRequest('theme').show(output('themed'));
-        expect(frame().srcdoc).toContain(
+        expect(loadedFrame().srcdoc).toContain(
           `name="color-scheme" content="${scheme}"`,
         );
-        expect(frame().style.colorScheme).toBe(scheme);
+        expect(loadedFrame().style.colorScheme).toBe(scheme);
       } finally {
         document.documentElement.style.colorScheme = previous;
       }
@@ -283,10 +306,10 @@ describe('native island output', () => {
       host.style.setProperty('--interact-debug-color-scheme', override);
       try {
         new DiagnosticRequest('custom theme').show(output('custom'));
-        expect(frame().srcdoc).toContain(
+        expect(loadedFrame().srcdoc).toContain(
           `name="color-scheme" content="${expected}"`,
         );
-        expect(frame().srcdoc).not.toContain('<script>');
+        expect(loadedFrame().srcdoc).not.toContain('<script>');
       } finally {
         host.style.removeProperty('--interact-debug-color-scheme');
         document.documentElement.style.colorScheme = previous;
@@ -328,8 +351,8 @@ describe('native island output', () => {
     ];
     await readResponse(stream(messages), 'debug', receive);
     expect(receive).toHaveBeenCalledTimes(1);
-    expect(frame().srcdoc).toContain('first second final');
-    expect(frame().srcdoc).not.toContain('Progress');
+    expect(loadedFrame().srcdoc).toContain('first second final');
+    expect(loadedFrame().srcdoc).not.toContain('Progress');
     await expect(
       readResponse(
         stream([{ ...messages[0], diagnostics: false }]),
@@ -359,6 +382,6 @@ describe('native island output', () => {
         () => {},
       ),
     ).rejects.toThrow('Safe');
-    expect(frame().srcdoc).toContain('stream failed');
+    expect(loadedFrame().srcdoc).toContain('stream failed');
   });
 });

@@ -90,7 +90,7 @@ class FailureTest extends TestCase
         static::assertSame(['Exception.beforeRender' => 'render'], $listener->implementedEvents());
         $request = new ServerRequest(['params' => [
             'plugin' => 'Interact',
-            'controller' => 'Update',
+            'controller' => 'Interact',
             'action' => 'update',
             'interactScope' => 'admin',
         ]]);
@@ -154,7 +154,7 @@ class FailureTest extends TestCase
     {
         $request = new ServerRequest(['params' => [
             'plugin' => 'Interact',
-            'controller' => 'Update',
+            'controller' => 'Interact',
             'action' => 'update',
             'interactScope' => 'default',
         ]]);

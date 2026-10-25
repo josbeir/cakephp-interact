@@ -6,11 +6,14 @@ import type { UploadMetadata } from '../uploads/types';
 import type { State, Writable } from '../types';
 import { state } from '../state/values';
 import { writable } from './protocol';
+import { realtimeMetadata } from '../realtime/protocol';
+import type { RealtimeMetadata } from '../realtime/types';
 
 /**
  * Validated bootstrap data emitted by PHP for one owned island root.
  */
 export interface MountMetadata {
+  realtime?: RealtimeMetadata;
   loading?: LoadingMode;
   id: string;
   snapshot: string;
@@ -28,7 +31,15 @@ export interface MountMetadata {
  * @throws Error When the markup cannot safely initialize an island client.
  */
 export function readMetadata(root: HTMLElement): MountMetadata {
+  const realtime: unknown =
+    root.dataset.interactRealtime === undefined
+      ? undefined
+      : JSON.parse(root.dataset.interactRealtime);
+  if (realtime !== undefined && !realtimeMetadata(realtime))
+    throw new Error('Invalid realtime metadata.');
   const loading = root.dataset.interactLoading;
+  if (loading !== undefined && realtime !== undefined)
+    throw new Error('Pending islands cannot subscribe.');
   if (
     loading !== undefined &&
     loading !== 'lazy' &&
@@ -63,6 +74,7 @@ export function readMetadata(root: HTMLElement): MountMetadata {
   if (endpoint.origin !== window.location.origin)
     throw new Error('Island endpoints must be same-origin.');
   return {
+    ...(realtimeMetadata(realtime) ? { realtime } : {}),
     ...(loading === undefined ? {} : { loading }),
     uploads,
     url,

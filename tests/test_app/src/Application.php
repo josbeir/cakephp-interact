@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace TestApp;
 
+use Cake\Console\CommandCollection;
 use Cake\Core\Configure;
 use Cake\Error\Middleware\ErrorHandlerMiddleware;
 use Cake\Http\BaseApplication;
@@ -12,6 +13,8 @@ use Cake\Http\MiddlewareQueue;
 use Cake\Routing\Middleware\RoutingMiddleware;
 use Cake\Routing\RouteBuilder;
 use Interact\InteractPlugin;
+use Mercure\MercurePlugin;
+use TestApp\Command\ServerCommand;
 use TestApp\Middleware\DemoIdentityMiddleware;
 use TestApp\Middleware\DemoSecurityMiddleware;
 
@@ -32,9 +35,31 @@ class Application extends BaseApplication
     public function bootstrap(): void
     {
         parent::bootstrap();
-        if (!$this->getPlugins()->has('Interact')) {
-            $this->addPlugin(new InteractPlugin(['path' => (string)ROOT . '/']));
+        if (getenv('MERCURE_URL') && !$this->getPlugins()->has('Mercure')) {
+            $this->addPlugin(MercurePlugin::class, ['bootstrap' => false]);
+            Configure::write('Mercure', [
+                'url' => getenv('MERCURE_URL'),
+                'public_url' => getenv('MERCURE_PUBLIC_URL') ?: getenv('MERCURE_URL'),
+                'jwt' => [
+                    'secret' => getenv('MERCURE_JWT_SECRET'),
+                    'issuer' => getenv('MERCURE_JWT_ISSUER') ?: 'https://localhost',
+                    'audience' => getenv('MERCURE_JWT_AUDIENCE') ?: getenv('MERCURE_URL'),
+                ],
+            ]);
+            Configure::write('Interact.realtime.provider', 'mercure');
         }
+
+        if (!$this->getPlugins()->has('Interact')) {
+            $this->addPlugin(InteractPlugin::class);
+        }
+    }
+
+    /**
+     * Use CakePHP's server workflow with the demo's bundled Mercure switch.
+     */
+    public function console(CommandCollection $commands): CommandCollection
+    {
+        return parent::console($commands)->add('server', ServerCommand::class);
     }
 
     /**

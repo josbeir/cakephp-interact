@@ -20,10 +20,15 @@ class HttpTest extends HttpTestCase
         $this->mounted(url: '/search');
         $this->assertResponseContains('1,200 sample resources');
         $this->assertResponseContains('Showing 1–20 of');
-        $this->assertResponseContains('aria-current="page">Search');
         $document = HTMLDocument::createFromString((string)$this->response?->getBody());
         $xpath = new XPath($document);
         $xpath->registerNamespace('html', 'http://www.w3.org/1999/xhtml');
+        static::assertSame(
+            1,
+            $xpath->query(
+                '//html:nav[@aria-label="Demo pages"]/html:a[@aria-current="page" and normalize-space(.)="Search"]',
+            )->length,
+        );
         static::assertSame(20, $xpath->query('//html:table/html:tbody/html:tr')->length);
         $root = $xpath->query('//*[@data-interact-state]')->item(0);
         static::assertInstanceOf(Element::class, $root);
@@ -123,7 +128,14 @@ class HttpTest extends HttpTestCase
         $this->mounted(url: '/playground');
         $this->assertResponseContains('Playground');
         $this->assertResponseContains('href="/demo.css"');
-        $this->assertResponseContains('aria-current="page">Playground');
+        $xpath = new XPath(HTMLDocument::createFromString((string)$this->response?->getBody()));
+        $xpath->registerNamespace('html', 'http://www.w3.org/1999/xhtml');
+        static::assertSame(
+            1,
+            $xpath->query(
+                '//html:nav[@aria-label="Demo pages"]/html:a[@aria-current="page" and normalize-space(.)="Playground"]',
+            )->length,
+        );
         $this->assertResponseContains('First counter');
         $this->assertResponseContains('Second counter');
         $this->assertResponseContains('Conditional form');

@@ -19,6 +19,7 @@ if (!defined('ROOT')) {
     define('CAKE', $core . 'src/');
     define('APP', dirname(__DIR__) . '/');
     define('CONFIG', APP . 'config/');
+    define('WWW_ROOT', APP . 'webroot/');
     define('TMP', rtrim(getenv('INTERACT_DEMO_TMP') ?: dirname(__DIR__, 3) . '/build/tmp', '/') . '/');
     define('CACHE', TMP . 'cache/');
     define('LOGS', TMP . 'logs/');
@@ -61,6 +62,12 @@ assert($connection instanceof Connection, 'The configured collaborator must sati
 $connection->execute(
     'CREATE TABLE IF NOT EXISTS articles (id INTEGER PRIMARY KEY, title TEXT NOT NULL, owner_id INTEGER NOT NULL)',
 );
+$connection->execute((string)file_get_contents(__DIR__ . '/schema/chat_messages.sql'));
+// Retain conversations created by earlier versions of the local demo.
+if (!$connection->getSchemaCollection()->describe('chat_messages')->hasColumn('recipient')) {
+    $connection->execute('ALTER TABLE chat_messages ADD COLUMN recipient TEXT DEFAULT NULL');
+}
+
 $connection->execute('CREATE TABLE IF NOT EXISTS outcome_articles (id INTEGER PRIMARY KEY, title TEXT NOT NULL)');
 $formSchema = (string)file_get_contents(__DIR__ . '/schema/form_articles.sql');
 foreach (explode(';', $formSchema) as $statement) {

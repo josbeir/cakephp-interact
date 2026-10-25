@@ -10,7 +10,7 @@ and browser tests. It combines the features documented in the guides and API pag
 
 ## Run the demo
 
-Use PHP 8.5 with SQLite support and Node 24.11+ or Node 26+.
+Use PHP 8.5 with SQLite support, Node 24.11+ or Node 26+, and Docker.
 
 ```sh
 composer install
@@ -21,6 +21,46 @@ composer preview
 
 Open **http://127.0.0.1:8765**. Demo data seeds automatically. The session identity
 is for demonstration; applications supply their own authentication.
+
+## Realtime demo
+
+`composer preview` includes realtime support. Open
+**http://127.0.0.1:8765/realtime** in two tabs. The launcher provisions an
+isolated FrankenPHP container with PHP 8.5, CakePHP, and its built-in Mercure 1.x
+hub on port 8765. The first run builds the image; later runs reuse Docker’s cache.
+The launcher removes the container on exit and retains the demo database. Stop any existing preview on port 8765 first.
+
+Share the working demo with `ngrok http 8765`. Browser subscriptions use
+`/.well-known/mercure` on the current origin, so both the app and hub travel through
+the same tunnel. PHP publishes through the internal address. No public URL setting
+or second tunnel is needed.
+
+The container invokes CakePHP's `server --frankenphp` command. The demo's
+`ServerCommand` enables `--mercure` and disables SSE compression. This runs ordinary
+PHP requests without worker mode. The image pins FrankenPHP 1.13.3 and installs
+CakePHP's required Intl extension. The same launcher starts isolated app/hub
+instances for the browser tests.
+
+<span id="realtime"></span>
+The chat room stores messages in SQLite and refreshes an independent feed in every
+subscribed tab. Type in one tab while sending from another: incoming messages arrive
+without disturbing your draft. Your own sends also refresh the feed through the
+normal response, so the chat remains usable without a live connection. Reloading
+restores the latest 50 messages. The room is shared by everyone visiting the demo;
+“Only my tabs” sends a private message scoped to the current browser session.
+Private history and subscriptions are authorized independently of the shared room.
+
+“Ask demo assistant” streams a scripted reply into the same conversation, with
+progress events, text chunks, and an HTML completion marker. Other tabs in the same
+session receive it too. Assistant output is a temporary preview; saved messages
+remain available after reloading.
+
+Tested source: [composer island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Realtime/ChatIsland.php),
+[feed island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Realtime/MessagesIsland.php),
+[template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/Realtime/chat.php).
+Start with the [two-tab notification walkthrough](/guide/realtime#send-a-notification-to-two-tabs)
+for a smaller example to build in your own application. The [streaming walkthrough](/guide/streaming#stream-a-report-with-progress)
+shows a report action without a realtime provider.
 
 ## Try the interactions
 
@@ -41,7 +81,7 @@ Matching templates live under `templates/island/`, with page mounts under
 | <span id="lazy-loading"></span>`/loading`<br>Explore loading modes, custom placeholders, and nested preservation                                    | [Page mounts](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/Loading/index.php)                                                                                                                                      |
 | <span id="navigation"></span>`/navigation`<br>Navigate ordinary CakePHP routes while preserving a layout notebook                                   | [Controller](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Controller/NavigationController.php), [page](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/Navigation/index.php)              |
 | <span id="redirects-and-downloads"></span>`/outcomes`<br>Save and redirect, request an authorized download, and navigate explicitly                 | [Actions](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/ActionOutcomesIsland.php), [controller](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Controller/OutcomesController.php)        |
-| <span id="streaming"></span>`/streaming`<br>Stream text, native elements, and progress during one action                                            | [Report island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/StreamingReportIsland.php), [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/streaming_report.php)   |
+| <span id="streaming"></span>`/streaming`<br>Stream text, native elements, and progress during one action                                            | [Report island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Streaming/ReportIsland.php), [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/Streaming/report.php)  |
 | `/page`<br>Update a whole-page island while its layout stays in place                                                                               | [Controller](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Controller/ArticlesController.php)                                                                                                                             |
 
 ## Debugging
@@ -52,8 +92,8 @@ Open `/debugging` from the demo navigation. Edit the message and try **Dump draf
 **Dump then fail** deliberately throws after dumping; **Resume after failure**
 restores normal requests.
 
-The tested example uses [DebuggingIsland](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/DebuggingIsland.php)
-and its [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/debugging.php).
+The tested example uses [PlaygroundIsland](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Debugging/PlaygroundIsland.php)
+and its [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/Debugging/playground.php).
 See [debugging](/guide/debugging) for viewer settings and DebugKit coexistence.
 
 ## Navigation head and CSP examples
@@ -72,7 +112,8 @@ remain explicit in each interaction.
 
 Article saves persist in `build/tmp/demo.sqlite`. To reset the data, stop the
 server and tests, then delete that file. It is recreated on the next request.
-`composer preview` disables OPcache so edits appear immediately.
+`composer preview` enables OPcache and checks PHP file timestamps on every request,
+so local edits appear immediately.
 
 See [Contributing](/contributing) for test commands and [Troubleshooting](/troubleshooting)
 for asset or update failures.
