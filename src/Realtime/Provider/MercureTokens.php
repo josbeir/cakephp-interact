@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace Interact\Realtime;
+namespace Interact\Realtime\Provider;
 
 use Cake\Core\Configure;
 use Interact\Runtime\Values;

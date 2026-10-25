@@ -7,6 +7,8 @@ use Cake\Container\ContainerInterface;
 use Cake\Core\Configure;
 use Interact\Configuration;
 use Interact\Discovery\Registry;
+use Interact\Realtime\Provider\MercureProvider;
+use Interact\Realtime\Provider\MercureTokens;
 use LogicException;
 use Mercure\Jwt\TokenFactoryInterface;
 use Mercure\Service\PublisherInterface as MercurePublisher;

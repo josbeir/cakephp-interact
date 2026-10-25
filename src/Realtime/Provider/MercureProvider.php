@@ -1,8 +1,13 @@
 <?php
 declare(strict_types=1);
 
-namespace Interact\Realtime;
+namespace Interact\Realtime\Provider;
 
+use Interact\Realtime\BroadcasterInterface;
+use Interact\Realtime\Grant;
+use Interact\Realtime\Message;
+use Interact\Realtime\Subscription;
+use Interact\Realtime\SubscriptionAuthorizerInterface;
 use Mercure\Jwt\TokenFactoryInterface;
 use Mercure\Service\PublisherInterface as MercurePublisher;
 use Mercure\Update\Update;
