@@ -1,6 +1,26 @@
 (() => {
   const register = () => {
-    window.Alpine.data('publishingDesk', () => ({
+    window.Alpine.data('chatMessages', () => {
+      let observer;
+      return {
+        init() {
+          const scroll = () => {
+            this.$el.scrollTop = this.$el.scrollHeight;
+          };
+          this.$nextTick(scroll);
+          observer = new window.MutationObserver(scroll);
+          observer.observe(this.$el, {
+            childList: true,
+            subtree: true,
+            characterData: true,
+          });
+        },
+        destroy() {
+          observer?.disconnect();
+        },
+      };
+    });
+    window.Alpine.data('chatDemo', () => ({
       notification: '',
       notificationCount: 0,
       progress: 0,

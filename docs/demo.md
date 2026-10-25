@@ -41,13 +41,19 @@ PHP requests without worker mode. The image pins FrankenPHP 1.13.3 and installs
 CakePHP's required Intl extension. `composer preview` remains the plain PHP preview.
 
 <span id="realtime"></span>
-The live publishing desk pairs an article editor with an independent reader preview.
-Publish a title to update other tabs, send a user-specific notification to the inbox,
-and generate a report with live progress, text logs, and an HTML result. Edit an
-unsaved title in a second tab to see incoming changes preserve that draft.
+The chat room stores messages in SQLite and refreshes an independent feed in every
+subscribed tab. Type in one tab while sending from another: incoming messages arrive
+without disturbing your draft. Your own sends also refresh the feed through the
+normal response, so the chat remains usable without a live connection. Reloading
+restores the latest 50 messages. The room is shared by everyone visiting the demo;
+private notifications use separate user-specific topics.
 
-Tested source: [island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RealtimeArticleIsland.php),
-[template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/realtime_article.php).
+The side panels demonstrate a private notification and a streamed chat recap with
+progress, text logs, and an HTML result. These panels require the realtime launcher.
+
+Tested source: [composer island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RealtimeChatIsland.php),
+[feed island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RealtimeMessagesIsland.php),
+[template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/realtime_chat.php).
 See [realtime subscriptions](/guide/realtime) for configuration and delivery guarantees.
 
 ## Try the interactions

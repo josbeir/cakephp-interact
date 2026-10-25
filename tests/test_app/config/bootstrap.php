@@ -62,6 +62,7 @@ assert($connection instanceof Connection, 'The configured collaborator must sati
 $connection->execute(
     'CREATE TABLE IF NOT EXISTS articles (id INTEGER PRIMARY KEY, title TEXT NOT NULL, owner_id INTEGER NOT NULL)',
 );
+$connection->execute((string)file_get_contents(__DIR__ . '/schema/chat_messages.sql'));
 $connection->execute('CREATE TABLE IF NOT EXISTS outcome_articles (id INTEGER PRIMARY KEY, title TEXT NOT NULL)');
 $formSchema = (string)file_get_contents(__DIR__ . '/schema/form_articles.sql');
 foreach (explode(';', $formSchema) as $statement) {

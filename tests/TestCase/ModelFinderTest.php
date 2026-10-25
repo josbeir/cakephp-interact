@@ -3,10 +3,13 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase;
 
+use Cake\Database\Connection;
+use Cake\Database\Driver\Sqlite;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\TestSuite\TestCase;
 use InvalidArgumentException;
 use TestApp\Model\Table\ArticlesTable;
+use TestApp\Model\Table\ChatMessagesTable;
 use TestApp\Model\Table\CitiesTable;
 use TestApp\Model\Table\ResourcesTable;
 
@@ -36,6 +39,31 @@ class ModelFinderTest extends TestCase
             [3],
             $articles->find('listing', ownerId: 1)->where(['Articles.id' => 3])->all()->extract('id')->toList(),
         );
+    }
+
+    public function testChatHistoryIsBoundedChronologicalAndComposable(): void
+    {
+        $connection = new Connection(['driver' => Sqlite::class, 'database' => ':memory:']);
+        $connection->execute((string)file_get_contents(APP . 'config/schema/chat_messages.sql'));
+
+        $messages = new ChatMessagesTable(['connection' => $connection]);
+        static::assertSame([], $messages->find('recent')->all()->toList());
+        foreach (range(1, 55) as $number) {
+            $messages->saveOrFail($messages->newEntity(['name' => 'Guest', 'message' => 'Message ' . $number]));
+        }
+
+        $recent = $messages->find('recent')->all()->extract('message')->toList();
+        static::assertCount(50, $recent);
+        static::assertSame('Message 6', $recent[0]);
+        static::assertSame('Message 55', $recent[49]);
+        static::assertSame(
+            ['Message 10'],
+            $messages->find('recent')->where(['message' => 'Message 10'])->all()->extract('message')->toList(),
+        );
+        static::assertSame(0, $messages->find('recent')->where(['message' => 'Message 1'])->count());
+        $invalid = $messages->newEntity(['name' => str_repeat('n', 41), 'message' => str_repeat('m', 501)]);
+        static::assertArrayHasKey('name', $invalid->getErrors());
+        static::assertArrayHasKey('message', $invalid->getErrors());
     }
 
     public function testCitySelectionMustBelongToTheSelectedCountry(): void

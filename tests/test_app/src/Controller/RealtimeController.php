@@ -15,19 +15,18 @@ use Interact\Realtime\SubscriptionHandler;
 /**
  * Hosts the self-contained realtime example and explicit demo identity changes.
  *
- * The ordinary preview displays setup instructions until the optional provider is
- * configured. Test-only identity switching never belongs in production applications.
+ * The ordinary preview supports persistent chat without a hub.
+ * Test-only identity switching never belongs in production applications.
  */
 class RealtimeController extends AppController
 {
     /**
-     * Render subscriptions only when the realtime launcher has configured the hub.
+     * Render the chat with optional hub setup instructions.
      */
     #[Get('/realtime', name: 'demo:realtime')]
     public function index(): void
     {
         $this->set('ready', Configure::read('Interact.realtime.provider') === 'mercure');
-        $this->set('articleId', $this->request->getSession()->read('demo.userId') === 2 ? 99 : 1);
     }
 
     /**

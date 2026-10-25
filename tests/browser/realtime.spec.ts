@@ -10,7 +10,7 @@ async function connected(page: Page, appURL: string, path = '/realtime') {
     page.getByText('connected', { exact: true }).first(),
   ).toBeVisible();
   await expect(
-    page.getByRole('button', { name: 'Save article' }).first(),
+    page.getByRole('button', { name: 'Send message' }).first(),
   ).toBeEnabled();
 }
 
@@ -52,13 +52,11 @@ test('shares one Mercure connection across independent islands and exact topics'
       subscriptions.push(request.url());
   });
   await connected(page, appURL);
-  await expect(page.getByText('connected', { exact: true })).toHaveCount(2);
+  await expect(page.getByText('connected', { exact: true })).toHaveCount(1);
   expect(subscriptions).toHaveLength(1);
-  expect(new URL(subscriptions[0] ?? '').searchParams.getAll('match')).toEqual([
-    'articles/1',
-    'users/1/notifications',
-    'users/1/output',
-  ]);
+  expect(
+    new URL(subscriptions[0] ?? '').searchParams.getAll('match').sort(),
+  ).toEqual(['demo/chat', 'users/1/notifications', 'users/1/output']);
   await page
     .getByRole('button', { name: 'Send private notification' })
     .first()
@@ -72,7 +70,7 @@ test('shares one Mercure connection across independent islands and exact topics'
   await page.getByRole('button', { name: 'Generate report' }).first().click();
   await expect(page.locator('pre').first()).toContainText('Report ready.');
   await expect(
-    page.locator('li').filter({ hasText: 'Publishing snapshot' }),
+    page.locator('li').filter({ hasText: 'Conversation recap' }),
   ).toHaveCount(1);
   await expect(
     page.getByRole('progressbar', { name: 'Report progress' }),
@@ -81,7 +79,7 @@ test('shares one Mercure connection across independent islands and exact topics'
   expect(errors).toEqual([]);
 });
 
-test('refreshes another session while preserving an unrelated unsaved draft', async ({
+test('delivers chat messages immediately while another session is typing and restores saved history', async ({
   page,
   browser,
   appURL,
@@ -91,26 +89,29 @@ test('refreshes another session while preserving an unrelated unsaved draft', as
   try {
     const other = await context.newPage();
     await connected(other, appURL);
-    const draft = other.getByLabel('Draft title').first();
-    await draft.fill('Keep my unfinished draft');
+    const draft = other.getByLabel('Message', { exact: true });
+    await draft.fill('Keep my unfinished message');
+    await page.getByLabel('Your name').fill('Ada');
     await page
-      .getByLabel('Draft title')
-      .first()
-      .fill('Published from another session');
-    await page.getByRole('button', { name: 'Save article' }).first().click();
-    await expect(other.getByLabel('Published title').last()).toHaveText(
-      'Published from another session',
+      .getByLabel('Message', { exact: true })
+      .fill('Hello from another session <b>hello</b>');
+    await page.getByLabel('Message', { exact: true }).press('Enter');
+    const feed = other.getByRole('log', { name: 'Chat messages' });
+    await expect(feed).toContainText('Hello from another session <b>hello</b>');
+    await expect(feed.locator('b')).toHaveCount(0);
+    await expect(draft).toHaveValue('Keep my unfinished message');
+    await expect(page.getByLabel('Message', { exact: true })).toHaveValue('');
+    await other.getByRole('button', { name: 'Send message' }).click();
+    await expect(page.getByRole('log')).toContainText(
+      'Keep my unfinished message',
     );
-    await expect(
-      other
-        .getByRole('status')
-        .filter({ hasText: 'New version available' })
-        .first(),
-    ).toBeVisible();
-    await expect(draft).toHaveValue('Keep my unfinished draft');
-    await other.getByRole('button', { name: 'Save article' }).first().click();
-    await expect(page.getByLabel('Published title').first()).toHaveText(
-      'Keep my unfinished draft',
+    await page.reload();
+    await settled(page);
+    await expect(page.getByRole('log')).toContainText(
+      'Hello from another session <b>hello</b>',
+    );
+    await expect(page.getByRole('log')).toContainText(
+      'Keep my unfinished message',
     );
   } finally {
     await context.close();
@@ -224,7 +225,7 @@ test('recovers the shared subscription after the independent hub restarts', asyn
   );
 });
 
-test('retains the inbox through publishing and initializes it through enhanced navigation on mobile', async ({
+test('retains the inbox through sending and initializes it through enhanced navigation on mobile', async ({
   page,
   appURL,
 }, testInfo) => {
@@ -240,18 +241,19 @@ test('retains the inbox through publishing and initializes it through enhanced n
   });
   await notify.click();
   await expect(page.getByLabel('Notifications received')).toHaveText('1');
-  await page.getByLabel('Draft title').fill('Mobile publishing update');
-  await page.getByRole('button', { name: 'Save article' }).click();
-  await expect(page.getByLabel('Published title').last()).toHaveText(
-    'Mobile publishing update',
-  );
+  await page.getByLabel('Message', { exact: true }).fill('Hello from mobile');
+  await page.getByRole('button', { name: 'Send message' }).click();
+  await expect(page.getByRole('log')).toContainText('Hello from mobile');
   await expect(page.getByLabel('Notifications received')).toHaveText('1');
   await expect(page.getByLabel('Private notification')).toHaveText(
     'An update just arrived.',
   );
   await notify.click();
   await expect(page.getByLabel('Notifications received')).toHaveText('2');
-  const publish = page.getByRole('button', { name: 'Save article' });
+  await page
+    .getByLabel('Message', { exact: true })
+    .fill('Another mobile hello');
+  const publish = page.getByRole('button', { name: 'Send message' });
   const before = await publish.boundingBox();
   await publish.click();
   await settled(page);
@@ -270,7 +272,7 @@ test('retains the inbox through publishing and initializes it through enhanced n
   expect(errors).toEqual([]);
 });
 
-test('publishes once and leaves action buttons enabled during background reconciliation', async ({
+test('sends once and leaves action buttons enabled during background reconciliation', async ({
   page,
   appURL,
 }) => {
@@ -279,13 +281,13 @@ test('publishes once and leaves action buttons enabled during background reconci
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
-  let saves = 0;
+  let sends = 0;
   let refreshes = 0;
   await page.route('**/_interact/update', async (route) => {
     const payload: unknown = route.request().postDataJSON();
     if (!payload || typeof payload !== 'object' || !('action' in payload))
       throw new Error('Missing island request action.');
-    if (payload.action === 'save') saves++;
+    if (payload.action === 'send') sends++;
     if (payload.action === null) {
       refreshes++;
       await gate;
@@ -293,21 +295,23 @@ test('publishes once and leaves action buttons enabled during background reconci
     await route.continue();
   });
   try {
-    await page.getByLabel('Draft title').fill('One explicit publication');
-    await page.getByRole('button', { name: 'Save article' }).click();
-    await expect.poll(() => refreshes).toBe(2);
+    await page
+      .getByLabel('Message', { exact: true })
+      .fill('One explicit message');
+    await page.getByRole('button', { name: 'Send message' }).click();
+    await expect.poll(() => refreshes).toBeGreaterThanOrEqual(1);
     for (const name of [
-      'Save article',
+      'Send message',
       'Send private notification',
       'Generate report',
     ]) {
       await expect(page.getByRole('button', { name })).toBeEnabled();
     }
-    expect(saves).toBe(1);
+    expect(sends).toBe(1);
     release();
     await settled(page);
-    expect(saves).toBe(1);
-    expect(refreshes).toBe(2);
+    expect(sends).toBe(1);
+    expect(refreshes).toBeLessThanOrEqual(2);
   } finally {
     release();
     await page.unroute('**/_interact/update');
@@ -331,10 +335,12 @@ test('retains custom scoped endpoints through initial refresh, actions, and hub 
   await expect(page.getByLabel('Private notification')).toHaveText(
     'An update just arrived.',
   );
-  await page.getByLabel('Draft title').fill('Scoped realtime publication');
-  await page.getByRole('button', { name: 'Save article' }).click();
-  await expect(page.getByLabel('Published title').last()).toHaveText(
-    'Scoped realtime publication',
+  await page
+    .getByLabel('Message', { exact: true })
+    .fill('Hello from the scoped chat');
+  await page.getByRole('button', { name: 'Send message' }).click();
+  await expect(page.getByRole('log')).toContainText(
+    'Hello from the scoped chat',
   );
   await settled(page);
   await page.getByRole('button', { name: 'Send private notification' }).click();
@@ -344,5 +350,74 @@ test('retains custom scoped endpoints through initial refresh, actions, and hub 
     const raw = await root.getAttribute('data-interact-realtime');
     const metadata: unknown = JSON.parse(raw ?? '{}');
     expect(metadata).toMatchObject({ endpoint: '/realtime/subscribe' });
+  }
+});
+
+test('sends and validates messages even when the browser cannot connect to the hub', async ({
+  page,
+  appURL,
+  mercureHub,
+}) => {
+  if (!mercureHub) throw new Error('Missing real Mercure hub.');
+  await page.route(`${mercureHub.url}**`, (route) => route.abort());
+  await page.goto(`${appURL}/realtime`);
+  const message = page.getByLabel('Message', { exact: true });
+  const send = page.getByRole('button', { name: 'Send message' });
+  await send.click();
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Write a message first.' }),
+  ).toBeVisible();
+  await message.fill('Local acknowledgement without a subscription');
+  await send.click();
+  await expect(page.getByRole('log')).toContainText(
+    'Local acknowledgement without a subscription',
+  );
+  await expect(message).toHaveValue('');
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Write a message first.' }),
+  ).toHaveCount(0);
+});
+
+test('keeps a newer message draft when an earlier send finishes', async ({
+  page,
+  appURL,
+}) => {
+  await connected(page, appURL);
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/_interact/update', async (route) => {
+    const payload: unknown = route.request().postDataJSON();
+    if (
+      payload &&
+      typeof payload === 'object' &&
+      'action' in payload &&
+      payload.action === 'send'
+    ) {
+      const response = await route.fetch();
+      await gate;
+      await route.fulfill({ response });
+    } else await route.continue();
+  });
+  try {
+    const message = page.getByLabel('Message', { exact: true });
+    await message.fill('First message in flight');
+    await page.getByRole('button', { name: 'Send message' }).click();
+    await expect(
+      page.getByRole('button', { name: 'Send message' }),
+    ).toBeDisabled();
+    await message.fill('My next message');
+    release();
+    await expect(page.getByRole('log')).toContainText(
+      'First message in flight',
+    );
+    await expect(message).toHaveValue('My next message');
+    await expect(
+      page.getByRole('button', { name: 'Send message' }),
+    ).toBeEnabled();
+  } finally {
+    release();
+    await page.unroute('**/_interact/update');
   }
 });

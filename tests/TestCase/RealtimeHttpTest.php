@@ -81,7 +81,7 @@ class RealtimeHttpTest extends HttpTestCase
             flags: JSON_THROW_ON_ERROR,
         ));
         static::assertSame(['subscribe'], Hash::get($claims, 'authorization_details.0.actions'));
-        static::assertSame('articles/1', Hash::get($claims, 'authorization_details.0.topics.0.match'));
+        static::assertSame('users/1/notifications', Hash::get($claims, 'authorization_details.0.topics.0.match'));
         $this->assertResponseNotContains('forbidden/topic');
         static::assertArrayNotHasKey('snapshot', Values::map(Hash::get($payload, 'islands.' . $mount['id'])));
     }
@@ -172,13 +172,76 @@ class RealtimeHttpTest extends HttpTestCase
         $this->assertResponseCode(400);
     }
 
-    public function testOrdinaryPreviewExplainsRealtimeSetupWithoutRequiringInfrastructure(): void
+    public function testOrdinaryPreviewCanSendAndReloadWithoutRealtimeInfrastructure(): void
     {
         putenv('MERCURE_URL');
-        $this->get('/realtime');
-        $this->assertResponseOk();
+        $mount = $this->mounted(url: '/realtime');
         $this->assertResponseContains('npm run demo:realtime');
         $this->assertResponseNotContains('data-interact-realtime=');
+        $this->assertResponseNotContains('Send private notification');
+        $this->update([
+            'snapshot' => $mount['snapshot'],
+            'action' => 'send',
+            'updates' => ['name' => 'Offline preview', 'message' => 'Saved without a hub.'],
+        ]);
+        $this->assertResponseOk();
+        $this->assertResponseContains('chat-sent');
+        $this->assertResponseContains('"html":null');
+        $this->get('/realtime');
+        $this->assertResponseContains('Saved without a hub.');
+    }
+
+    public function testChatValidatesDraftsThenSavesAndPublishesEscapedPersistentMessages(): void
+    {
+        $mount = $this->mounted(url: '/realtime');
+        $this->update([
+            'snapshot' => $mount['snapshot'],
+            'action' => 'send',
+            'updates' => ['name' => '  ', 'message' => '   '],
+        ]);
+        $this->assertResponseCode(422);
+        $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
+        static::assertSame(['Choose a display name.'], Hash::get($payload, 'errors.name'));
+        static::assertSame(['Write a message first.'], Hash::get($payload, 'errors.message'));
+        static::assertIsString($payload['html']);
+        static::assertSame([], $this->publisher->getUpdates());
+        $this->update([
+            'snapshot' => $this->nextSnapshot(),
+            'action' => 'send',
+            'updates' => ['name' => '<b>Ada</b>', 'message' => '  Hello <script>bad()</script>  '],
+        ]);
+        $this->assertResponseOk();
+        $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
+        static::assertSame('', Hash::get($payload, 'state.message'));
+        static::assertSame([], $payload['errors']);
+        static::assertIsString($payload['html'], 'The first valid send clears previously rendered errors.');
+        static::assertSame(['demo/chat'], $this->publisher->getUpdates()[0]->getTopics());
+        static::assertStringContainsString('message-sent', $this->publisher->getUpdates()[0]->getData());
+        $this->get('/realtime');
+        $this->assertResponseContains('&lt;b&gt;Ada&lt;/b&gt;');
+        $this->assertResponseContains('Hello &lt;script&gt;bad()&lt;/script&gt;');
+        $this->assertResponseNotContains('<script>bad()</script>');
+    }
+
+    public function testFailedPublicationStillAcknowledgesTheSavedMessageAndRefreshesTheLocalFeed(): void
+    {
+        $publisher = $this->createMock(MockPublisher::class);
+        $publisher->expects(static::once())->method('publish')->willReturn(false);
+        MercurePublisher::setInstance($publisher);
+        $mount = $this->mounted(url: '/realtime');
+        $this->update([
+            'snapshot' => $mount['snapshot'],
+            'action' => 'send',
+            'updates' => ['message' => 'Saved during an outage.'],
+        ]);
+        $this->assertResponseOk();
+        $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
+        static::assertSame('', Hash::get($payload, 'state.message'));
+        static::assertTrue(Hash::get($payload, 'state.deliveryIssue'));
+        static::assertSame('chat-sent', Hash::get($payload, 'events.0.name'));
+        static::assertSame([], $payload['errors']);
+        $this->get('/realtime');
+        $this->assertResponseContains('Saved during an outage.');
     }
 
     /**
