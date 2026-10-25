@@ -6,8 +6,8 @@ description: Declare display targets for incremental action output.
 # x-interact:stream
 
 `x-interact:stream` declares a named, display-only target inside an island.
-[Streaming actions](/guide/streaming) append or replace its content before the
-final action result arrives.
+[Streaming actions](/guide/streaming) and [realtime display subscriptions](/guide/realtime#append-text)
+append or replace its content.
 
 ```html
 <pre x-interact:stream="answer"></pre>
@@ -18,8 +18,9 @@ Content is appended as literal text. Use `replace: true` in PHP to replace it.
 Multiple matching targets in the owning island receive the same update; child
 islands retain their own scope. Missing targets are ignored.
 
-Realtime `Subscription::stream()` deliveries use these same targets. For custom
-Alpine reactions to streamed or realtime events, use [`x-interact:on:event`](/directives/on).
+See the [complete report](/guide/streaming#stream-a-report-with-progress) for action
+output or [published text](/guide/realtime#append-text) for updates from other
+requests. Use [`x-interact:on:event`](/directives/on) for custom Alpine reactions.
 
 ## HTML elements
 

@@ -1,239 +1,516 @@
 ---
 title: Realtime subscriptions
-description: Receive provider events, refresh authorized islands, and publish notifications or display output.
+description: Build a two-tab notification, refresh server-rendered content, and publish text or HTML through any provider adapter.
 ---
 
 # Realtime subscriptions
 
-Realtime subscriptions receive changes from other users, controllers, or jobs through
-an external provider. A matching message refreshes an island, emits a browser event,
-or updates an existing stream target.
+Realtime subscriptions receive publications from other requests, users, or jobs
+through a configured provider adapter. One publication can update every subscribed
+tab. For incremental output during a single action, use [streaming](/guide/streaming).
 
-Interact supports application-owned providers, including WebSocket servers.
-[Custom providers](/guide/realtime-providers) use the same subscription and publishing
-APIs as the bundled [Mercure integration](#configure-mercure).
+## Before you start
 
-Declare subscriptions in an island using `Interact\Realtime\Subscription` and
-`Interact\IslandContext`:
+Complete [installation](/installation), then [configure a provider adapter](/guide/realtime-providers).
+Interact includes an **optional Mercure integration** and supports application-owned
+adapters, including WebSocket gateways. The examples below work with either; no
+provider-specific code or separate JavaScript file belongs in the island.
 
-```php
-public function subscriptions(IslandContext $context): array
+<span id="listen-with-alpine"></span>
+
+## Send a notification to two tabs
+
+Create `src/Island/NoticeIsland.php` and `templates/island/notice.php`, then put the
+mount call in an existing page template:
+
+::: code-group
+
+```php [Island]
+<?php
+declare(strict_types=1);
+
+namespace App\Island;
+
+use Interact\Attribute\Action;
+use Interact\Island;
+use Interact\IslandContext;
+use Interact\Realtime\PublisherInterface;
+use Interact\Realtime\Subscription;
+
+/**
+ * Sends a public demonstration notification to every subscribed tab.
+ */
+class NoticeIsland extends Island
 {
-    return [Subscription::refresh('catalog', event: 'catalog-updated', private: false)];
+    public function __construct(protected readonly PublisherInterface $publisher)
+    {
+    }
+
+    /**
+     * Listen for notifications on the shared demonstration topic.
+     *
+     * @return list<Subscription>
+     */
+    public function subscriptions(IslandContext $context): array
+    {
+        return [
+            Subscription::listen('demo/notifications', event: 'notification', private: false),
+        ];
+    }
+
+    /**
+     * Publish without replacing the local notification markup.
+     */
+    #[Action(render: false)]
+    public function notify(): void
+    {
+        $this->publisher->publishEvent(
+            'demo/notifications',
+            'notification',
+            ['text' => 'Notification sent at ' . date('H:i:s')],
+            private: false,
+        );
+    }
 }
 ```
 
-The ordinary request lifecycle authorizes and renders each refresh. Push messages
-never replace signed state or invoke PHP actions themselves.
-
-## Subscription modes
-
-| Declaration                                    | Behavior                                            |
-| ---------------------------------------------- | --------------------------------------------------- |
-| `Subscription::refresh($topic, event: $event)` | Mark the island stale and synchronize when safe     |
-| `Subscription::listen($topic, event: $event)`  | Deliver named events to `x-interact:on:event`       |
-| `Subscription::stream($topic, event: $event)`  | Deliver display messages to existing stream targets |
-
-Use `refresh()` for server-rendered changes without JavaScript. Use `stream()`
-with named text/HTML targets for incremental output. Choose `listen()` when the
-application needs a custom Alpine reaction.
-
-The event filter is optional. Topics match exactly; wildcard subscriptions are not
-supported. All modes default to `private: true`; use `private: false` for public
-delivery. The publisher must also choose public/private delivery explicitly.
-
-Derive protected topics from authorized props/state or the current request identity.
-Resource authorization belongs in `authorize()`, including during subscription
-renewal. See the [complete protected example](/demo#realtime).
-
-Declarations run after mount on initial rendering and after behavior on subsequent
-updates, including renderless updates. Lazy placeholders begin subscribing only
-after initialization. Each island supports up to 128 declarations; an authorization
-batch supports up to 64 mounted islands and the existing 1 MiB request limit.
-
-## Publish events, text, and HTML
-
-Inject `Interact\Realtime\PublisherInterface` into islands, controllers, services,
-or queue tasks. Publishing never requires a browser request or island instance:
-
-```php
-$publisher->publishEvent('catalog', 'catalog-updated', ['id' => 42], private: false);
-$publisher->publishText('reports/42', 'report-output', 'output', "Next result\n");
-$publisher->publishHtml('reports/42', 'report-output', 'rows', $renderedElement);
-```
-
-`publishText()` and `publishHtml()` take topic, event, target, content, and optional
-`options: ['replace' => true, 'private' => false]`. Content appends by default and
-delivery is private by default. Render `$renderedElement` with application-owned
-CakePHP view/element code and escape its values normally.
-
-For explicit message identities or application-managed retries, use
-`publish($topic, $message, private: true)` with `Interact\Realtime\Message`.
-`Message::event()`, `Message::text()`, and `Message::html()` share the shortcut
-vocabulary. Construct `new Message('changed', detail: $data, id: $stableId)` to
-retain an application-selected identity.
-
-Messages carry a bounded ID, exact topic, event name, JSON record detail, and an
-optional existing display-target message. The encoded envelope is limited to 1 MiB.
-Events and targets use the existing lowercase identifier syntax.
-
-Publish after a successful transaction commit. Publication failures throw and are
-not automatically retried. Durable notification history, job results, queues, and
-outbox delivery belong to application storage and services.
-
-## Listen with Alpine
-
-Use [`x-interact:on:event`](/directives/on) to react to a published event in the
-receiving island. The directive matches the event name and supplies the payload
-directly as `$event.detail`:
-
-```html
+```php [Template]
+<?php
+declare(strict_types=1);
+/** @var \Interact\View\TemplateView $this */
+?>
 <div
-  x-data="{ notification: '' }"
-  x-interact:on:notification="notification = $event.detail.text"
+    x-data="{ notification: '' }"
+    x-interact:on:notification="notification = $event.detail.text"
 >
-  <p role="status" x-text="notification"></p>
+    <p>Connection: <span x-text="$server.realtime.status"></span></p>
+    <?= $this->Form->button('Send notification', [
+        'type' => 'button',
+        '@click' => '$server.call("notify")',
+        ':disabled' => '$server.pending("notify") || $server.realtime.status !== "connected"',
+    ]) ?>
+    <p role="status" x-text="notification || 'No notifications yet.'">No notifications yet.</p>
 </div>
 ```
 
-Declare `Subscription::listen($topic, event: 'notification')` and publish with
-`$publisher->publishEvent($topic, 'notification', ['text' => 'Your report is ready.'])`.
-The same listener syntax receives [streamed events](/guide/streaming#streamevent).
-Listeners belong to their nearest island; no window listener or ownership check
-is needed. `$message` provides the original envelope, including the push's `id`,
-`topic`, `event`, and `detail`, when application logic needs metadata.
+```php [Mount]
+<?= $this->Interact->render('Notice') ?>
+```
 
-An expression may explicitly call `$server.call()` when application PHP behavior
-is needed; authorize and validate those arguments normally. Notifications do not
-themselves invoke PHP. Advanced observers can still use the bubbling `interact:push`
-event from the receiving island root; its detail retains the original envelope.
+:::
 
-For display subscriptions, keep existing `x-interact:stream` and
-`x-interact:stream.html` targets. Their ownership and display-only restrictions
-remain unchanged. A normal render replaces provisional output; retain durable
-results in application storage. See [streaming](/guide/streaming).
+Open the page in two tabs. When both show **connected**, click **Send notification**
+in either tab. Both show the sent time without a page reload. The button calls
+`notify()`, the publisher sends the message, and each subscribed island evaluates
+its `x-interact:on:notification` expression.
+
+This example deliberately uses a public topic: everyone subscribed to
+`demo/notifications` can receive it. [Private topics](#private-topics) require
+application-owned access control.
+
+### Topic, event, and target
+
+| Name   | Meaning                                                  | In these examples              |
+| ------ | -------------------------------------------------------- | ------------------------------ |
+| Topic  | Which islands can receive a publication                  | `demo/notifications`           |
+| Event  | Which kind of message a subscription or listener handles | `notification`                 |
+| Target | Which text/HTML region receives display output           | `output` in the examples below |
+
+The publisher and subscription must agree on the topic and event. A listener
+receives the application payload directly in `$event.detail`; Interact handles
+island ownership and cleanup. See [`x-interact:on`](/directives/on) for its options.
+
+## Refresh server-rendered HTML
+
+Use `Subscription::refresh()` when PHP should render updated content. This
+standalone clock example needs no database and no custom event listener.
+Create `src/Island/ClockIsland.php` and `templates/island/clock.php`, then mount it:
+
+::: code-group
+
+```php [Island]
+<?php
+declare(strict_types=1);
+
+namespace App\Island;
+
+use Interact\Attribute\Action;
+use Interact\Island;
+use Interact\IslandContext;
+use Interact\Realtime\PublisherInterface;
+use Interact\Realtime\Subscription;
+
+/**
+ * Refreshes a server-rendered timestamp in every subscribed tab.
+ */
+class ClockIsland extends Island
+{
+    public function __construct(protected readonly PublisherInterface $publisher)
+    {
+    }
+
+    /**
+     * Fetch fresh HTML when another tab requests a clock update.
+     *
+     * @return list<Subscription>
+     */
+    public function subscriptions(IslandContext $context): array
+    {
+        return [
+            Subscription::refresh('demo/clock', event: 'clock-updated', private: false),
+        ];
+    }
+
+    /**
+     * Compute the timestamp on each render rather than storing it in a snapshot.
+     *
+     * @return array{updatedAt: string}
+     */
+    public function viewData(): array
+    {
+        return ['updatedAt' => date('H:i:s')];
+    }
+
+    /**
+     * Signal all readers without performing a local render in the action response.
+     */
+    #[Action(render: false)]
+    public function refreshReaders(): void
+    {
+        $this->publisher->publishEvent('demo/clock', 'clock-updated', private: false);
+    }
+}
+```
+
+```php [Template]
+<?php
+declare(strict_types=1);
+use function Cake\Core\h;
+/**
+ * @var \Interact\View\TemplateView $this
+ * @var string $updatedAt
+ */
+?>
+<div>
+    <p>Connection: <span x-text="$server.realtime.status"></span></p>
+    <p>Last rendered by PHP: <time><?= h($updatedAt) ?></time></p>
+    <?= $this->Form->button('Refresh readers', [
+        'type' => 'button',
+        '@click' => '$server.call("refreshReaders")',
+        ':disabled' => '$server.pending("refreshReaders") || $server.realtime.status !== "connected"',
+    ]) ?>
+</div>
+```
+
+```php [Mount]
+<?= $this->Interact->render('Clock') ?>
+```
+
+:::
+
+Open two tabs and wait for **connected**. After a few seconds, click **Refresh readers**.
+Both tabs fetch fresh HTML and show a new timestamp. `refreshReaders()` publishes
+the signal; `Subscription::refresh()` schedules the ordinary PHP render.
+
+In an application, `viewData()` can read current records through your Table finders.
+Publish the change after saving; synchronization itself never saves data. The
+[chat feed](/demo#realtime) demonstrates persisted history.
+
+## Append text
+
+Use `Subscription::stream()` to deliver text straight into a named display target.
+Create `src/Island/TextFeedIsland.php` and `templates/island/text_feed.php`:
+
+::: code-group
+
+```php [Island]
+<?php
+declare(strict_types=1);
+
+namespace App\Island;
+
+use Interact\Attribute\Action;
+use Interact\Island;
+use Interact\IslandContext;
+use Interact\Realtime\PublisherInterface;
+use Interact\Realtime\Subscription;
+
+/**
+ * Publishes a line of text to every subscribed tab's output target.
+ */
+class TextFeedIsland extends Island
+{
+    public function __construct(protected readonly PublisherInterface $publisher)
+    {
+    }
+
+    /**
+     * Receive provisional text output on the shared demonstration topic.
+     *
+     * @return list<Subscription>
+     */
+    public function subscriptions(IslandContext $context): array
+    {
+        return [Subscription::stream('demo/feed', event: 'line', private: false)];
+    }
+
+    /**
+     * Append a line without rendering over the provisional output.
+     */
+    #[Action(render: false)]
+    public function appendOutput(): void
+    {
+        $this->publisher->publishText(
+            'demo/feed',
+            'line',
+            'output',
+            'Received at ' . date('H:i:s') . "\n",
+            options: ['private' => false],
+        );
+    }
+}
+```
+
+```php [Template]
+<?php
+declare(strict_types=1);
+/** @var \Interact\View\TemplateView $this */
+?>
+<div>
+    <p>Connection: <span x-text="$server.realtime.status"></span></p>
+    <?= $this->Form->button('Append a line', [
+        'type' => 'button',
+        '@click' => '$server.call("appendOutput")',
+        ':disabled' => '$server.pending("appendOutput") || $server.realtime.status !== "connected"',
+    ]) ?>
+    <pre x-interact:stream="output"></pre>
+</div>
+```
+
+```php [Mount]
+<?= $this->Interact->render('TextFeed') ?>
+```
+
+:::
+
+When both tabs show **connected**, click **Append a line**. Each click adds a line
+in both tabs. The topic is `demo/feed`, the event is `line`, and the third
+`publishText()` argument matches `x-interact:stream="output"`.
+
+## Replace HTML
+
+Use `publishHtml()` with an explicit `.html` target for formatted output. Create
+`src/Island/ResultIsland.php` and `templates/island/result.php`:
+
+::: code-group
+
+```php [Island]
+<?php
+declare(strict_types=1);
+
+namespace App\Island;
+
+use Interact\Attribute\Action;
+use Interact\Island;
+use Interact\IslandContext;
+use Interact\Realtime\PublisherInterface;
+use Interact\Realtime\Subscription;
+
+/**
+ * Replaces a display target with trusted application HTML in every subscribed tab.
+ */
+class ResultIsland extends Island
+{
+    public function __construct(protected readonly PublisherInterface $publisher)
+    {
+    }
+
+    /**
+     * Receive formatted results on a shared public topic.
+     *
+     * @return list<Subscription>
+     */
+    public function subscriptions(IslandContext $context): array
+    {
+        return [Subscription::stream('demo/results', event: 'result', private: false)];
+    }
+
+    /**
+     * Publish the result without replacing the island template.
+     */
+    #[Action(render: false)]
+    public function replaceOutput(): void
+    {
+        $this->publisher->publishHtml(
+            'demo/results',
+            'result',
+            'output',
+            '<strong>Report ready.</strong>',
+            options: ['replace' => true, 'private' => false],
+        );
+    }
+}
+```
+
+```php [Template]
+<?php
+declare(strict_types=1);
+/** @var \Interact\View\TemplateView $this */
+?>
+<div>
+    <p>Connection: <span x-text="$server.realtime.status"></span></p>
+    <?= $this->Form->button('Show result', [
+        'type' => 'button',
+        '@click' => '$server.call("replaceOutput")',
+        ':disabled' => '$server.pending("replaceOutput") || $server.realtime.status !== "connected"',
+    ]) ?>
+    <div x-interact:stream.html="output"></div>
+</div>
+```
+
+```php [Mount]
+<?= $this->Interact->render('Result') ?>
+```
+
+:::
+
+When both tabs show **connected**, click **Show result**. Both display the formatted
+result. `.html` must match `publishHtml()`; a mode mismatch is rejected.
+`publishText()` keeps HTML characters as literal text. For dynamic HTML, render
+an application-owned CakePHP element and escape its values normally.
+
+Text and HTML publications are provisional display updates. A normal island
+render or page reload replaces them; keep durable results in application storage.
+Targets must contain display-only markup; see [`x-interact:stream`](/directives/stream).
+
+## Subscription modes
+
+| Declaration                                    | Use it to                                  |
+| ---------------------------------------------- | ------------------------------------------ |
+| `Subscription::listen($topic, event: $event)`  | React in Alpine with `x-interact:on:event` |
+| `Subscription::refresh($topic, event: $event)` | Fetch fresh PHP-rendered HTML when safe    |
+| `Subscription::stream($topic, event: $event)`  | Append or replace text/HTML targets        |
+
+Topics match exactly; wildcard subscriptions are not supported. Omit `event` to
+receive every event on the topic. Declarations run after mount and on subsequent
+updates; lazy islands subscribe after initialization.
+
+## Publish events, text, and HTML
+
+`PublisherInterface` can also be injected into controllers, services, and queue tasks.
+Use `publishEvent($topic, $event, $detail, private: ...)` for notifications or
+refresh signals. `publishText()` and `publishHtml()` take topic, event, target,
+content, and `options: ['replace' => ..., 'private' => ...]`. Display publications
+append by default; all publication methods default to private delivery.
+
+Publish after a successful transaction commit. Failures throw and are not
+automatically retried; application queues and outboxes own durable delivery.
+
+::: details Message identities and limits
+
+For an application-managed message ID, call `publish($topic, $message, private: true)`
+with `Interact\Realtime\Message`. `Message::event()`, `Message::text()`, and
+`Message::html()` construct messages; `new Message('changed', detail: $data, id: $id)`
+retains an application-selected identity. Reuse that identity in your own retry workflow.
+
+Topics are bounded exact identifiers. Events and targets use lowercase names
+matching `[a-z][a-z0-9:-]*`. Each encoded message is limited to 1 MiB, including
+its ID, topic, event, JSON record detail, and optional display output. Each island
+supports 128 declarations; an authorization batch supports 64 islands and a 1 MiB request.
+
+:::
+
+## Private topics
+
+Subscriptions and publications default to `private: true`. The public examples
+above explicitly set `private: false` at both ends. For user or resource-specific
+messages, derive the topic from an authorized resource or current request identity
+and enforce access in `authorize()` on the receiving island. A topic's name is not
+an access check. See the [session-private chat example](/demo#realtime).
 
 ## Refreshes and drafts
 
-Invalidations coalesce for 100 ms. An island has at most one active automatic
-refresh and one pending follow-up. Requests use the ordinary synchronization queue.
+Automatic refreshes wait while an island has unsent drafts, validation errors, or
+work in progress. They also wait while the document is hidden. Event listeners
+and explicit display updates can still run immediately.
 
-Refreshes defer while the island has local drafts, validation errors, pending
-controls, uploads, queued requests, paused error recovery, or URL restoration.
-They also defer during enhanced navigation and while the document is hidden.
-Notifications and explicit display messages can still arrive immediately.
+`$server.realtime.stale` indicates that a refresh is waiting. Use ordinary Alpine
+presentation if the application needs to show it; see [`$server.realtime`](/reference/server#realtime).
 
-```html
-<p role="status" x-show="$server.realtime.stale" x-cloak>
-  Updates available. Your draft is preserved.
-</p>
-```
+::: details Refresh scheduling
 
-Only an authoritative render whose request began after the invalidation clears
-stale status. Renderless actions do not clear it. Synchronization does not save;
-application-owned drafts already synchronized to PHP remain application-owned.
+Invalidations coalesce for 100 ms, with at most one active automatic refresh and
+one pending follow-up per island. Refreshes use the ordinary synchronization queue.
+Pending controls, uploads, queued requests, paused recovery, URL restoration, and
+enhanced navigation also defer refreshing. Only an authoritative render whose
+request began after the invalidation clears stale status; a renderless action does not.
+
+:::
 
 ## Connection sharing and recovery
 
-Islands in the same Alpine installation, tab, endpoint, and CSRF scope share one
-provider connection. Ten islands subscribing to three topics normally use one
-provider connection for those three topics. Different tabs and authorization
-scopes retain independent connections.
+Islands in the same tab and authorization scope share one provider connection
+across their topics. Removing the final subscriber closes it. Different tabs
+retain separate connections. Reconnection can refresh saved content, but notifications
+and display messages are best effort; store anything that must survive missed messages.
 
-Adding/removing declarations renews authorization and reopens the shared provider
-connection with the updated topic set. Removing the final subscriber closes it.
-Compatible persisted layout islands retain their ownership across navigation.
+::: details Connection lifecycle
 
-Transports own reconnection. The bundled Mercure adapter and WebSocket example
-retry transient failures with bounded backoff and jitter. Initial
-connection and reconnection invalidate refresh subscriptions to reconcile current
-data. Duplicate message IDs are discarded within a bounded in-memory cache.
-Notifications and display streams are best effort, without exactly-once guarantees.
-PHP actions are never automatically replayed.
+The sharing scope is one Alpine installation, subscription endpoint, and CSRF
+context. Changing declarations renews authorization and reopens the connection;
+compatible persisted layout islands retain ownership across navigation.
+
+Transports own reconnection. The included Mercure adapter and custom WebSocket
+example use bounded backoff and jitter. Connecting or reconnecting invalidates
+refresh subscriptions. Duplicate message IDs are discarded in a bounded in-memory
+cache. PHP actions are never automatically replayed.
+
+:::
 
 ## Authorization leases
 
-The CSRF-protected subscription endpoint verifies separate, session/scope-bound
-leases and current application authorization. Leases last five minutes and renew
-after four minutes. Every renewal constructs a fresh island and runs setup,
-restoration, authorization, and subscription declarations; it does not run mount,
-update hooks, actions, persistence, or rendering.
+Interact checks current island authorization when granting or renewing subscriptions.
+Keep protected access in `authorize()`; initial authorization alone is insufficient.
 
-Leases cannot authorize ordinary updates, uploads, or child operations. Renewal
-does not extend ordinary snapshot expiry. Existing snapshot recovery may require
-a remount even while a provider connection remains active. Permission changes
-take effect on reauthorization or grant expiry; immediate revocation is not promised.
+::: details Lease lifecycle and custom middleware scopes
 
-For protected routing scopes, connect both `InteractController::update()` and
-`InteractController::subscribe()` under the application's middleware, using the
-same `interactScope`. Set the helper's `subscriptionEndpoint` alongside its custom
-`endpoint`. The custom subscription endpoint is retained in signed identity across
-updates and lazy initialization; browser payloads cannot replace it. New nested
-islands inherit their parent's subscription endpoint. See
-[security](/security#application-middleware-remains-authoritative).
+The CSRF-protected subscription endpoint verifies separate session/scope-bound
+leases. Leases last five minutes and renew after four minutes. Renewal constructs
+fresh islands and runs setup, restoration, authorization, and subscription declarations;
+it does not run mount, actions, update hooks, persistence, or rendering.
+
+Leases neither authorize ordinary updates nor extend action snapshot expiry.
+Permission changes take effect on reauthorization or grant expiry; immediate
+revocation is not promised. Snapshot recovery may require remounting while a
+provider connection is still active.
+
+For protected routing scopes, connect `InteractController::update()` and
+`InteractController::subscribe()` under the same middleware and `interactScope`.
+Set the helper's `subscriptionEndpoint` with its custom `endpoint`. Signed identity
+preserves the subscription endpoint through updates, lazy initialization, and nested
+mounts; browser payloads cannot replace it. See [security](/security#application-middleware-remains-authoritative).
+
+:::
 
 <span id="other-providers"></span>
 
 ## Custom providers
 
-Implement `BroadcasterInterface` for PHP delivery and
-`SubscriptionAuthorizerInterface` for expiring subscriber grants. Register a browser
-transport under the grant's driver name. Interact supplies the publisher shortcuts,
-authorization endpoint, leases, connection sharing, and island delivery policies.
+The [Advanced providers guide](/guide/realtime-providers#custom-providers) shows
+an application-owned WebSocket gateway, PHP service registration, and browser
+transport. The application-facing examples on this page stay the same.
 
-See [Realtime providers](/guide/realtime-providers) in Advanced for a complete
-WebSocket example: a PHP adapter, CakePHP container registration, the gateway's
-required protocol, and a tested browser transport with authentication,
-reconnection, and cleanup.
+<span id="configure-mercure"></span>
 
-## Configure Mercure
+## Provider setup
 
-Install the optional CakePHP 6 integration and run a Mercure 1.x hub:
-
-```sh
-composer require josbeir/cakephp-mercure:dev-cake6
-```
-
-Supply the provider configuration before loading Interact in application bootstrap.
-This example configures Mercure explicitly instead of loading its default config file:
-
-```php
-use Cake\Core\Configure;
-use Interact\InteractPlugin;
-use Mercure\MercurePlugin;
-use function Cake\Core\env;
-
-Configure::write('Mercure', [
-    'url' => env('MERCURE_URL'),
-    'public_url' => env('MERCURE_PUBLIC_URL'),
-    'jwt' => [
-        'secret' => env('MERCURE_JWT_SECRET'),
-        'issuer' => env('MERCURE_JWT_ISSUER'),
-        'audience' => env('MERCURE_JWT_AUDIENCE'),
-    ],
-]);
-Configure::write('Interact.realtime.provider', 'mercure');
-$this->addPlugin(MercurePlugin::class, ['bootstrap' => false]);
-$this->addPlugin(InteractPlugin::class);
-```
-
-Configure the hub with the same issuer, signing key, and resource identifier as the
-token audience. `url` is the server-side publication endpoint; `public_url` is the
-browser subscription endpoint. Different origins require hub CORS configuration
-allowing the application origin and bearer authorization. Allow the hub in the
-application's CSP `connect-src` when that directive is restricted.
-
-The bundled browser adapter uses native fetch and subscriber-only bearer tokens.
-It leaves application Mercure cookies untouched. Provider credentials remain in
-memory, outside `$server.state` and persistent browser storage.
+Choose the [optional Mercure adapter](/guide/realtime-providers#mercure) or an
+[application-owned provider adapter](/guide/realtime-providers#custom-providers).
+Provider configuration belongs in application bootstrap/services, separately from
+island subscriptions and template listeners.
 
 ## Demo and testing
 
-Run `composer preview` with Docker available, then open `/realtime` in two tabs.
-The launcher serves CakePHP and the built-in Mercure hub together in a pinned
-FrankenPHP container, so `ngrok http 8765` can share both through one URL.
-
-PHP unit tests use controlled publishing and real token generation. Runtime tests
-use fake timers and controlled SSE boundaries. Playwright suites start
-isolated FrankenPHP app/hub containers through the shared fixture API, failing clearly
-when Docker or the pinned image is unavailable. See [contributing](/contributing).
+The [chat demo](/demo#realtime) combines saved history, private notifications, text,
+HTML, and progress in one application. Its page links the tested source and setup
+instructions. See [contributing](/contributing) for the shared browser-test launcher.

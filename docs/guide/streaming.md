@@ -1,12 +1,19 @@
 ---
 title: Streaming
-description: Stream text, native elements, and JSON progress during a single island action.
+description: Build a report that displays text and progress while one island action runs.
 ---
 
 # Streaming
 
-Streaming displays incremental output while a declared action runs. Call the action
-through `$server.call()` and mark it with `#[Action(stream: true)]`.
+Streaming displays text, HTML, or progress while a single island action runs.
+It uses that action's HTTP response and **does not require a realtime provider**.
+Use [realtime subscriptions](/guide/realtime) when other requests or jobs need to
+publish updates to connected tabs.
+
+## Stream a report with progress
+
+Complete [installation](/installation). Create `src/Island/ReportIsland.php` and
+`templates/island/report.php`, then mount the island in an existing page:
 
 ::: code-group
 
@@ -21,7 +28,7 @@ use Interact\Attribute\State;
 use Interact\Island;
 
 /**
- * Publishes report lines as they become available and retains the completed report.
+ * Streams sample report lines and retains them for the final PHP render.
  */
 class ReportIsland extends Island
 {
@@ -29,16 +36,23 @@ class ReportIsland extends Island
     public string $report = '';
 
     /**
-     * Stream application results, then retain them for the final ordinary render.
+     * Emit each result and its progress as the sample work completes.
      */
     #[Action(stream: true)]
     public function generate(): void
     {
         $this->report = '';
         $this->stream('report', '', replace: true);
-        foreach (['First result', 'Second result'] as $line) {
+        $this->streamEvent('progress', ['percent' => 0]);
+        $steps = ['Collecting data', 'Building totals', 'Report complete'];
+        foreach ($steps as $index => $line) {
+            // Demo pacing only; real work should emit results as they become available.
+            usleep(400_000);
             $this->report .= $line . "\n";
             $this->stream('report', $line . "\n");
+            $this->streamEvent('progress', [
+                'percent' => (int)round(($index + 1) / count($steps) * 100),
+            ]);
         }
     }
 }
@@ -46,14 +60,25 @@ class ReportIsland extends Island
 
 ```php [Template]
 <?php
-// templates/island/report.php
+declare(strict_types=1);
 use function Cake\Core\h;
-/** @var string $report */
+/**
+ * @var \Interact\View\TemplateView $this
+ * @var string $report
+ */
 ?>
-<button type="button" @click="$server.call('generate')" :disabled="$server.busy">
-    Generate report
-</button>
-<pre x-interact:stream="report"><?= (string)h($report) ?></pre>
+<div
+    x-data="{ percent: 0 }"
+    x-interact:on:progress="percent = $event.detail.percent"
+>
+    <?= $this->Form->button('Generate report', [
+        'type' => 'button',
+        '@click' => '$server.call("generate")',
+        ':disabled' => '$server.pending("generate")',
+    ]) ?>
+    <progress max="100" :value="percent" aria-label="Report progress"></progress>
+    <pre x-interact:stream="report"><?= h($report) ?></pre>
+</div>
 ```
 
 ```php [Mount]
@@ -62,69 +87,135 @@ use function Cake\Core\h;
 
 :::
 
-Complete [installation](/installation) first. See the tested
-[report example](/demo#streaming) for text, elements, and progress together.
+Click **Generate report**. Lines appear one at a time while the button is disabled,
+and progress reaches 100%. The completed text remains after the action's final
+render. Click again to reset the output and run a new report.
+
+The delay only makes this demonstration visible. In application code, stream each
+result when your actual work produces it. There is no separate JavaScript entry point.
+
+### How the pieces match
+
+| PHP                                          | Template                                                   | Result                                         |
+| -------------------------------------------- | ---------------------------------------------------------- | ---------------------------------------------- |
+| `#[Action(stream: true)]`                    | `$server.call('generate')`                                 | Run an action that can emit incremental output |
+| `stream('report', $text)`                    | `x-interact:stream="report"`                               | Append literal text to the `report` target     |
+| `streamEvent('progress', ['percent' => 50])` | `x-interact:on:progress="percent = $event.detail.percent"` | Update local Alpine progress                   |
+| `#[State] public string $report`             | `<?= h($report) ?>`                                        | Retain completed text through the final render |
+
+Streamed DOM output is provisional. Assigning `$this->report` keeps the final
+PHP-rendered output consistent; it does not save the report to a database or make
+it survive a page reload. Use application storage for that.
 
 ## stream()
 
-`stream(string $to, string $content, bool $replace = false): void` appends literal
-text to every matching [`x-interact:stream`](/directives/stream) target owned by
-the current island. `replace: true` clears its previous content. HTML characters
-remain text; missing targets are harmless.
+`stream($to, $content, replace: false)` appends literal text. The first argument
+matches a named [`x-interact:stream`](/directives/stream) target in the same island.
+The report action uses `replace: true` once to clear a previous run.
 
-Target and event names are lowercase identifiers matching
-`[a-z][a-z0-9:-]*`. Names are literal values, rather than Alpine expressions.
+HTML characters remain text. Multiple matching targets in the island receive the
+same content; missing targets are ignored and child islands retain their own scope.
+Target and event names match `[a-z][a-z0-9:-]*`.
 
 ## streamElement()
 
-`streamElement(string $to, string $element, array $data = [], bool $replace = false): void`
-renders a native CakePHP element through the island's configured view and helpers.
-The element receives explicit `$data`. Unqualified element names use the island
-class's plugin; `Plugin.element_name` selects another loaded plugin explicitly.
+Use `streamElement()` when the output is a native CakePHP element. This standalone
+summary example keeps its result in state so it remains visible after the final
+render. Create `src/Island/SummaryIsland.php`, `templates/island/summary.php`, and
+`templates/element/report_summary.php`:
 
-```php
-$this->streamElement('rows', 'report_row', ['title' => $title]);
+::: code-group
+
+```php [Island]
+<?php
+declare(strict_types=1);
+
+namespace App\Island;
+
+use Interact\Attribute\Action;
+use Interact\Attribute\State;
+use Interact\Island;
+
+/**
+ * Streams a native summary element and retains its value for the final render.
+ */
+class SummaryIsland extends Island
+{
+    #[State]
+    public string $result = '';
+
+    /**
+     * Render an application result into the summary target.
+     */
+    #[Action(stream: true)]
+    public function summarize(): void
+    {
+        $this->result = 'Report ready.';
+        $this->streamElement('summary', 'report_summary', [
+            'result' => $this->result,
+        ], replace: true);
+    }
+}
 ```
 
-```html
-<ul x-interact:stream.html="rows"></ul>
+```php [Element]
+<?php
+declare(strict_types=1);
+use function Cake\Core\h;
+/** @var string $result */
+?>
+<p><strong><?= h($result) ?></strong></p>
 ```
 
-Escape application values in the element. The `.html` modifier explicitly accepts
-HTML; it must match the message's mode. Custom renderers can implement
-`Interact\Rendering\ElementRendererInterface` to support this method.
-
-Targets and fragments must contain display markup. Controls, model bindings,
-child island metadata, ignored regions, executable scripts, and nested stream
-targets are rejected before the update changes the DOM. Keep interactive forms
-and independently owned widgets outside the target. Alpine initializes appended
-HTML once and cleans up replaced content.
-
-## streamEvent()
-
-`streamEvent(string $name, array $detail = []): void` immediately delivers a named
-event to listeners in the island. Values must be JSON-compatible.
-
-```php
-$this->streamEvent('progress', ['percent' => 50]);
-```
-
-```html
-<div
-  x-data="{ percent: 0 }"
-  x-interact:on:progress="percent = $event.detail.percent"
->
-  <progress max="100" :value="percent" aria-label="Progress"></progress>
+```php [Template]
+<?php
+declare(strict_types=1);
+/**
+ * @var \Interact\View\TemplateView $this
+ * @var string $result
+ */
+?>
+<div>
+    <?= $this->Form->button('Show summary', [
+        'type' => 'button',
+        '@click' => '$server.call("summarize")',
+        ':disabled' => '$server.pending("summarize")',
+    ]) ?>
+    <div x-interact:stream.html="summary">
+        <?= $this->element('report_summary', ['result' => $result]) ?>
+    </div>
 </div>
 ```
 
-[`x-interact:on:event`](/directives/on) handles ownership, name matching, and
-cleanup. `$event.detail` contains the payload; `$message` contains the original
-`{ name, detail }` envelope. The same syntax receives [realtime notifications](/guide/realtime#listen-with-alpine).
-Advanced observers can still listen to the bubbling `interact:stream` event from
-the island root; its detail remains `{ name, detail }`. Ordinary
-[`dispatch()`](/guide/events#dispatch) effects still wait for the successful
-final result.
+```php [Mount]
+<?= $this->Interact->render('Summary') ?>
+```
+
+:::
+
+Click **Show summary** to render the formatted result. `summary` is the target;
+`report_summary` is the element name. `.html` is required for element output.
+The declared `result` state lets the template reproduce the summary after the
+final render. Escape application values inside elements normally.
+
+`streamElement($to, $element, $data, replace: false)` supplies explicit element
+variables and uses the island's view and helpers. Unqualified names resolve in the
+island's plugin; `Plugin.element_name` selects another loaded plugin.
+
+Keep targets display-only: put controls, nested islands, and widget-owned markup
+outside them. See [`x-interact:stream`](/directives/stream#options-and-ownership)
+for target restrictions.
+
+## streamEvent()
+
+`streamEvent($name, $detail)` delivers a named event immediately. The report's
+`progress` event carries `percent` in `$event.detail`; its listener needs no
+ownership checks or window binding. Use [`x-interact:on`](/directives/on) for
+expression syntax, optional metadata, and ownership rules.
+
+The same listener receives [realtime notifications](/guide/realtime#send-a-notification-to-two-tabs).
+Ordinary [`dispatch()`](/guide/events#dispatch) events wait for the accepted final
+result instead of arriving during the action.
 
 ## Completion, validation, and failure
 
@@ -153,6 +244,12 @@ automatically replays an action. Aborting a reader does not cancel server work;
 check durable application results before an explicit retry.
 
 ## HTTP and deployment
+
+If all output appears at once, check PHP, web-server, compression, and proxy
+buffering. Interact flushes each frame, but infrastructure must allow immediate
+delivery. A long streaming action occupies a PHP worker until it finishes.
+
+::: details Response lifecycle and protocol limits
 
 The existing CSRF-protected POST endpoint negotiates JSON or `text/event-stream`.
 Only server-declared streaming actions select SSE. The browser uses native fetch
@@ -191,47 +288,14 @@ The browser uses `eventsource-parser` for framing, with bounded buffering for
 incomplete messages. Unknown SSE fields and comments are ignored; invalid UTF-8,
 oversized message data, and a missing terminal result still fail the request.
 
+:::
+
 ## Custom receiving adapters
 
-An adapter connects an application-owned feed, such as Mercure or a WebSocket,
-to an island's display targets. Map your provider's messages to
-[`$server.receiveStream()`](/reference/server#receivestream); the normal action
-POST keeps its built-in SSE reader.
+Action streaming already includes its HTTP reader. For an external provider,
+use the [provider adapters](/guide/realtime-providers). Applications that own a
+separate per-island feed can use the advanced [direct display adapter](/guide/realtime-providers#direct-display-adapters)
+example; its connection lifecycle belongs to the application.
 
-For example, suppose an authorized SSE feed sends `{"text":"Next result\n"}`.
-Register this external script [before Interact starts](/guide/alpine#custom-javascript):
-
-<<< @/../tests/Fixture/browser/text-feed.js
-
-Inside the receiving island, supply an authorized subscription URL as `$feedUrl`
-through `viewData()` and attach the adapter:
-
-```php
-<?php
-declare(strict_types=1);
-use function Cake\Core\h;
-/** @var string $feedUrl */
-?>
-<div x-data="textFeed" data-feed-url="<?= (string)h($feedUrl) ?>">
-    <pre x-interact:stream="output"></pre>
-</div>
-```
-
-Each message appends literal text to this island's `output` target immediately.
-The adapter supplies the current island ID, catches malformed messages, and closes
-its connection when Alpine destroys the wrapper. The connection stays outside
-reactive state. Use your provider's client and cleanup method in the same lifecycle;
-authentication, authorized topics, and reconnection belong to that integration.
-
-The receiver also accepts `replace: true`, HTML for explicit `.html` targets, and
-`type: 'event'` messages with `name` and JSON record `detail`. Event messages reach
-[`x-interact:on:event`](/directives/on) listeners in the island. The raw
-`interact:stream` event remains available to advanced observers. The npm package exports `StreamMessage`
-and `IslandBridge` for typed adapters; see the [message contract](/reference/server#receivestream).
-
-These are provisional display updates. Signed state, validation, request activity,
-and action results stay with normal requests; a subsequent render is authoritative.
-Invalid input throws to the adapter, while delivery after island disposal is ignored.
-
-For managed topic subscriptions, shared provider connections, notification events,
-and automatic island refreshes, see [realtime subscriptions](/guide/realtime).
+The [complete report demo](/demo#streaming) combines text, elements, and progress
+and links the tested source.

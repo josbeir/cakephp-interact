@@ -10,81 +10,69 @@ receives a matching realtime notification or streamed event.
 
 ```html
 <div
-  x-data="{ percent: 0 }"
-  x-interact:on:progress="percent = $event.detail.percent"
+  x-data="{ notification: '' }"
+  x-interact:on:notification="notification = $event.detail.text"
 >
-  <progress max="100" :value="percent" aria-label="Progress"></progress>
+  <p role="status" x-text="notification"></p>
 </div>
 ```
 
-Send progress from a [streaming action](/guide/streaming#streamevent):
-
-```php
-$this->streamEvent('progress', ['percent' => 50]);
-```
-
-For [realtime delivery](/guide/realtime), declare
-`Subscription::listen($topic, event: 'progress')` in the island and publish with
-`$publisher->publishEvent($topic, 'progress', ['percent' => 50])`. Both paths use
-the same template listener. Listeners do not subscribe to topics themselves.
+For complete sender, receiver, and mount examples, see
+[notifications between two tabs](/guide/realtime#send-a-notification-to-two-tabs)
+or [a streamed report with progress](/guide/streaming#stream-a-report-with-progress).
+A listener handles incoming events; realtime topics are declared in `subscriptions()`.
 
 ## Expressions and payloads
 
-`$event.type` is the matching application event name and `$event.detail` is its
-payload. The expression runs in the element's Alpine scope, so assignments and
-application methods work without a separate JavaScript entry point:
+`$event.type` is the application event name and `$event.detail` is its payload.
+Expressions run in the element's Alpine scope. Assign local values, call an
+application method with `$event.detail`, or explicitly call `$server.call()`.
+Receiving an event does not send a PHP request or change transported state itself.
 
-```html
-<div x-interact:on:notification="notifications.receive($event.detail)"></div>
-```
+`$event` is an expression-local `CustomEvent` with no DOM target or propagation
+path. Use native Alpine `@event` for DOM events, PHP [`dispatch()` effects](/guide/events),
+and request/navigation/error lifecycle events.
 
-This example assumes an application-defined `notifications` object in Alpine
-scope. Calling `$server.call()` is also explicit; receiving an event does not send
-a PHP request or change transported state automatically.
+## Names and ownership
 
-`$event` is an expression-local `CustomEvent`, not a redispatched DOM event.
-It has no DOM target or propagation path. Use normal Alpine `@event` listeners
-for browser events and [`dispatch()` effects](/guide/events), including communication
-between parent or sibling islands. Request, navigation, and error lifecycle events
-also retain their existing DOM listeners; this directive handles push and streamed
-application events only.
+| Rule                | Behavior                                                                                       |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| Literal event name  | Matches `[a-z][a-z0-9:-]*`; `x-interact:on:report:progress` listens for `report:progress`      |
+| Nonempty expression | Uses local Alpine scope; dynamic names and modifiers are not supported                         |
+| Nearest island      | Listeners on a root or owned descendant ignore nested and sibling islands                      |
+| Multiple listeners  | Each matching listener runs once per incoming event                                            |
+| Both delivery paths | Push and streaming events with the same name use the same listener                             |
+| Automatic cleanup   | Removing an element or directive releases its listeners; changed bindings rebind during morphs |
+
+Keep listeners outside display-only [`x-interact:stream`](/directives/stream) targets.
 
 ## Metadata
 
-`$message` contains the original envelope for optional filtering or bookkeeping:
-
-```html
-<div
-  x-interact:on:notification="
-    $message.topic === 'reports/42' && (notification = $event.detail.text)
-  "
-></div>
-```
-
-This example assumes `notification` exists in Alpine scope.
+`$message` supplies the original envelope when metadata is needed:
 
 | Source                                            | `$message` fields                |
 | ------------------------------------------------- | -------------------------------- |
 | Realtime `Subscription::listen()`                 | `id`, `topic`, `event`, `detail` |
 | Action `streamEvent()` or a custom stream adapter | `name`, `detail`                 |
 
-The raw bubbling `interact:push` and `interact:stream` DOM events remain available
-to advanced observers with their existing envelope shapes.
+For example, add a topic check to an existing notification listener:
 
-## Names and ownership
+```html
+<div
+  x-data="{ notification: '' }"
+  x-interact:on:notification="
+    $message.topic === 'reports/42' && (notification = $event.detail.text)
+  "
+>
+  <p role="status" x-text="notification"></p>
+</div>
+```
 
-Event names are literal lowercase identifiers matching `[a-z][a-z0-9:-]*`.
-For example, `x-interact:on:report:progress` listens for `report:progress`.
-The expression must be nonempty; modifiers and dynamic event names are not supported.
+::: details Raw DOM observers
 
-Place a listener on an island root or any owned descendant. Nested and sibling
-islands retain independent delivery. Multiple matching listeners in the same
-island each run once for an incoming event. An event of the same name received
-through push or streaming runs the same listener.
+Advanced observers can listen to the bubbling `interact:push` and `interact:stream`
+events on the receiving island root. Their detail contains the original envelope
+listed above. `x-interact:on` does not redispatch its expression-local event into
+the DOM.
 
-Keep listeners outside display-only `x-interact:stream` targets.
-
-Alpine removes listeners when their elements or directives disappear. Ordinary
-morphs preserve local Alpine state and rebind changed declarations. Text and HTML
-output can use [`x-interact:stream`](/directives/stream) without an event handler;
-server-rendered changes can use `Subscription::refresh()` without JavaScript.
+:::

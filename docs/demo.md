@@ -58,7 +58,9 @@ remain available after reloading.
 Tested source: [composer island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RealtimeChatIsland.php),
 [feed island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RealtimeMessagesIsland.php),
 [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/realtime_chat.php).
-See [realtime subscriptions](/guide/realtime) for configuration and delivery guarantees.
+Start with the [two-tab notification walkthrough](/guide/realtime#send-a-notification-to-two-tabs)
+for a smaller example to build in your own application. The [streaming walkthrough](/guide/streaming#stream-a-report-with-progress)
+shows a report action without a realtime provider.
 
 ## Try the interactions
 

@@ -1,13 +1,74 @@
 ---
-title: Custom realtime providers
-description: Connect an application-owned WebSocket server through PHP provider contracts and a browser transport.
+title: Realtime providers
+description: Configure the optional Mercure adapter or connect an application-owned realtime service.
 ---
 
-# Custom realtime providers
+<span id="custom-realtime-providers"></span>
 
-A realtime provider connects Interact to an external delivery service. Implement two
-PHP contracts and register a browser transport. Islands keep the same
-[`subscriptions()` and publisher APIs](/guide/realtime).
+# Realtime providers
+
+A provider adapter connects Interact to an external delivery service. Choose an
+adapter once; application islands use the same subscriptions, publisher methods,
+and template directives with every provider.
+
+## Choose an adapter
+
+| Adapter                                 | Setup                                                                                                                   |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Included Mercure integration            | Install the optional CakePHP package and configure a Mercure hub. See [Mercure](#mercure).                              |
+| Application-owned WebSocket integration | Connect your gateway through PHP provider contracts and a browser transport. See [Custom providers](#custom-providers). |
+
+Mercure is optional. The custom adapter contracts can connect other realtime
+services too; Interact does not require their messages to arrive over SSE.
+[Action streaming](/guide/streaming) uses the action's own HTTP response and needs
+no realtime provider.
+
+## Mercure
+
+Install the optional CakePHP 6 integration and run a Mercure 1.x hub:
+
+```sh
+composer require josbeir/cakephp-mercure:dev-cake6
+```
+
+Supply the provider configuration before loading Interact in application bootstrap.
+This example configures Mercure explicitly instead of loading its default config file:
+
+```php
+use Cake\Core\Configure;
+use Interact\InteractPlugin;
+use Mercure\MercurePlugin;
+use function Cake\Core\env;
+
+Configure::write('Mercure', [
+    'url' => env('MERCURE_URL'),
+    'public_url' => env('MERCURE_PUBLIC_URL'),
+    'jwt' => [
+        'secret' => env('MERCURE_JWT_SECRET'),
+        'issuer' => env('MERCURE_JWT_ISSUER'),
+        'audience' => env('MERCURE_JWT_AUDIENCE'),
+    ],
+]);
+Configure::write('Interact.realtime.provider', 'mercure');
+$this->addPlugin(MercurePlugin::class, ['bootstrap' => false]);
+$this->addPlugin(InteractPlugin::class);
+```
+
+Configure the hub with the same issuer, signing key, and resource identifier as the
+token audience. `url` is the server-side publication endpoint; `public_url` is the
+browser subscription endpoint. Different origins require hub CORS configuration
+allowing the application origin and bearer authorization. Allow the hub in the
+application's CSP `connect-src` when that directive is restricted.
+
+The bundled browser adapter uses native fetch and subscriber-only bearer tokens.
+It leaves application Mercure cookies untouched. Provider credentials remain in
+memory, outside `$server.state` and persistent browser storage.
+
+## Custom providers
+
+Implement two PHP contracts and register a browser transport. The following
+WebSocket example supplies all three parts; applications keep the
+[ordinary realtime APIs](/guide/realtime).
 
 | Boundary           | Contract                                       | Responsibility                                                                   |
 | ------------------ | ---------------------------------------------- | -------------------------------------------------------------------------------- |
@@ -166,3 +227,50 @@ container bindings, message encoding, invalid responses, and failed publication
 without retries. Its browser transport tests use a controlled WebSocket boundary
 for acknowledgement, delivery, reconnects, and cleanup. Test your actual gateway
 with two independent identities, forbidden topics, expired tokens, and disconnects.
+
+## Direct display adapters
+
+For managed subscriptions, use a provider adapter above: Interact handles island
+authorization, shared connections, and grant renewal. A direct display adapter is
+an advanced alternative when the application owns a separate feed and its entire
+connection lifecycle.
+
+An adapter connects an application-owned feed, such as Mercure or a WebSocket,
+to an island's display targets. Map your provider's messages to
+[`$server.receiveStream()`](/reference/server#receivestream); the normal action
+POST keeps its built-in SSE reader.
+
+For example, suppose an authorized SSE feed sends `{"text":"Next result\n"}`.
+Register this external script [before Interact starts](/guide/alpine#custom-javascript):
+
+<<< @/../tests/Fixture/browser/text-feed.js
+
+Inside the receiving island, supply an authorized subscription URL as `$feedUrl`
+through `viewData()` and attach the adapter:
+
+```php
+<?php
+declare(strict_types=1);
+use function Cake\Core\h;
+/** @var string $feedUrl */
+?>
+<div x-data="textFeed" data-feed-url="<?= (string)h($feedUrl) ?>">
+    <pre x-interact:stream="output"></pre>
+</div>
+```
+
+Each message appends literal text to this island's `output` target immediately.
+The adapter supplies the current island ID, catches malformed messages, and closes
+its connection when Alpine destroys the wrapper. The connection stays outside
+reactive state. Use your provider's client and cleanup method in the same lifecycle;
+authentication, authorized topics, and reconnection belong to that integration.
+
+The receiver also accepts `replace: true`, HTML for explicit `.html` targets, and
+`type: 'event'` messages with `name` and JSON record `detail`. Event messages reach
+[`x-interact:on:event`](/directives/on) listeners in the island. The raw
+`interact:stream` event remains available to advanced observers. The npm package exports `StreamMessage`
+and `IslandBridge` for typed adapters; see the [message contract](/reference/server#receivestream).
+
+These are provisional display updates. Signed state, validation, request activity,
+and action results stay with normal requests; a subsequent render is authoritative.
+Invalid input throws to the adapter, while delivery after island disposal is ignored.
