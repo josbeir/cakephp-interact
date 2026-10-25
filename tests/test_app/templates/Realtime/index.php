@@ -18,7 +18,9 @@ $this->assign('title', 'Live publishing desk · Interact');
     <?php if ($ready): ?>
         <div class="rt-grid">
             <div class="rt-workspace"><?= $this->Interact->render('RealtimeArticle', props: ['articleId' => $articleId]) ?></div>
-            <aside class="rt-preview" aria-label="Live article preview"><?= $this->Interact->render('RealtimeArticle', props: ['articleId' => $articleId, 'editorKey' => 'monitor'], key: 'realtime-monitor') ?></aside>
+            <aside class="rt-preview" aria-label="Live article preview">
+                <?= $this->Interact->render('RealtimeArticle', props: ['articleId' => $articleId, 'editorKey' => 'monitor'], key: 'realtime-monitor') ?>
+            </aside>
         </div>
         <p class="rt-footer-note"><span aria-hidden="true">◌</span> Two independent islands. One shared connection. Your application stays in control.</p>
     <?php else: ?>

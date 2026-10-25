@@ -1,4 +1,7 @@
 import Alpine from '@alpinejs/csp';
+import { readMetadata } from '../../resources/ts/transport/metadata';
+import { IslandClient } from '../../resources/ts/client';
+import { registerNavigation } from '../../resources/ts/navigation/registry';
 import {
   afterEach,
   beforeEach,
@@ -368,7 +371,7 @@ describe('island invalidation and delivery', () => {
     };
     const client = new RealtimeIsland(root, full, coordinator, eligible);
     disposers.push(() => client.dispose());
-    return { client, bridge, root, eligible, feedback };
+    return { client, bridge, root, eligible, feedback, coordinator };
   }
 
   it('coalesces bursts, defers blocked drafts, and preserves newer generations', async () => {
@@ -408,6 +411,40 @@ describe('island invalidation and delivery', () => {
     expect(bridge.sync).toHaveBeenCalledOnce();
     client.accepted(true, client.begin());
     expect(feedback.stale).toBe(false);
+  });
+
+  it('renews accepted membership, changes authorization scope, and releases the final subscription', async () => {
+    const { client, feedback, coordinator } = island();
+    const close = vi.fn();
+    coordinator.registerTransport('test', () => close);
+    const fetcher = vi.fn<typeof fetch>(async () => authorization(['one']));
+    vi.stubGlobal('fetch', fetcher);
+    client.update(metadata, 'csrf');
+    await vi.advanceTimersByTimeAsync(0);
+    client.update({ ...metadata, lease: 'new-accepted-lease' }, 'csrf');
+    await vi.advanceTimersByTimeAsync(240000);
+    expect(fetcher.mock.calls[1]?.[1]?.body).toBe(
+      JSON.stringify({ version: 1, leases: { one: 'new-accepted-lease' } }),
+    );
+    client.update(metadata, 'other-csrf');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(fetcher.mock.calls[2]?.[1]?.headers).toMatchObject({
+      'X-CSRF-Token': 'other-csrf',
+    });
+    client.update(undefined, 'other-csrf');
+    expect(feedback.status).toBe('disabled');
+    expect(feedback.stale).toBe(false);
+    expect(close).toHaveBeenCalledTimes(3);
+  });
+
+  it('uses refresh delivery without requiring a display payload', () => {
+    const { client, bridge, feedback } = island();
+    client.receive(message, metadata.subscriptions);
+    expect(feedback.stale).toBe(true);
+    client.receive(message, [
+      { topic: message.topic, event: null, mode: 'stream', private: true },
+    ]);
+    expect(bridge.receiveStream).not.toHaveBeenCalled();
   });
 
   it('routes notifications and provisional targets exactly once and releases disposed owners', () => {
@@ -451,4 +488,260 @@ describe('island invalidation and delivery', () => {
     await vi.advanceTimersByTimeAsync(1000);
     expect(bridge.sync).not.toHaveBeenCalled();
   });
+});
+
+describe('authorization recovery and delivery boundaries', () => {
+  async function active(members: ReturnType<typeof owner>[]) {
+    const fetcher = vi.fn<typeof fetch>(async () =>
+      authorization(members.map((member) => member.id)),
+    );
+    vi.stubGlobal('fetch', fetcher);
+    const slot: { current?: TransportCallbacks } = {};
+    const close = vi.fn();
+    const connection = new RealtimeConnection(
+      '/subscribe',
+      'csrf',
+      new Map([
+        [
+          'test',
+          (_grant: unknown, events: TransportCallbacks) => {
+            slot.current = events;
+            return close;
+          },
+        ],
+      ]),
+    );
+    disposers.push(() => connection.dispose());
+    for (const member of members) connection.update(member, metadata);
+    await vi.advanceTimersByTimeAsync(0);
+    const callbacks = slot.current;
+    if (!callbacks) throw new Error('Missing active transport.');
+    callbacks.status('connected');
+    return { fetcher, close, callbacks, connection };
+  }
+
+  it('closes the final member and cancels renewal without accepting late delivery', async () => {
+    const one = owner('one');
+    const { connection, callbacks, close, fetcher } = await active([one]);
+    connection.remove('one');
+    await vi.advanceTimersByTimeAsync(0);
+    callbacks.receive(message);
+    callbacks.status('connected');
+    await vi.advanceTimersByTimeAsync(600000);
+    expect(close).toHaveBeenCalledOnce();
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(one.receive).not.toHaveBeenCalled();
+    expect(one.invalidate).toHaveBeenCalledOnce();
+  });
+
+  it('disables subscriptions removed by renewed authorization and closes the old grant', async () => {
+    const one = owner('one');
+    const { connection, close, fetcher } = await active([one]);
+    one.feedback.stale = true;
+    fetcher.mockImplementation(async () =>
+      authorization(['one'], {
+        islands: { one: { lease: 'unsubscribed', subscriptions: [] } },
+        grant: null,
+      }),
+    );
+    await vi.advanceTimersByTimeAsync(240000);
+    expect(one.feedback).toEqual({
+      status: 'disabled',
+      error: null,
+      stale: false,
+    });
+    expect(close).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(600000);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    connection.remove('one');
+  });
+
+  it('bounds duplicate suppression and isolates a recipient display failure', async () => {
+    const one = owner('one');
+    const two = owner('two');
+    one.receive.mockImplementation(() => {
+      throw new Error('Widget failed.');
+    });
+    const { callbacks } = await active([one, two]);
+    for (let id = 0; id < 513; id++)
+      callbacks.receive({ ...message, id: `event-${id}` });
+    callbacks.receive({ ...message, id: 'event-512' });
+    expect(two.receive).toHaveBeenCalledTimes(513);
+    callbacks.receive({ ...message, id: 'event-0' });
+    expect(two.receive).toHaveBeenCalledTimes(514);
+    expect(one.feedback.error).toBe('Realtime display update failed.');
+    expect(two.feedback.error).toBeNull();
+    callbacks.status('reconnecting', 'Gateway offline');
+    expect(two.feedback).toMatchObject({
+      status: 'reconnecting',
+      error: 'Gateway offline',
+    });
+  });
+
+  it.each([
+    new Response('', { status: 403 }),
+    authorization(['one'], { grant: { driver: 'test', data: {}, expires: 1 } }),
+  ])(
+    'rejects HTTP or expired-grant authorization failures before connecting',
+    async (response) => {
+      const fetcher = vi.fn(async () => response);
+      vi.stubGlobal('fetch', fetcher);
+      const transport = vi.fn(() => vi.fn());
+      const connection = new RealtimeConnection(
+        '/subscribe',
+        'csrf',
+        new Map([['test', transport]]),
+      );
+      disposers.push(() => connection.dispose());
+      const one = owner('one');
+      connection.update(one, metadata);
+      await vi.advanceTimersByTimeAsync(0);
+      expect(transport).not.toHaveBeenCalled();
+      expect(one.feedback).toMatchObject({
+        status: 'error',
+        error: 'Realtime authorization failed.',
+      });
+    },
+  );
+});
+
+describe('bootstrap and client lifecycle integration', () => {
+  function root() {
+    const element = document.createElement('section');
+    Object.assign(element.dataset, {
+      interactId: 'one',
+      interactSnapshot: 'snapshot',
+      interactEndpoint: '/update',
+      interactState: '{}',
+      interactWritable: '{}',
+    });
+    document.body.append(element);
+    return element;
+  }
+
+  it('reads valid subscription metadata and rejects malformed or pending subscription owners', () => {
+    const element = root();
+    element.dataset.interactRealtime = JSON.stringify(metadata);
+    expect(readMetadata(element).realtime).toEqual(metadata);
+    element.dataset.interactRealtime = '{}';
+    expect(() => readMetadata(element)).toThrow('Invalid realtime metadata');
+    element.dataset.interactRealtime = JSON.stringify(metadata);
+    element.dataset.interactLoading = 'manual';
+    expect(() => readMetadata(element)).toThrow(
+      'Pending islands cannot subscribe',
+    );
+  });
+
+  it('defers client refresh during navigation, then reconciles or removes accepted subscription metadata', async () => {
+    const element = root();
+    element.dataset.interactRealtime = JSON.stringify(metadata);
+    const grantFetcher = vi.fn<typeof fetch>(async () =>
+      authorization(['one']),
+    );
+    vi.stubGlobal('fetch', grantFetcher);
+    const slot: { current?: TransportCallbacks } = {};
+    const close = vi.fn();
+    const coordinator = new RealtimeCoordinator({
+      transports: {
+        test: (_grant, callbacks) => {
+          slot.current = callbacks;
+          return close;
+        },
+      },
+    });
+    const updateFetcher = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            version: 1,
+            id: 'one',
+            snapshot: 'accepted',
+            html: element.outerHTML,
+            state: {},
+            writable: {},
+            errors: {},
+            events: [],
+            realtime: metadata,
+          }),
+          { headers: { 'Content-Type': 'application/json' } },
+        ),
+    );
+    const client = new IslandClient(
+      element,
+      () => {},
+      Alpine.reactive,
+      updateFetcher,
+    );
+    disposers.push(() => client.dispose());
+    const store = Alpine.reactive({ pending: true });
+    disposers.push(
+      registerNavigation(window, {
+        activity: { store },
+        epoch: () => 0,
+        visit: async () => 'enhanced',
+        invalidate: () => {},
+        query: () => {},
+      }),
+    );
+    client.attachRealtime(coordinator);
+    const effect = Alpine.effect(() => client.flushRealtime());
+    disposers.push(() => Alpine.release(effect));
+    await vi.advanceTimersByTimeAsync(0);
+    slot.current?.status('connected');
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(client.bridge.realtime.stale).toBe(true);
+    expect(updateFetcher).not.toHaveBeenCalled();
+    store.pending = false;
+    await vi.advanceTimersByTimeAsync(100);
+    expect(updateFetcher).toHaveBeenCalledOnce();
+    expect(client.bridge.realtime.stale).toBe(false);
+    updateFetcher.mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            version: 1,
+            id: 'one',
+            snapshot: 'unsubscribed',
+            html: element.outerHTML,
+            state: {},
+            writable: {},
+            errors: {},
+            events: [],
+          }),
+          { headers: { 'Content-Type': 'application/json' } },
+        ),
+    );
+    await client.bridge.sync();
+    expect(client.bridge.realtime.status).toBe('disabled');
+    expect(close).toHaveBeenCalledOnce();
+  });
+});
+
+it('aborts a pending grant request on disposal without scheduling authorization retries', async () => {
+  const fetcher = vi.fn<typeof fetch>(
+    (_url, options) =>
+      new Promise<Response>((_resolve, reject) => {
+        options?.signal?.addEventListener(
+          'abort',
+          () => reject(new DOMException('Aborted', 'AbortError')),
+          { once: true },
+        );
+      }),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  const transport = vi.fn(() => vi.fn());
+  const connection = new RealtimeConnection(
+    '/subscribe',
+    'csrf',
+    new Map([['test', transport]]),
+  );
+  disposers.push(() => connection.dispose());
+  connection.update(owner('one'), metadata);
+  await vi.advanceTimersByTimeAsync(0);
+  connection.dispose();
+  await vi.advanceTimersByTimeAsync(300000);
+  expect(fetcher).toHaveBeenCalledOnce();
+  expect(fetcher.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+  expect(transport).not.toHaveBeenCalled();
+  expect(vi.getTimerCount()).toBe(0);
 });

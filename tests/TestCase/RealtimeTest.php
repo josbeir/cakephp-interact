@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase;
 
+use Cake\Http\Exception\ServiceUnavailableException;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
 use Cake\Http\Session;
@@ -10,6 +11,7 @@ use Cake\Utility\Hash;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Interact\Discovery\Registry;
+use Interact\Island;
 use Interact\IslandContext;
 use Interact\Realtime\BroadcasterInterface;
 use Interact\Realtime\Grant;
@@ -220,6 +222,53 @@ class RealtimeTest extends TestCase
         $now = 1300;
         $this->expectException(InvalidSnapshotException::class);
         $codec->open($token, 'session', 'scope');
+    }
+
+    /**
+     * @return iterable<string, array{array<array-key, mixed>}> Invalid declaration collections.
+     */
+    public static function invalidSubscriptionLists(): iterable
+    {
+        yield 'keyed' => [['article' => Subscription::refresh('records/1')]];
+        yield 'too many' => [array_fill(0, 129, Subscription::refresh('records/1'))];
+        yield 'wrong entry' => [['not a declaration']];
+    }
+
+    #[DataProvider('invalidSubscriptionLists')]
+    public function testRejectsInvalidSubscriptionCollections(array $declarations): void
+    {
+        $island = $this->createMock(Island::class);
+        $island->expects($this->once())->method('subscriptions')->willReturn($declarations);
+        $this->expectException(InvalidArgumentException::class);
+        $this->subscriptions->declarations($island, $this->context);
+    }
+
+    public function testAuthorizationInfrastructureFailuresAreNotReportedAsPermissionDenials(): void
+    {
+        $mount = $this->runtime->mount('RealtimeFixture', ['recordId' => 7], 'first', $this->context);
+        static::assertNotNull($mount->realtime);
+        $definition = $this->registry->definition('RealtimeFixture');
+        $island = $this->createMock(RealtimeFixtureIsland::class);
+        $island->expects($this->once())
+            ->method('authorize')
+            ->willThrowException(new ServiceUnavailableException('Authorization service unavailable.'));
+        $registry = $this->createMock(Registry::class);
+        $registry->expects($this->once())->method('definition')->with('RealtimeFixture')->willReturn($definition);
+        $registry->expects($this->once())->method('create')->with($definition)->willReturn($island);
+        $provider = $this->createMock(SubscriptionAuthorizerInterface::class);
+        $provider->expects($this->never())->method('authorize');
+        $request = $this->context
+            ->request
+            ->withMethod('POST')
+            ->withParsedBody([
+                'version' => 1,
+                'leases' => [$mount->id => $mount->realtime['lease']],
+            ]);
+        $this->expectException(ServiceUnavailableException::class);
+        new SubscriptionHandler($registry, $this->leases, $provider, $this->subscriptions)->handle(
+            $request,
+            new Response(),
+        );
     }
 
     public function testDisabledProviderFailsClearlyForDeclaredSubscriptions(): void

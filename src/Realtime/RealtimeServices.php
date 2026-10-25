@@ -8,7 +8,6 @@ use Cake\Core\Configure;
 use Interact\Configuration;
 use Interact\Discovery\Registry;
 use LogicException;
-use Mercure\Jwt\FirebaseTokenFactory;
 use Mercure\Jwt\TokenFactoryInterface;
 use Mercure\Service\PublisherInterface as MercurePublisher;
 
@@ -68,15 +67,15 @@ class RealtimeServices
      */
     protected function mercure(ContainerInterface $container): void
     {
-        if (!class_exists(FirebaseTokenFactory::class)) {
-            throw new LogicException('Install josbeir/cakephp-mercure and load the Mercure plugin first.');
-        }
-
         if (!$container->hasDefinition(TokenFactoryInterface::class)) {
             $container->addShared(TokenFactoryInterface::class, new MercureTokens()->create(...));
         }
 
         if (!$container->hasDefinition(MercureProvider::class)) {
+            if (!$container->hasDefinition(MercurePublisher::class)) {
+                throw new LogicException('Install josbeir/cakephp-mercure and load the Mercure plugin first.');
+            }
+
             $container->addShared(MercureProvider::class, static function () use ($container): MercureProvider {
                 $publisher = $container->get(MercurePublisher::class);
                 /** @var mixed $url */

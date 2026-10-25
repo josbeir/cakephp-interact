@@ -157,3 +157,47 @@ it('backs off network/server failures and cancels the pending reconnect on dispo
   await vi.advanceTimersByTimeAsync(30000);
   expect(fetcher).toHaveBeenCalledTimes(3);
 });
+
+it('accepts frames without SSE cursors and closes an aborted reader without reconnecting', async () => {
+  const current = stream();
+  const fetcher = vi.fn<typeof fetch>(async (_url, options) => {
+    options?.signal?.addEventListener('abort', () => current.feed?.close(), {
+      once: true,
+    });
+    return current.response;
+  });
+  vi.stubGlobal('fetch', fetcher);
+  const callbacks = { receive: vi.fn(), status: vi.fn() };
+  const dispose = mercureTransport(grant, callbacks);
+  close.push(dispose);
+  await vi.advanceTimersByTimeAsync(0);
+  current.feed?.enqueue(new TextEncoder().encode('data: {"version":1}\n\n'));
+  await vi.advanceTimersByTimeAsync(0);
+  expect(callbacks.receive).toHaveBeenCalledWith({ version: 1 });
+  dispose();
+  await vi.advanceTimersByTimeAsync(30000);
+  expect(callbacks.status).toHaveBeenLastCalledWith('connected');
+  expect(fetcher).toHaveBeenCalledOnce();
+});
+
+it('cancels a pending connection attempt without reporting an error or retrying', async () => {
+  const fetcher = vi.fn<typeof fetch>(
+    (_url, options) =>
+      new Promise<Response>((_resolve, reject) => {
+        options?.signal?.addEventListener(
+          'abort',
+          () => reject(new DOMException('Aborted', 'AbortError')),
+          { once: true },
+        );
+      }),
+  );
+  vi.stubGlobal('fetch', fetcher);
+  const callbacks = { receive: vi.fn(), status: vi.fn() };
+  const dispose = mercureTransport(grant, callbacks);
+  close.push(dispose);
+  dispose();
+  await vi.advanceTimersByTimeAsync(30000);
+  expect(fetcher).toHaveBeenCalledOnce();
+  expect(fetcher.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+  expect(callbacks.status).not.toHaveBeenCalled();
+});

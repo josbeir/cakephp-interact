@@ -9,6 +9,10 @@ Realtime subscriptions receive changes from other users, controllers, or jobs th
 an external provider. A matching message refreshes an island, emits a browser event,
 or updates an existing stream target.
 
+Interact supports application-owned providers, including WebSocket servers.
+[Custom providers](/guide/realtime-providers) use the same subscription and publishing
+APIs as the bundled [Mercure integration](#configure-mercure).
+
 Declare subscriptions in an island using `Interact\Realtime\Subscription` and
 `Interact\IslandContext`:
 
@@ -21,47 +25,6 @@ public function subscriptions(IslandContext $context): array
 
 The ordinary request lifecycle authorizes and renders each refresh. Push messages
 never replace signed state or invoke PHP actions themselves.
-
-## Configure Mercure
-
-Install the optional CakePHP 6 integration and run a Mercure 1.x hub:
-
-```sh
-composer require josbeir/cakephp-mercure:dev-cake6
-```
-
-Supply the provider configuration before loading Interact in application bootstrap.
-This example configures Mercure explicitly instead of loading its default config file:
-
-```php
-use Cake\Core\Configure;
-use Interact\InteractPlugin;
-use Mercure\MercurePlugin;
-use function Cake\Core\env;
-
-Configure::write('Mercure', [
-    'url' => env('MERCURE_URL'),
-    'public_url' => env('MERCURE_PUBLIC_URL'),
-    'jwt' => [
-        'secret' => env('MERCURE_JWT_SECRET'),
-        'issuer' => env('MERCURE_JWT_ISSUER'),
-        'audience' => env('MERCURE_JWT_AUDIENCE'),
-    ],
-]);
-Configure::write('Interact.realtime.provider', 'mercure');
-$this->addPlugin(MercurePlugin::class, ['bootstrap' => false]);
-$this->addPlugin(InteractPlugin::class);
-```
-
-Configure the hub with the same issuer, signing key, and resource identifier as the
-token audience. `url` is the server-side publication endpoint; `public_url` is the
-browser subscription endpoint. Different origins require hub CORS configuration
-allowing the application origin and bearer authorization. Allow the hub in the
-application's CSP `connect-src` when that directive is restricted.
-
-The bundled browser adapter uses native fetch and subscriber-only bearer tokens.
-It leaves application Mercure cookies untouched. Provider credentials remain in
-memory, outside `$server.state` and persistent browser storage.
 
 ## Subscription modes
 
@@ -164,14 +127,15 @@ application-owned drafts already synchronized to PHP remain application-owned.
 
 Islands in the same Alpine installation, tab, endpoint, and CSRF scope share one
 provider connection. Ten islands subscribing to three topics normally use one
-Mercure connection with three exact matchers. Different tabs and authorization
+provider connection for those three topics. Different tabs and authorization
 scopes retain independent connections.
 
-Adding/removing declarations renews authorization and reopens the shared SSE
+Adding/removing declarations renews authorization and reopens the shared provider
 connection with the updated topic set. Removing the final subscriber closes it.
 Compatible persisted layout islands retain their ownership across navigation.
 
-The adapter reconnects transient failures with bounded backoff and jitter. Initial
+Transports own reconnection. The bundled Mercure adapter and WebSocket example
+retry transient failures with bounded backoff and jitter. Initial
 connection and reconnection invalidate refresh subscriptions to reconcile current
 data. Duplicate message IDs are discarded within a bounded in-memory cache.
 Notifications and display streams are best effort, without exactly-once guarantees.
@@ -195,27 +159,59 @@ For protected routing scopes, connect both `InteractController::update()` and
 same `interactScope`. Set the helper's `subscriptionEndpoint` alongside its custom
 `endpoint`. See [security](/security#application-middleware-remains-authoritative).
 
-## Other providers
+<span id="other-providers"></span>
 
-Bind `BroadcasterInterface` and `SubscriptionAuthorizerInterface` through CakePHP's
-container. The shared `Publisher` supplies the shortcuts; the broadcaster implements
-`publish()` only. The authorizer receives exact server-authorized topics and a
-credential expiry, returning a `Grant` with driver name and JSON connection data.
+## Custom providers
 
-Register the browser transport with
-`createInteract({ realtime: { transports: { websocket: transport } } })`.
-Composer installations can register during the synchronous `interact:configure`
-startup event. Load that external script before Interact starts.
+Implement `BroadcasterInterface` for PHP delivery and
+`SubscriptionAuthorizerInterface` for expiring subscriber grants. Register a browser
+transport under the grant's driver name. Interact supplies the publisher shortcuts,
+authorization endpoint, leases, connection sharing, and island delivery policies.
 
-A transport receives the grant and `receive()`/`status()` callbacks, and returns
-a cleanup function. It owns authentication, reconnects, and provider cursor rules.
-Normalize foreign payloads into the exported `PushMessage` contract. Cleanup must
-close sockets/readers, remove listeners, and cancel reconnect timers.
+The [custom WebSocket provider guide](/guide/realtime-providers) includes a complete
+PHP adapter, CakePHP container registration, the gateway's required protocol, and a
+tested browser transport with authentication, reconnection, and cleanup.
 
-The tested WebSocket adapter example uses an
-application-owned server protocol:
+## Configure Mercure
 
-<<< @/../tests/Fixture/browser/websocket-feed.js
+Install the optional CakePHP 6 integration and run a Mercure 1.x hub:
+
+```sh
+composer require josbeir/cakephp-mercure:dev-cake6
+```
+
+Supply the provider configuration before loading Interact in application bootstrap.
+This example configures Mercure explicitly instead of loading its default config file:
+
+```php
+use Cake\Core\Configure;
+use Interact\InteractPlugin;
+use Mercure\MercurePlugin;
+use function Cake\Core\env;
+
+Configure::write('Mercure', [
+    'url' => env('MERCURE_URL'),
+    'public_url' => env('MERCURE_PUBLIC_URL'),
+    'jwt' => [
+        'secret' => env('MERCURE_JWT_SECRET'),
+        'issuer' => env('MERCURE_JWT_ISSUER'),
+        'audience' => env('MERCURE_JWT_AUDIENCE'),
+    ],
+]);
+Configure::write('Interact.realtime.provider', 'mercure');
+$this->addPlugin(MercurePlugin::class, ['bootstrap' => false]);
+$this->addPlugin(InteractPlugin::class);
+```
+
+Configure the hub with the same issuer, signing key, and resource identifier as the
+token audience. `url` is the server-side publication endpoint; `public_url` is the
+browser subscription endpoint. Different origins require hub CORS configuration
+allowing the application origin and bearer authorization. Allow the hub in the
+application's CSP `connect-src` when that directive is restricted.
+
+The bundled browser adapter uses native fetch and subscriber-only bearer tokens.
+It leaves application Mercure cookies untouched. Provider credentials remain in
+memory, outside `$server.state` and persistent browser storage.
 
 ## Demo and testing
 
