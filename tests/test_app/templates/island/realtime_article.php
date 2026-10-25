@@ -63,7 +63,7 @@ use function Cake\Core\h;
                     <?= $this->Form->button('Publish changes', [
                         'class' => 'button-primary',
                         'aria-label' => 'Save article',
-                        ':disabled' => '$server.busy',
+                        ':disabled' => '$server.pending("save")',
                     ]) ?>
                     <span class="rt-draft-note" role="status" x-text="$server.dirty
                         ? ($server.realtime.stale ? 'New version available · draft preserved' : 'Unpublished changes')
@@ -85,7 +85,7 @@ use function Cake\Core\h;
                 <span class="rt-message-icon" aria-hidden="true">✓</span>
                 <div><strong>Workspace update</strong><p role="status" aria-label="Private notification" x-text="notification"></p><small>Private · Delivered live</small></div>
             </div>
-            <button type="button" class="rt-wide-button" @click="$server.call('notify')" :disabled="$server.busy">Send private notification <span aria-hidden="true">↗</span></button>
+            <button type="button" class="rt-wide-button" @click="$server.call('notify')" :disabled="$server.pending('notify')">Send private notification <span aria-hidden="true">↗</span></button>
         </section>
 
         <section class="rt-panel rt-report-panel" aria-label="Live report">
@@ -94,7 +94,7 @@ use function Cake\Core\h;
             <div class="rt-progress" role="progressbar" aria-label="Report progress" aria-valuemin="0" aria-valuemax="100" :aria-valuenow="progress"><span :style="{ width: progress + '%' }"></span></div>
             <pre class="rt-report-log" x-interact:stream="realtime-output">Ready when you are.</pre>
             <ul class="rt-report-results" x-interact:stream.html="realtime-rows"></ul>
-            <button type="button" class="rt-wide-button" @click="$server.call('output')" :disabled="$server.busy">Generate report <span aria-hidden="true">↗</span></button>
+            <button type="button" class="rt-wide-button" @click="$server.call('output')" :disabled="$server.pending('output')">Generate report <span aria-hidden="true">↗</span></button>
         </section>
     </div>
 <?php endif;

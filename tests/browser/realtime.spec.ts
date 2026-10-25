@@ -269,3 +269,47 @@ test('retains the inbox through publishing and initializes it through enhanced n
   });
   expect(errors).toEqual([]);
 });
+
+test('publishes once and leaves action buttons enabled during background reconciliation', async ({
+  page,
+  appURL,
+}) => {
+  await connected(page, appURL);
+  let release = () => {};
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let saves = 0;
+  let refreshes = 0;
+  await page.route('**/_interact/update', async (route) => {
+    const payload: unknown = route.request().postDataJSON();
+    if (!payload || typeof payload !== 'object' || !('action' in payload))
+      throw new Error('Missing island request action.');
+    if (payload.action === 'save') saves++;
+    if (payload.action === null) {
+      refreshes++;
+      await gate;
+    }
+    await route.continue();
+  });
+  try {
+    await page.getByLabel('Draft title').fill('One explicit publication');
+    await page.getByRole('button', { name: 'Save article' }).click();
+    await expect.poll(() => refreshes).toBe(2);
+    for (const name of [
+      'Save article',
+      'Send private notification',
+      'Generate report',
+    ]) {
+      await expect(page.getByRole('button', { name })).toBeEnabled();
+    }
+    expect(saves).toBe(1);
+    release();
+    await settled(page);
+    expect(saves).toBe(1);
+    expect(refreshes).toBe(2);
+  } finally {
+    release();
+    await page.unroute('**/_interact/update');
+  }
+});
