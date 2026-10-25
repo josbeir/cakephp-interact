@@ -1,11 +1,13 @@
 <?php
 declare(strict_types=1);
 use function Cake\Core\h;
-/** @var \Interact\View\TemplateView $this */
-/** @var \Cake\Datasource\EntityInterface $article */
-/** @var string $title */
-/** @var int $articleId */
-/** @var string $editorKey */
+/**
+ * @var \Interact\View\TemplateView $this
+ * @var \Cake\Datasource\EntityInterface $article
+ * @var string $title
+ * @var int $articleId
+ * @var string $editorKey
+ */
 ?>
 <?php if ($editorKey === 'monitor'): ?>
     <div class="rt-monitor">

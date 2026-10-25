@@ -1,8 +1,10 @@
 <?php
 declare(strict_types=1);
-/** @var \Interact\View\TemplateView $this */
-/** @var bool $ready */
-/** @var int $articleId */
+/**
+ * @var \Interact\View\TemplateView $this
+ * @var bool $ready
+ * @var int $articleId
+ */
 $this->assign('title', 'Live publishing desk · Interact');
 ?>
 <div class="rt-page">
