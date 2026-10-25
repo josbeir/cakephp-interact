@@ -36,10 +36,10 @@ features:
     details: Keep filters and pagination in the URL, with browser Back and Forward support.
     link: /guide/url-state
     linkText: Bind URL state
-  - title: Streaming and polling
-    details: Stream text, rendered elements, and progress events, or refresh an island on a timer.
-    link: /guide/streaming
-    linkText: Stream updates
+  - title: Realtime and streaming
+    details: Push updates to subscribed islands across tabs. Stream text, HTML, and progress events, or refresh on a timer.
+    link: /guide/realtime
+    linkText: Send live updates
   - title: CakePHP security
     details: Keep your application's CSRF protection, authorization, and middleware. Signed snapshots protect state integrity.
     link: /security
