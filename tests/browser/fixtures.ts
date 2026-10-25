@@ -4,6 +4,8 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
+import { startMercure } from '../../scripts/mercure.mjs';
+import type { MercureHub } from '../../scripts/mercure.mjs';
 import { test as base } from '@playwright/test';
 
 export { expect } from '@playwright/test';
@@ -14,9 +16,44 @@ export { expect } from '@playwright/test';
  * PHP chooses a free port; SQLite, sessions, and uploads share only that worker's
  * directory. Teardown stops PHP before removing its files.
  */
-export const test = base.extend<object, { appURL: string; peerURL: string }>({
+export const test = base.extend<
+  object,
+  {
+    appURL: string;
+    peerURL: string;
+    realtime: boolean;
+    mercureHub: MercureHub | undefined;
+  }
+>({
+  realtime: [false, { scope: 'worker', option: true }],
+  mercureHub: [
+    async ({ realtime }, use, workerInfo) => {
+      if (!realtime) {
+        await use(undefined);
+        return;
+      }
+      const hub = await startMercure();
+      try {
+        await use(hub);
+      } finally {
+        try {
+          await mkdir(workerInfo.project.outputDir, { recursive: true });
+          await writeFile(
+            join(
+              workerInfo.project.outputDir,
+              `mercure-${workerInfo.workerIndex}.log`,
+            ),
+            await hub.logs(),
+          );
+        } finally {
+          await hub.stop();
+        }
+      }
+    },
+    { scope: 'worker' },
+  ],
   appURL: [
-    async ({ playwright }, use, workerInfo) => {
+    async ({ playwright, mercureHub }, use, workerInfo) => {
       const storage = await mkdtemp(join(tmpdir(), 'interact-playwright-'));
       const previousStorage = process.env.INTERACT_DEMO_TMP;
       process.env.INTERACT_DEMO_TMP = storage;
@@ -37,7 +74,10 @@ export const test = base.extend<object, { appURL: string; peerURL: string }>({
           'tests/test_app/webroot',
           'tests/test_app/webroot/index.php',
         ],
-        { stdio: ['ignore', 'ignore', 'pipe'] },
+        {
+          stdio: ['ignore', 'ignore', 'pipe'],
+          env: { ...process.env, ...mercureHub?.env },
+        },
       );
       const output = createInterface({ input: server.stderr });
       const diagnostics: string[] = [];
@@ -120,7 +160,7 @@ export const test = base.extend<object, { appURL: string; peerURL: string }>({
     { scope: 'worker' },
   ],
   peerURL: [
-    async ({ appURL }, use) => {
+    async ({ appURL, mercureHub }, use) => {
       // Depend on appURL so the primary worker has already installed its isolated storage.
       if (!appURL) throw new Error('Missing primary application');
       const storage = process.env.INTERACT_DEMO_TMP;
@@ -136,7 +176,10 @@ export const test = base.extend<object, { appURL: string; peerURL: string }>({
           'tests/test_app/webroot',
           'tests/test_app/webroot/index.php',
         ],
-        { stdio: ['ignore', 'ignore', 'pipe'] },
+        {
+          stdio: ['ignore', 'ignore', 'pipe'],
+          env: { ...process.env, ...mercureHub?.env },
+        },
       );
       const output = createInterface({ input: server.stderr });
       let timeout: ReturnType<typeof setTimeout> | undefined;

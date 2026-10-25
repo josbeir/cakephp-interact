@@ -10,8 +10,12 @@
   "require-dev": {
     "cakephp/mago-rules": "dev-main",
     "carthage-software/mago": "^1.47",
+    "josbeir/cakephp-mercure": "dev-cake6",
     "phpunit/phpunit": "^12.5",
     "rector/rector": "^2.7"
+  },
+  "suggest": {
+    "josbeir/cakephp-mercure": "Mercure 1.x publishing and subscription authorization with the CakePHP 6 compatible package."
   },
   "autoload": {
     "psr-4": {

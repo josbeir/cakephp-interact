@@ -8,6 +8,8 @@ $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $demoAssets = [
     '/interact-mark.svg' => 'image/svg+xml',
     '/demo.css' => 'text/css; charset=utf-8',
+    '/realtime.css' => 'text/css; charset=utf-8',
+    '/realtime.js' => 'text/javascript; charset=utf-8',
     '/navigation-overview.css' => 'text/css; charset=utf-8',
     '/navigation-details.css' => 'text/css; charset=utf-8',
     '/js/widgets.js' => 'text/javascript; charset=utf-8',

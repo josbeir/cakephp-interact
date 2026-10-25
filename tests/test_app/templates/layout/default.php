@@ -16,6 +16,10 @@ $currentPath = $this->getRequest()->getUri()->getPath();
         <script src="/js/widgets.js" defer></script>
     <?php endif; ?>
     <link rel="stylesheet" href="/demo.css">
+    <?php if ($currentPath === '/realtime'): ?>
+        <link rel="stylesheet" href="/realtime.css">
+        <script src="/realtime.js" defer></script>
+    <?php endif; ?>
     <link rel="icon" type="image/svg+xml" href="/interact-mark.svg">
     <?= $this->fetch('script') ?>
 </head>
@@ -56,7 +60,7 @@ $currentPath = $this->getRequest()->getUri()->getPath();
             @click="menuOpen = false"
             @keydown.escape="$refs.menuToggle.focus()"
         >
-            <?php foreach (['/' => 'Embedded islands', '/playground' => 'Playground', '/forms' => 'Article form', '/search' => 'Search', '/composition' => 'Child inputs', '/uploads' => 'Uploads', '/outcomes' => 'Action outcomes', '/loading' => 'Lazy loading', '/page' => 'Page island', '/navigation' => 'Navigation', '/renderless' => 'Renderless actions', '/streaming' => 'Streaming', '/debugging' => 'Debugging'] as $path => $label): ?>
+            <?php foreach (['/' => 'Embedded islands', '/playground' => 'Playground', '/forms' => 'Article form', '/search' => 'Search', '/composition' => 'Child inputs', '/uploads' => 'Uploads', '/outcomes' => 'Action outcomes', '/loading' => 'Lazy loading', '/page' => 'Page island', '/navigation' => 'Navigation', '/renderless' => 'Renderless actions', '/streaming' => 'Streaming', '/realtime' => 'Realtime', '/debugging' => 'Debugging'] as $path => $label): ?>
                 <a
                     href="<?= (string)h($path) ?>"
                     x-interact:navigate<?= $path === '/navigation' ? '.trail' : '' ?>

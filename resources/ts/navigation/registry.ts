@@ -2,6 +2,7 @@ import type { Redirect } from '../effects/browser';
 
 /** Page-owned navigation boundary shared with island outcomes and URL bindings. */
 export interface NavigationService {
+  readonly activity?: { readonly store: { readonly pending: boolean } };
   epoch(): number;
   visit(url: string, options?: VisitOptions): Promise<VisitResult>;
   invalidate(): void;

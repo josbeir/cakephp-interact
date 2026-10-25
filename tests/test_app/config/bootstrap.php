@@ -19,6 +19,7 @@ if (!defined('ROOT')) {
     define('CAKE', $core . 'src/');
     define('APP', dirname(__DIR__) . '/');
     define('CONFIG', APP . 'config/');
+    define('WWW_ROOT', APP . 'webroot/');
     define('TMP', rtrim(getenv('INTERACT_DEMO_TMP') ?: dirname(__DIR__, 3) . '/build/tmp', '/') . '/');
     define('CACHE', TMP . 'cache/');
     define('LOGS', TMP . 'logs/');

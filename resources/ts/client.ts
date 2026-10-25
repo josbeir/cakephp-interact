@@ -1,4 +1,6 @@
 import { ownsIslandElement } from './dom/ownership';
+import { RealtimeIsland } from './realtime/island';
+import type { RealtimeCoordinator } from './realtime/coordinator';
 import { StreamReceiver } from './streaming/receiver';
 import { paginationLinks } from './pagination/links';
 import { navigation, enhancedRedirect } from './navigation/registry';
@@ -75,9 +77,30 @@ export class IslandClient {
   private leaving = false;
   private readonly activity: { paused: boolean };
   private poller: Poller | undefined;
+  private realtime: RealtimeIsland | undefined;
   private uploads: UploadFields;
   private readonly url: UrlRegistration | undefined;
   private urlTarget: UrlRestoration | undefined;
+
+  /** Connect subscription ownership to this installation's shared provider connections. */
+  attachRealtime(coordinator: RealtimeCoordinator): void {
+    this.realtime = new RealtimeIsland(
+      this.root,
+      this.bridge,
+      coordinator,
+      () =>
+        !this.urlTarget &&
+        !this.leaving &&
+        !navigation(window)?.activity?.store.pending &&
+        this.canPoll(this.root),
+    );
+    this.realtime.update(this.metadata.realtime, this.metadata.csrf);
+  }
+
+  /** Recheck background refresh eligibility from the installation's Alpine effect. */
+  flushRealtime(): void {
+    this.realtime?.flush();
+  }
 
   /** @internal Read loading status without exposing initialization controls on the public bridge. */
   isMounted(): boolean {
@@ -123,6 +146,7 @@ export class IslandClient {
   refreshContext(incoming: HTMLElement): void {
     this.metadata.csrf = incoming.dataset.interactCsrf ?? '';
     this.root.dataset.interactCsrf = this.metadata.csrf;
+    this.realtime?.update(this.metadata.realtime, this.metadata.csrf);
   }
 
   /**
@@ -160,6 +184,7 @@ export class IslandClient {
       this.uploads.blocked() ||
       !equal(this.bridge.state, this.baseline);
     this.bridge = reactive({
+      realtime: { status: 'disabled', stale: false, error: null },
       uploads: this.uploads.fields,
       state: this.metadata.state,
       busy: false,
@@ -323,6 +348,7 @@ export class IslandClient {
     this.composition?.dispose();
     this.disposed = true;
     this.streams.dispose();
+    this.realtime?.dispose();
     this.lifetime.abort();
     this.disposePagination();
     this.trigger?.dispose();
@@ -464,6 +490,7 @@ export class IslandClient {
     invocation: Invocation,
     lifecycle?: RequestLifecycle,
   ): Promise<void> {
+    const realtimeGeneration = this.realtime?.begin();
     const upload = invocation.upload;
     if (
       upload
@@ -615,6 +642,7 @@ export class IslandClient {
           }
         } else this.effects.navigate(accepted.redirect);
         this.leaving = true;
+        this.realtime?.dispose();
         this.controls.clearPending();
         this.poller?.dispose();
         this.queue.dispose();
@@ -645,6 +673,10 @@ export class IslandClient {
       try {
         const mounting = !this.mounted;
         this.apply(accepted, sent, replacement, upload, invocation);
+        if (accepted.realtime) this.metadata.realtime = accepted.realtime;
+        else delete this.metadata.realtime;
+        this.realtime?.update(accepted.realtime, this.metadata.csrf);
+        this.realtime?.accepted(accepted.html !== null, realtimeGeneration);
         if (this.parentTicket === parentTicket) this.parentTicket = undefined;
         else if (mounting && this.parentTicket && !this.bridge.paused)
           void this.bridge.sync();

@@ -30,7 +30,7 @@ $routes->scope('/admin', function (RouteBuilder $routes): void {
     // Apply your application's existing administrative middleware here.
     $routes->post('/_interact/update', [
         'plugin' => 'Interact',
-        'controller' => 'Update',
+        'controller' => 'Interact',
         'action' => 'update',
         'interactScope' => 'admin',
     ], 'admin:interact:update');

@@ -230,3 +230,6 @@ and `IslandBridge` for typed adapters; see the [message contract](/reference/ser
 These are provisional display updates. Signed state, validation, request activity,
 and action results stay with normal requests; a subsequent render is authoritative.
 Invalid input throws to the adapter, while delivery after island disposal is ignored.
+
+For managed topic subscriptions, shared provider connections, notification events,
+and automatic island refreshes, see [realtime subscriptions](/guide/realtime).

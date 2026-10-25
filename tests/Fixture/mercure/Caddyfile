@@ -1,0 +1,21 @@
+{
+    auto_https off
+    admin off
+}
+
+:80 {
+    mercure {
+        issuer https://localhost {
+            publisher {
+                jwt {env.MERCURE_TEST_SECRET}
+            }
+            subscriber {
+                jwt {env.MERCURE_TEST_SECRET}
+            }
+        }
+        resource_identifier https://interact.test/.well-known/mercure
+        cors_origins *
+        anonymous
+    }
+    respond /health 200
+}

@@ -261,7 +261,10 @@ export default defineConfig({
     },
     overrides: [
       {
-        files: ['tests/Fixture/browser/*.js'],
+        files: [
+          'tests/Fixture/browser/*.js',
+          'tests/test_app/webroot/realtime.js',
+        ],
         globals: { window: 'readonly', document: 'readonly' },
       },
       {

@@ -170,3 +170,23 @@ without a morph. Validation must render, and the next successful action must
 render again to clear feedback. Initialization, synchronization, transfers, and
 history restoration always require HTML. Exercise the standalone FormHelper
 editor at `/renderless` through SQLite integration tests and all three browsers.
+
+## Realtime integration
+
+Realtime browser specs use the shared fixture API with `test.use({ realtime: true })`.
+They start a pinned standalone Mercure 1.x Docker image per worker, with independent
+ports, signing keys, storage, and logs. PHP application servers and their existing
+SQLite/session/upload isolation remain unchanged. Other browser specs do not start hubs.
+
+```sh
+npm run test:browser -- tests/browser/realtime.spec.ts
+npm run demo:realtime
+```
+
+Docker must be running and permitted to create loopback-bound containers. Missing
+infrastructure fails explicitly. CI pre-pulls the pinned image; fixtures collect hub
+logs and remove their containers/storage on teardown. `scripts/mercure.mjs` owns test hub
+lifecycle. The demo launcher instead builds the pinned FrankenPHP image in
+`tests/test_app/Dockerfile`, serving CakePHP and Mercure together on port 8765.
+See [Demo](/demo#realtime-demo) for ngrok sharing. The test hub's wildcard CORS and demonstration
+identity endpoints are local fixtures; applications configure their own origins and identity.

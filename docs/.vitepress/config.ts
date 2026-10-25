@@ -112,6 +112,7 @@ export default defineConfig({
             { text: 'Validation', link: '/guide/forms' },
             { text: 'File uploads', link: '/guide/uploads' },
             { text: 'Streaming', link: '/guide/streaming' },
+            { text: 'Realtime', link: '/guide/realtime' },
             { text: 'Error handling', link: '/guide/failures' },
             { text: 'Debugging', link: '/guide/debugging' },
           ],

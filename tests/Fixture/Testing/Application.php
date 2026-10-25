@@ -23,7 +23,7 @@ class Application extends DemoApplication
     public function bootstrap(): void
     {
         parent::bootstrap();
-        $this->addPlugin(new BasePlugin(['name' => 'Commerce', 'path' => dirname(__DIR__) . '/Plugins/Commerce/']));
+        $this->addPlugin(BasePlugin::class, ['name' => 'Commerce', 'path' => dirname(__DIR__) . '/Plugins/Commerce/']);
     }
 
     /**

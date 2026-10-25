@@ -19,6 +19,7 @@ use Interact\Loading\Options;
 use Interact\Loading\PendingMount;
 use Interact\Pagination\PagePath;
 use Interact\Pagination\Pagination;
+use Interact\Realtime\Subscriptions;
 use Interact\Rendering\RendererInterface;
 use Interact\Security\SnapshotCodec;
 use Interact\Streaming\Stream;
@@ -78,6 +79,14 @@ class Runtime
         $this->actions = new ActionInvoker();
         $this->hydrator = new Hydrator($this->state);
         $this->mounts = new MountRenderer($this->html, $snapshots, $this->hydrator, $state);
+    }
+
+    /**
+     * Attach the optional metadata exporter without changing standalone construction.
+     */
+    public function attachSubscriptions(?Subscriptions $subscriptions): void
+    {
+        $this->html->attachSubscriptions($subscriptions);
     }
 
     /**

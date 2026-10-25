@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4b281481e7c76a963b6bea98b8f2c803",
+    "content-hash": "25c671d6c0c41df4a922a7f42a0efa6b",
     "packages": [
         {
             "name": "brick/varexporter",
@@ -1166,6 +1166,123 @@
             "time": "2026-10-14T07:10:47+00:00"
         },
         {
+            "name": "firebase/php-jwt",
+            "version": "v7.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/googleapis/php-jwt.git",
+                "reference": "0501f5729b9e2448516674aff07c7d1727869b8e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/googleapis/php-jwt/zipball/0501f5729b9e2448516674aff07c7d1727869b8e",
+                "reference": "0501f5729b9e2448516674aff07c7d1727869b8e",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "guzzlehttp/guzzle": "^7.4||^8.0",
+                "phpfastcache/phpfastcache": "^9.2",
+                "phpseclib/phpseclib": "~3.0",
+                "phpspec/prophecy-phpunit": "^2.2",
+                "phpunit/phpunit": "^9.5",
+                "psr/cache": "^2.0||^3.0",
+                "psr/http-client": "^1.0",
+                "psr/http-factory": "^1.0"
+            },
+            "suggest": {
+                "ext-sodium": "Support EdDSA (Ed25519) signatures",
+                "paragonie/sodium_compat": "Support EdDSA (Ed25519) signatures when libsodium is not present",
+                "phpseclib/phpseclib": "Support PS256 (RSASSA-PSS) signatures"
+            },
+            "type": "library",
+            "extra": {
+                "component": {
+                    "id": "jwt",
+                    "path": "Jwt",
+                    "entry": "README.md",
+                    "target": "googleapis/php-jwt.git"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Firebase\\JWT\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-3-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Neuman Vong",
+                    "email": "neuman+pear@twilio.com",
+                    "role": "Developer"
+                },
+                {
+                    "name": "Anant Narayanan",
+                    "email": "anant@php.net",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A simple library to encode and decode JSON Web Tokens (JWT) in PHP. Should conform to the current spec.",
+            "homepage": "https://github.com/googleapis/php-jwt",
+            "keywords": [
+                "jwt",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/googleapis/php-jwt/issues",
+                "source": "https://github.com/googleapis/php-jwt/tree/v7.2.1"
+            },
+            "time": "2026-09-28T17:51:46+00:00"
+        },
+        {
+            "name": "josbeir/cakephp-mercure",
+            "version": "dev-cake6",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/josbeir/cakephp-mercure.git",
+                "reference": "8626064a115fef4e641fd00164e5f869dd292084"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/josbeir/cakephp-mercure/zipball/8626064a115fef4e641fd00164e5f869dd292084",
+                "reference": "8626064a115fef4e641fd00164e5f869dd292084",
+                "shasum": ""
+            },
+            "require": {
+                "cakephp/cakephp": "^6.0@dev",
+                "firebase/php-jwt": "^7.2",
+                "php": ">=8.5"
+            },
+            "require-dev": {
+                "cakephp/cakephp-codesniffer": "^6.0@dev",
+                "cakephp/plugin-installer": "^2.0.1",
+                "phpstan/phpstan": "^2.3",
+                "phpunit/phpunit": "^13.0",
+                "rector/rector": "^2.7"
+            },
+            "type": "cakephp-plugin",
+            "autoload": {
+                "psr-4": {
+                    "Mercure\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Mercure 1.x integration for CakePHP with automatic JWT generation and private subscriptions",
+            "support": {
+                "issues": "https://github.com/josbeir/cakephp-mercure/issues",
+                "source": "https://github.com/josbeir/cakephp-mercure/tree/cake6"
+            },
+            "time": "2026-10-24T14:27:04+00:00"
+        },
+        {
             "name": "myclabs/deep-copy",
             "version": "1.14.0",
             "source": {
@@ -1374,7 +1491,7 @@
             ],
             "authors": [
                 {
-                    "name": "Ond\u0159ej Mirtes"
+                    "name": "Ondřej Mirtes"
                 },
                 {
                     "name": "Markus Staab"
@@ -1959,7 +2076,7 @@
                     "email": "ceesjank@gmail.com"
                 },
                 {
-                    "name": "Christian L\u00fcck",
+                    "name": "Christian Lück",
                     "email": "christian@clue.engineering"
                 },
                 {
@@ -3023,13 +3140,14 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "cakephp/cakephp": 20,
-        "cakephp/mago-rules": 20
+        "cakephp/mago-rules": 20,
+        "josbeir/cakephp-mercure": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.5"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.9.0"
 }

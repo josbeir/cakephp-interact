@@ -24,6 +24,9 @@ class DemoIdentityMiddleware implements MiddlewareInterface
         /** @var mixed $role */
         $role = $request->getSession()->read('demo.role') ?? 'editor';
 
-        return $handler->handle($request->withAttribute('identity', ['id' => 1, 'role' => $role]));
+        return $handler->handle($request->withAttribute('identity', [
+            'id' => $request->getSession()->read('demo.userId') === 2 ? 2 : 1,
+            'role' => $role,
+        ]));
     }
 }

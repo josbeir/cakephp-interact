@@ -17,14 +17,15 @@ export class SseDecoder {
   private readonly encoder = new TextEncoder();
   private readonly parser: EventSourceParser;
 
-  constructor(receive: (event: string, data: string) => void) {
+  constructor(receive: (event: string, data: string, id?: string) => void) {
     this.parser = createParser({
       // Allow the field prefix while an exactly-at-limit data line is incomplete.
       maxBufferSize: maxDataBytes + 'data: '.length,
-      onEvent: ({ event, data }) => {
+      onEvent: ({ event, data, id }) => {
         if (this.encoder.encode(data).byteLength > maxDataBytes)
           throw new Error('Stream message exceeds the size limit.');
-        receive(event || 'message', data);
+        if (id === undefined) receive(event || 'message', data);
+        else receive(event || 'message', data, id);
       },
       onError(error) {
         if (error.type === 'max-buffer-size-exceeded') throw error;

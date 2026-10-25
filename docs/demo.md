@@ -22,6 +22,34 @@ composer preview
 Open **http://127.0.0.1:8765**. Demo data seeds automatically. The session identity
 is for demonstration; applications supply their own authentication.
 
+## Realtime demo
+
+With Docker available, run `npm run demo:realtime` instead of `composer preview`,
+then open **http://127.0.0.1:8765/realtime** in two tabs. The launcher provisions an
+isolated FrankenPHP container with PHP 8.5, CakePHP, and its built-in Mercure 1.x
+hub on port 8765. The first run builds the image; later runs reuse Docker’s cache.
+The launcher removes the container on exit and retains the demo database. Stop any existing preview on port 8765 first.
+
+Share the working demo with `ngrok http 8765`. Browser subscriptions use
+`/.well-known/mercure` on the current origin, so both the app and hub travel through
+the same tunnel. PHP publishes through the internal address. No public URL setting
+or second tunnel is needed.
+
+The container invokes CakePHP's `server --frankenphp` command. The demo's
+`ServerCommand` enables `--mercure` and disables SSE compression. This runs ordinary
+PHP requests without worker mode. The image pins FrankenPHP 1.13.3 and installs
+CakePHP's required Intl extension. `composer preview` remains the plain PHP preview.
+
+<span id="realtime"></span>
+The live publishing desk pairs an article editor with an independent reader preview.
+Publish a title to update other tabs, send a user-specific notification to the inbox,
+and generate a report with live progress, text logs, and an HTML result. Edit an
+unsaved title in a second tab to see incoming changes preserve that draft.
+
+Tested source: [island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RealtimeArticleIsland.php),
+[template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/realtime_article.php).
+See [realtime subscriptions](/guide/realtime) for configuration and delivery guarantees.
+
 ## Try the interactions
 
 Paths in the source column are relative to

@@ -76,6 +76,8 @@ jobs:
           git ls-files --error-unmatch webroot/js/runtime.js webroot/js/THIRD-PARTY-LICENSES.txt
           git diff --exit-code HEAD -- webroot/js/runtime.js webroot/js/THIRD-PARTY-LICENSES.txt
       - run: npx playwright install --with-deps chromium firefox webkit
+      - name: Pull pinned Mercure hub
+        run: docker pull dunglas/mercure:v1.1.4@sha256:ed2c3959516e9945542cdc9888df01222b48b56dabf0407834b1808bccb78574
       - run: npm run test:browser
       - run: npm run docs:build
       - run: npm run package:composer

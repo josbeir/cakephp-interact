@@ -7,6 +7,7 @@ use Cake\View\View;
 use Interact\Configuration;
 use Interact\Discovery\Registry;
 use Interact\IslandContext;
+use Interact\Realtime\Subscriptions;
 use Interact\Rendering\PhpRenderer;
 use Interact\Security\SnapshotCodec;
 use Interact\Upload\UploadManager;
@@ -30,6 +31,7 @@ class Factory
         protected readonly SnapshotCodec $snapshots,
         protected readonly UploadManager $uploads = new UploadManager(),
         protected readonly Configuration $configuration = new Configuration(),
+        protected readonly ?Subscriptions $subscriptions = null,
     ) {
     }
 
@@ -40,6 +42,7 @@ class Factory
     {
         $view = $this->createView($host);
         $runtime = new Runtime($this->registry, $this->snapshots, new PhpRenderer($view), uploads: $this->uploads);
+        $runtime->attachSubscriptions($this->subscriptions);
         if ($view->helpers()->has('Interact')) {
             $helper = $view->helpers()->get('Interact');
             assert(

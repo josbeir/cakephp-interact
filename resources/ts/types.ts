@@ -2,6 +2,7 @@ import type { Redirect } from './effects/browser';
 import type { UrlFields, UrlRestoration } from './url/types';
 import type { UploadField, UploadJob, UploadMetadata } from './uploads/types';
 import type { DiagnosticOutput } from './diagnostics/output';
+import type { RealtimeMetadata, RealtimeFeedback } from './realtime/types';
 /**
  * Values accepted by the JSON transport, including nested lists and records.
  */
@@ -71,6 +72,7 @@ export type UpdateResponse =
  * Browser effects never establish authorization or durable business messages.
  */
 export interface StateResponse {
+  realtime?: RealtimeMetadata;
   diagnostics?: DiagnosticOutput;
   download?: string;
   uploads?: UploadMetadata;
@@ -144,6 +146,7 @@ export type RequestResult =
  * island's queue; synchronization alone never implies application persistence.
  */
 export interface IslandBridge {
+  realtime: RealtimeFeedback;
   /** Receive a validated, island-scoped provisional message from a custom transport adapter. */
   receiveStream(message: unknown): void;
   uploads: Record<string, UploadField>;

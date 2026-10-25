@@ -10,6 +10,7 @@ use Interact\IslandContext;
 use Interact\Loading\Options;
 use Interact\Loading\PlaceholderRenderer;
 use Interact\Navigation\Identity;
+use Interact\Realtime\Subscriptions;
 use Interact\Rendering\PlaceholderRendererInterface;
 use Interact\Rendering\RendererInterface;
 use Interact\Security\SnapshotCodec;
@@ -37,6 +38,14 @@ class HtmlRenderer
         protected readonly UploadManager $uploads = new UploadManager(),
     ) {
         $this->responses = new ResponseBuilder($snapshots, $state, $uploads, $stack);
+    }
+
+    /**
+     * Attach optional subscription exporting without changing standalone renderer construction.
+     */
+    public function attachSubscriptions(?Subscriptions $subscriptions): void
+    {
+        $this->responses->attachSubscriptions($subscriptions);
     }
 
     /**
@@ -134,6 +143,7 @@ class HtmlRenderer
         $html .= '>' . $result->html . '</' . $definition->declaration->tag . '>';
 
         return new Result($result->id, $html, $result->snapshot, [
+            'realtime' => $result->realtime,
             'state' => $result->state,
             'writable' => $result->writable,
             'url' => $result->url,
@@ -161,6 +171,10 @@ class HtmlRenderer
         ];
         if ($result->url !== []) {
             $attributes['data-interact-url'] = json_encode((object)$result->url, JSON_THROW_ON_ERROR | JSON_HEX_TAG);
+        }
+
+        if ($result->realtime !== null) {
+            $attributes['data-interact-realtime'] = json_encode($result->realtime, JSON_THROW_ON_ERROR | JSON_HEX_TAG);
         }
 
         if ($result->uploads !== []) {

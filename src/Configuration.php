@@ -6,6 +6,7 @@ namespace Interact;
 use Cake\Core\Configure;
 use Interact\Configuration\AssetSettings;
 use Interact\Configuration\SnapshotSettings;
+use Interact\Realtime\LeaseCodec;
 use Interact\Runtime\Values;
 use Interact\Security\SnapshotCodec;
 use Interact\View\TemplateView;
@@ -105,6 +106,14 @@ readonly class Configuration
     public function snapshots(): SnapshotCodec
     {
         return $this->signing->codec();
+    }
+
+    /**
+     * Create subscription-only signing with the same configured secret and a separate domain.
+     */
+    public function leases(): LeaseCodec
+    {
+        return $this->signing->leases();
     }
 
     /**

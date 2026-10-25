@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Configuration;
 
 use Cake\Utility\Security;
+use Interact\Realtime\LeaseCodec;
 use Interact\Security\SnapshotCodec;
 use InvalidArgumentException;
 
@@ -43,5 +44,13 @@ readonly class SnapshotSettings
     public function codec(): SnapshotCodec
     {
         return new SnapshotCodec($this->key ?? Security::getSalt(), $this->ttl);
+    }
+
+    /**
+     * Keep lease signatures separate while honoring the application's configured signing secret.
+     */
+    public function leases(): LeaseCodec
+    {
+        return new LeaseCodec($this->key ?? Security::getSalt());
     }
 }
