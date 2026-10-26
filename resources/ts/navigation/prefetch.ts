@@ -5,7 +5,7 @@ interface PrefetchEntry {
   controller: AbortController;
   promise: Promise<PageResponse>;
   value?: PageResponse;
-  press?: AbortSignal;
+  attempt?: AbortSignal;
 }
 
 export interface PageResponse {
@@ -16,8 +16,8 @@ export interface PageResponse {
 }
 
 /**
- * Holds bounded hover responses and the GET owned by an active mouse press.
- * Completed press responses belong only to that gesture; later reuse requires HTTP freshness.
+ * Holds bounded responses and the GET owned by an active hover, focus, or mouse press.
+ * Completed responses belong only to that attempt; later reuse requires HTTP freshness.
  * Detached HTML never initializes Alpine or owns polling, upload, or lazy-load activity.
  */
 export class PageFetcher {
@@ -27,16 +27,18 @@ export class PageFetcher {
     protected readonly fetcher: Fetcher = (url, options) => fetch(url, options),
   ) {}
 
-  prefetch(url: string, press?: AbortSignal): void {
-    if (press?.aborted) return;
+  prefetch(url: string, attempt?: AbortSignal): void {
+    if (attempt?.aborted) return;
     const previous = this.entries.get(url);
     if (
       previous &&
       (!previous.value ||
         previous.value.cacheUntil > Date.now() ||
-        (!press && previous.press && !previous.press.aborted))
+        (previous.attempt &&
+          !previous.attempt.aborted &&
+          (!attempt || previous.attempt === attempt)))
     ) {
-      if (press) this.hold(url, previous, press);
+      if (attempt) this.hold(url, previous, attempt);
       return;
     }
     this.entries.delete(url);
@@ -53,12 +55,12 @@ export class PageFetcher {
       promise: this.fetch(url, controller.signal),
     };
     this.entries.set(url, entry);
-    if (press) this.hold(url, entry, press);
+    if (attempt) this.hold(url, entry, attempt);
     void entry.promise.then(
       (value) => {
         if (this.entries.get(url) !== entry) return;
         entry.value = value;
-        if (value.cacheUntil <= Date.now() && !entry.press)
+        if (value.cacheUntil <= Date.now() && !entry.attempt)
           this.entries.delete(url);
       },
       () => {
@@ -70,11 +72,11 @@ export class PageFetcher {
   async take(
     url: string,
     signal: AbortSignal,
-    press?: AbortSignal,
+    attempt?: AbortSignal,
   ): Promise<PageResponse> {
     const entry = this.entries.get(url);
     const owned =
-      press !== undefined && !press.aborted && entry?.press === press;
+      attempt !== undefined && !attempt.aborted && entry?.attempt === attempt;
     if (
       !entry ||
       (entry.value && entry.value.cacheUntil <= Date.now() && !owned)
@@ -96,15 +98,20 @@ export class PageFetcher {
     this.entries.clear();
   }
 
-  /** Keep early responses for their originating gesture and release abandoned work. */
-  protected hold(url: string, entry: PrefetchEntry, press: AbortSignal): void {
-    if (entry.press === press) return;
-    entry.press = press;
-    press.addEventListener(
+  /** Keep early responses for their originating attempt and release abandoned work. */
+  protected hold(
+    url: string,
+    entry: PrefetchEntry,
+    attempt: AbortSignal,
+  ): void {
+    if (entry.attempt === attempt) return;
+    entry.attempt = attempt;
+    attempt.addEventListener(
       'abort',
       () => {
-        if (this.entries.get(url) !== entry || entry.press !== press) return;
-        delete entry.press;
+        if (this.entries.get(url) !== entry || entry.attempt !== attempt)
+          return;
+        delete entry.attempt;
         if (!entry.value || entry.value.cacheUntil <= Date.now()) {
           this.entries.delete(url);
           entry.controller.abort();

@@ -440,6 +440,97 @@ describe('navigation feedback and links', () => {
     },
   );
 
+  it.each(
+    ['mouse', 'keyboard'].flatMap((activation) =>
+      ['no-store', 'no-cache', '', 'private, max-age=30'].map((policy) => ({
+        activation,
+        policy,
+      })),
+    ),
+  )(
+    'consumes a completed hover response on $activation activation with "$policy"',
+    async ({ activation, policy }) => {
+      vi.useFakeTimers();
+      const fetcher = vi.fn<Fetcher>(async () => {
+        const response = pageResponse();
+        response.headers.set('Cache-Control', policy);
+        return response;
+      });
+      const { controller, native } = setup(fetcher);
+      const link = document.createElement('a');
+      link.href = '/second';
+      document.body.append(link);
+      const dispose = navigationBinding(
+        controller,
+        link,
+        'navigate',
+        ['hover'],
+        '',
+      );
+      link.dispatchEvent(
+        new Event(activation === 'mouse' ? 'mouseenter' : 'focus'),
+      );
+      await vi.advanceTimersByTimeAsync(60);
+      expect(fetcher).toHaveBeenCalledOnce();
+      if (activation === 'mouse') {
+        link.dispatchEvent(
+          new MouseEvent('mousedown', { button: 0, bubbles: true }),
+        );
+        // Native focus follows mouse-down and must not start another attempt.
+        link.dispatchEvent(new Event('focus'));
+        await vi.advanceTimersByTimeAsync(100);
+        link.dispatchEvent(
+          new MouseEvent('mouseup', { button: 0, bubbles: true }),
+        );
+      }
+      link.click();
+      await vi.runAllTimersAsync();
+      expect(fetcher).toHaveBeenCalledOnce();
+      expect(window.location.pathname).toBe('/second');
+      expect(native).not.toHaveBeenCalled();
+      dispose();
+    },
+  );
+
+  it.each(['mouseleave', 'blur', 'window-blur', 'href', 'dispose'])(
+    'releases a completed uncached hover response on %s',
+    async (reason) => {
+      vi.useFakeTimers();
+      const fetcher = vi.fn<Fetcher>(async () => pageResponse());
+      const { controller } = setup(fetcher);
+      const prefetch = vi.spyOn(controller, 'prefetch');
+      const link = document.createElement('a');
+      link.href = '/second';
+      document.body.append(link);
+      const dispose = navigationBinding(
+        controller,
+        link,
+        'navigate',
+        ['hover'],
+        '',
+      );
+      link.dispatchEvent(new Event('mouseenter'));
+      await vi.advanceTimersByTimeAsync(60);
+      link.dispatchEvent(new Event('focus'));
+      await vi.advanceTimersByTimeAsync(60);
+      expect(fetcher).toHaveBeenCalledOnce();
+      if (reason === 'window-blur') window.dispatchEvent(new Event('blur'));
+      else if (reason === 'dispose') dispose();
+      else if (reason === 'href') {
+        link.href = '/third';
+        await Promise.resolve();
+      } else link.dispatchEvent(new Event(reason));
+      expect(prefetch.mock.calls[0]?.[1]?.aborted).toBe(true);
+      const visit = controller.visit(
+        new URL('/second', window.location.href).href,
+      );
+      await vi.runAllTimersAsync();
+      expect(await visit).toBe('enhanced');
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      dispose();
+    },
+  );
+
   it.each([
     ['private, max-age=30', 1],
     ['no-store', 1],

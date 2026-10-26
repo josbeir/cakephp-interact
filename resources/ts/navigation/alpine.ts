@@ -61,11 +61,13 @@ export function navigationBinding(
   current();
   const observer = new MutationObserver(() => {
     release();
+    cancel();
     current();
   });
   observer.observe(element, { attributes: true, attributeFilter: ['href'] });
   document.addEventListener('interact:url', current);
   let pressed: { url: string; controller: AbortController } | undefined;
+  let hovered: { url: string; controller: AbortController } | undefined;
   let releaseTimer: ReturnType<typeof setTimeout> | undefined;
   const release = () => {
     clearTimeout(releaseTimer);
@@ -88,28 +90,39 @@ export function navigationBinding(
   };
   const click = (event: MouseEvent) => {
     const url = linkDestination(element, event);
-    cancel();
+    clearTimeout(timer);
     if (url) {
       event.preventDefault();
+      const attempt = pressed ?? hovered;
       void controller.visit(
         url.href,
         {
           preserveScroll: modifiers.includes('preserve-scroll'),
         },
-        pressed?.url === url.href ? pressed.controller.signal : undefined,
+        attempt?.url === url.href ? attempt.controller.signal : undefined,
       );
     }
+    cancel();
     release();
   };
   element.addEventListener('click', click);
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const cancel = () => clearTimeout(timer);
+  const cancel = () => {
+    clearTimeout(timer);
+    hovered?.controller.abort();
+    hovered = undefined;
+  };
   const press = (event: MouseEvent) => {
     release();
     const url = linkDestination(element, event);
-    if (!url) return;
+    if (!url) {
+      cancel();
+      return;
+    }
+    const controllerForPress =
+      hovered?.url === url.href ? hovered.controller : new AbortController();
+    if (hovered?.controller === controllerForPress) hovered = undefined;
     cancel();
-    const controllerForPress = new AbortController();
     pressed = { url: url.href, controller: controllerForPress };
     controller.prefetch(url.href, controllerForPress.signal);
     document.addEventListener('mouseup', released, true);
@@ -120,10 +133,14 @@ export function navigationBinding(
     element.addEventListener('dragstart', release);
   };
   const prefetch = () => {
-    cancel();
+    clearTimeout(timer);
     timer = setTimeout(() => {
       const url = linkDestination(element);
-      if (url) controller.prefetch(url.href);
+      if (!url || pressed?.url === url.href || hovered?.url === url.href)
+        return;
+      cancel();
+      hovered = { url: url.href, controller: new AbortController() };
+      controller.prefetch(url.href, hovered.controller.signal);
     }, 60);
   };
   if (!modifiers.includes('no-prefetch'))
@@ -133,6 +150,7 @@ export function navigationBinding(
     element.addEventListener('focus', prefetch);
     element.addEventListener('mouseleave', cancel);
     element.addEventListener('blur', cancel);
+    window.addEventListener('blur', cancel);
   }
   return () => {
     cancel();
@@ -145,5 +163,6 @@ export function navigationBinding(
     element.removeEventListener('focus', prefetch);
     element.removeEventListener('mouseleave', cancel);
     element.removeEventListener('blur', cancel);
+    window.removeEventListener('blur', cancel);
   };
 }
