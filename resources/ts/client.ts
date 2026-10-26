@@ -111,7 +111,7 @@ export class IslandClient {
   canModel(path: string): boolean {
     const separator = path.indexOf('.');
     const owner = separator < 0 ? path : path.slice(0, separator);
-    return this.writable[owner] !== undefined;
+    return (this.writable[path] ?? this.writable[owner]) !== undefined;
   }
 
   /** @internal Read the last accepted value for cross-island draft reconciliation. */

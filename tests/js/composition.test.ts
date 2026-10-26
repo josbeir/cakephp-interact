@@ -5,6 +5,7 @@ import { relation } from '../../resources/ts/composition/protocol';
 import type { IslandClient } from '../../resources/ts/client';
 import type { State, Writable } from '../../resources/ts/types';
 import { clone, record, state } from '../../resources/ts/state/values';
+import { mergeChanges } from '../../resources/ts/state/paths';
 import { destroyBindings, mountClient } from './mount';
 import { readMetadata } from '../../resources/ts/transport/metadata';
 
@@ -46,7 +47,7 @@ function participant(
       if (!record(request) || !state(request.updates))
         throw new Error('Invalid request.');
       requests.push(request);
-      accepted = { ...accepted, ...request.updates };
+      accepted = mergeChanges(accepted, request.updates);
       const next = handler ? await handler(request, clone(accepted)) : accepted;
       accepted = clone(next);
       const replacement = element.cloneNode(false);
@@ -261,6 +262,84 @@ it('checks the exact writable owner of scalar and nested model paths', async () 
   expect(child.client.canModel('values')).toBe(false);
   expect(parent.client.canModel('database.value')).toBe(false);
   expect(child.client.canModel('')).toBe(false);
+});
+
+it.each(['page', 'limit'])(
+  'mirrors a child model bound to the declared pagination field paging.%s',
+  async (field) => {
+    const relationships = new Relationships(Alpine, (element) =>
+      roots.get(element),
+    );
+    const path = `paging.${field}`;
+    const parentRoot = root(
+      'parent',
+      { paging: { page: 1, sort: '', direction: 'asc', limit: 20 } },
+      { [path]: { type: 'int', nullable: false } },
+    );
+    document.body.append(parentRoot);
+    const parent = participant(
+      parentRoot,
+      relationships,
+      undefined,
+      undefined,
+      true,
+    );
+    const childRoot = root(
+      'child',
+      { value: field === 'page' ? 1 : 20 },
+      { value: { type: 'int', nullable: false } },
+    );
+    childRoot.dataset.interactRelation = JSON.stringify({
+      parentId: 'parent',
+      models: { value: { path, timing: 'defer', delay: 250 } },
+    });
+    childRoot.innerHTML = '<input type="number" x-interact:model="value">';
+    parentRoot.append(childRoot);
+    const child = participant(childRoot, relationships);
+    const failed = vi.spyOn(child.client, 'compositionFailed');
+    await Promise.resolve();
+    const input = childRoot.querySelector('input');
+    if (!input) throw new Error('Missing child input.');
+
+    edit(input, '2');
+    await vi.waitFor(() =>
+      expect(parent.client.bridge.state.paging).toMatchObject({ [field]: 2 }),
+    );
+    parent.client.bridge.state.paging = {
+      page: 1,
+      sort: '',
+      direction: 'asc',
+      limit: 20,
+      [field]: 3,
+    };
+    await vi.waitFor(() => expect(child.client.bridge.state.value).toBe(3));
+    expect(input.value).toBe('3');
+    expect(parent.requests).toHaveLength(0);
+    expect(child.requests).toHaveLength(0);
+    expect(failed).not.toHaveBeenCalled();
+
+    await parent.client.bridge.sync();
+    expect(parent.requests[0]).toMatchObject({ updates: { [path]: 3 } });
+    expect(parent.client.bridge.state.paging).toMatchObject({ [field]: 3 });
+    expect(child.client.bridge.state.value).toBe(3);
+  },
+);
+
+it('requires explicit pagination leaf capabilities without granting sibling or root access', () => {
+  const element = root(
+    'parent',
+    { paging: { page: 1, sort: '', direction: 'asc' } },
+    { 'paging.page': { type: 'int', nullable: false } },
+  );
+  document.body.append(element);
+  const relationships = new Relationships(Alpine, (entry) => roots.get(entry));
+  const { client } = participant(element, relationships);
+
+  expect(client.canModel('paging.page')).toBe(true);
+  expect(client.canModel('paging')).toBe(false);
+  expect(client.canModel('paging.limit')).toBe(false);
+  expect(client.canModel('paging.sort')).toBe(false);
+  expect(client.canModel('paging.unknown')).toBe(false);
 });
 
 it('captures edits before blur or an input event when the parent action submits', async () => {
