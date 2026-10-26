@@ -46,6 +46,14 @@ class ResourcesController extends AppController
     }
 
     /**
+     * Show two independently configured Table listings within one island.
+     */
+    #[Get('/search/multiple', name: 'demo:search:multiple')]
+    public function multiple(): void
+    {
+    }
+
+    /**
      * Exercise nullable and nested query bindings with independent ownership and persistent navigation.
      */
     #[Get('/demo/url-state', name: 'demo:url-state')]

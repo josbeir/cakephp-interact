@@ -33,10 +33,10 @@ class HttpTest extends HttpTestCase
         $root = $xpath->query('//*[@data-interact-state]')->item(0);
         static::assertInstanceOf(Element::class, $root);
         static::assertJsonStringEqualsJsonString(
-            '{"controlPrefix":"ResourceSearch","notes":"","search":"","category":"","level":"","sort":"title","direction":"asc","limit":20,"page":1}',
+            '{"controlPrefix":"ResourceSearch","notes":"","search":"","category":"","level":"","paging":{"page":1,"sort":"title","direction":"asc","limit":20}}',
             (string)$root->getAttribute('data-interact-state'),
         );
-        $options = $xpath->query('//html:select[@*[name()="x-interact:model.change" and .="sort"]]/html:option');
+        $options = $xpath->query('//html:select[@*[name()="x-interact:model.change" and .="paging.sort"]]/html:option');
         $labels = [];
         foreach ($options as $option) {
             $labels[] = $option->textContent;
@@ -44,7 +44,7 @@ class HttpTest extends HttpTestCase
 
         static::assertSame(['Title: A–Z', 'Title: Z–A', 'Shortest read first', 'Longest read first'], $labels);
         $selected = $xpath->query(
-            '//html:select[@*[name()="x-interact:model.change" and .="sort"]]/html:option[@selected]',
+            '//html:select[@*[name()="x-interact:model.change" and .="paging.sort"]]/html:option[@selected]',
         );
         static::assertSame(1, $selected->length);
         $selectedOption = $selected->item(0);
@@ -55,7 +55,7 @@ class HttpTest extends HttpTestCase
     public function testResourceSearchCombinesFiltersAndResetsPaginationAfterEdits(): void
     {
         $mount = $this->mounted(url: '/search');
-        $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['page' => 999]]);
+        $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['paging.page' => 999]]);
         $this->assertResponseOk();
         $this->assertResponseContains('"page":60');
         $this->assertResponseContains('Showing 1,181\u20131,200');
@@ -65,7 +65,7 @@ class HttpTest extends HttpTestCase
                 'search' => 'validation',
                 'category' => 'cakephp',
                 'level' => 'beginner',
-                'sort' => 'shortest',
+                'paging.sort' => 'shortest',
             ],
         ]);
         $this->assertResponseOk();
@@ -75,7 +75,7 @@ class HttpTest extends HttpTestCase
         $this->assertResponseNotContains('Input validation');
         $this->assertResponseNotContains('Undefined variable');
         $this->assertResponseContains('value=\"shortest\" selected');
-        $this->update(['snapshot' => $this->nextSnapshot(), 'updates' => ['page' => -10]]);
+        $this->update(['snapshot' => $this->nextSnapshot(), 'updates' => ['paging.page' => -10]]);
         $this->assertResponseOk();
         $this->assertResponseContains('"page":1');
     }
@@ -83,10 +83,10 @@ class HttpTest extends HttpTestCase
     public function testResourceSearchChangesPageSizeAndRestoresTheFullLibrary(): void
     {
         $mount = $this->mounted(url: '/search');
-        $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['limit' => 50]]);
+        $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['paging.limit' => 50]]);
         $this->assertResponseOk();
         $this->assertResponseContains('Showing 1\u201350 of');
-        $this->update(['snapshot' => $this->nextSnapshot(), 'updates' => ['page' => 999]]);
+        $this->update(['snapshot' => $this->nextSnapshot(), 'updates' => ['paging.page' => 999]]);
         $this->assertResponseOk();
         $this->assertResponseContains('"page":24');
         $this->update(['snapshot' => $this->nextSnapshot(), 'updates' => ['search' => '%']]);
@@ -107,18 +107,18 @@ class HttpTest extends HttpTestCase
         foreach ([
             ['category' => 'unknown'],
             ['level' => 'unknown'],
-            ['sort' => 'Resources.id'],
-            ['limit' => 0],
+            ['paging.sort' => 'Resources.id'],
+            ['paging.limit' => 0],
             ['search' => str_repeat('x', 201)],
         ] as $updates) {
             $this->update(['snapshot' => $mount['snapshot'], 'updates' => $updates]);
             $this->assertResponseCode(400);
         }
 
-        $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['page' => 999]]);
+        $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['paging.page' => 999]]);
         $this->assertResponseOk();
         $this->assertResponseContains('"page":60');
-        $this->update(['snapshot' => $this->nextSnapshot(), 'updates' => ['page' => -1]]);
+        $this->update(['snapshot' => $this->nextSnapshot(), 'updates' => ['paging.page' => -1]]);
         $this->assertResponseOk();
         $this->assertResponseContains('"page":1');
     }

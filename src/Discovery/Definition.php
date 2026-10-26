@@ -3,11 +3,13 @@ declare(strict_types=1);
 
 namespace Interact\Discovery;
 
+use Interact\Attribute\Pagination;
 use Interact\Attribute\Prop;
 use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Attribute\Upload;
 use Interact\Island;
+use Interact\Pagination\PaginationProperty;
 use Interact\Upload\UploadProperty;
 use Interact\Url\UrlState;
 use InvalidArgumentException;
@@ -78,8 +80,15 @@ readonly class Definition
             $prop = $property->getAttributes(Prop::class);
             $state = $property->getAttributes(State::class);
             $upload = $property->getAttributes(Upload::class);
-            if ((int)($prop !== []) + (int)($state !== []) + (int)($upload !== []) > 1) {
-                throw new InvalidArgumentException('A property can declare only one of Prop, State, or Upload.');
+            $pagination = $property->getAttributes(Pagination::class);
+            if ((int)($prop !== []) + (int)($state !== []) + (int)($upload !== []) + (int)($pagination !== []) > 1) {
+                throw new InvalidArgumentException(
+                    'A property can declare only one of Prop, State, Upload, or Pagination.',
+                );
+            }
+
+            if ($pagination !== []) {
+                $properties[$property->getName()] = new PaginationProperty($property, $pagination[0]->newInstance());
             }
 
             if ($upload !== []) {
@@ -105,6 +114,19 @@ readonly class Definition
         $this->renderlessActions = $actions->renderless;
         $this->streamingActions = $actions->streaming;
         new UrlState()->metadata($this, null);
+    }
+
+    /**
+     * Return independently declared listing states without retaining request-local objects.
+     *
+     * @return array<string, PaginationProperty>
+     */
+    public function paginations(): array
+    {
+        return array_filter(
+            $this->properties,
+            static fn(Property $property): bool => $property instanceof PaginationProperty,
+        );
     }
 
     /**

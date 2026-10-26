@@ -7,6 +7,7 @@ use Cake\Container\ContainerInterface;
 use Cake\Core\App;
 use Cake\Core\Plugin;
 use Interact\Island;
+use Interact\Pagination\PaginationProperty;
 use InvalidArgumentException;
 use ReflectionClass;
 use function Cake\Core\pluginSplit;
@@ -130,6 +131,11 @@ class Registry
         if (!$instance instanceof Island) {
             throw new InvalidArgumentException('The container must return an Island instance.');
         }
+
+        $paginations = $definition->paginations();
+        array_walk($paginations, static function (PaginationProperty $pagination) use ($instance): void {
+            $pagination->initialize($instance);
+        });
 
         $instance->initialize();
 

@@ -6,12 +6,11 @@ use function Cake\Core\h;
 /**
  * @var \Interact\View\TemplateView $this
  * @var \Cake\Datasource\Paging\PaginatedInterface<int, \Cake\Datasource\EntityInterface> $rows
- * @var string|null $sort
- * @var int $page
+ * @var \Interact\Pagination\PaginationState $paging
  */
 ?>
-<p>Accepted page <?= $page ?>. <?= $this->Paginator->counter('{{start}}–{{end}} of {{count}}') ?></p>
-<?php if (isset($sort)): ?>
+<p>Accepted page <?= $paging->page ?>. <?= $this->Paginator->counter('{{start}}–{{end}} of {{count}}') ?></p>
+<?php if ($paging->sort !== '' || $rows->pagingParam('alias') !== null): ?>
     <?= $this->Paginator->sort('title', 'Title') ?>
 <?php endif; ?>
 <ul>

@@ -53,7 +53,7 @@ class UrlCodecTest extends TestCase
     #[DataProvider('examples')]
     public function testSharedQuery(string $property, string $query, mixed $expected): void
     {
-        $binding = new Binding(
+        $binding = Binding::fromProperty(
             new ReflectionProperty(StructuredUrlTypes::class, $property),
             new State(writable: true, url: 'value'),
         );
@@ -175,7 +175,7 @@ class UrlCodecTest extends TestCase
      */
     public function testRejectsExcessiveValues(): void
     {
-        $binding = new Binding(
+        $binding = Binding::fromProperty(
             new ReflectionProperty(StructuredUrlTypes::class, 'items'),
             new State(writable: true, url: 'value'),
         );
@@ -212,7 +212,7 @@ class UrlCodecTest extends TestCase
     #[DataProvider('acceptedMaps')]
     public function testAcceptedMapsRoundTrip(string $property, mixed $accepted): void
     {
-        $binding = new Binding(
+        $binding = Binding::fromProperty(
             new ReflectionProperty(StructuredUrlTypes::class, $property),
             new State(writable: true, url: 'value'),
         );

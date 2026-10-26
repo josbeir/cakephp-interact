@@ -1,4 +1,5 @@
 import type { State, Writable } from '../types';
+import { read } from './paths';
 import { equal } from './values';
 
 /**
@@ -13,8 +14,8 @@ export function changedWritable(
 ): State {
   const changes: State = {};
   for (const name of Object.keys(fields)) {
-    const value = current[name];
-    if (value !== undefined && !equal(value, baseline[name]))
+    const value = read(current, name);
+    if (value !== undefined && !equal(value, read(baseline, name)))
       changes[name] = value;
   }
   return changes;

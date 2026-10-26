@@ -20,12 +20,15 @@ use LogicException;
 /**
  * Applies declared paging state to an application-owned query after authorization.
  *
- * Only one dataset is evaluated per request. Native results and link bookkeeping stay
+ * Each declared listing is evaluated at most once per request. Native results and link bookkeeping stay
  * request-local; accepted scalar parameters are normalized before snapshot export.
  */
 class Pagination
 {
-    protected bool $used = false;
+    /**
+     * @var array<string, Links> One result and link context per declared listing in this request.
+     */
+    protected array $links = [];
 
     /**
      * Compose paging against the same compiled declaration and signed mount identity as rendering.
@@ -46,26 +49,24 @@ class Pagination
      * @return \Cake\Datasource\Paging\PaginatedInterface<int, mixed>
      * @throws \Interact\Security\InvalidSnapshotException When the signed identity requires a remount.
      * @throws InvalidArgumentException When paging declarations or settings are invalid.
-     * @throws LogicException When the island attempts to paginate more than one dataset.
+     * @throws LogicException When the same pagination state is reused for another dataset.
      */
     public function paginate(
         Island $island,
         RepositoryInterface|QueryInterface $object,
         array $settings,
+        ?PaginationState $paging = null,
     ): PaginatedInterface {
         $path = PagePath::required($this->identity->pagePath);
-        if ($this->used) {
-            throw new LogicException('An island can paginate one dataset per request.');
-        }
-
-        $this->used = true;
         $configuration = $this->configuration ?? new Configuration($this->definition);
-        $fields = $configuration->fields();
-        $params = [];
-        foreach ($fields as $name => $field) {
-            $params[$name] = $field->reflection->getValue($island);
+        $property = $configuration->select($island, $paging);
+        if (isset($this->links[$property->name])) {
+            throw new LogicException('Each pagination state can paginate one dataset per request.');
         }
 
+        $fields = $property->fields();
+        $params = $property->read($island);
+        $settings += $property->declaration->settings;
         if (($params['sort'] ?? '') === '') {
             unset($params['sort'], $params['direction']);
         }
@@ -79,36 +80,44 @@ class Pagination
         $settings['allowedParameters'] = array_keys($fields);
         unset($settings['className']);
         $params['page'] = max(1, (int)$params['page']);
-        if ($params['page'] > 9_007_199_254_740_991) {
-            throw new InvalidArgumentException('Pagination page must be a browser-safe integer.');
-        }
-
         $result = $this->bounded($paginator, $object, $params, $settings);
-        $accepted = $this->accept($island, $fields, $result, $params);
+        $accepted = $this->accept($property->state($island), $result, $params);
+
+        $values = new State()->export($island, $this->definition);
+        foreach ($this->links as $previous) {
+            $previous->accept($values);
+        }
 
         $links = new Links(
             $path,
             $this->query ?? $this->context->request->getUri()->getQuery(),
             new UrlState()->metadata($this->definition, $this->identity->urlPrefix),
-            new State()->export($island, $this->definition),
+            $values,
             $this->identity->routing,
         );
 
-        return new Paginated($result, $links, array_keys($fields), [
-            'sort' => $accepted['sort'],
-            'direction' => $accepted['direction'],
-        ]);
+        $this->links[$property->name] = $links;
+
+        return new Paginated(
+            $result,
+            $links,
+            array_keys($fields),
+            [
+                'sort' => $accepted['sort'],
+                'direction' => $accepted['direction'],
+            ],
+            $property->name,
+        );
     }
 
     /**
      * Normalize only explicit client paging fields, keeping default database ordering out of sort state.
      *
-     * @param array<string, \Interact\Discovery\Property> $fields Compiled writable paging declarations.
      * @param \Cake\Datasource\Paging\PaginatedInterface<int, mixed> $result Native accepted results.
      * @param array<string, mixed> $params Declared incoming paging values.
      * @return array{page: int, limit: int, sort: string, direction: string} Normalized native parameters.
      */
-    protected function accept(Island $island, array $fields, PaginatedInterface $result, array $params): array
+    protected function accept(PaginationState $state, PaginatedInterface $result, array $params): array
     {
         $accepted = [
             'page' => $result->currentPage(),
@@ -120,9 +129,10 @@ class Pagination
             $accepted['direction'] = 'asc';
         }
 
-        foreach ($fields as $name => $field) {
-            $field->assign($island, $accepted[$name]);
-        }
+        $state->page = $accepted['page'];
+        $state->sort = $accepted['sort'];
+        $state->direction = $accepted['direction'];
+        $state->limit = $accepted['limit'];
 
         return $accepted;
     }

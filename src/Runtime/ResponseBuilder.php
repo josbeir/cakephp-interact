@@ -79,12 +79,12 @@ class ResponseBuilder
             $context->scope,
         );
         $writable = [];
-        foreach ($definition->properties as $name => $property) {
+        foreach ($definition->properties as $property) {
             if (!$property->writable) {
                 continue;
             }
 
-            $writable[$name] = ['type' => $property->type, 'nullable' => $property->nullable];
+            $writable += $property->writableFields();
         }
 
         $values = [

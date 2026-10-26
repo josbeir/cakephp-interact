@@ -2,7 +2,8 @@ import { destination, redirect } from '../effects/browser';
 import { urlFields, urlState } from '../url/codec';
 import { uploadMetadata } from '../uploads/protocol';
 import type { UpdateResponse, Writable } from '../types';
-import { forbidden, record, state } from '../state/values';
+import { validPath } from '../state/paths';
+import { record, state } from '../state/values';
 import { diagnosticEnvelope } from '../diagnostics/output';
 import { realtimeMetadata } from '../realtime/protocol';
 
@@ -14,7 +15,7 @@ export function writable(value: unknown): value is Writable {
     record(value) &&
     Object.entries(value).every(
       ([key, entry]) =>
-        !forbidden.has(key) &&
+        validPath(key) &&
         record(entry) &&
         typeof entry.type === 'string' &&
         ['string', 'int', 'float', 'bool', 'array'].includes(entry.type) &&

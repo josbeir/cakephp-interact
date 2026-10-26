@@ -6,6 +6,7 @@ namespace Interact\Test\TestCase;
 use Cake\Core\Configure;
 use Cake\Utility\Fs\Finder;
 use Cake\Utility\Fs\Path;
+use Interact\Pagination\PaginationState;
 use Interact\Test\Fixture\DocumentationControls;
 use Interact\View\TemplateView;
 use PHPUnit\Framework\TestCase;
@@ -52,6 +53,7 @@ class DocumentationMarkupTest extends TestCase
                     foreach ($groups as $group) {
                         $view = new TemplateView();
                         $view->set([
+                            'paging' => new PaginationState(),
                             'search' => '',
                             'title' => '',
                             'bio' => '',

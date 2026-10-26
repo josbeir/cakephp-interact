@@ -67,7 +67,7 @@ class State
             }
 
             /** @var mixed $value */
-            $value = $property->reflection->getValue($island);
+            $value = $property->read($island);
             Values::validate($value);
             $property->url?->validate($value);
             $values[$name] = $value;

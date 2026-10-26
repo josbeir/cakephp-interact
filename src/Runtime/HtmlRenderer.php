@@ -70,6 +70,10 @@ class HtmlRenderer
                         throw new InvalidArgumentException('View data cannot shadow declared state, props, or errors.');
                     }
 
+                    foreach ($definition->paginations() as $name => $pagination) {
+                        $values[$name] = $pagination->state($island);
+                    }
+
                     return $this->renderer->render($definition, $values + ['errors' => $island->errors()] + $data);
                 },
             );

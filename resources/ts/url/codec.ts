@@ -1,3 +1,4 @@
+import { read, validPath } from '../state/paths';
 import { equal, record } from '../state/values';
 import type { Json, State } from '../types';
 import type { UrlField, UrlFields, UrlValue } from './types';
@@ -36,7 +37,7 @@ export function urlFields(value: unknown): value is UrlFields {
   const names = new Set<string>();
   return Object.entries(value).every(([property, field]) => {
     if (
-      !queryName(property) ||
+      !validPath(property) ||
       !record(field) ||
       typeof field.name !== 'string' ||
       !queryName(field.name) ||
@@ -56,7 +57,7 @@ export function urlFields(value: unknown): value is UrlFields {
 /** Require every declared query property to be present with its supported value type. */
 export function urlState(values: State, fields: UrlFields): boolean {
   return Object.entries(fields).every(([property, field]) =>
-    urlValue(values[property], field.type, field.nullable === true),
+    urlValue(read(values, property), field.type, field.nullable === true),
   );
 }
 
@@ -153,7 +154,7 @@ export function readQuery(search: string, fields: UrlFields): State {
 /** Replace owned keys only, keeping unrelated query parameters and list ordering intact. */
 export function writeQuery(url: URL, fields: UrlFields, values: State): void {
   for (const [property, field] of Object.entries(fields)) {
-    const value = values[property];
+    const value = read(values, property);
     if (!urlValue(value, field.type, field.nullable === true))
       throw new Error('Invalid accepted URL state.');
     for (const key of [...url.searchParams.keys()])

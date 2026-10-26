@@ -36,7 +36,7 @@ class BoundSource
         }
 
         /** @var mixed $value */
-        $value = $source->reflection->getValue($parent->island);
+        $value = $source->read($parent->island);
         foreach ($segments as $segment) {
             if (!is_array($value) || !array_key_exists($segment, $value)) {
                 throw new InvalidArgumentException('Initialize parent model paths before mounting a child.');

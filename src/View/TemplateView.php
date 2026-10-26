@@ -61,25 +61,31 @@ class TemplateView extends View
         $this->subDir = '';
         $this->currentType = static::TYPE_TEMPLATE;
         $this->viewVars = $data;
-        $result = null;
+        $results = [];
         /** @var mixed $value */
         foreach ($data as $value) {
             if (!$value instanceof Paginated) {
                 continue;
             }
 
-            $result = $value;
+            $results[] = $value;
         }
 
-        $restore = $helper->islandScope($result);
+        $restore = $helper->islandScope(count($results) === 1 ? $results[0] : null);
         try {
             if ($declaration->element !== null) {
-                return $this->element($declaration->element, $data) . ($result?->links->markup() ?? '');
+                return (
+                    $this->element($declaration->element, $data)
+                        . implode('', array_map(
+                            static fn(Paginated $result): string => $result->links->markup(),
+                            $results,
+                        ))
+                );
             }
 
             return (
                 $this->renderFile($this->getTemplateFileName($declaration->template), $data)
-                    . ($result?->links->markup() ?? '')
+                    . implode('', array_map(static fn(Paginated $result): string => $result->links->markup(), $results))
             );
         } finally {
             $restore();

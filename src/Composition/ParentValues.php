@@ -35,7 +35,7 @@ readonly class ParentValues
         /** @var mixed $value */
         foreach ($this->props as $name => $value) {
             $field = $definition->properties[$name];
-            if ($field->reflection->getValue($island) !== $value) {
+            if ($field->read($island) !== $value) {
                 $field->assign($island, $value);
                 $changed[] = $name;
             }

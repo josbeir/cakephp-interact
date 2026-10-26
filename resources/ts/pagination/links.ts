@@ -62,18 +62,24 @@ export function paginationLinks(
 
 /** Validate paging edits against explicit writable declarations without requiring URL ownership. */
 function pagingChanges(value: unknown, writable: Writable): value is State {
-  return (
-    record(value) &&
-    typeof value.page === 'number' &&
-    Object.entries(value).every(([key, item]) => {
-      const type = key === 'page' || key === 'limit' ? 'int' : 'string';
-      return (
-        ['page', 'sort', 'direction', 'limit'].includes(key) &&
-        writable[key]?.type === type &&
-        (type === 'int'
-          ? typeof item === 'number' && Number.isSafeInteger(item) && item > 0
-          : typeof item === 'string')
-      );
-    })
-  );
+  if (!record(value)) return false;
+  const entries = Object.entries(value);
+  const pages = entries.filter(([key]) => key.split('.').at(-1) === 'page');
+  const page = pages[0];
+  if (pages.length !== 1 || !page) return false;
+  const owner = page[0].split('.').slice(0, -1).join('.');
+  return entries.every(([key, item]) => {
+    const parts = key.split('.');
+    const name = parts.pop();
+    const type = name === 'page' || name === 'limit' ? 'int' : 'string';
+    return (
+      parts.join('.') === owner &&
+      name !== undefined &&
+      ['page', 'sort', 'direction', 'limit'].includes(name) &&
+      writable[key]?.type === type &&
+      (type === 'int'
+        ? typeof item === 'number' && Number.isSafeInteger(item) && item > 0
+        : typeof item === 'string')
+    );
+  });
 }

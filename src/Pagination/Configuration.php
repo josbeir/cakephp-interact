@@ -7,6 +7,7 @@ use Cake\Core\App;
 use Cake\Datasource\Paging\NumericPaginator;
 use Cake\Datasource\Paging\SimplePaginator;
 use Interact\Discovery\Definition;
+use Interact\Island;
 use InvalidArgumentException;
 use ReflectionClass;
 
@@ -49,34 +50,23 @@ class Configuration
     }
 
     /**
-     * Require writable, non-nullable paging state independently of optional URL bindings.
-     *
-     * @return array<string, \Interact\Discovery\Property> Explicit writable paging capabilities only.
+     * Select the sole declaration or require an explicitly owned state for multiple listings.
      */
-    public function fields(): array
+    public function select(Island $island, ?PaginationState $paging): PaginationProperty
     {
-        $fields = [];
-        foreach (['page' => 'int', 'sort' => 'string', 'direction' => 'string', 'limit' => 'int'] as $name => $type) {
-            $field = $this->definition->properties[$name] ?? null;
-            if ($name !== 'page' && $field === null) {
-                continue;
-            }
-
-            if ($field === null || !$field->writable || $field->nullable || $field->type !== $type) {
-                throw new InvalidArgumentException(sprintf(
-                    'Pagination requires writable, non-nullable %s state "%s".',
-                    $type,
-                    $name,
-                ));
-            }
-
-            $fields[$name] = $field;
+        $properties = $this->definition->paginations();
+        if (!$paging instanceof PaginationState && count($properties) === 1) {
+            return array_values($properties)[0];
         }
 
-        if (isset($fields['sort']) !== isset($fields['direction'])) {
-            throw new InvalidArgumentException('Declare pagination sort and direction state together.');
+        foreach ($properties as $property) {
+            if ($property->state($island) === $paging) {
+                return $property;
+            }
         }
 
-        return $fields;
+        throw new InvalidArgumentException(
+            'Select a declared PaginationState; multiple listings require the paging argument.',
+        );
     }
 }

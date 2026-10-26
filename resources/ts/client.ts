@@ -32,7 +32,7 @@ import { clone, equal } from './state/values';
 import { readMetadata } from './transport/metadata';
 import type { MountMetadata } from './transport/metadata';
 import type { CompositionHooks } from './composition/types';
-import { read } from './state/paths';
+import { mergeChanges, read } from './state/paths';
 import { postUpdate, readResponse } from './transport/request';
 import { IslandRequestError, requestError } from './transport/failure';
 import type {
@@ -237,7 +237,7 @@ export class IslandClient {
       (changes) => {
         this.controls.captureAll();
         this.controls.clearPending();
-        Object.assign(this.bridge.state, changes);
+        this.bridge.state = mergeChanges(this.bridge.state, changes);
         this.controls.refresh();
         void this.bridge.sync();
       },
@@ -528,7 +528,7 @@ export class IslandClient {
       const restoration = invocation.urlRestore;
       const parentTicket = this.parentTicket;
       const sent = restoration
-        ? { ...clone(this.baseline), ...clone(restoration.values) }
+        ? mergeChanges(this.baseline, restoration.values)
         : clone(this.bridge.state);
       this.composition?.begin(invocation.action, sent);
       const payload = {
@@ -735,7 +735,7 @@ export class IslandClient {
       this.snapshot = payload.snapshot;
       this.baseline = clone(payload.state);
       this.writable = payload.writable;
-      this.bridge.state = { ...payload.state, ...newer };
+      this.bridge.state = mergeChanges(payload.state, newer);
       this.bridge.errors = payload.errors;
       this.uploads.accept(payload.uploads ?? {}, upload);
       this.controls.refresh();
@@ -798,13 +798,13 @@ export class IslandClient {
     this.controls.captureAll();
     const unchanged = Object.entries(target.values).every(
       ([key, value]) =>
-        equal(value, this.bridge.state[key]) &&
-        equal(value, this.baseline[key]),
+        equal(value, read(this.bridge.state, key)) &&
+        equal(value, read(this.baseline, key)),
     );
     if (unchanged && !this.bridge.pending()) return;
     this.controls.clearPending();
     this.urlTarget = target;
-    this.bridge.state = { ...this.bridge.state, ...clone(target.values) };
+    this.bridge.state = mergeChanges(this.bridge.state, target.values);
     this.controls.refresh();
     if (this.bridge.paused && this.bridge.error?.recovery !== 'retry') return;
     this.bridge.error = null;

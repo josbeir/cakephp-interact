@@ -53,7 +53,7 @@ class MountRenderer
         $props = $this->hydrator->props($island, $definition);
         $bound = [];
         foreach (array_keys($identity->relation->models ?? []) as $name) {
-            $bound[$name] = $definition->properties[$name]->reflection->getValue($island);
+            $bound[$name] = $definition->properties[$name]->read($island);
         }
 
         $snapshot = $this->snapshots->seal(

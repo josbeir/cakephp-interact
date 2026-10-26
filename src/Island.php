@@ -9,6 +9,7 @@ use Cake\Datasource\RepositoryInterface;
 use Interact\Action\ActionEffects;
 use Interact\Action\Outcome;
 use Interact\Pagination\Pagination;
+use Interact\Pagination\PaginationState;
 use Interact\Realtime\Subscription;
 use Interact\Validation\ErrorNormalizer;
 use InvalidArgumentException;
@@ -36,11 +37,6 @@ abstract class Island
 
     protected ?ActionEffects $actionEffects = null;
 
-    /**
-     * @var array<string, mixed> Native CakePHP numeric paginator defaults.
-     */
-    protected array $paginate = [];
-
     protected ?Pagination $pagination = null;
 
     /**
@@ -54,19 +50,23 @@ abstract class Island
     }
 
     /**
-     * Paginate an application-owned query using declared URL state and native CakePHP settings.
+     * Paginate an application-owned query using its declared paging state and native CakePHP settings.
      *
-     * @param array<string, mixed> $settings Per-call overrides for $paginate.
+     * @param array<string, mixed> $settings Per-call overrides for attribute settings.
+     * @param PaginationState|null $paging Required when the island declares multiple paginators.
      * @return \Cake\Datasource\Paging\PaginatedInterface<int, mixed>
-     * @throws LogicException When called outside an island request or more than once per request.
+     * @throws LogicException When called outside an island request or twice for the same pagination state.
      * @throws InvalidArgumentException When paging state or native settings are invalid.
      * @throws \Interact\Security\InvalidSnapshotException When the signed identity requires a remount.
      */
-    public function paginate(RepositoryInterface|QueryInterface $object, array $settings = []): PaginatedInterface
-    {
+    public function paginate(
+        RepositoryInterface|QueryInterface $object,
+        array $settings = [],
+        ?PaginationState $paging = null,
+    ): PaginatedInterface {
         $pagination = $this->pagination ?? throw new LogicException('Pagination requires an island runtime.');
 
-        return $pagination->paginate($this, $object, $settings + $this->paginate);
+        return $pagination->paginate($this, $object, $settings, $paging);
     }
 
     /**

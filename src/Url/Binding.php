@@ -12,23 +12,29 @@ use ReflectionProperty;
  * Compiles an explicit URL capability and its reload default for one writable property.
  *
  * Query values remain untrusted input; this declaration never grants resource access.
+ *
+ * @consistent-constructor
  */
 readonly class Binding
 {
-    public string $name;
-
-    public string $type;
-
-    public bool $nullable;
-
-    public mixed $default;
-
-    public bool $history;
+    /**
+     * Compile a typed query value with its immutable reload default.
+     */
+    public function __construct(
+        public string $name,
+        public string $type,
+        public mixed $default,
+        public bool $history = false,
+        public bool $nullable = false,
+    ) {
+        Names::require($name);
+        $this->validate($default);
+    }
 
     /**
-     * Require writable state with a declared default and a lossless query representation.
+     * Require writable native state with a declared default and a lossless query representation.
      */
-    public function __construct(ReflectionProperty $property, State $state)
+    public static function fromProperty(ReflectionProperty $property, State $state): static
     {
         $type = $property->getType();
         if (
@@ -46,13 +52,13 @@ readonly class Binding
             );
         }
 
-        $this->name = is_string($state->url) ? $state->url : $property->getName();
-        Names::require($this->name);
-        $this->type = $type->getName();
-        $this->nullable = $type->allowsNull();
-        $this->default = $property->getDefaultValue();
-        $this->history = $state->history;
-        $this->validate($this->default);
+        return new static(
+            is_string($state->url) ? $state->url : $property->getName(),
+            $type->getName(),
+            $property->getDefaultValue(),
+            $state->history,
+            $type->allowsNull(),
+        );
     }
 
     /**

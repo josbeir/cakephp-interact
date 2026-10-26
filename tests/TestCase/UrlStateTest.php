@@ -207,7 +207,7 @@ class UrlStateTest extends TestCase
     public function testRejectsInvalidDeclarations(string $property, State $state): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new Binding(new ReflectionProperty(UrlTypes::class, $property), $state);
+        Binding::fromProperty(new ReflectionProperty(UrlTypes::class, $property), $state);
     }
 
     public function testRejectsHistoryWithoutUrl(): void

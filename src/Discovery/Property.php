@@ -59,8 +59,6 @@ readonly class Property
             || $reflection->isStatic()
             || $reflection->isReadOnly()
             || !$type instanceof ReflectionNamedType
-            || !$type->isBuiltin()
-            || !in_array($type->getName(), ['string', 'int', 'float', 'bool', 'array'], true)
         ) {
             throw new InvalidArgumentException(
                 'Props and state require public, mutable, typed JSON-compatible properties.',
@@ -68,11 +66,54 @@ readonly class Property
         }
 
         $this->name = $reflection->getName();
-        $this->type = $type->getName();
+        $this->type = $this->transportType($type);
         $this->nullable = $type->allowsNull();
-        $this->url = $state instanceof State && $state->url !== false ? new Binding($reflection, $state) : null;
+        $this->url =
+            $state instanceof State && $state->url !== false ? Binding::fromProperty($reflection, $state) : null;
         $this->modelable = $state->modelable ?? false;
         $this->reactive = $declaration->reactive ?? false;
+    }
+
+    /**
+     * Resolve the scalar or array representation accepted by the state transport.
+     */
+    protected function transportType(ReflectionNamedType $type): string
+    {
+        if (!$type->isBuiltin() || !in_array($type->getName(), ['string', 'int', 'float', 'bool', 'array'], true)) {
+            throw new InvalidArgumentException(
+                'Props and state require public, mutable, typed JSON-compatible properties.',
+            );
+        }
+
+        return $type->getName();
+    }
+
+    /**
+     * Read the JSON representation of an initialized property.
+     */
+    public function read(Island $island): mixed
+    {
+        return $this->reflection->getValue($island);
+    }
+
+    /**
+     * Publish independently owned query bindings keyed by their writable state paths.
+     *
+     * @return array<string, Binding>
+     */
+    public function bindings(): array
+    {
+        return array_filter([$this->name => $this->url]);
+    }
+
+    /**
+     * Describe this property's browser-edit capability at its exact writable path.
+     *
+     * @return array<string, array{type: string, nullable: bool}>
+     */
+    public function writableFields(): array
+    {
+        return [$this->name => ['type' => $this->type, 'nullable' => $this->nullable]];
     }
 
     /**

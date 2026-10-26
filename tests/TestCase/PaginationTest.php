@@ -26,15 +26,17 @@ use Interact\Pagination\Pagination;
 use Interact\Runtime\Factory;
 use Interact\Runtime\Runtime;
 use Interact\Runtime\SnapshotData;
+use Interact\Runtime\Values;
 use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotCodec;
 use Interact\Test\Fixture\CounterIsland;
+use Interact\Test\Fixture\Pagination\InvalidAliasIsland;
 use Interact\Test\Fixture\Pagination\ListingIsland;
-use Interact\Test\Fixture\Pagination\NullablePageIsland;
+use Interact\Test\Fixture\Pagination\NullablePagingIsland;
 use Interact\Test\Fixture\Pagination\PageIsland;
 use Interact\Test\Fixture\Pagination\PrivatePageIsland;
-use Interact\Test\Fixture\Pagination\SortOnlyIsland;
 use Interact\Test\Fixture\Pagination\StateOnlyIsland;
+use Interact\Test\Fixture\Pagination\TwoListingsIsland;
 use Interact\View\TemplateView;
 use InvalidArgumentException;
 use LogicException;
@@ -72,6 +74,7 @@ class PaginationTest extends TestCase
         $registry->register(ListingIsland::class, 'Listing');
         $registry->register(PrivatePageIsland::class, 'PrivatePaging');
         $registry->register(StateOnlyIsland::class, 'StateOnly');
+        $registry->register(TwoListingsIsland::class, 'TwoListings');
 
         $this->codec = new SnapshotCodec(str_repeat('p', 32));
         $this->view = new TemplateView($request);
@@ -84,7 +87,13 @@ class PaginationTest extends TestCase
         static::assertStringContainsString('1–3 of 150', $initial->html);
         static::assertStringContainsString('href="/catalog/7?utm=mail&amp;p=2"', $initial->html);
         static::assertSame(
-            ['page' => 1, 'search' => '', 'settings' => ['limit' => 3], 'twice' => false, 'allowed' => true],
+            [
+                'paging' => ['page' => 1, 'sort' => '', 'direction' => 'asc'],
+                'search' => '',
+                'settings' => ['limit' => 3],
+                'twice' => false,
+                'allowed' => true,
+            ],
             $initial->state,
         );
         $signed = $this->codec->open($initial->snapshot, $this->context->binding(), 'default');
@@ -99,27 +108,27 @@ class PaginationTest extends TestCase
         $initial = $this->runtime->mount('Paging', [], null, $this->context);
         $request = $this->context->request->withUri($this->context->request->getUri()->withPath('/_interact/update'));
         $updated = $this->runtime->update(
-            ['snapshot' => $initial->snapshot, 'updates' => ['page' => 999], 'pageQuery' => '?utm=mail'],
+            ['snapshot' => $initial->snapshot, 'updates' => ['paging.page' => 999], 'pageQuery' => '?utm=mail'],
             new IslandContext($request, 'default', '/_interact/update'),
         );
-        static::assertSame(30, $updated->state['page']);
+        static::assertSame(30, Values::map($updated->state['paging'])['page']);
         static::assertStringContainsString('Accepted page 30.', $updated->html);
         static::assertStringContainsString('146–150 of 150', $updated->html);
         static::assertStringContainsString('/catalog/7?utm=mail&amp;p=29', $updated->html);
         $signed = $this->codec->open($updated->snapshot, $this->context->binding(), 'default');
         static::assertIsArray($signed['state']);
-        static::assertSame(30, $signed['state']['page']);
+        static::assertSame(30, Values::map($signed['state']['paging'])['page']);
         $empty = $this->runtime->update([
             'snapshot' => $updated->snapshot,
             'updates' => ['search' => 'no such resource'],
         ], $this->context);
-        static::assertSame(1, $empty->state['page']);
+        static::assertSame(1, Values::map($empty->state['paging'])['page']);
         static::assertStringContainsString('0–0 of 0', $empty->html);
         $negative = $this->runtime->update([
             'snapshot' => $initial->snapshot,
-            'updates' => ['page' => -5],
+            'updates' => ['paging.page' => -5],
         ], $this->context);
-        static::assertSame(1, $negative->state['page']);
+        static::assertSame(1, Values::map($negative->state['paging'])['page']);
     }
 
     /**
@@ -159,7 +168,7 @@ class PaginationTest extends TestCase
         );
         $fresh = $this->runtime->mount('Paging', [], null, $this->context);
         $updated = $this->runtime->update(
-            ['snapshot' => $fresh->snapshot, 'updates' => ['page' => 2]],
+            ['snapshot' => $fresh->snapshot, 'updates' => ['paging.page' => 2]],
             new IslandContext($request, 'default', '/_interact/update'),
         );
         static::assertStringContainsString('/catalog/7?', $updated->html);
@@ -173,9 +182,9 @@ class PaginationTest extends TestCase
      */
     public static function legacyOperations(): iterable
     {
-        yield 'synchronization' => [['updates' => ['page' => 2]]];
+        yield 'synchronization' => [['updates' => ['paging.page' => 2]]];
         yield 'renderless action' => [['action' => 'changePage', 'args' => [2]]];
-        yield 'history restoration' => [['urlRestore' => true, 'updates' => ['page' => 2, 'search' => '']]];
+        yield 'history restoration' => [['urlRestore' => true, 'updates' => ['paging.page' => 2, 'search' => '']]];
         yield 'deferred initialization' => [['initialize' => true]];
     }
 
@@ -185,19 +194,19 @@ class PaginationTest extends TestCase
         static::assertStringContainsString('1–5 of 150', $initial->html);
         $sorted = $this->runtime->update([
             'snapshot' => $initial->snapshot,
-            'updates' => ['sort' => 'title', 'direction' => 'DESC', 'limit' => 500],
+            'updates' => ['paging.sort' => 'title', 'paging.direction' => 'DESC', 'paging.limit' => 500],
         ], $this->context);
-        static::assertSame(10, $sorted->state['limit']);
-        static::assertSame('desc', $sorted->state['direction']);
-        static::assertSame('title', $sorted->state['sort']);
+        static::assertSame(10, Values::map($sorted->state['paging'])['limit']);
+        static::assertSame('desc', Values::map($sorted->state['paging'])['direction']);
+        static::assertSame('title', Values::map($sorted->state['paging'])['sort']);
         static::assertStringContainsString('1–10 of 150', $sorted->html);
         static::assertStringContainsString('order=title', $sorted->html);
         $invalid = $this->runtime->update([
             'snapshot' => $initial->snapshot,
-            'updates' => ['sort' => 'Resources.id', 'direction' => 'sql'],
+            'updates' => ['paging.sort' => 'Resources.id', 'paging.direction' => 'sql'],
         ], $this->context);
-        static::assertSame('', $invalid->state['sort']);
-        static::assertSame('asc', $invalid->state['direction']);
+        static::assertSame('', Values::map($invalid->state['paging'])['sort']);
+        static::assertSame('asc', Values::map($invalid->state['paging'])['direction']);
         static::assertStringContainsString('1–5 of 150', $invalid->html);
     }
 
@@ -216,14 +225,20 @@ class PaginationTest extends TestCase
             'initialize' => true,
             'pageQuery' => '?left_p=2&utm=mail&right_p=4',
         ], $this->context);
-        static::assertSame(2, $mounted->state['page']);
+        static::assertSame(2, Values::map($mounted->state['paging'])['page']);
         static::assertStringContainsString('/catalog/7?utm=mail&amp;right_p=4&amp;left_p=3', $mounted->html);
         $restored = $this->runtime->update([
             'snapshot' => $mounted->snapshot,
             'urlRestore' => true,
-            'updates' => ['page' => 3, 'search' => '', 'sort' => '', 'direction' => 'asc', 'limit' => 5],
+            'updates' => [
+                'paging.page' => 3,
+                'search' => '',
+                'paging.sort' => '',
+                'paging.direction' => 'asc',
+                'paging.limit' => 5,
+            ],
         ], $this->context);
-        static::assertSame(3, $restored->state['page']);
+        static::assertSame(3, Values::map($restored->state['paging'])['page']);
         static::assertStringContainsString('11–15 of 150', $restored->html);
         $renderless = $this->runtime->update([
             'snapshot' => $restored->snapshot,
@@ -231,17 +246,22 @@ class PaginationTest extends TestCase
             'args' => [999],
         ], $this->context);
         static::assertNull($renderless->payload()['html']);
-        static::assertSame(999, $renderless->state['page']);
+        static::assertSame(999, Values::map($renderless->state['paging'])['page']);
         static::assertSame(
             30,
-            $this->runtime->update(['snapshot' => $renderless->snapshot], $this->context)->state['page'],
+            Values::map(
+                $this->runtime->update(['snapshot' => $renderless->snapshot], $this->context)->state['paging'],
+            )['page'],
         );
     }
 
     public function testDeletingTheLastPageClampsTheNextRefreshWithoutAnApplicationAction(): void
     {
         $mount = $this->runtime->mount('Paging', [], null, $this->context);
-        $last = $this->runtime->update(['snapshot' => $mount->snapshot, 'updates' => ['page' => 30]], $this->context);
+        $last = $this->runtime->update([
+            'snapshot' => $mount->snapshot,
+            'updates' => ['paging.page' => 30],
+        ], $this->context);
         $connection = ConnectionManager::get('default');
         static::assertInstanceOf(Connection::class, $connection);
         $connection->begin();
@@ -250,7 +270,7 @@ class PaginationTest extends TestCase
                 "DELETE FROM resources WHERE id IN (SELECT id FROM resources WHERE category = 'cakephp' ORDER BY id DESC LIMIT 5)",
             );
             $refresh = $this->runtime->update(['snapshot' => $last->snapshot], $this->context);
-            static::assertSame(29, $refresh->state['page']);
+            static::assertSame(29, Values::map($refresh->state['paging'])['page']);
             static::assertStringContainsString('141–145 of 145', $refresh->html);
         } finally {
             $connection->rollback();
@@ -265,6 +285,31 @@ class PaginationTest extends TestCase
             ['snapshot' => $mount->snapshot],
             new IslandContext($this->context->request->withAttribute('denied', true), 'default', '/_interact/update'),
         );
+    }
+
+    public function testSeveralQueriesAgainstTheSameTableKeepIndependentStateAndCompleteLinkMetadata(): void
+    {
+        $mount = $this->runtime->mount('TwoListings', [], null, $this->context);
+        static::assertStringContainsString('First 1–5 of 150', $mount->html);
+        static::assertStringContainsString('Second 1–2 of 30', $mount->html);
+        static::assertSame(2, substr_count($mount->html, 'data-interact-pagination='));
+        static::assertStringContainsString('&quot;paging.page&quot;:2', $mount->html);
+        static::assertStringContainsString('&quot;other.page&quot;:2', $mount->html);
+        $updated = $this->runtime->update([
+            'snapshot' => $mount->snapshot,
+            'updates' => ['paging.page' => 3, 'other.page' => 2],
+        ], $this->context);
+        static::assertStringContainsString('First 11–15 of 150', $updated->html);
+        static::assertStringContainsString('Second 3–4 of 30', $updated->html);
+        static::assertStringContainsString('other_page=2&amp;p=4', $updated->html);
+        static::assertStringContainsString('other_page=3&amp;p=3', $updated->html);
+        $bounded = $this->runtime->update([
+            'snapshot' => $updated->snapshot,
+            'updates' => ['other.page' => 999],
+        ], $this->context);
+        static::assertSame(3, Values::map($bounded->state['paging'])['page']);
+        static::assertSame(15, Values::map($bounded->state['other'])['page']);
+        static::assertStringContainsString('other_page=15&amp;p=4', $bounded->html);
     }
 
     public function testRejectsSeveralDatasetsWithinOneIsland(): void
@@ -292,21 +337,21 @@ class PaginationTest extends TestCase
     public function testRejectsMissingPageDeclarations(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new Configuration(new Definition(CounterIsland::class))->fields();
+        new Configuration(new Definition(CounterIsland::class))->select(new CounterIsland(), null);
     }
 
     public function testPrivatePagingIsWritableWithoutOwningAnyPagingQueryParameter(): void
     {
-        $fields = new Configuration(new Definition(PrivatePageIsland::class))->fields();
-        static::assertNull($fields['page']->url);
+        $fields = new Definition(PrivatePageIsland::class)->properties['paging']->bindings();
+        static::assertSame([], $fields);
         $mount = $this->runtime->mount('PrivatePaging', [], null, $this->context);
         static::assertArrayNotHasKey('page', $mount->url);
         $updated = $this->runtime->update([
             'snapshot' => $mount->snapshot,
-            'updates' => ['page' => 2, 'search' => 'CakePHP'],
+            'updates' => ['paging.page' => 2, 'search' => 'CakePHP'],
             'pageQuery' => '?utm=mail',
         ], $this->context);
-        static::assertSame(2, $updated->state['page']);
+        static::assertSame(2, Values::map($updated->state['paging'])['page']);
         static::assertStringContainsString('6–10 of 150', $updated->html);
         static::assertStringContainsString('/catalog/7?utm=mail&amp;q=CakePHP#interact-pagination-', $updated->html);
         static::assertStringNotContainsString('&amp;p=', $updated->html);
@@ -318,50 +363,59 @@ class PaginationTest extends TestCase
         static::assertSame([], $mount->url);
         $updated = $this->runtime->update([
             'snapshot' => $mount->snapshot,
-            'updates' => ['page' => 3, 'limit' => 7, 'sort' => 'title', 'direction' => 'desc'],
+            'updates' => [
+                'paging.page' => 3,
+                'paging.limit' => 7,
+                'paging.sort' => 'title',
+                'paging.direction' => 'desc',
+            ],
             'pageQuery' => '?utm=mail',
         ], $this->context);
         static::assertSame([], $updated->url);
-        static::assertSame(3, $updated->state['page']);
-        static::assertSame(7, $updated->state['limit']);
-        static::assertSame('desc', $updated->state['direction']);
+        static::assertSame(3, Values::map($updated->state['paging'])['page']);
+        static::assertSame(7, Values::map($updated->state['paging'])['limit']);
+        static::assertSame('desc', Values::map($updated->state['paging'])['direction']);
         static::assertStringContainsString('15–21 of 150', $updated->html);
         static::assertStringNotContainsString('order=title', $updated->html);
         static::assertStringNotContainsString('dir=desc', $updated->html);
         static::assertStringContainsString('/catalog/7?utm=mail#interact-pagination-', $updated->html);
         $fresh = $this->runtime->mount('StateOnly', [], null, $this->context);
-        static::assertSame(1, $fresh->state['page']);
-        static::assertSame(5, $fresh->state['limit']);
-        static::assertSame('', $fresh->state['sort']);
+        static::assertSame(1, Values::map($fresh->state['paging'])['page']);
+        static::assertSame(5, Values::map($fresh->state['paging'])['limit']);
+        static::assertSame('', Values::map($fresh->state['paging'])['sort']);
     }
 
     public function testPrivatePageRejectsIntegersOutsideBrowserPrecision(): void
     {
         $mount = $this->runtime->mount('StateOnly', [], null, $this->context);
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Pagination page must be a browser-safe integer.');
+        $this->expectExceptionMessage('Invalid pagination page: expected a browser-safe integer.');
         $this->runtime->update([
             'snapshot' => $mount->snapshot,
-            'updates' => ['page' => PHP_INT_MAX],
+            'updates' => ['paging.page' => PHP_INT_MAX],
         ], $this->context);
     }
 
     public function testPrivatePagingStillRejectsNullableDeclarations(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new Configuration(new Definition(NullablePageIsland::class))->fields();
+        new Definition(NullablePagingIsland::class);
     }
 
-    public function testRejectsOrphanedSortDeclarations(): void
+    public function testRejectsAliasesForUndeclaredPagingFields(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        new Configuration(new Definition(SortOnlyIsland::class))->fields();
+        new Definition(InvalidAliasIsland::class);
     }
 
     public function testRepositoryTargetsAndPerRepositorySettingsPreserveSortRestrictions(): void
     {
         $island = new PageIsland();
         $definition = new Definition(PageIsland::class, 'Paging');
+        foreach ($definition->paginations() as $pagination) {
+            $pagination->initialize($island);
+        }
+
         $identity = new SnapshotData([
             'alias' => 'Paging',
             'id' => 'repository',
@@ -386,10 +440,10 @@ class PaginationTest extends TestCase
         );
         $updated = $this->runtime->update([
             'snapshot' => $mount->snapshot,
-            'updates' => ['sort' => 'Resources.id', 'direction' => 'desc', 'limit' => 100],
+            'updates' => ['paging.sort' => 'Resources.id', 'paging.direction' => 'desc', 'paging.limit' => 100],
         ], $this->context);
-        static::assertSame('', $updated->state['sort']);
-        static::assertSame(7, $updated->state['limit']);
+        static::assertSame('', Values::map($updated->state['paging'])['sort']);
+        static::assertSame(7, Values::map($updated->state['paging'])['limit']);
         static::assertStringContainsString('1–7 of 150', $updated->html);
     }
 

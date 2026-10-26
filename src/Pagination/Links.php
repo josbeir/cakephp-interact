@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Interact\Pagination;
 
 use Interact\Action\RouteContext;
+use Interact\Runtime\PathEditor;
+use Interact\Runtime\Values;
 use Interact\Url\ArrayValue;
 use Interact\Url\QueryWriter;
 use InvalidArgumentException;
@@ -32,9 +34,19 @@ class Links
         public readonly string $path,
         protected readonly string $query,
         protected readonly array $fields,
-        protected readonly array $values,
+        protected array $values,
         public readonly RouteContext $routing = new RouteContext(),
     ) {
+    }
+
+    /**
+     * Preserve the final accepted selection of every listing before helper links are rendered.
+     *
+     * @param array<string, mixed> $values Scalar state exported after another listing was normalized.
+     */
+    public function accept(array $values): void
+    {
+        $this->values = $values;
     }
 
     /**
@@ -43,15 +55,16 @@ class Links
      * @param array<string, mixed> $paging Native page, sort, direction, and limit values.
      * @param list<string> $names Conventional declared paging fields.
      */
-    public function generate(array $paging, array $names): string
+    public function generate(array $paging, array $names, string $property = ''): string
     {
         $values = $this->values;
         $changes = [];
         foreach ($names as $name) {
+            $path = ltrim($property . '.' . $name, '.');
             /** @var mixed $value */
-            $value = $paging[$name] ?? $this->values[$name];
-            $changes[$name] = $name === 'page' || $name === 'limit' ? (int)$value : (string)$value;
-            $values[$name] = $changes[$name];
+            $value = $paging[$name] ?? new PathEditor()->read($this->values, Values::path($path));
+            $changes[$path] = $name === 'page' || $name === 'limit' ? (int)$value : (string)$value;
+            $values = Values::map(new PathEditor()->apply($values, Values::path($path), $changes[$path]));
         }
 
         $pairs = [];
@@ -66,7 +79,7 @@ class Links
 
         foreach ($this->fields as $name => $field) {
             /** @var mixed $value */
-            $value = $values[$name];
+            $value = new PathEditor()->read($values, Values::path($name));
             $query = ArrayValue::same($value, $field['default'])
                 ? ''
                 : new QueryWriter()->write($field['name'], $value);
@@ -76,7 +89,7 @@ class Links
         }
 
         $url = $this->path . ($pairs === [] ? '' : '?' . implode('&', $pairs));
-        if (array_diff($names, array_keys($this->fields)) !== []) {
+        if (array_diff(array_keys($changes), array_keys($this->fields)) !== []) {
             $url .= '#interact-pagination-' . bin2hex(random_bytes(12));
         }
 
@@ -111,9 +124,10 @@ class Links
      * @param list<string> $names Conventional paging fields used by the result.
      * @throws InvalidArgumentException When a native destination would expose state-only parameters.
      */
-    public function assertUrlBound(array $names): void
+    public function assertUrlBound(array $names, string $property = ''): void
     {
-        if (array_diff($names, array_keys($this->fields)) !== []) {
+        $paths = array_map(static fn(string $name): string => ltrim($property . '.' . $name, '.'), $names);
+        if (array_diff($paths, array_keys($this->fields)) !== []) {
             throw new InvalidArgumentException('Native paginator URL overrides require URL-bound paging state.');
         }
     }
