@@ -38,6 +38,14 @@ class Names
     }
 
     /**
+     * Accept literal map keys, list indexes, append brackets, and reserved leaf markers.
+     */
+    public static function segment(string $segment): bool
+    {
+        return static::valid($segment) || preg_match('/^(?:|0|[1-9][0-9]*|~null|~empty)$/D', $segment) === 1;
+    }
+
+    /**
      * Preserve the distinction between flat query keys and explicit instance prefixes.
      */
     public static function optional(mixed $prefix): ?string

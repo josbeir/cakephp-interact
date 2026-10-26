@@ -189,4 +189,46 @@ class UrlCodecTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         new QueryWriter()->write('value', $value);
     }
+
+    /**
+     * Supply accepted maps independently of decoded partial-query defaults.
+     *
+     * @return iterable<string, array{string, mixed}>
+     */
+    public static function acceptedMaps(): iterable
+    {
+        $contents = file_get_contents(dirname(__DIR__) . '/Fixture/url-values.json');
+        static::assertIsString($contents);
+        /** @var array{roundTrips: list<array{name: string, property: string, accepted: mixed}>} $fixture */
+        $fixture = json_decode($contents, true, flags: JSON_THROW_ON_ERROR);
+        foreach ($fixture['roundTrips'] as $case) {
+            yield $case['name'] => [$case['property'], $case['accepted']];
+        }
+    }
+
+    /**
+     * Preserve explicit deletions in both the query writer and native pagination links.
+     */
+    #[DataProvider('acceptedMaps')]
+    public function testAcceptedMapsRoundTrip(string $property, mixed $accepted): void
+    {
+        $binding = new Binding(
+            new ReflectionProperty(StructuredUrlTypes::class, $property),
+            new State(writable: true, url: 'value'),
+        );
+        $binding->validate($accepted);
+
+        $codec = new Codec();
+        $query = new QueryWriter()->write('value', $accepted);
+        static::assertSame($accepted, $codec->read($query, 'value', $binding));
+        $links = new Links(
+            '/search',
+            'external=keep',
+            ['value' => ['name' => 'value', 'type' => 'array', 'default' => $binding->default, 'history' => false]],
+            ['value' => $accepted],
+        );
+        $query = parse_url($links->generate([], []), PHP_URL_QUERY);
+        static::assertIsString($query);
+        static::assertSame($accepted, $codec->read($query, 'value', $binding));
+    }
 }

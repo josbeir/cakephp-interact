@@ -124,6 +124,11 @@ map fields from their defaults. Supplied lists replace their defaults rather
 than retaining old items. Applications still validate allowed fields and values;
 the array default is not a schema or an allowlist.
 
+Generated URLs mark complete maps with `filters[~replace]=1`. These maps restore
+exactly as accepted, including keys an action removed from the default map.
+Hand-written partial queries without this marker continue to inherit defaults.
+Interact adds the marker automatically; it is not application configuration.
+
 ::: code-group
 
 ```html [HTML]
@@ -155,7 +160,7 @@ property to its default without discarding other URL-bound properties.
 For empty values, `filters=` represents `[]`, while `filters[status]=` represents
 an empty string. Nested empty arrays use a reserved marker, such as
 `filters[categories][~empty]=1`, so they survive reloads even when their defaults
-are nonempty. Interact generates these markers automatically. Both markers are
+are nonempty. Interact generates these markers automatically. These markers are
 reserved syntax, not application map keys.
 
 The [URL bindings demo](/demo#url-bindings) exercises nullable selections, nested

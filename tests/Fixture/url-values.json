@@ -34,6 +34,13 @@
     "items": {
       "type": "array",
       "default": ["default"]
+    },
+    "review": {
+      "type": "array",
+      "default": {
+        "status": "published",
+        "tags": ["initial"]
+      }
     }
   },
   "cases": [
@@ -498,6 +505,152 @@
       "property": "ratio",
       "query": "value=1.2345678901234567",
       "expected": 1.2345678901234567
+    },
+    {
+      "name": "explicit complete map",
+      "property": "review",
+      "query": "value[~replace]=1&value[tags][0]=new",
+      "expected": {
+        "tags": ["new"]
+      }
+    },
+    {
+      "name": "complete marker after entries",
+      "property": "review",
+      "query": "value[tags][0]=new&value[~replace]=1",
+      "expected": {
+        "tags": ["new"]
+      }
+    },
+    {
+      "name": "complete empty map",
+      "property": "review",
+      "query": "value[~replace]=1",
+      "expected": []
+    },
+    {
+      "name": "complete list",
+      "property": "review",
+      "query": "value[~replace]=1&value[0]=new",
+      "expected": ["new"]
+    },
+    {
+      "name": "duplicate complete marker",
+      "property": "review",
+      "query": "value[~replace]=1&value[~replace]=1&value[tags][0]=new",
+      "expected": {
+        "tags": ["new"]
+      }
+    },
+    {
+      "name": "wrong complete marker",
+      "property": "review",
+      "query": "value[~replace]=0&value[tags][0]=new",
+      "expected": {
+        "status": "published",
+        "tags": ["initial"]
+      }
+    },
+    {
+      "name": "wrong duplicate complete marker",
+      "property": "review",
+      "query": "value[~replace]=0&value[~replace]=1&value[tags][0]=new",
+      "expected": {
+        "status": "published",
+        "tags": ["initial"]
+      }
+    },
+    {
+      "name": "nested complete marker rejected",
+      "property": "review",
+      "query": "value[tags][~replace]=1",
+      "expected": {
+        "status": "published",
+        "tags": ["initial"]
+      }
+    },
+    {
+      "name": "complete scalar rejected",
+      "property": "text",
+      "query": "value[~replace]=1&value=word",
+      "expected": "start"
+    },
+    {
+      "name": "complete null rejected",
+      "property": "text",
+      "query": "value[~replace]=1&value[~null]=1",
+      "expected": "start"
+    },
+    {
+      "name": "complete map with unsafe key",
+      "property": "review",
+      "query": "value[~replace]=1&value[constructor]=bad",
+      "expected": {
+        "status": "published",
+        "tags": ["initial"]
+      }
+    },
+    {
+      "name": "complete marker invalid utf8",
+      "property": "review",
+      "query": "value[~replace]=%FF&value[tags][0]=new",
+      "expected": {
+        "status": "published",
+        "tags": ["initial"]
+      }
+    }
+  ],
+  "roundTrips": [
+    {
+      "name": "removed defaulted entry",
+      "property": "review",
+      "accepted": {
+        "tags": ["new"]
+      }
+    },
+    {
+      "name": "removed several defaulted entries",
+      "property": "filters",
+      "accepted": {
+        "categories": ["new"]
+      }
+    },
+    {
+      "name": "removed nested map entry",
+      "property": "filters",
+      "accepted": {
+        "status": "draft",
+        "categories": [],
+        "price": {
+          "min": "10"
+        }
+      }
+    },
+    {
+      "name": "removed defaults and added custom map",
+      "property": "filters",
+      "accepted": {
+        "custom": {
+          "key": "value"
+        }
+      }
+    },
+    {
+      "name": "empty complete array",
+      "property": "review",
+      "accepted": []
+    },
+    {
+      "name": "map replaces list default",
+      "property": "items",
+      "accepted": {
+        "new": "value"
+      }
+    },
+    {
+      "name": "list replaces map default",
+      "property": "review",
+      "accepted": ["new"]
     }
   ]
 }

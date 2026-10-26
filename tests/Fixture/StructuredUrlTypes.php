@@ -26,4 +26,9 @@ class StructuredUrlTypes
      * @var list<string>
      */
     public array $items = ['default'];
+
+    /**
+     * @var array{status: string, tags: list<string>}
+     */
+    public array $review = ['status' => 'published', 'tags' => ['initial']];
 }

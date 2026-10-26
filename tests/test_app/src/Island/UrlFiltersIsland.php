@@ -21,7 +21,7 @@ class UrlFiltersIsland extends Island
     public ?string $query = 'all';
 
     /**
-     * @var array{status: string, tags: list<string>, price: array{min: string, max: string}}
+     * @var array{status?: string, tags: list<string>, price?: array{min: string, max: string}}
      */
     #[State(writable: true, url: true, history: true)]
     public array $filters = ['status' => '', 'tags' => ['initial'], 'price' => ['min' => '', 'max' => '100']];
@@ -58,6 +58,16 @@ class UrlFiltersIsland extends Island
     public function clearTags(): void
     {
         $this->filters['tags'] = [];
+        $this->calls++;
+    }
+
+    /**
+     * Remove defaulted map entries without turning them back into active filters on reload.
+     */
+    #[Action]
+    public function removeDefaultedFields(): void
+    {
+        $this->filters = ['tags' => ['new']];
         $this->calls++;
     }
 }

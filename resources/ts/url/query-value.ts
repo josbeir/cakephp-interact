@@ -7,7 +7,7 @@ interface QueryNode {
 }
 
 type QueryValue =
-  | { valid: true; present: boolean; value: Json }
+  | { valid: true; present: boolean; replace: boolean; value: Json }
   | { valid: false };
 
 /** Insert raw segments without allocating sparse arrays or normalizing map keys. */
@@ -65,17 +65,25 @@ function value(node: QueryNode): Json {
       throw new Error('Mixed or sparse query array.');
     entries.push([key, value(child)]);
   }
-  return list ? entries.map(([, entry]) => entry) : Object.fromEntries(entries);
+  return list === false
+    ? Object.fromEntries(entries)
+    : entries.map(([, entry]) => entry);
 }
 
 /** Parse one owned parameter tree independently of malformed unrelated input. */
 export function queryValue(params: URLSearchParams, name: string): QueryValue {
   const node: QueryNode = { children: new Map() };
   let present = false;
+  let replace = false;
   try {
     for (const [key, entry] of params) {
       if (key !== name && !key.startsWith(`${name}[`)) continue;
       present = true;
+      if (key === `${name}[~replace]`) {
+        if (entry !== '1') return { valid: false };
+        replace = true;
+        continue;
+      }
       const suffix = key.slice(name.length);
       if (!/^(?:\[[^[\]]*\])*$/.test(suffix)) return { valid: false };
       const path = [...suffix.matchAll(/\[([^[\]]*)\]/g)].map(
@@ -83,7 +91,10 @@ export function queryValue(params: URLSearchParams, name: string): QueryValue {
       );
       insert(node, path, entry);
     }
-    return { valid: true, present, value: present ? value(node) : null };
+    const decoded = present ? value(node) : null;
+    if (replace && (decoded === null || typeof decoded !== 'object'))
+      return { valid: false };
+    return { valid: true, present, replace, value: decoded };
   } catch {
     return { valid: false };
   }

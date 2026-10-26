@@ -304,3 +304,45 @@ test('malformed nested bindings reset only their owning property before renderin
     .poll(() => selected(page.url(), 'first_filters[tags][4]'))
     .toBeNull();
 });
+
+test('removed defaulted map entries stay removed through reload and Back/Forward', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto(
+    '/demo/url-state?first_filters[status]=published&second_q=other&external=keep',
+  );
+  const first = page.getByRole('region', { name: 'First filters' });
+  await first.getByRole('button', { name: 'Remove defaulted fields' }).click();
+  await expect(first.getByLabel('Accepted filters')).toHaveText(
+    '{"tags":["new"]}',
+  );
+  await expect
+    .poll(() => selected(page.url(), 'first_filters[~replace]'))
+    .toBe('1');
+  await first.getByLabel('Unsent notes').fill('Keep this newer draft');
+  await page.goBack();
+  await expect(first.getByLabel('Accepted filters')).toHaveText(
+    '{"status":"published","tags":["initial"],"price":{"min":"","max":"100"}}',
+  );
+  await page.goForward();
+  await expect(first.getByLabel('Accepted filters')).toHaveText(
+    '{"tags":["new"]}',
+  );
+  await expect(first.getByLabel('Unsent notes')).toHaveValue(
+    'Keep this newer draft',
+  );
+  await expect(first.getByLabel('Action count')).toHaveText('1');
+  await page.reload();
+  await expect(first.getByLabel('Accepted filters')).toHaveText(
+    '{"tags":["new"]}',
+  );
+  await expect(
+    page
+      .getByRole('region', { name: 'Second filters' })
+      .getByLabel('Query', { exact: true }),
+  ).toHaveValue('other');
+  expect(selected(page.url(), 'external')).toBe('keep');
+  expect(errors).toEqual([]);
+});

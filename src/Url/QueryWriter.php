@@ -39,7 +39,7 @@ class QueryWriter
                 return [rawurlencode($name . ($depth === 0 ? '' : '[~empty]')) . '=' . ($depth === 0 ? '' : '1')];
             }
 
-            $pairs = [];
+            $pairs = $depth === 0 && !array_is_list($value) ? [rawurlencode($name . '[~replace]') . '=1'] : [];
             /** @var mixed $entry */
             foreach ($value as $key => $entry) {
                 array_push($pairs, ...$this->pairs($name . '[' . $key . ']', $entry, $depth + 1));

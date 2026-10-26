@@ -31,7 +31,7 @@ class Codec
             $value = $raw->value === '' ? [] : $raw->value;
 
             return is_array($value) && ArrayValue::accepts($value)
-                ? $this->merge($value, $binding->default)
+                ? $this->merge($value, $raw->replace ? [] : $binding->default)
                 : $binding->default;
         }
 
@@ -59,13 +59,14 @@ class Codec
             return $value;
         }
 
-        /** @var mixed $entry */
-        foreach ($value as $key => $entry) {
-            /** @var mixed $previous */
-            $previous = $default[$key] ?? null;
-            $default[$key] = is_array($entry) && is_array($previous) ? $this->merge($entry, $previous) : $entry;
+        $merged = array_replace($default, $value);
+        /** @var mixed $previous */
+        foreach (array_intersect_key($default, $value) as $key => $previous) {
+            /** @var mixed $entry */
+            $entry = $value[$key];
+            $merged[$key] = is_array($entry) && is_array($previous) ? $this->merge($entry, $previous) : $entry;
         }
 
-        return $default;
+        return $merged;
     }
 }

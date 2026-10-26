@@ -50,6 +50,7 @@ use function Cake\Core\h;
     <div class="button-row">
         <button type="button" @click="$server.call('selectNull')">Select null</button>
         <button type="button" @click="$server.call('clearTags')">Clear tags</button>
+        <button type="button" @click="$server.call('removeDefaultedFields')">Remove defaulted fields</button>
     </div>
     <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
     <p>Query: <output aria-label="Query value" x-text="$server.state.query === null ? 'null' : $server.state.query"></output></p>

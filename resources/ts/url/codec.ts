@@ -88,7 +88,7 @@ export function readField(params: URLSearchParams, field: UrlField): Json {
       stringTree(tree) &&
       typeof field.default !== 'string' &&
       stringTree(field.default)
-      ? mergeMaps(tree, field.default)
+      ? mergeMaps(tree, raw.replace ? [] : field.default)
       : structuredClone(field.default);
   }
   if (raw.value === null && field.nullable === true) return null;
@@ -175,6 +175,8 @@ function appendValue(
     params.append(`${name}[~null]`, '1');
   } else if (typeof value === 'object') {
     const entries = Object.entries(value);
+    if (depth === 0 && !Array.isArray(value))
+      params.append(`${name}[~replace]`, '1');
     if (entries.length === 0)
       params.append(
         depth === 0 ? name : `${name}[~empty]`,

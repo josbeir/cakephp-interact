@@ -15,7 +15,8 @@ const fixture: unknown = JSON.parse(
 if (
   !record(fixture) ||
   !record(fixture.fields) ||
-  !Array.isArray(fixture.cases)
+  !Array.isArray(fixture.cases) ||
+  !Array.isArray(fixture.roundTrips)
 )
   throw new Error('Invalid shared fixture.');
 const definitions = fixture.fields;
@@ -51,6 +52,32 @@ describe('shared PHP/browser URL values', () => {
   }
 });
 
+const acceptedMaps: unknown[] = fixture.roundTrips;
+for (const example of acceptedMaps) {
+  if (
+    !record(example) ||
+    typeof example.name !== 'string' ||
+    typeof example.property !== 'string' ||
+    !json(example.accepted)
+  )
+    throw new Error('Invalid accepted-map example.');
+  const declaration = definitions[example.property];
+  if (!record(declaration))
+    throw new Error('Missing accepted-map declaration.');
+  const fields: unknown = {
+    value: { ...declaration, name: 'value', history: true },
+  };
+  if (!urlFields(fields)) throw new Error('Invalid accepted-map declaration.');
+  const accepted = example.accepted;
+  it(`round-trips accepted state: ${example.name}`, () => {
+    const url = new URL('https://example.test/?external=keep#results');
+    writeQuery(url, fields, { value: accepted });
+    expect(readQuery(url.search, fields)).toEqual({ value: accepted });
+    expect(url.searchParams.get('external')).toBe('keep');
+    expect(url.hash).toBe('#results');
+  });
+}
+
 it('rejects invalid nested values and nullable metadata before claiming URL state', () => {
   const unsafe: unknown = JSON.parse('{"__proto__":"bad"}');
   for (const value of [
@@ -59,6 +86,7 @@ it('rejects invalid nested values and nullable metadata before claiming URL stat
     { a: false },
     { 'a.b': '' },
     { a: {} },
+    { '~replace': '1' },
     unsafe,
   ])
     expect(urlValue(value, 'array')).toBe(false);
