@@ -1,4 +1,5 @@
 import { ownsIslandElement } from './dom/ownership';
+import { ActionEvents } from './events/actions';
 import { RealtimeIsland } from './realtime/island';
 import type { RealtimeCoordinator } from './realtime/coordinator';
 import { StreamReceiver } from './streaming/receiver';
@@ -78,6 +79,7 @@ export class IslandClient {
   private readonly activity: { paused: boolean };
   private poller: Poller | undefined;
   private realtime: RealtimeIsland | undefined;
+  private actionEvents: ActionEvents | undefined;
   private uploads: UploadFields;
   private readonly url: UrlRegistration | undefined;
   private urlTarget: UrlRestoration | undefined;
@@ -247,6 +249,7 @@ export class IslandClient {
       this.trigger = new LoadTrigger(root, this.metadata.loading, () =>
         this.request(null, []),
       );
+    if (this.mounted) this.listenForEvents();
   }
 
   /**
@@ -345,6 +348,7 @@ export class IslandClient {
    * Aborting fetch does not establish whether the server executed an action.
    */
   dispose(): void {
+    this.actionEvents?.dispose();
     this.composition?.dispose();
     this.disposed = true;
     this.streams.dispose();
@@ -388,8 +392,9 @@ export class IslandClient {
     action: string | null,
     args: Json[],
     upload?: UploadJob,
+    event?: string,
   ): Promise<RequestResult> {
-    if (this.mounted) return this.sendRequest(action, args, upload);
+    if (this.mounted) return this.sendRequest(action, args, upload, event);
     if (action !== null || args.length || upload !== undefined) {
       const error = requestError('client_error', null);
       if (!this.disposed) this.failed(error);
@@ -410,6 +415,7 @@ export class IslandClient {
     action: string | null,
     args: Json[],
     upload?: UploadJob,
+    event?: string,
   ): Promise<RequestResult> {
     const navigationEpoch = navigation(window)?.epoch();
     try {
@@ -428,7 +434,7 @@ export class IslandClient {
           urlEpoch: this.urlTarget.epoch,
         });
       }
-      await this.enqueue(action, args, upload, navigationEpoch);
+      await this.enqueue(action, args, upload, navigationEpoch, event);
       if (!this.disposed) return { ok: true };
     } catch (cause: unknown) {
       if (this.leaving)
@@ -452,6 +458,7 @@ export class IslandClient {
     args: Json[],
     upload?: UploadJob,
     navigationEpoch?: number,
+    event?: string,
   ): Promise<void> {
     this.controls.clearPending();
     if (this.disposed) return Promise.reject(new Error('Island was removed.'));
@@ -479,6 +486,7 @@ export class IslandClient {
       ...(this.url ? { urlEpoch: this.url.epoch() } : {}),
       action,
       args,
+      ...(event === undefined ? {} : { event }),
       ...(upload ? { upload } : { uploadRevision: this.uploads.revision }),
     });
   }
@@ -550,6 +558,7 @@ export class IslandClient {
         ...(restoration ? { urlRestore: true } : {}),
         action: invocation.action,
         args: invocation.args,
+        ...(invocation.event === undefined ? {} : { event: invocation.event }),
         ...(upload
           ? {
               upload: {
@@ -643,6 +652,7 @@ export class IslandClient {
         } else this.effects.navigate(accepted.redirect);
         this.leaving = true;
         this.realtime?.dispose();
+        this.actionEvents?.dispose();
         this.controls.clearPending();
         this.poller?.dispose();
         this.queue.dispose();
@@ -772,7 +782,11 @@ export class IslandClient {
       invocation?.urlEpoch ?? 0,
       invocation?.urlRestore !== undefined,
     );
-    if (!previous.mounted) previous.uploads.dispose();
+    if (!previous.mounted) {
+      previous.uploads.dispose();
+      this.metadata.listeners = readMetadata(this.root).listeners;
+      this.listenForEvents();
+    }
     if (!previous.mounted && this.urlTarget) {
       const target = this.urlTarget;
       this.urlTarget = undefined;
@@ -784,6 +798,16 @@ export class IslandClient {
       this.root.dispatchEvent(
         new CustomEvent(effect.name, { detail: effect.detail, bubbles: true }),
       );
+  }
+
+  /** Register static declarations once the island has an initialized action capability. */
+  private listenForEvents(): void {
+    this.actionEvents = new ActionEvents(
+      this.metadata.listeners,
+      (action, event, detail) =>
+        this.request(action, [detail], undefined, event),
+      (cause) => this.failed(requestError('client_error', null, cause)),
+    );
   }
 
   /**

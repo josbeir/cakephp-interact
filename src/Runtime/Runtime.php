@@ -190,7 +190,7 @@ class Runtime
         $data = new SnapshotData($verified);
         $definition = $this->registry->definition($data->alias);
         $parentValues = $this->inputs->read($input->parentInputs, $data, $definition, $context);
-        $this->actions->validate($definition, $input->action, $input->arguments);
+        $this->actions->validate($definition, $input->action, $input->arguments, $input->event);
         $island = $this->registry->create($definition);
         $this->hydrator->restore($island, $definition, $data->state);
 

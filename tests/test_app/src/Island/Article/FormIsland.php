@@ -118,7 +118,7 @@ class FormIsland extends Island
         }
 
         $this->saved = true;
-        $this->dispatch('article-saved', ['id' => $this->article->get('id')]);
+        $this->dispatch('article-saved', id: $this->article->get('id'));
     }
 
     /**

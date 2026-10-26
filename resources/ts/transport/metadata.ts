@@ -7,12 +7,15 @@ import type { State, Writable } from '../types';
 import { state } from '../state/values';
 import { writable } from './protocol';
 import { realtimeMetadata } from '../realtime/protocol';
+import { actionListeners } from '../events/actions';
+import type { ActionListeners } from '../events/actions';
 import type { RealtimeMetadata } from '../realtime/types';
 
 /**
  * Validated bootstrap data emitted by PHP for one owned island root.
  */
 export interface MountMetadata {
+  listeners: ActionListeners;
   realtime?: RealtimeMetadata;
   loading?: LoadingMode;
   id: string;
@@ -31,6 +34,9 @@ export interface MountMetadata {
  * @throws Error When the markup cannot safely initialize an island client.
  */
 export function readMetadata(root: HTMLElement): MountMetadata {
+  const listeners: unknown = JSON.parse(root.dataset.interactListeners ?? '{}');
+  if (!actionListeners(listeners))
+    throw new Error('Invalid action listener metadata.');
   const realtime: unknown =
     root.dataset.interactRealtime === undefined
       ? undefined
@@ -74,6 +80,7 @@ export function readMetadata(root: HTMLElement): MountMetadata {
   if (endpoint.origin !== window.location.origin)
     throw new Error('Island endpoints must be same-origin.');
   return {
+    listeners,
     ...(realtimeMetadata(realtime) ? { realtime } : {}),
     ...(loading === undefined ? {} : { loading }),
     uploads,

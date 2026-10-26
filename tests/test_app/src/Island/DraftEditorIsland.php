@@ -76,7 +76,7 @@ class DraftEditorIsland extends Island
 
         $this->articleId = (int)$this->article->get('id');
         $this->savedCount++;
-        $this->dispatch('draft-saved', ['id' => $this->articleId]);
+        $this->dispatch('draft-saved', id: $this->articleId);
     }
 
     /**
@@ -86,7 +86,7 @@ class DraftEditorIsland extends Island
     public function signal(int $count = 1): void
     {
         $this->signals += $count;
-        $this->dispatch('draft-signal', ['count' => $this->signals]);
+        $this->dispatch('draft-signal', count: $this->signals);
         if ($count === 1) {
             $this->skipRender();
         }

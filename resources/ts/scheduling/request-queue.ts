@@ -111,6 +111,7 @@ export class RequestQueue {
           {
             action: task.action,
             args: task.args,
+            ...(task.event === undefined ? {} : { event: task.event }),
             ...(task.navigationEpoch === undefined
               ? {}
               : { navigationEpoch: task.navigationEpoch }),

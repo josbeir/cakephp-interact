@@ -55,6 +55,9 @@ readonly class Definition
      */
     public array $streamingActions;
 
+    /** @var array<string, list<string>> Browser events and their declared action handlers. */
+    public array $listeners;
+
     /**
      * Compile one concrete island class into validated declaration metadata.
      *
@@ -113,6 +116,7 @@ readonly class Definition
 
         $this->renderlessActions = $actions->renderless;
         $this->streamingActions = $actions->streaming;
+        $this->listeners = $actions->listeners;
         new UrlState()->metadata($this, null);
     }
 

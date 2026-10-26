@@ -49,7 +49,7 @@ class RenderlessIsland extends Island
     public function remember(): void
     {
         $this->count++;
-        $this->dispatch('remembered', ['count' => $this->count]);
+        $this->dispatch('remembered', count: $this->count);
     }
 
     /**

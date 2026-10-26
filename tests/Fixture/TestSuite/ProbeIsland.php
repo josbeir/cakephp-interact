@@ -102,8 +102,8 @@ class ProbeIsland extends Island
     public function record(int $amount = 1): void
     {
         $this->count += $amount;
-        $this->dispatch('recorded', ['id' => 1]);
-        $this->dispatch('recorded', ['id' => 2]);
+        $this->dispatch('recorded', id: 1);
+        $this->dispatch('recorded', id: 2);
         $this->dispatch('empty-event');
     }
 

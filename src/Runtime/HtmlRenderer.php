@@ -139,6 +139,10 @@ class HtmlRenderer
      */
     public function wrap(Definition $definition, Result $result, IslandContext $context, array $extra = []): Result
     {
+        if ($definition->listeners !== [] && !isset($extra['data-interact-loading'])) {
+            $extra['data-interact-listeners'] = json_encode($definition->listeners, JSON_THROW_ON_ERROR | JSON_HEX_TAG);
+        }
+
         $html = '<' . $definition->declaration->tag;
         foreach ($this->attributes($result, $context) + $extra as $name => $value) {
             $html .= ' ' . $name . '="' . htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"';

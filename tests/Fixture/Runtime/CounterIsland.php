@@ -60,7 +60,7 @@ class CounterIsland extends Island
     public function increment(int $by = 1): void
     {
         $this->count += $by;
-        $this->dispatch('counter-saved', ['count' => $this->count]);
+        $this->dispatch('counter-saved', count: $this->count);
     }
 
     /**

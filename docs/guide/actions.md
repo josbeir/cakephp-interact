@@ -121,6 +121,13 @@ explicit retries.
 
 <span id="pass-an-argument"></span>
 
+## Listening for events
+
+Use `#[Action(on: 'article-saved')]` to invoke an action when a matching browser
+event reaches the window. Event detail binds to typed PHP parameters by name.
+See [action listeners](/guide/events#action-listeners) for delivery, defaults,
+and authorization behavior.
+
 ## Passing arguments
 
 Declare typed parameters and validate allowed values in PHP:

@@ -47,8 +47,13 @@ class ActionInvoker
      *
      * @param list<mixed> $arguments Reject invalid signatures before constructing or authorizing an island.
      */
-    public function validate(Definition $definition, ?string $action, array $arguments): void
-    {
+    public function validate(
+        Definition $definition,
+        ?string $action,
+        array $arguments,
+        ?EventInvocation $event = null,
+    ): void {
+        $arguments = $event?->arguments($definition, $action) ?? $arguments;
         if ($action === null) {
             if ($arguments !== []) {
                 throw new InvalidArgumentException('Synchronization cannot have action arguments.');
@@ -101,8 +106,9 @@ class ActionInvoker
 
         if ($request->action !== null) {
             $callback = $definition->actions[$request->action]->getClosure($island);
+            $arguments = EventInvocation::resolve($definition, $request);
 
-            return $island->actionEffects()->capture(static fn() => $callback(...$request->arguments), $stream);
+            return $island->actionEffects()->capture(static fn() => $callback(...$arguments), $stream);
         }
 
         return null;

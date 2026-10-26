@@ -30,6 +30,7 @@ export type Writable = Record<string, { type: string; nullable: boolean }>;
 export interface Invocation {
   action: string | null;
   args: Json[];
+  event?: string;
   upload?: UploadJob;
   uploadRevision?: number;
   urlEpoch?: number;

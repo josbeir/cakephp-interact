@@ -31,6 +31,9 @@ readonly class UpdateRequest
 
     public ?string $action;
 
+    /** Browser event selecting named detail binding for an explicitly listening action. */
+    public ?EventInvocation $event;
+
     /**
      * Internal staging/removal operation, never a callable PHP action.
      */
@@ -80,6 +83,7 @@ readonly class UpdateRequest
         $this->snapshot = $snapshot;
         $this->updates = Values::map($updates);
         $this->action = $action;
+        $this->event = EventInvocation::read($request['event'] ?? null, $action, $arguments);
         $this->arguments = $arguments;
     }
 }

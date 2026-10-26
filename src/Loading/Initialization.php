@@ -30,7 +30,14 @@ class Initialization
             return false;
         }
 
-        $allowed = ['action' => null, 'args' => [], 'updates' => [], 'urlRestore' => false, 'upload' => null];
+        $allowed = [
+            'action' => null,
+            'event' => null,
+            'args' => [],
+            'updates' => [],
+            'urlRestore' => false,
+            'upload' => null,
+        ];
         foreach ($allowed as $name => $empty) {
             if (isset($request[$name]) && $request[$name] !== $empty) {
                 throw new InvalidArgumentException(

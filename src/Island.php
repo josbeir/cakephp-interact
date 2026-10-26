@@ -8,6 +8,7 @@ use Cake\Datasource\QueryInterface;
 use Cake\Datasource\RepositoryInterface;
 use Interact\Action\ActionEffects;
 use Interact\Action\Outcome;
+use Interact\Event\BrowserEvent;
 use Interact\Pagination\Pagination;
 use Interact\Pagination\PaginationState;
 use Interact\Realtime\Subscription;
@@ -234,15 +235,13 @@ abstract class Island
     /**
      * Queue a native browser event for a successful update response.
      *
-     * @param array<string, mixed> $detail Browser-visible, untrusted event data.
+     * @param mixed ...$detail Named, browser-visible JSON event data.
+     * @throws InvalidArgumentException When the name or named JSON detail record is invalid.
      */
-    public function dispatch(string $name, array $detail = []): void
+    public function dispatch(string $event, mixed ...$detail): void
     {
-        if (!preg_match('/^[a-z][a-z0-9:-]*$/D', $name)) {
-            throw new InvalidArgumentException('Browser event names must be lowercase identifiers.');
-        }
-
-        $this->events[] = ['name' => $name, 'detail' => $detail];
+        $effect = new BrowserEvent($event, $detail);
+        $this->events[] = ['name' => $effect->name, 'detail' => $effect->detail];
     }
 
     /**
