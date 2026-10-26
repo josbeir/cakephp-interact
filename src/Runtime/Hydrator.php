@@ -74,7 +74,7 @@ class Hydrator
             }
 
             /** @var mixed $value */
-            $value = $property->reflection->getValue($island);
+            $value = $property->read($island);
             Values::validate($value);
             $props[$name] = $value;
         }

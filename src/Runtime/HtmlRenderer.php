@@ -70,6 +70,10 @@ class HtmlRenderer
                         throw new InvalidArgumentException('View data cannot shadow declared state, props, or errors.');
                     }
 
+                    foreach ($definition->paginations() as $name => $pagination) {
+                        $values[$name] = $pagination->state($island);
+                    }
+
                     return $this->renderer->render($definition, $values + ['errors' => $island->errors()] + $data);
                 },
             );
@@ -78,7 +82,10 @@ class HtmlRenderer
                 'data-interact-mount' => new Identity()->fingerprint($island, $definition, $identity, $context),
                 ...(
                     $identity->relation instanceof Relation
-                        ? ['data-interact-relation' => json_encode($identity->relation->data(), JSON_THROW_ON_ERROR)]
+                        ? ['data-interact-relation' => json_encode(
+                            $identity->relation->browserData(),
+                            JSON_THROW_ON_ERROR,
+                        )]
                         : []
                 ),
             ]);
@@ -135,6 +142,10 @@ class HtmlRenderer
      */
     public function wrap(Definition $definition, Result $result, IslandContext $context, array $extra = []): Result
     {
+        if ($result->listeners !== []) {
+            $extra['data-interact-listeners'] = json_encode($result->listeners, JSON_THROW_ON_ERROR | JSON_HEX_TAG);
+        }
+
         $html = '<' . $definition->declaration->tag;
         foreach ($this->attributes($result, $context) + $extra as $name => $value) {
             $html .= ' ' . $name . '="' . htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') . '"';
@@ -150,6 +161,7 @@ class HtmlRenderer
             'uploads' => $result->uploads,
             'errors' => $result->errors,
             'events' => $result->events,
+            'listeners' => $result->listeners,
         ]);
     }
 

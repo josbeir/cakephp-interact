@@ -5,6 +5,8 @@ namespace Interact\Url;
 
 use Interact\Discovery\Definition;
 use Interact\Island;
+use Interact\Runtime\PathEditor;
+use Interact\Runtime\Values;
 use InvalidArgumentException;
 
 /**
@@ -26,17 +28,27 @@ class UrlState
      */
     public function initialize(Island $island, Definition $definition, string $query, ?string $prefix): void
     {
-        foreach ($this->metadata($definition, $prefix) as $property => $metadata) {
-            $field = $definition->properties[$property];
-            assert($field->url instanceof Binding, 'URL metadata refers to compiled URL declarations.');
-            $field->assign($island, $this->codec->read($query, $metadata['name'], $field->url));
+        if ($prefix !== null) {
+            Names::require($prefix);
+        }
+
+        foreach ($this->bindings($definition) as $path => $binding) {
+            $segments = Values::path($path);
+            $field = $definition->properties[array_shift($segments)];
+            $name = ($prefix === null ? '' : $prefix . '_') . $binding->name;
+            /** @var mixed $value */
+            $value = $this->codec->read($query, $name, $binding);
+            $field->assign(
+                $island,
+                $segments === [] ? $value : new PathEditor()->apply($field->read($island), $segments, $value),
+            );
         }
     }
 
     /**
      * Export validated query names and immutable defaults for browser synchronization.
      *
-     * @return array<string, array{name: string, type: string, default: mixed, history: bool}>
+     * @return array<string, array{name: string, type: string, default: mixed, history: bool, nullable?: bool}>
      */
     public function metadata(Definition $definition, ?string $prefix): array
     {
@@ -46,25 +58,37 @@ class UrlState
 
         $metadata = [];
         $used = [];
-        foreach ($definition->properties as $name => $field) {
-            if ($field->url === null) {
-                continue;
-            }
-
-            if (isset($used[$field->url->name])) {
+        foreach ($this->bindings($definition) as $name => $binding) {
+            if (isset($used[$binding->name])) {
                 throw new InvalidArgumentException('URL query keys must be unique within an island.');
             }
 
-            $used[$field->url->name] = true;
+            $used[$binding->name] = true;
             $metadata[$name] = [
-                'name' => ($prefix === null ? '' : $prefix . '_') . $field->url->name,
-                'type' => $field->url->type,
-                'default' => $field->url->default,
-                'history' => $field->url->history,
+                'name' => ($prefix === null ? '' : $prefix . '_') . $binding->name,
+                'type' => $binding->type,
+                ...($binding->nullable ? ['nullable' => true] : []),
+                'default' => $binding->default,
+                'history' => $binding->history,
             ];
         }
 
         return $metadata;
+    }
+
+    /**
+     * Collect scalar and structured declarations under their explicit writable paths.
+     *
+     * @return array<string, Binding>
+     */
+    protected function bindings(Definition $definition): array
+    {
+        $bindings = [];
+        foreach ($definition->properties as $field) {
+            $bindings += $field->bindings();
+        }
+
+        return $bindings;
     }
 
     /**

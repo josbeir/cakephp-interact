@@ -27,8 +27,8 @@
     "psr-4": {
       "Interact\\Test\\": "tests/",
       "TestApp\\": "tests/test_app/src/",
-      "Commerce\\": "tests/Fixture/Plugins/Commerce/src/",
-      "Acme\\Catalog\\": "tests/Fixture/Plugins/Catalog/src/"
+      "Commerce\\": "tests/Fixture/Rendering/Plugins/Commerce/src/",
+      "Acme\\Catalog\\": "tests/Fixture/Rendering/Plugins/Catalog/src/"
     }
   },
   "scripts": {

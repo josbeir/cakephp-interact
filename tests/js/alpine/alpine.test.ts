@@ -1,0 +1,314 @@
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
+import Alpine from '@alpinejs/csp';
+import install from '../../../resources/ts/index';
+
+function root(id: string, content = ''): HTMLDivElement {
+  const element = document.createElement('div');
+  element.setAttribute('x-data', 'interact');
+  element.dataset.interactId = id;
+  element.dataset.interactState = '{"title":"original"}';
+  element.dataset.interactWritable =
+    '{"title":{"type":"string","nullable":false}}';
+  element.dataset.interactSnapshot = 'signed';
+  element.dataset.interactEndpoint = '/_interact/update';
+  element.innerHTML = content;
+  return element;
+}
+function reply(element: HTMLElement, html: string): Response {
+  return new Response(
+    JSON.stringify({
+      version: 1,
+      id: element.dataset.interactId,
+      html,
+      snapshot: 'next',
+      state: { title: 'original' },
+      writable: { title: { type: 'string', nullable: false } },
+      errors: {},
+      events: [],
+    }),
+    { headers: { 'Content-Type': 'application/json' } },
+  );
+}
+afterEach(() => {
+  for (const element of document.querySelectorAll<HTMLElement>(
+    '[data-interact-id]',
+  ))
+    Alpine.destroyTree(element);
+  document.body.innerHTML = '';
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
+});
+
+describe('Alpine installation and morphing', () => {
+  it('installs once, provides the bridge, preserves children and local Alpine state', async () => {
+    const plugin = vi.spyOn(Alpine, 'plugin');
+    const magic = vi.spyOn(Alpine, 'magic');
+    install(Alpine);
+    install(Alpine);
+    expect(plugin).toHaveBeenCalledOnce();
+    const callback: unknown = magic.mock.calls.find(
+      ([name]) => name === 'server',
+    )?.[1];
+    if (typeof callback !== 'function') throw new Error('Missing server magic');
+    expect(() =>
+      Reflect.apply(callback, undefined, [document.createElement('div')]),
+    ).toThrow('inside');
+    const parent = root(
+      'parent',
+      '<button @click="$server.call(\'refresh\')">Refresh</button><p x-text="$server.state.title"></p><div x-data="{ open: false }"><button @click="open = !open">Toggle</button><span x-show="open">Local state</span></div>',
+    );
+    const child = root(
+      'child',
+      '<input x-interact:model="title" value="original">',
+    );
+    parent.append(child);
+    document.body.append(parent);
+    Alpine.initTree(parent);
+    const toggle = parent.querySelector(':scope > [x-data] > button');
+    if (!(toggle instanceof HTMLButtonElement))
+      throw new Error('Missing local toggle');
+    toggle.click();
+    await vi.waitFor(() =>
+      expect(parent.querySelector('span')?.style.display).not.toBe('none'),
+    );
+    const input = child.querySelector('input');
+    if (!(input instanceof HTMLInputElement))
+      throw new Error('Missing child input');
+    input.value = 'child draft';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    const replacement = parent.cloneNode(true);
+    if (!(replacement instanceof HTMLElement))
+      throw new Error('Missing replacement');
+    const childReplacement = replacement.querySelector(
+      '[data-interact-id="child"]',
+    );
+    const placeholder = document.createElement('div');
+    placeholder.dataset.interactPreserve = 'child';
+    childReplacement?.replaceWith(placeholder);
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(reply(parent, replacement.outerHTML));
+    vi.stubGlobal('fetch', fetcher);
+    const button = parent.querySelector('button');
+    if (!(button instanceof HTMLButtonElement))
+      throw new Error('Missing refresh button');
+    button.click();
+    await vi.waitFor(() =>
+      expect(parent.dataset.interactSnapshot).toBe('signed'),
+    );
+    await vi.waitFor(() => expect(parent.getAttribute('aria-busy')).toBeNull());
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(parent.querySelector('[data-interact-id="child"]')).toBe(child);
+    expect(child.querySelector('input')).toBe(input);
+    expect(input.value).toBe('child draft');
+    expect(parent.querySelector('span')?.style.display).not.toBe('none');
+  });
+  it('keeps nested polling declarations independent through parent morphs and child drafts', async () => {
+    vi.useFakeTimers();
+    install(Alpine);
+    const parent = root('polling-parent');
+    parent.setAttribute('x-interact:poll.100ms', "$server.call('parentTick')");
+    const child = root('polling-child', '<input x-interact:model="title">');
+    child.setAttribute('x-interact:poll.100ms', "$server.call('childTick')");
+    parent.append(child);
+    document.body.append(parent);
+    const replacement = parent.cloneNode(true);
+    if (!(replacement instanceof HTMLElement))
+      throw new Error('Missing parent render.');
+    const placeholder = document.createElement('div');
+    placeholder.dataset.interactPreserve = 'polling-child';
+    replacement
+      .querySelector('[data-interact-id="polling-child"]')
+      ?.replaceWith(placeholder);
+    const fetcher = vi.fn(async (_url: string, options: RequestInit) => {
+      if (typeof options.body !== 'string') throw new Error('Missing request.');
+      return options.body.includes('parentTick')
+        ? reply(parent, replacement.outerHTML)
+        : reply(child, child.outerHTML);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    Alpine.initTree(parent);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    const input = child.querySelector('input');
+    if (!input) throw new Error('Missing child draft.');
+    input.value = 'Unsynchronized child draft';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(100);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+    expect(fetcher.mock.calls[2]?.[1].body).toContain('parentTick');
+    expect(parent.querySelector('[data-interact-id="polling-child"]')).toBe(
+      child,
+    );
+    expect(input.value).toBe('Unsynchronized child draft');
+  });
+
+  it('disposes requests when Alpine destroys an island', async () => {
+    install(Alpine);
+    const element = root(
+      'disposal',
+      '<button @click="$server.call(\'save\')">Save</button>',
+    );
+    document.body.append(element);
+    Alpine.initTree(element);
+    let complete: (response: Response) => void = () => {};
+    const fetcher = vi.fn().mockReturnValue(
+      new Promise<Response>((resolve) => {
+        complete = resolve;
+      }),
+    );
+    vi.stubGlobal('fetch', fetcher);
+    element.querySelector('button')?.click();
+    Alpine.destroyTree(element);
+    complete(reply(element, element.outerHTML));
+    await vi.waitFor(() =>
+      expect(element.getAttribute('aria-busy')).toBeNull(),
+    );
+    const options: unknown = fetcher.mock.calls[0]?.[1];
+    expect(options).toHaveProperty('signal.aborted', true);
+  });
+  it('evaluates shorthand actions with typed arguments in the CSP build', async () => {
+    install(Alpine);
+    const element = root(
+      'arguments',
+      '<button @click="$server.call(\'adjust\', -1)" :disabled="$server.busy">Decrease</button>',
+    );
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(reply(element, element.outerHTML));
+    vi.stubGlobal('fetch', fetcher);
+    document.body.append(element);
+    Alpine.initTree(element);
+    element.querySelector('button')?.click();
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+    const options: unknown = fetcher.mock.calls[0]?.[1];
+    expect(options).toHaveProperty('body');
+    if (
+      typeof options !== 'object' ||
+      options === null ||
+      !('body' in options) ||
+      typeof options.body !== 'string'
+    )
+      throw new Error('Missing JSON request body');
+    expect(JSON.parse(options.body)).toMatchObject({
+      action: 'adjust',
+      args: [-1],
+    });
+    await vi.waitFor(() =>
+      expect(element.getAttribute('aria-busy')).toBeNull(),
+    );
+  });
+  it('updates draft exports reactively and handles inline request failures without callbacks in the CSP build', async () => {
+    install(Alpine);
+    const element = root(
+      'feedback',
+      '<input x-interact:model="title" value="original"><textarea readonly :value="$server.exportDraft()"></textarea><button @click="$server.call(\'save\')">Save</button><span x-text="$server.paused ? \'Paused\' : \'Ready\'"></span><p x-text="$server.error ? $server.error.message : \'\'"></p>',
+    );
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(new Response('', { status: 503 }));
+    vi.stubGlobal('fetch', fetcher);
+    document.body.append(element);
+    Alpine.initTree(element);
+    const input = element.querySelector('input');
+    if (!(input instanceof HTMLInputElement)) throw new Error('Missing input');
+    input.value = 'editable draft';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.waitFor(() =>
+      expect(element.querySelector('textarea')?.value).toContain(
+        'editable draft',
+      ),
+    );
+    element.querySelector('button')?.click();
+    await vi.waitFor(() =>
+      expect(element.querySelector('span')?.textContent).toBe('Paused'),
+    );
+    expect(element.querySelector('p')?.textContent).toContain(
+      'Check the result',
+    );
+    input.value = 'still editable';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await vi.waitFor(() =>
+      expect(element.querySelector('textarea')?.value).toContain(
+        'still editable',
+      ),
+    );
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+  it('updates targeted pending and delayed feedback with CSP object selectors', async () => {
+    vi.useFakeTimers();
+    install(Alpine);
+    const element = root(
+      'feedback-targets',
+      "<button @click=\"$server.call('remove', 42)\" :disabled=\"$server.pending('remove', 42)\">Remove</button><span x-show=\"$server.loading({ action: 'remove', args: [42], delay: 300 })\" :class=\"{ 'pending-row': $server.loading('remove', 42) }\">Removing</span><p x-show=\"$server.pending('remove', 43)\">Other row</p>",
+    );
+    const html = element.outerHTML;
+    let complete: (response: Response) => void = () => {};
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockReturnValue(
+        new Promise<Response>((resolve) => {
+          complete = resolve;
+        }),
+      ),
+    );
+    document.body.append(element);
+    Alpine.initTree(element);
+    await Promise.resolve();
+    const button = element.querySelector('button');
+    const span = element.querySelector('span');
+    if (!button || !span) throw new Error('Missing loading fixture.');
+    expect(span.style.display).toBe('none');
+    button.click();
+    await Promise.resolve();
+    expect(button.disabled).toBe(true);
+    expect(element.querySelector('p')?.style.display).toBe('none');
+    await vi.advanceTimersByTimeAsync(200);
+    expect(span.classList.contains('pending-row')).toBe(true);
+    expect(span.style.display).toBe('none');
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.waitFor(() => expect(span.style.display).not.toBe('none'));
+    complete(reply(element, html));
+    await vi.waitFor(() => {
+      expect(element.querySelector('button')?.disabled).toBe(false);
+      expect(element.querySelector('span')?.style.display).toBe('none');
+      expect(
+        element.querySelector('span')?.classList.contains('pending-row'),
+      ).toBe(false);
+    });
+  });
+  it('starts the standalone CSP build and prevents a second Alpine runtime', async () => {
+    delete window.Alpine;
+    const start = vi.spyOn(Alpine, 'start').mockImplementation(() => {});
+    const standalone = await import('../../../resources/ts/standalone');
+    expect(start).toHaveBeenCalledOnce();
+    expect(window.Alpine).toBe(Alpine);
+    expect(() => standalone.start()).toThrow('already loaded');
+    delete window.Alpine;
+  });
+});
+
+it('replaces loading placeholder directives instead of inheriting their x-show and status attributes', async () => {
+  install(Alpine);
+  const pending = root(
+    'manual-navigation',
+    '<p role="status" x-show="!$server.error">Load content</p>',
+  );
+  pending.dataset.interactLoading = 'manual';
+  pending.dataset.interactState = '{}';
+  pending.dataset.interactWritable = '{}';
+  const rendered = root(
+    'manual-navigation',
+    '<p class="eyebrow">Persistent layout</p><p role="status">Ready</p>',
+  );
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue(reply(pending, rendered.outerHTML)),
+  );
+  document.body.append(pending);
+  Alpine.initTree(pending);
+  await Alpine.evaluateRaw<Promise<unknown>>(pending, '$server.sync()');
+  expect(pending.querySelector('.eyebrow')?.hasAttribute('role')).toBe(false);
+  expect(pending.querySelector('.eyebrow')?.hasAttribute('x-show')).toBe(false);
+  expect(pending.querySelectorAll('[role="status"]')).toHaveLength(1);
+});

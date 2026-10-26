@@ -17,6 +17,7 @@
     "resources/ts",
     "tests/js",
     "tests/browser",
+    "tests/Fixture/**/*.ts",
     "tests/test_app/resources/ts",
     "*.ts"
   ]

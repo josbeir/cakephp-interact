@@ -33,7 +33,7 @@ PHP contracts are documented with their related features.
 
 ## Pagination
 
-[`paginate()`, `$paginate`, state declarations, and native helper templates](/guide/pagination).
+[`#[Pagination]`, `PaginationState`, `paginate()`, and native helper templates](/guide/pagination).
 
 ## Upload properties
 

@@ -72,6 +72,7 @@ $currentPath = $this->getRequest()->getUri()->getPath();
                     '/' => 'Embedded islands',
                     '/playground' => 'Playground',
                     '/forms' => 'Article form',
+                    '/events' => 'Events',
                     '/search' => 'Search',
                     '/composition' => 'Child inputs',
                     '/uploads' => 'Uploads',

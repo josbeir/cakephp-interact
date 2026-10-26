@@ -22,18 +22,51 @@ class Codec
     public function read(string $query, string $name, Binding $binding): mixed
     {
         $raw = new QueryValue($query, $name);
-        if (!$raw->valid) {
+        if (!$raw->valid || !$raw->present) {
             return $binding->default;
         }
 
         if ($binding->type === 'array') {
-            return $raw->items ?? ($raw->scalar === '' ? [] : $binding->default);
+            assert(is_array($binding->default), 'Compiled URL arrays have array defaults.');
+            $value = $raw->value === '' ? [] : $raw->value;
+
+            return is_array($value) && ArrayValue::accepts($value)
+                ? $this->merge($value, $raw->replace ? [] : $binding->default)
+                : $binding->default;
         }
 
-        if ($raw->items !== null || $raw->scalar === null) {
+        if ($raw->value === null && $binding->nullable) {
+            return null;
+        }
+
+        if (!is_string($raw->value)) {
             return $binding->default;
         }
 
-        return $this->scalars->read($raw->scalar, $binding);
+        return $this->scalars->read($raw->value, $binding);
+    }
+
+    /**
+     * Fill omitted map entries without appending old items to a supplied list.
+     *
+     * @param array<array-key, mixed> $value Decoded and validated query tree.
+     * @param array<array-key, mixed> $default Compiled application default.
+     * @return array<array-key, mixed>
+     */
+    protected function merge(array $value, array $default): array
+    {
+        if (array_is_list($value) || array_is_list($default)) {
+            return $value;
+        }
+
+        $merged = array_replace($default, $value);
+        /** @var mixed $previous */
+        foreach (array_intersect_key($default, $value) as $key => $previous) {
+            /** @var mixed $entry */
+            $entry = $value[$key];
+            $merged[$key] = is_array($entry) && is_array($previous) ? $this->merge($entry, $previous) : $entry;
+        }
+
+        return $merged;
     }
 }

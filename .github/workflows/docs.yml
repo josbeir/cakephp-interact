@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'docs/**'
-      - 'tests/docs/**'
+      - 'tests/Fixture/Documentation/**'
       - 'scripts/check-docs.mjs'
       - 'README.md'
       - 'package.json'
@@ -14,7 +14,7 @@ on:
   pull_request:
     paths:
       - 'docs/**'
-      - 'tests/docs/**'
+      - 'tests/Fixture/Documentation/**'
       - 'scripts/check-docs.mjs'
       - 'README.md'
       - 'package.json'

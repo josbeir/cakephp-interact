@@ -76,6 +76,8 @@ Matching templates live under `templates/island/`, with page mounts under
 | <span id="renderless-actions"></span>`/renderless`<br>Save drafts without replacing the view, with normal validation recovery                       | [Draft editor](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/DraftEditorIsland.php)                                                                                                                                |
 | <span id="widgets"></span><span id="polling"></span>`/playground`<br>Try counters, conditional forms, tasks, polling, widgets, and failure recovery | [Page mounts](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/Articles/playground.php), [widget wrapper](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/resources/ts/enhanced-select.ts)        |
 | <span id="search"></span>`/search`<br>Filter 1,200 resources, sort, paginate, and restore URL state                                                 | [Search island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/ResourceSearchIsland.php), [Table finders](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Model/Table/ResourcesTable.php)  |
+| <span id="multiple-paginators"></span>`/search/multiple`<br>Paginate Resources and Articles independently in one island                             | [Overview island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/LibraryOverviewIsland.php), [Template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/library_overview.php) |
+| <span id="url-bindings"></span>`/demo/url-state`<br>Share nullable selections and nested filters; restore history without losing drafts             | [URL filters island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/UrlFiltersIsland.php), [Template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/url_filters.php)        |
 | <span id="child-inputs"></span>`/composition`<br>Bind reusable child inputs and send reactive parent props                                          | [Parent](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Composition/OrderIsland.php), [picker](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Composition/PickerIsland.php)        |
 | <span id="uploads"></span>`/uploads`<br>Stage documents, manage attachments, validate, and save                                                     | [Upload island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/DocumentUploadIsland.php), [application Form](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Form/DocumentForm.php)        |
 | <span id="lazy-loading"></span>`/loading`<br>Explore loading modes, custom placeholders, and nested preservation                                    | [Page mounts](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/Loading/index.php)                                                                                                                                      |
@@ -83,6 +85,20 @@ Matching templates live under `templates/island/`, with page mounts under
 | <span id="redirects-and-downloads"></span>`/outcomes`<br>Save and redirect, request an authorized download, and navigate explicitly                 | [Actions](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/ActionOutcomesIsland.php), [controller](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Controller/OutcomesController.php)        |
 | <span id="streaming"></span>`/streaming`<br>Stream text, native elements, and progress during one action                                            | [Report island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Streaming/ReportIsland.php), [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/Streaming/report.php)  |
 | `/page`<br>Update a whole-page island while its layout stays in place                                                                               | [Controller](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Controller/ArticlesController.php)                                                                                                                             |
+
+## Dynamic events
+
+Open `/events`. Save article 1 to refresh the selected card, then save article 2
+to refresh its own card. The unrelated card sends no request. Enter notes, change
+**Watched article** to article 2, and save article 2 again: both cards receive the
+same event. The selected card retains its identity and notes. Matching-event
+counters show which cards responded.
+
+Tested source:
+[listener island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Article/EventSummaryIsland.php),
+[parent island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Article/EventPanelIsland.php),
+[template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/Article/event_panel.php).
+See [dynamic event names](/guide/events#dynamic-event-names) for syntax and supported props.
 
 ## Debugging
 

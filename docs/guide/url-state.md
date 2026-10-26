@@ -59,7 +59,7 @@ an empty string when the property's default is non-empty.
 | `int`    | `page=2`; whole numbers within JavaScript's safe integer range |
 | `float`  | `ratio=1.5`; finite numbers                                    |
 | `bool`   | `enabled=1` or `enabled=0`                                     |
-| `array`  | Flat string lists: `topics[0]=php&topics[1]=testing`           |
+| `array`  | Nested string lists/maps: `filters[price][min]=10`             |
 
 For an array declaration:
 
@@ -75,14 +75,96 @@ public array $topics = [];
 
 The decoder also accepts `topics[]=php&topics[]=testing`. An empty bare
 `topics=` represents `[]`; `topics[]=` represents `['']`. List order is preserved.
-Nullable properties, nested arrays, associative arrays, and non-string list
-items are not supported by URL bindings. Ordinary state retains its existing types.
+Arrays also support nested lists and maps with string leaves. Numeric-looking
+array values remain strings: `filters[price][min]=010` becomes `'010'`. Use a
+separate typed scalar property when automatic numeric or boolean conversion is
+needed. Nullable arrays, objects, and non-string array leaves are unsupported.
 
 Malformed values fall back independently to the declared default. For example,
 `page=abc` uses page one. Correctly typed values still require application rules:
 `page=-5` is an integer, but the application should bound it before querying.
 Aliases and prefixes allow letters, digits, underscores, and hyphens, starting
 with a letter or underscore. Dots, brackets, and prototype-related names are rejected.
+
+## Nullable scalars
+
+Nullable PHP scalar types work with the same declaration:
+
+```php
+#[State(writable: true, url: 'q')]
+public ?string $search = null;
+```
+
+A missing parameter uses the declared default, including `null`. Values equal to
+the default are omitted. `q=` is an empty string; it does not mean null.
+Interact encodes an explicit non-default null as `q[~null]=1`, keeping null,
+empty strings, false, and zero distinct. This applies to `?string`, `?int`,
+`?float`, and `?bool`; an empty numeric or boolean value is malformed and uses
+the declared default. Literal strings such as `'null'` remain ordinary strings.
+
+## Nested filters
+
+Declare a writable array with ordinary defaults. No schema or additional
+attribute is needed:
+
+```php
+/**
+ * @var array{status: string, categories: list<string>, price: array{min: string, max: string}}
+ */
+#[State(writable: true, url: true, history: true)]
+public array $filters = [
+    'status' => '',
+    'categories' => [],
+    'price' => ['min' => '', 'max' => '100'],
+];
+```
+
+A URL such as `?filters[status]=published&filters[price][min]=10` fills omitted
+map fields from their defaults. Supplied lists replace their defaults rather
+than retaining old items. Applications still validate allowed fields and values;
+the array default is not a schema or an allowlist.
+
+Generated URLs mark complete maps with `filters[~replace]=1`. These maps restore
+exactly as accepted, including keys an action removed from the default map.
+Hand-written partial queries without this marker continue to inherit defaults.
+Interact adds the marker automatically; it is not application configuration.
+
+::: code-group
+
+```html [HTML]
+<label for="minimum-price">Minimum price</label>
+<input
+  id="minimum-price"
+  name="minimumPrice"
+  type="text"
+  x-interact:model="filters.price.min"
+/>
+```
+
+```php [FormHelper]
+<?= $this->Form->control('minimumPrice', [
+    'id' => 'minimum-price',
+    'label' => 'Minimum price',
+    'x-interact:model' => 'filters.price.min',
+]) ?>
+```
+
+:::
+
+Nested map keys use the same safe identifier rules as query aliases. List indexes
+must be contiguous and ordered; the decoder also accepts append brackets `[]`.
+Duplicate leaves use the last value. Scalar/container conflicts, mixed list/map
+keys, unsafe keys, malformed encoding, or excessive nesting reset the owning
+property to its default without discarding other URL-bound properties.
+
+For empty values, `filters=` represents `[]`, while `filters[status]=` represents
+an empty string. Nested empty arrays use a reserved marker, such as
+`filters[categories][~empty]=1`, so they survive reloads even when their defaults
+are nonempty. Interact generates these markers automatically. These markers are
+reserved syntax, not application map keys.
+
+The [URL bindings demo](/demo#url-bindings) exercises nullable selections, nested
+form fields, independent prefixes, renderless actions, and history restoration.
 
 ## When the URL changes
 

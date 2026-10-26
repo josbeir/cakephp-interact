@@ -53,7 +53,7 @@ class MountRenderer
         $props = $this->hydrator->props($island, $definition);
         $bound = [];
         foreach (array_keys($identity->relation->models ?? []) as $name) {
-            $bound[$name] = $definition->properties[$name]->reflection->getValue($island);
+            $bound[$name] = $definition->properties[$name]->read($island);
         }
 
         $snapshot = $this->snapshots->seal(
@@ -89,7 +89,7 @@ class MountRenderer
             'data-interact-mount' => new Identity()->fingerprint($island, $definition, $identity, $context),
             ...(
                 $identity->relation instanceof Relation
-                    ? ['data-interact-relation' => json_encode($identity->relation->data(), JSON_THROW_ON_ERROR)]
+                    ? ['data-interact-relation' => json_encode($identity->relation->browserData(), JSON_THROW_ON_ERROR)]
                     : []
             ),
         ]);

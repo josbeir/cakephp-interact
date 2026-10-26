@@ -40,7 +40,9 @@ public function initialize(): void
 Configure request-local dependencies, such as Table properties. The runtime calls
 this hook once after construction, including when a subclass defines its own
 constructor. Constructor-injected services are already available; declared props,
-URL values, and snapshot state have not been assigned yet.
+URL values, and snapshot state have not been assigned yet. Declared
+[`PaginationState`](/guide/pagination) objects already contain their attribute
+defaults, just as ordinary typed properties contain their PHP defaults.
 
 ```php
 namespace App\Island;

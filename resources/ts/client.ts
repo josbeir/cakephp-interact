@@ -1,4 +1,5 @@
 import { ownsIslandElement } from './dom/ownership';
+import { ActionEvents } from './events/actions';
 import { RealtimeIsland } from './realtime/island';
 import type { RealtimeCoordinator } from './realtime/coordinator';
 import { StreamReceiver } from './streaming/receiver';
@@ -32,7 +33,7 @@ import { clone, equal } from './state/values';
 import { readMetadata } from './transport/metadata';
 import type { MountMetadata } from './transport/metadata';
 import type { CompositionHooks } from './composition/types';
-import { read } from './state/paths';
+import { mergeChanges, read } from './state/paths';
 import { postUpdate, readResponse } from './transport/request';
 import { IslandRequestError, requestError } from './transport/failure';
 import type {
@@ -78,6 +79,7 @@ export class IslandClient {
   private readonly activity: { paused: boolean };
   private poller: Poller | undefined;
   private realtime: RealtimeIsland | undefined;
+  private actionEvents: ActionEvents | undefined;
   private uploads: UploadFields;
   private readonly url: UrlRegistration | undefined;
   private urlTarget: UrlRestoration | undefined;
@@ -111,7 +113,7 @@ export class IslandClient {
   canModel(path: string): boolean {
     const separator = path.indexOf('.');
     const owner = separator < 0 ? path : path.slice(0, separator);
-    return this.writable[owner] !== undefined;
+    return (this.writable[path] ?? this.writable[owner]) !== undefined;
   }
 
   /** @internal Read the last accepted value for cross-island draft reconciliation. */
@@ -237,7 +239,7 @@ export class IslandClient {
       (changes) => {
         this.controls.captureAll();
         this.controls.clearPending();
-        Object.assign(this.bridge.state, changes);
+        this.bridge.state = mergeChanges(this.bridge.state, changes);
         this.controls.refresh();
         void this.bridge.sync();
       },
@@ -247,6 +249,7 @@ export class IslandClient {
       this.trigger = new LoadTrigger(root, this.metadata.loading, () =>
         this.request(null, []),
       );
+    if (this.mounted) this.listenForEvents();
   }
 
   /**
@@ -345,6 +348,7 @@ export class IslandClient {
    * Aborting fetch does not establish whether the server executed an action.
    */
   dispose(): void {
+    this.actionEvents?.dispose();
     this.composition?.dispose();
     this.disposed = true;
     this.streams.dispose();
@@ -388,8 +392,9 @@ export class IslandClient {
     action: string | null,
     args: Json[],
     upload?: UploadJob,
+    event?: string,
   ): Promise<RequestResult> {
-    if (this.mounted) return this.sendRequest(action, args, upload);
+    if (this.mounted) return this.sendRequest(action, args, upload, event);
     if (action !== null || args.length || upload !== undefined) {
       const error = requestError('client_error', null);
       if (!this.disposed) this.failed(error);
@@ -410,6 +415,7 @@ export class IslandClient {
     action: string | null,
     args: Json[],
     upload?: UploadJob,
+    event?: string,
   ): Promise<RequestResult> {
     const navigationEpoch = navigation(window)?.epoch();
     try {
@@ -428,7 +434,7 @@ export class IslandClient {
           urlEpoch: this.urlTarget.epoch,
         });
       }
-      await this.enqueue(action, args, upload, navigationEpoch);
+      await this.enqueue(action, args, upload, navigationEpoch, event);
       if (!this.disposed) return { ok: true };
     } catch (cause: unknown) {
       if (this.leaving)
@@ -452,6 +458,7 @@ export class IslandClient {
     args: Json[],
     upload?: UploadJob,
     navigationEpoch?: number,
+    event?: string,
   ): Promise<void> {
     this.controls.clearPending();
     if (this.disposed) return Promise.reject(new Error('Island was removed.'));
@@ -479,6 +486,7 @@ export class IslandClient {
       ...(this.url ? { urlEpoch: this.url.epoch() } : {}),
       action,
       args,
+      ...(event === undefined ? {} : { event }),
       ...(upload ? { upload } : { uploadRevision: this.uploads.revision }),
     });
   }
@@ -528,7 +536,7 @@ export class IslandClient {
       const restoration = invocation.urlRestore;
       const parentTicket = this.parentTicket;
       const sent = restoration
-        ? { ...clone(this.baseline), ...clone(restoration.values) }
+        ? mergeChanges(this.baseline, restoration.values)
         : clone(this.bridge.state);
       this.composition?.begin(invocation.action, sent);
       const payload = {
@@ -550,6 +558,7 @@ export class IslandClient {
         ...(restoration ? { urlRestore: true } : {}),
         action: invocation.action,
         args: invocation.args,
+        ...(invocation.event === undefined ? {} : { event: invocation.event }),
         ...(upload
           ? {
               upload: {
@@ -643,6 +652,7 @@ export class IslandClient {
         } else this.effects.navigate(accepted.redirect);
         this.leaving = true;
         this.realtime?.dispose();
+        this.actionEvents?.dispose();
         this.controls.clearPending();
         this.poller?.dispose();
         this.queue.dispose();
@@ -735,7 +745,7 @@ export class IslandClient {
       this.snapshot = payload.snapshot;
       this.baseline = clone(payload.state);
       this.writable = payload.writable;
-      this.bridge.state = { ...payload.state, ...newer };
+      this.bridge.state = mergeChanges(payload.state, newer);
       this.bridge.errors = payload.errors;
       this.uploads.accept(payload.uploads ?? {}, upload);
       this.controls.refresh();
@@ -772,7 +782,14 @@ export class IslandClient {
       invocation?.urlEpoch ?? 0,
       invocation?.urlRestore !== undefined,
     );
-    if (!previous.mounted) previous.uploads.dispose();
+    this.metadata.listeners = payload.listeners ?? {};
+    this.root.dataset.interactListeners = JSON.stringify(
+      this.metadata.listeners,
+    );
+    if (!previous.mounted) {
+      previous.uploads.dispose();
+      this.listenForEvents();
+    } else this.actionEvents?.update(this.metadata.listeners);
     if (!previous.mounted && this.urlTarget) {
       const target = this.urlTarget;
       this.urlTarget = undefined;
@@ -784,6 +801,16 @@ export class IslandClient {
       this.root.dispatchEvent(
         new CustomEvent(effect.name, { detail: effect.detail, bubbles: true }),
       );
+  }
+
+  /** Register accepted declarations once the island has an initialized action capability. */
+  private listenForEvents(): void {
+    this.actionEvents = new ActionEvents(
+      this.metadata.listeners,
+      (action, event, detail) =>
+        this.request(action, [detail], undefined, event),
+      (cause) => this.failed(requestError('client_error', null, cause)),
+    );
   }
 
   /**
@@ -798,13 +825,13 @@ export class IslandClient {
     this.controls.captureAll();
     const unchanged = Object.entries(target.values).every(
       ([key, value]) =>
-        equal(value, this.bridge.state[key]) &&
-        equal(value, this.baseline[key]),
+        equal(value, read(this.bridge.state, key)) &&
+        equal(value, read(this.baseline, key)),
     );
     if (unchanged && !this.bridge.pending()) return;
     this.controls.clearPending();
     this.urlTarget = target;
-    this.bridge.state = { ...this.bridge.state, ...clone(target.values) };
+    this.bridge.state = mergeChanges(this.bridge.state, target.values);
     this.controls.refresh();
     if (this.bridge.paused && this.bridge.error?.recovery !== 'retry') return;
     this.bridge.error = null;

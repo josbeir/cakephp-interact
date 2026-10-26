@@ -24,7 +24,7 @@ readonly class Result
     public ?array $realtime;
 
     /**
-     * @var array<string, array{name: string, type: string, default: mixed, history: bool}> URL declarations.
+     * @var array<string, array{name: string, type: string, default: mixed, history: bool, nullable?: bool}> URL declarations.
      */
     public array $url;
 
@@ -48,18 +48,22 @@ readonly class Result
      */
     public array $events;
 
+    /** @var array<string, list<string>> Concrete event listeners for these accepted props. */
+    public array $listeners;
+
     /**
      * Collect markup, a signed snapshot, validation feedback, and browser effects.
      *
      * @param array{
      *     download?: string,
      *     realtime?: array{lease: string, endpoint: string, subscriptions: list<array{topic: string, mode: string, event: string|null, private: bool}>}|null,
-     *     url?: array<string, array{name: string, type: string, default: mixed, history: bool}>,
+     *     url?: array<string, array{name: string, type: string, default: mixed, history: bool, nullable?: bool}>,
      *     uploads?: array<string, array{multiple: bool, maxSize: int, maxFiles: int, files: list<array{id: string, name: string, size: int}>}>,
      *     state?: array<string, mixed>,
      *     writable?: array<string, array{type: string, nullable: bool}>,
      *     errors?: array<string, list<string>>,
-     *     events?: list<array{name: string, detail: array<string, mixed>}>
+     *     events?: list<array{name: string, detail: array<string, mixed>}>,
+     *     listeners?: array<string, list<string>>
      * } $data Browser-visible render output.
      */
     public function __construct(public string $id, public string $html, public string $snapshot, array $data = [])
@@ -72,6 +76,7 @@ readonly class Result
         $this->writable = $data['writable'] ?? [];
         $this->errors = $data['errors'] ?? [];
         $this->events = $data['events'] ?? [];
+        $this->listeners = $data['listeners'] ?? [];
     }
 
     /**
@@ -87,6 +92,7 @@ readonly class Result
             ...($this->download === null ? [] : ['download' => $this->download]),
             ...($this->url === [] ? [] : ['url' => (object)$this->url]),
             ...($this->uploads === [] ? [] : ['uploads' => (object)$this->uploads]),
+            ...($this->listeners === [] ? [] : ['listeners' => (object)$this->listeners]),
             'id' => $this->id,
             'html' => $this->html,
             'snapshot' => $this->snapshot,

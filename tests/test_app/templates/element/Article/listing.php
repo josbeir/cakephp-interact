@@ -8,7 +8,7 @@ declare(strict_types=1);
  * @var \Cake\ORM\ResultSet<int, \Cake\ORM\Entity> $articles
  */
 ?>
-<section class="demo-card article-list" aria-label="Articles" @article-saved.stop="$server.sync()">
+<section class="demo-card article-list" aria-label="Articles">
     <div class="card-heading"><div><p class="eyebrow">01 / Nested islands</p><h2>Article listing</h2></div><span class="capability">Search + save</span></div>
     <p class="card-description">Each row is a keyed child island. Search renders the parent; saving a child dispatches an event that refreshes this list.</p>
     <?= $this->Form->create(null, ['url' => false, 'idPrefix' => 'Article/Listing', 'x-interact:submit' => '$server.sync()']) ?>

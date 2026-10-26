@@ -104,7 +104,8 @@ class EditorIsland extends Island
         }
 
         $this->saved = true;
-        $this->dispatch('article-saved', ['id' => $this->articleId]);
+        $this->dispatch('article-saved', id: $this->articleId);
+        $this->dispatch("article-saved:{$this->articleId}", id: $this->articleId);
     }
 
     /**

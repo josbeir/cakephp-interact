@@ -1,6 +1,7 @@
 import { navigation } from '../navigation/registry';
+import { read, write } from '../state/paths';
 import { clone, equal } from '../state/values';
-import type { Json, State } from '../types';
+import type { State } from '../types';
 import type { UrlFields, UrlRestoration } from './types';
 import { readQuery, writeQuery } from './codec';
 
@@ -144,19 +145,20 @@ export class UrlCoordinator {
       previous !== undefined &&
       Object.entries(owner.fields).some(
         ([property, field]) =>
-          field.history && !equal(previous[property], state[property]),
+          field.history &&
+          !equal(read(previous, property), read(state, property)),
       );
     this.write(url, push);
   }
 
   /** Copy claimed properties only, keeping URL lists independent of mutable island drafts. */
   protected copy(fields: UrlFields, state: State): State {
-    const entries: [string, Json][] = [];
+    const selected: State = {};
     for (const property of Object.keys(fields)) {
-      const value = state[property];
-      if (value !== undefined) entries.push([property, value]);
+      const value = read(state, property);
+      if (value !== undefined) write(selected, property, value);
     }
-    return clone(Object.fromEntries(entries));
+    return clone(selected);
   }
 
   /** Route native history and restoration failures through the owning island's feedback. */

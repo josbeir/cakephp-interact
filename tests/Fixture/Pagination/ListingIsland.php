@@ -3,22 +3,27 @@ declare(strict_types=1);
 
 namespace Interact\Test\Fixture\Pagination;
 
+use Interact\Attribute\Pagination;
 use Interact\Attribute\Render;
-use Interact\Attribute\State;
+use Interact\Pagination\PaginationState;
 
 /**
  * Adds explicit writable sorting and page-size capabilities to the basic page fixture.
  * Defaults remain application-controlled and use independent URL aliases.
  */
-#[Render(template: 'island/pagination')]
+#[Render(template: 'island/Pagination/resource_listing')]
 class ListingIsland extends PageIsland
 {
-    #[State(writable: true, url: 'order', history: true)]
-    public string $sort = '';
-
-    #[State(writable: true, url: 'dir', history: true)]
-    public string $direction = 'asc';
-
-    #[State(writable: true, url: 'size', history: true)]
-    public int $limit = 5;
+    #[Pagination(
+        settings: [
+            'limit' => 5,
+            'maxLimit' => 10,
+            'order' => ['Resources.id' => 'asc'],
+            'sortableFields' => ['title' => 'Resources.title'],
+        ],
+        url: ['page' => 'p', 'sort' => 'order', 'direction' => 'dir', 'limit' => 'size'],
+        history: true,
+        editableLimit: true,
+    )]
+    public PaginationState $paging;
 }

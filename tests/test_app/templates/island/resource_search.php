@@ -9,9 +9,7 @@ use function Cake\Core\h;
  * @var string $search
  * @var string $category
  * @var string $level
- * @var string $sort
- * @var int $page
- * @var int $limit
+ * @var \Interact\Pagination\PaginationState $paging
  * @var \Cake\Datasource\Paging\PaginatedInterface<int, \Cake\ORM\Entity> $resources
  * @var int $total
  * @var int $librarySize
@@ -62,14 +60,14 @@ $this->Paginator->setTemplates([
             <?= $this->Form->control('sort', [
                 'label' => 'Sort by',
                 'options' => ['title' => 'Title: A–Z', 'title-desc' => 'Title: Z–A', 'shortest' => 'Shortest read first', 'longest' => 'Longest read first'],
-                'value' => $sort,
-                'x-interact:model.change' => 'sort',
+                'value' => $paging->sort,
+                'x-interact:model.change' => 'paging.sort',
             ]) ?>
             <?= $this->Form->control('limit', [
                 'label' => 'Per page',
                 'options' => [10 => '10 results', 20 => '20 results', 50 => '50 results'],
-                'value' => $limit,
-                'x-interact:model.change' => 'limit',
+                'value' => $paging->limit,
+                'x-interact:model.change' => 'paging.limit',
             ]) ?>
         </div>
         <details>

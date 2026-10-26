@@ -30,9 +30,7 @@ class PaginatorHelper extends CakePaginatorHelper
             $this->templater instanceof StringTemplate ? clone $this->templater : null,
         ];
         $this->paginated = $result;
-        if ($result instanceof Paginated) {
-            $this->setConfig('options.url', [], false);
-        }
+        $this->setConfig('options.url', [], false);
 
         return function () use ($previous): void {
             [$this->paginated, $this->config, $this->templater] = $previous;
@@ -62,7 +60,7 @@ class PaginatorHelper extends CakePaginatorHelper
             || !empty($this->config['options']['routePlaceholders'])
         ) {
             if ($result instanceof Paginated) {
-                $result->links->assertUrlBound($result->fields);
+                $result->links->assertUrlBound($result->fields, $result->property);
 
                 return $this->Url->build(
                     $result->links->routing->complete(parent::generateUrlParams($options, $url)),
@@ -79,7 +77,11 @@ class PaginatorHelper extends CakePaginatorHelper
 
         /** @var string $format */
         $format = $this->getConfig('options.sortFormat');
-        $destination = $result->links->generate(LinkParameters::read($result, $options, $format), $result->fields);
+        $destination = $result->links->generate(
+            LinkParameters::read($result, $options, $format),
+            $result->fields,
+            $result->property,
+        );
         if ($urlOptions['fullBase']) {
             $destination = Router::fullBaseUrl() . $destination;
         }

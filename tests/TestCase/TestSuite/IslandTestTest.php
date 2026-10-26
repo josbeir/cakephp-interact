@@ -21,10 +21,10 @@ use Commerce\Island\Article\EditorIsland as PluginEditor;
 use Interact\IslandContext;
 use Interact\Runtime\RenderlessResult;
 use Interact\Security\InvalidSnapshotException;
-use Interact\Test\Fixture\Quickstart\Island\CounterIsland as QuickstartCounter;
-use Interact\Test\Fixture\Testing\Application;
-use Interact\Test\Fixture\Testing\ProbeIsland;
-use Interact\Test\Fixture\Testing\ProbeService;
+use Interact\Test\Fixture\Documentation\Quickstart\Island\CounterIsland as QuickstartCounter;
+use Interact\Test\Fixture\TestSuite\Application;
+use Interact\Test\Fixture\TestSuite\ProbeIsland;
+use Interact\Test\Fixture\TestSuite\ProbeService;
 use Interact\TestSuite\IslandTest;
 use Interact\TestSuite\IslandTestTrait;
 use InvalidArgumentException;
@@ -56,7 +56,8 @@ class IslandTestTest extends TestCase
         parent::setUp();
         Configure::write('App.paths.templates', [
             APP . 'templates/',
-            dirname(__DIR__, 2) . '/Fixture/views/templates/',
+            dirname(__DIR__, 2) . '/Fixture/TestSuite/templates/',
+            dirname(__DIR__, 2) . '/Fixture/Rendering/templates/',
         ]);
         $this->configApplication(Application::class, [CONFIG]);
         $connection = ConnectionManager::get('default');
@@ -95,8 +96,8 @@ class IslandTestTest extends TestCase
 
     public function testTheDocumentedQuickstartCounterTestWorks(): void
     {
-        Configure::write('App.namespace', 'Interact\\Test\\Fixture\\Quickstart');
-        Configure::write('App.paths.templates', [dirname(__DIR__, 2) . '/Fixture/Quickstart/templates/']);
+        Configure::write('App.namespace', 'Interact\\Test\\Fixture\\Documentation\\Quickstart');
+        Configure::write('App.paths.templates', [dirname(__DIR__, 2) . '/Fixture/Documentation/Quickstart/templates/']);
         $this->testIsland(QuickstartCounter::class)
             ->assertSet('count', 0)
             ->call('increment')
@@ -319,7 +320,7 @@ class IslandTestTest extends TestCase
         $paths = Configure::read('App.paths.templates');
         static::assertIsArray($paths);
         Configure::write('App.paths.templates', [
-            dirname(__DIR__, 2) . '/Fixture/views/overrides/',
+            dirname(__DIR__, 2) . '/Fixture/Rendering/overrides/',
             ...$paths,
         ]);
         $this->testIsland('Commerce.Article/Editor')

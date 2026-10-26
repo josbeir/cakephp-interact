@@ -11,6 +11,27 @@ use InvalidArgumentException;
 class PathEditor
 {
     /**
+     * Read an explicitly owned scalar or nested state path without object traversal.
+     *
+     * @param array<string, mixed> $values Validated state representation.
+     * @param list<string> $segments Validated path segments.
+     */
+    public function read(array $values, array $segments): mixed
+    {
+        $value = $values;
+        foreach ($segments as $segment) {
+            if (!is_array($value) || !array_key_exists($segment, $value)) {
+                throw new InvalidArgumentException('Unknown island state path.');
+            }
+
+            /** @var mixed $value */
+            $value = $value[$segment];
+        }
+
+        return $value;
+    }
+
+    /**
      * Replace a whole value or apply a validated path within array state.
      *
      * @param list<string> $segments Validated path after its owning property name.

@@ -11,7 +11,7 @@ use Interact\UpdatedPaths;
  * Combines independently owned URL state with the parent-bound values of a nested input.
  * Update-hook normalization must run for model changes even during history restoration.
  */
-#[Render(template: 'island/composition_probe')]
+#[Render(template: 'island/Composition/probe')]
 class HistoryProbeIsland extends ProbeIsland
 {
     #[State(writable: true, url: true, history: true)]

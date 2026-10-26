@@ -1,5 +1,5 @@
 import type { Json, State } from '../types';
-import { forbidden } from './values';
+import { clone, forbidden } from './values';
 
 /**
  * Parse a dotted property path and reject malformed or prototype-related segments.
@@ -91,4 +91,20 @@ function assign(
   value: Json,
 ): void {
   if (!Reflect.set(target, key, value)) throw new Error('Cannot update state.');
+}
+
+/** Check declaration paths without throwing while validating untrusted metadata. */
+export function validPath(value: string): boolean {
+  return (
+    /^[a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z0-9_-]+)*$/.test(value) &&
+    !value.split('.').some((part) => forbidden.has(part))
+  );
+}
+
+/** Apply independently owned paths without replacing sibling selections or drafts. */
+export function mergeChanges(value: State, changes: State): State {
+  const merged = clone(value);
+  for (const [name, replacement] of Object.entries(changes))
+    write(merged, name, replacement);
+  return merged;
 }

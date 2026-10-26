@@ -12,40 +12,53 @@ use ReflectionProperty;
  * Compiles an explicit URL capability and its reload default for one writable property.
  *
  * Query values remain untrusted input; this declaration never grants resource access.
+ *
+ * @consistent-constructor
  */
 readonly class Binding
 {
-    public string $name;
-
-    public string $type;
-
-    public mixed $default;
-
-    public bool $history;
+    /**
+     * Compile a typed query value with its immutable reload default.
+     */
+    public function __construct(
+        public string $name,
+        public string $type,
+        public mixed $default,
+        public bool $history = false,
+        public bool $nullable = false,
+    ) {
+        Names::require($name);
+        $this->validate($default);
+    }
 
     /**
-     * Require a writable, initialized scalar or string-list declaration with a safe query name.
+     * Require writable native state with a declared default and a lossless query representation.
      */
-    public function __construct(ReflectionProperty $property, State $state)
+    public static function fromProperty(ReflectionProperty $property, State $state): static
     {
         $type = $property->getType();
         if (
             !$state->writable
             || !$property->hasDefaultValue()
             || !$type instanceof ReflectionNamedType
-            || $type->allowsNull()
+            || !in_array($type->getName(), ['string', 'int', 'float', 'bool', 'array'], true)
+            || (
+                $type->allowsNull()
+                && $type->getName() === 'array'
+            )
         ) {
             throw new InvalidArgumentException(
-                'URL state requires writable, non-nullable properties with declared defaults.',
+                'URL state requires writable properties with declared defaults; nullable arrays are unsupported.',
             );
         }
 
-        $this->name = is_string($state->url) ? $state->url : $property->getName();
-        Names::require($this->name);
-        $this->type = $type->getName();
-        $this->default = $property->getDefaultValue();
-        $this->history = $state->history;
-        $this->validate($this->default);
+        return new static(
+            is_string($state->url) ? $state->url : $property->getName(),
+            $type->getName(),
+            $property->getDefaultValue(),
+            $state->history,
+            $type->allowsNull(),
+        );
     }
 
     /**
@@ -53,19 +66,19 @@ readonly class Binding
      */
     public function validate(mixed $value): void
     {
-        $valid = match ($this->type) {
-            'string' => is_string($value),
-            'bool' => is_bool($value),
-            'int' => is_int($value) && abs($value) <= 9_007_199_254_740_991,
-            'float' => (is_float($value) || is_int($value)) && is_finite((float)$value),
-            'array' => is_array($value)
-                && array_is_list($value)
-                && array_all($value, static fn(mixed $entry, int $key): bool => is_string($entry)),
-            default => false,
-        };
+        $valid =
+            $value === null && $this->nullable
+            || match ($this->type) {
+                'string' => is_string($value),
+                'bool' => is_bool($value),
+                'int' => is_int($value) && abs($value) <= 9_007_199_254_740_991,
+                'float' => (is_float($value) || is_int($value)) && is_finite((float)$value),
+                'array' => is_array($value) && ArrayValue::accepts($value),
+                default => false,
+            };
         if (!$valid) {
             throw new InvalidArgumentException(
-                'URL state supports finite scalars, safe integers, and flat string lists.',
+                'URL state supports nullable scalars, safe numbers, and nested string lists or maps.',
             );
         }
     }

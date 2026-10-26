@@ -7,9 +7,11 @@ use Cake\Datasource\Paging\SortField;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\ORM\Query\SelectQuery;
 use Interact\Attribute\Action;
+use Interact\Attribute\Pagination;
 use Interact\Attribute\Prop;
 use Interact\Attribute\State;
 use Interact\Island;
+use Interact\Pagination\PaginationState;
 use Interact\UpdatedPaths;
 use InvalidArgumentException;
 use TestApp\Model\Table\ResourcesTable;
@@ -41,25 +43,18 @@ class ResourceSearchIsland extends Island
     #[State(writable: true, url: true)]
     public string $level = '';
 
-    #[State(writable: true, url: true)]
-    public string $sort = 'title';
-
-    #[State(writable: true, url: true, history: true)]
-    public string $direction = 'asc';
-
-    #[State(writable: true, url: 'pageSize', history: true)]
-    public int $limit = 20;
-
-    #[State(writable: true, url: true, history: true)]
-    public int $page = 1;
-
-    /**
-     * @var array<string, mixed> Native numeric pagination limits and stable default ordering.
-     */
-    protected array $paginate = [
-        'maxLimit' => 50,
-        'order' => ['Resources.title' => 'asc', 'Resources.id' => 'asc'],
-    ];
+    #[Pagination(
+        settings: [
+            'limit' => 20,
+            'maxLimit' => 50,
+            'order' => ['Resources.title' => 'asc', 'Resources.id' => 'asc'],
+        ],
+        url: ['page' => 'page', 'sort' => 'sort', 'direction' => 'direction', 'limit' => 'pageSize'],
+        history: ['page', 'direction', 'limit'],
+        editableLimit: true,
+        defaults: ['sort' => 'title'],
+    )]
+    public PaginationState $paging;
 
     /**
      * Assign the request-local Table before authorization and state restoration.
@@ -77,10 +72,10 @@ class ResourceSearchIsland extends Island
     public function updated(UpdatedPaths $paths): void
     {
         if (
-            $paths->hasAny('search', 'category', 'level', 'sort', 'direction', 'limit')
-            && !$paths->has('page')
+            $paths->hasAny('search', 'category', 'level', 'paging.sort', 'paging.direction', 'paging.limit')
+            && !$paths->has('paging.page')
         ) {
-            $this->page = 1;
+            $this->paging->page = 1;
         }
     }
 
@@ -93,10 +88,10 @@ class ResourceSearchIsland extends Island
         $this->search = '';
         $this->category = '';
         $this->level = '';
-        $this->sort = 'title';
-        $this->direction = 'asc';
-        $this->limit = 20;
-        $this->page = 1;
+        $this->paging->sort = 'title';
+        $this->paging->direction = 'asc';
+        $this->paging->limit = 20;
+        $this->paging->page = 1;
     }
 
     /**
@@ -131,7 +126,7 @@ class ResourceSearchIsland extends Island
      */
     protected function listing(): SelectQuery
     {
-        if (!in_array($this->limit, [10, 20, 50], true)) {
+        if (!in_array($this->paging->limit, [10, 20, 50], true)) {
             throw new InvalidArgumentException('Choose 10, 20, or 50 results per page.');
         }
 
@@ -140,7 +135,7 @@ class ResourceSearchIsland extends Island
             search: $this->search,
             category: $this->category,
             level: $this->level,
-            sort: $this->sort,
+            sort: $this->paging->sort,
         );
     }
 }

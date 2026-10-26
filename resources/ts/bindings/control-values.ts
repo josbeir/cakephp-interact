@@ -25,7 +25,8 @@ export function captureControl(
   list = false,
 ): void {
   const first = path(name)[0];
-  const field = first === undefined ? undefined : fields[first];
+  const field =
+    first === undefined ? undefined : (fields[name] ?? fields[first]);
   if (!field) throw new Error('This state is not writable.');
   let value: Json = control.value;
   if (control instanceof HTMLInputElement) {
@@ -61,7 +62,8 @@ export function captureValue(
   fields: Writable,
 ): void {
   const first = path(name)[0];
-  const field = first === undefined ? undefined : fields[first];
+  const field =
+    first === undefined ? undefined : (fields[name] ?? fields[first]);
   if (!field) throw new Error('This state is not writable.');
   if (field.type === 'int' || field.type === 'float') {
     if (value === '' && field.nullable) value = null;

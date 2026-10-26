@@ -5,7 +5,9 @@ export default defineConfig({
   pack: [
     {
       name: 'configuration-fixture',
-      entry: { configuration: 'tests/browser/configuration-runtime.ts' },
+      entry: {
+        configuration: 'tests/Fixture/Configuration/browser/runtime.ts',
+      },
       outDir: 'tests/test_app/webroot/js',
       format: 'iife',
       platform: 'browser',
@@ -262,7 +264,8 @@ export default defineConfig({
     overrides: [
       {
         files: [
-          'tests/Fixture/browser/*.js',
+          'tests/Fixture/Realtime/Providers/*.js',
+          'tests/Fixture/Streaming/Providers/*.js',
           'tests/test_app/webroot/realtime.js',
         ],
         globals: { window: 'readonly', document: 'readonly' },

@@ -105,7 +105,7 @@ class ChatIsland extends Island
 
         $this->message = '';
         $this->deliveryIssue = false;
-        $this->dispatch('chat-sent', ['id' => $message->get('id')]);
+        $this->dispatch('chat-sent', id: $message->get('id'));
         try {
             $this->publisher?->publishEvent($this->private ? $this->identity->topic() : 'demo/chat', 'message-sent', [
                 'id' => $message->get('id'),

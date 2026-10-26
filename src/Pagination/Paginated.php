@@ -27,6 +27,7 @@ class Paginated extends PaginatedResultSet
         public readonly Links $links,
         public readonly array $fields,
         array $parameters = [],
+        public readonly string $property = '',
     ) {
         parent::__construct($result->items(), $parameters + $result->pagingParams());
     }

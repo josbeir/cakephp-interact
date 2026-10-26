@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Discovery;
 
 use Interact\Attribute\Action;
+use Interact\Event\ListenerNames;
 use Interact\Island;
 use InvalidArgumentException;
 use ReflectionClass;
@@ -25,16 +26,20 @@ readonly class Actions
     /** @var array<string, bool> */
     public array $streaming;
 
+    public ListenerNames $listeners;
+
     /**
      * Read exact declaration markers without constructing an application island.
      *
      * @param ReflectionClass<Island> $reflection Concrete island declarations.
+     * @param array<string, Property> $properties Compiled property ownership and transport types.
      */
-    public function __construct(ReflectionClass $reflection)
+    public function __construct(ReflectionClass $reflection, array $properties)
     {
         $actions = [];
         $renderless = [];
         $streaming = [];
+        $listeners = [];
         foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC
             | ReflectionMethod::IS_PROTECTED
             | ReflectionMethod::IS_PRIVATE) as $method) {
@@ -52,6 +57,10 @@ readonly class Actions
 
             $actions[$method->getName()] = $method;
             $policy = $method->getAttributes(Action::class)[0]->newInstance();
+            if ($policy->on !== null) {
+                $listeners[$policy->on][] = $method->getName();
+            }
+
             $renderless[$method->getName()] = !$policy->render;
             $streaming[$method->getName()] = $policy->stream;
         }
@@ -59,5 +68,6 @@ readonly class Actions
         $this->methods = $actions;
         $this->renderless = $renderless;
         $this->streaming = $streaming;
+        $this->listeners = new ListenerNames($listeners, $properties);
     }
 }

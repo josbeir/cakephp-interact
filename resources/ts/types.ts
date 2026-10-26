@@ -3,6 +3,7 @@ import type { UrlFields, UrlRestoration } from './url/types';
 import type { UploadField, UploadJob, UploadMetadata } from './uploads/types';
 import type { DiagnosticOutput } from './diagnostics/output';
 import type { RealtimeMetadata, RealtimeFeedback } from './realtime/types';
+import type { ActionListeners } from './events/actions';
 /**
  * Values accepted by the JSON transport, including nested lists and records.
  */
@@ -30,6 +31,7 @@ export type Writable = Record<string, { type: string; nullable: boolean }>;
 export interface Invocation {
   action: string | null;
   args: Json[];
+  event?: string;
   upload?: UploadJob;
   uploadRevision?: number;
   urlEpoch?: number;
@@ -72,6 +74,7 @@ export type UpdateResponse =
  * Browser effects never establish authorization or durable business messages.
  */
 export interface StateResponse {
+  listeners?: ActionListeners;
   realtime?: RealtimeMetadata;
   diagnostics?: DiagnosticOutput;
   download?: string;
