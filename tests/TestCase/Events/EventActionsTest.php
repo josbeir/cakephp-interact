@@ -102,7 +102,7 @@ class EventActionsTest extends TestCase
     public function testMetadataListsAllListenersAndRejectsMalformedDeclarations(): void
     {
         $definition = new Definition(ListenerIsland::class);
-        static::assertSame(['saved', 'refresh'], $definition->listeners['article-saved']);
+        static::assertSame(['saved', 'refresh'], $definition->listeners->resolve([])['article-saved']);
         $mount = $this->runtime()->mount('Listener', [], null, $this->context());
         static::assertStringContainsString('data-interact-listeners=', $mount->html);
         static::assertStringContainsString(

@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Interact\Discovery;
 
 use Interact\Attribute\Action;
-use Interact\Event\BrowserEvent;
+use Interact\Event\ListenerNames;
 use Interact\Island;
 use InvalidArgumentException;
 use ReflectionClass;
@@ -26,15 +26,15 @@ readonly class Actions
     /** @var array<string, bool> */
     public array $streaming;
 
-    /** @var array<string, list<string>> Event names mapped to callable methods. */
-    public array $listeners;
+    public ListenerNames $listeners;
 
     /**
      * Read exact declaration markers without constructing an application island.
      *
      * @param ReflectionClass<Island> $reflection Concrete island declarations.
+     * @param array<string, Property> $properties Compiled property ownership and transport types.
      */
-    public function __construct(ReflectionClass $reflection)
+    public function __construct(ReflectionClass $reflection, array $properties)
     {
         $actions = [];
         $renderless = [];
@@ -58,7 +58,6 @@ readonly class Actions
             $actions[$method->getName()] = $method;
             $policy = $method->getAttributes(Action::class)[0]->newInstance();
             if ($policy->on !== null) {
-                BrowserEvent::assertName($policy->on);
                 $listeners[$policy->on][] = $method->getName();
             }
 
@@ -69,6 +68,6 @@ readonly class Actions
         $this->methods = $actions;
         $this->renderless = $renderless;
         $this->streaming = $streaming;
-        $this->listeners = $listeners;
+        $this->listeners = new ListenerNames($listeners, $properties);
     }
 }

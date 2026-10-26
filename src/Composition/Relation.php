@@ -63,12 +63,24 @@ readonly class Relation
     }
 
     /**
-     * Export the same immutable relationship for signing and browser coordination.
+     * Export the immutable server relationship for signing and ticket comparisons.
      *
      * @return array{parentId: string, models: array<string, array{path: string, timing: string, delay?: int}>}
      */
     public function data(): array
     {
         return ['parentId' => $this->parentId, 'models' => $this->models];
+    }
+
+    /**
+     * Preserve an empty binding map as a JSON object for browser relationship validation.
+     *
+     * @return array{parentId: string, models: object} Browser-only serialization shape.
+     */
+    public function browserData(): array
+    {
+        $data = $this->data();
+
+        return [...$data, 'models' => (object)$data['models']];
     }
 }

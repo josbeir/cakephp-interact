@@ -782,11 +782,14 @@ export class IslandClient {
       invocation?.urlEpoch ?? 0,
       invocation?.urlRestore !== undefined,
     );
+    this.metadata.listeners = payload.listeners ?? {};
+    this.root.dataset.interactListeners = JSON.stringify(
+      this.metadata.listeners,
+    );
     if (!previous.mounted) {
       previous.uploads.dispose();
-      this.metadata.listeners = readMetadata(this.root).listeners;
       this.listenForEvents();
-    }
+    } else this.actionEvents?.update(this.metadata.listeners);
     if (!previous.mounted && this.urlTarget) {
       const target = this.urlTarget;
       this.urlTarget = undefined;
@@ -800,7 +803,7 @@ export class IslandClient {
       );
   }
 
-  /** Register static declarations once the island has an initialized action capability. */
+  /** Register accepted declarations once the island has an initialized action capability. */
   private listenForEvents(): void {
     this.actionEvents = new ActionEvents(
       this.metadata.listeners,

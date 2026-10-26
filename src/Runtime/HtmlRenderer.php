@@ -82,7 +82,10 @@ class HtmlRenderer
                 'data-interact-mount' => new Identity()->fingerprint($island, $definition, $identity, $context),
                 ...(
                     $identity->relation instanceof Relation
-                        ? ['data-interact-relation' => json_encode($identity->relation->data(), JSON_THROW_ON_ERROR)]
+                        ? ['data-interact-relation' => json_encode(
+                            $identity->relation->browserData(),
+                            JSON_THROW_ON_ERROR,
+                        )]
                         : []
                 ),
             ]);
@@ -139,8 +142,8 @@ class HtmlRenderer
      */
     public function wrap(Definition $definition, Result $result, IslandContext $context, array $extra = []): Result
     {
-        if ($definition->listeners !== [] && !isset($extra['data-interact-loading'])) {
-            $extra['data-interact-listeners'] = json_encode($definition->listeners, JSON_THROW_ON_ERROR | JSON_HEX_TAG);
+        if ($result->listeners !== []) {
+            $extra['data-interact-listeners'] = json_encode($result->listeners, JSON_THROW_ON_ERROR | JSON_HEX_TAG);
         }
 
         $html = '<' . $definition->declaration->tag;
@@ -158,6 +161,7 @@ class HtmlRenderer
             'uploads' => $result->uploads,
             'errors' => $result->errors,
             'events' => $result->events,
+            'listeners' => $result->listeners,
         ]);
     }
 

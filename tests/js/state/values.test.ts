@@ -131,6 +131,13 @@ describe('transport values', () => {
       events: [{ name: 'article-saved', detail: {} }],
     };
     expect(response(payload)).toBe(true);
+    expect(
+      response({ ...payload, listeners: { 'saved:42': ['refresh'] } }),
+    ).toBe(true);
+    expect(
+      response({ ...payload, listeners: { 'saved:{id}': ['refresh'] } }),
+    ).toBe(false);
+    expect(response({ ...payload, listeners: { 'saved:42': [] } })).toBe(false);
     for (const change of [
       { version: 2 },
       { snapshot: '' },

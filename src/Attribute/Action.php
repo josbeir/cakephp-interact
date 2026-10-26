@@ -15,7 +15,7 @@ use Attribute;
 final readonly class Action
 {
     /**
-     * Choose rendering and streaming policy, and optionally listen for one browser event.
+     * Choose rendering and streaming policy, and optionally listen for a literal or prop-scoped event.
      */
     public function __construct(public bool $render = true, public bool $stream = false, public ?string $on = null)
     {

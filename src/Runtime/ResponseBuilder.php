@@ -88,6 +88,7 @@ class ResponseBuilder
         }
 
         $values = [
+            'listeners' => $definition->listeners->resolve($state),
             'realtime' => $this->subscriptions?->metadata($island, $definition, $identity, $context, $state),
             'url' => $this->state->urlMetadata($definition, $identity->urlPrefix),
             'state' => $state,

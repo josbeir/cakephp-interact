@@ -8,6 +8,7 @@ use Interact\Attribute\Prop;
 use Interact\Attribute\Render;
 use Interact\Attribute\State;
 use Interact\Attribute\Upload;
+use Interact\Event\ListenerNames;
 use Interact\Island;
 use Interact\Pagination\PaginationProperty;
 use Interact\Upload\UploadProperty;
@@ -55,8 +56,8 @@ readonly class Definition
      */
     public array $streamingActions;
 
-    /** @var array<string, list<string>> Browser events and their declared action handlers. */
-    public array $listeners;
+    /** Cached listener templates and their declared prop dependencies. */
+    public ListenerNames $listeners;
 
     /**
      * Compile one concrete island class into validated declaration metadata.
@@ -77,9 +78,30 @@ readonly class Definition
         $rendering = new Template($reflection, $render, $name);
         $this->plugin = $rendering->plugin;
         $this->declaration = $rendering->declaration;
+        [$properties, $uploads] = $this->compileProperties($reflection);
+        $this->properties = $properties;
+        $this->uploads = $uploads;
+        $actions = new Actions($reflection, $properties);
+        $this->actions = $actions->methods;
+
+        $this->renderlessActions = $actions->renderless;
+        $this->streamingActions = $actions->streaming;
+        $this->listeners = $actions->listeners;
+        new UrlState()->metadata($this, null);
+    }
+
+    /**
+     * Compile explicit property ownership before actions can reference any props.
+     *
+     * @param ReflectionClass<Island> $reflection Concrete application declarations.
+     * @return array{array<string, Property>, array<string, UploadProperty>} Transported values and request-local uploads.
+     */
+    protected function compileProperties(ReflectionClass $reflection): array
+    {
         $properties = [];
         $uploads = [];
         foreach ($reflection->getProperties() as $property) {
+            $field = $property->getName();
             $prop = $property->getAttributes(Prop::class);
             $state = $property->getAttributes(State::class);
             $upload = $property->getAttributes(Upload::class);
@@ -91,15 +113,15 @@ readonly class Definition
             }
 
             if ($pagination !== []) {
-                $properties[$property->getName()] = new PaginationProperty($property, $pagination[0]->newInstance());
+                $properties[$field] = new PaginationProperty($property, $pagination[0]->newInstance());
             }
 
             if ($upload !== []) {
-                $uploads[$property->getName()] = new UploadProperty($property, $upload[0]->newInstance());
+                $uploads[$field] = new UploadProperty($property, $upload[0]->newInstance());
             }
 
             if ($prop !== [] || $state !== []) {
-                $properties[$property->getName()] = new Property(
+                $properties[$field] = new Property(
                     $property,
                     $prop !== [],
                     $state !== [] && $state[0]->newInstance()->writable,
@@ -109,15 +131,7 @@ readonly class Definition
             }
         }
 
-        $this->properties = $properties;
-        $this->uploads = $uploads;
-        $actions = new Actions($reflection);
-        $this->actions = $actions->methods;
-
-        $this->renderlessActions = $actions->renderless;
-        $this->streamingActions = $actions->streaming;
-        $this->listeners = $actions->listeners;
-        new UrlState()->metadata($this, null);
+        return [$properties, $uploads];
     }
 
     /**

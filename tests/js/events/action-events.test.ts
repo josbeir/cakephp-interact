@@ -7,6 +7,7 @@ import { readMetadata } from '../../../resources/ts/transport/metadata';
 import { mergeChanges } from '../../../resources/ts/state/paths';
 import { state } from '../../../resources/ts/state/values';
 import type { IslandClient } from '../../../resources/ts/client';
+import type { ActionListeners } from '../../../resources/ts/events/actions';
 import type { Fetcher, State } from '../../../resources/ts/types';
 import { destroyBindings, mountClient } from '../support/mount';
 
@@ -17,10 +18,14 @@ function setup(
     pending?: boolean;
     renderless?: boolean;
     beforeReply?: (request: State) => Promise<void>;
+    listeners?: ActionListeners;
+    replyListeners?: () => ActionListeners;
   } = {},
 ) {
   const root = document.createElement('div');
-  const listeners = { 'article-saved': ['saved', 'refresh'] };
+  const listeners = options.listeners ?? {
+    'article-saved': ['saved', 'refresh'],
+  };
   Object.assign(root.dataset, {
     interactId: 'listener',
     interactSnapshot: 'signed',
@@ -45,11 +50,12 @@ function setup(
       throw new Error('Invalid request.');
     requests.push(request);
     await options.beforeReply?.(request);
+    const nextListeners = options.replyListeners?.() ?? listeners;
     accepted = mergeChanges(accepted, request.updates);
     const replacement = root.cloneNode(true);
     if (!(replacement instanceof HTMLElement)) throw new Error('Missing root.');
     delete replacement.dataset.interactLoading;
-    replacement.dataset.interactListeners = JSON.stringify(listeners);
+    replacement.dataset.interactListeners = JSON.stringify(nextListeners);
     replacement.dataset.interactState = JSON.stringify(accepted);
     replacement.dataset.interactWritable = JSON.stringify({
       draft: { type: 'string', nullable: false },
@@ -59,6 +65,7 @@ function setup(
     return new Response(
       JSON.stringify({
         version: 1,
+        listeners: nextListeners,
         id: 'listener',
         snapshot: 'next',
         html: options.renderless ? null : replacement.outerHTML,
@@ -266,4 +273,69 @@ it('retains normal action failure feedback without automatically retrying event 
   expect(client.bridge.paused).toBe(true);
   expect(requests).toHaveLength(1);
   expect(client.bridge.pending()).toBe(false);
+});
+
+it.each([false, true])(
+  'rebinds accepted names after rendered or renderless scope changes (%s)',
+  async (renderless) => {
+    let scope = 1;
+    let release: () => void = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const { client, requests, root } = setup({
+      renderless,
+      listeners: { 'article-saved:1': ['saved'] },
+      replyListeners: () => ({ [`article-saved:${scope}`]: ['saved'] }),
+      beforeReply: async (request) => {
+        if (request.action === 'switch') {
+          await held;
+          scope = 2;
+        }
+      },
+    });
+    const switching = client.bridge.call('switch');
+    window.dispatchEvent(new CustomEvent('article-saved:2', { detail: {} }));
+    await vi.waitFor(() => expect(requests).toHaveLength(1));
+    client.bridge.state.draft = 'newer draft';
+    release();
+    expect(await switching).toEqual({ ok: true });
+    window.dispatchEvent(new CustomEvent('article-saved:1', { detail: {} }));
+    expect(requests).toHaveLength(1);
+    window.dispatchEvent(
+      new CustomEvent('article-saved:2', { detail: { id: 2 } }),
+    );
+    await vi.waitFor(() => expect(client.bridge.pending()).toBe(false));
+    expect(requests).toHaveLength(2);
+    expect(requests[1]).toMatchObject({
+      event: 'article-saved:2',
+      action: 'saved',
+      args: [{ id: 2 }],
+    });
+    expect(client.bridge.state.draft).toBe('newer draft');
+    expect(JSON.parse(root.dataset.interactListeners ?? '{}')).toEqual({
+      'article-saved:2': ['saved'],
+    });
+  },
+);
+
+it('replaces and removes listeners without reviving a disposed client', async () => {
+  const invoke = vi.fn(async () => ({ ok: true as const }));
+  const listener = new ActionEvents(
+    { 'article-saved:1': ['saved'] },
+    invoke,
+    vi.fn(),
+  );
+  listener.update({ 'article-saved:2': ['saved'] });
+  window.dispatchEvent(new CustomEvent('article-saved:1'));
+  expect(invoke).not.toHaveBeenCalled();
+  window.dispatchEvent(new CustomEvent('article-saved:2'));
+  expect(invoke).toHaveBeenCalledOnce();
+  listener.update({});
+  window.dispatchEvent(new CustomEvent('article-saved:2'));
+  expect(invoke).toHaveBeenCalledOnce();
+  listener.dispose();
+  listener.update({ 'article-saved:2': ['saved'] });
+  window.dispatchEvent(new CustomEvent('article-saved:2'));
+  expect(invoke).toHaveBeenCalledOnce();
 });

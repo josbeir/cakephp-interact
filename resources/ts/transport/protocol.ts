@@ -6,6 +6,7 @@ import { validPath } from '../state/paths';
 import { record, state } from '../state/values';
 import { diagnosticEnvelope } from '../diagnostics/output';
 import { realtimeMetadata } from '../realtime/protocol';
+import { actionListeners } from '../events/actions';
 
 /**
  * Validate browser-write metadata against the supported native PHP property types.
@@ -39,6 +40,7 @@ export function response(value: unknown): value is UpdateResponse {
   return (
     record(value) &&
     value.version === 1 &&
+    (value.listeners === undefined || actionListeners(value.listeners)) &&
     (value.realtime === undefined || realtimeMetadata(value.realtime)) &&
     (value.url === undefined || urlFields(value.url)) &&
     (value.uploads === undefined || uploadMetadata(value.uploads)) &&

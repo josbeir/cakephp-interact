@@ -71,7 +71,7 @@ parameters or invalid types fail normal action validation. A parameterless handl
 can refresh an island without consuming the payload. Multiple methods may listen
 for the same event; each receives its own queued request.
 
-`on` accepts one literal event name and combines with `render: false` or
+`on` accepts one literal event name or a [prop-based template](#dynamic-event-names) and combines with `render: false` or
 `stream: true`. The action remains callable through `$server.call()` using its
 normal positional arguments. Listener declarations need no template attributes.
 
@@ -88,6 +88,57 @@ from successful actions and avoid handlers that re-emit their triggering event.
 Streaming and realtime notifications keep their explicit
 [`x-interact:on:event`](/directives/on) listeners. They do not automatically invoke
 matching `Action(on: ...)` handlers.
+
+## Dynamic event names
+
+Use a declared prop to scope events to a record before sending a request. Inside
+an island, import `Prop` and `Action` from `Interact\Attribute`:
+
+```php
+#[Prop(reactive: true)]
+public int $articleId;
+
+/**
+ * Refresh only this article's display.
+ */
+#[Action(on: 'article-saved:{articleId}')]
+public function refreshArticle(): void
+{
+}
+```
+
+The application supplies `articleId` through the mount call. An emitting island
+with that prop dispatches the concrete name:
+
+```php
+$this->dispatch(
+    "article-saved:{$this->articleId}",
+    id: $this->articleId,
+);
+```
+
+For `articleId: 42`, the listener receives `article-saved:42`. Other records do
+not send a request. Multiple islands displaying article 42 each receive the
+event. Use a generic name such as `article-saved` separately when a whole listing
+should refresh.
+
+Placeholders reference top-level `#[Prop]` properties with string or integer
+types. Repeated or multiple placeholders are supported. State properties, nested
+object/array paths, method calls, and wildcards are not supported. Values must be
+initialized, nonnull strings or integers and produce a valid concrete event name;
+strings are not escaped or evaluated as further placeholders. Colons and hyphens
+are supported separators; dots retain their existing exclusion from event names.
+
+Concrete names come from accepted server props. Unsent drafts do not change
+listeners. A reactive parent prop update replaces the child's old names after
+the child accepts it; rendered and renderless actions also publish accepted
+listener changes. Initialization and cleanup follow the same action-listener
+lifecycle. Event scope remains a routing filter: authorize the current record on
+every receiving request.
+
+The [dynamic-events demo](/demo#dynamic-events) shows a save reaching one card,
+an unrelated card sending no request, and a preserved child switching its scope
+without losing notes.
 
 ## Parent listeners
 

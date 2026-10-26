@@ -25,6 +25,14 @@ class ArticlesController extends AppController
     }
 
     /**
+     * Demonstrate independent article listeners and reactive event-scope changes.
+     */
+    #[Get('/events', name: 'demo:events')]
+    public function events(): void
+    {
+    }
+
+    /**
      * Mount independent examples of typed actions, conditional inputs, and dynamic collections.
      */
     #[Get('/playground', name: 'demo:playground')]

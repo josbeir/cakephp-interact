@@ -46,14 +46,16 @@ class ActionInvoker
      * execution.
      *
      * @param list<mixed> $arguments Reject invalid signatures before constructing or authorizing an island.
+     * @param array<string, mixed> $props Accepted snapshot values with verified parent prop replacements.
      */
     public function validate(
         Definition $definition,
         ?string $action,
         array $arguments,
         ?EventInvocation $event = null,
+        array $props = [],
     ): void {
-        $arguments = $event?->arguments($definition, $action) ?? $arguments;
+        $arguments = $event?->arguments($definition, $action, $props) ?? $arguments;
         if ($action === null) {
             if ($arguments !== []) {
                 throw new InvalidArgumentException('Synchronization cannot have action arguments.');
@@ -100,13 +102,13 @@ class ActionInvoker
         ?Stream $stream = null,
         array $paths = [],
     ): ?Outcome {
+        $arguments = EventInvocation::resolve($definition, $request, $island);
         if ($paths !== []) {
             $island->updated(new UpdatedPaths($paths));
         }
 
         if ($request->action !== null) {
             $callback = $definition->actions[$request->action]->getClosure($island);
-            $arguments = EventInvocation::resolve($definition, $request);
 
             return $island->actionEffects()->capture(static fn() => $callback(...$arguments), $stream);
         }

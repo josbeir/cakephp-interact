@@ -86,6 +86,20 @@ Matching templates live under `templates/island/`, with page mounts under
 | <span id="streaming"></span>`/streaming`<br>Stream text, native elements, and progress during one action                                            | [Report island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Streaming/ReportIsland.php), [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/Streaming/report.php)  |
 | `/page`<br>Update a whole-page island while its layout stays in place                                                                               | [Controller](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Controller/ArticlesController.php)                                                                                                                             |
 
+## Dynamic events
+
+Open `/events`. Save article 1 to refresh the selected card, then save article 2
+to refresh its own card. The unrelated card sends no request. Enter notes, change
+**Watched article** to article 2, and save article 2 again: both cards receive the
+same event. The selected card retains its identity and notes. Matching-event
+counters show which cards responded.
+
+Tested source:
+[listener island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Article/EventSummaryIsland.php),
+[parent island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/Article/EventPanelIsland.php),
+[template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/Article/event_panel.php).
+See [dynamic event names](/guide/events#dynamic-event-names) for syntax and supported props.
+
 ## Debugging
 
 Open `/debugging` from the demo navigation. Edit the message and try **Dump draft**,

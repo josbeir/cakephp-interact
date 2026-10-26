@@ -3,6 +3,7 @@ import type { UrlFields, UrlRestoration } from './url/types';
 import type { UploadField, UploadJob, UploadMetadata } from './uploads/types';
 import type { DiagnosticOutput } from './diagnostics/output';
 import type { RealtimeMetadata, RealtimeFeedback } from './realtime/types';
+import type { ActionListeners } from './events/actions';
 /**
  * Values accepted by the JSON transport, including nested lists and records.
  */
@@ -73,6 +74,7 @@ export type UpdateResponse =
  * Browser effects never establish authorization or durable business messages.
  */
 export interface StateResponse {
+  listeners?: ActionListeners;
   realtime?: RealtimeMetadata;
   diagnostics?: DiagnosticOutput;
   download?: string;

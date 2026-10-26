@@ -1,4 +1,4 @@
-import { clone, record, state } from '../state/values';
+import { clone, equal, record, state } from '../state/values';
 import type { RequestResult, State } from '../types';
 
 /** Literal browser events mapped to explicitly declared PHP action methods. */
@@ -29,17 +29,28 @@ export function actionListeners(value: unknown): value is ActionListeners {
  * remains responsible for parameter binding, type checks, and authorization.
  */
 export class ActionEvents {
-  private readonly lifetime = new AbortController();
+  private lifetime = new AbortController();
+  private listeners: ActionListeners = {};
+  private disposed = false;
 
   constructor(
     listeners: ActionListeners,
-    invoke: (
+    private readonly invoke: (
       action: string,
       event: string,
       detail: State,
     ) => Promise<RequestResult>,
-    failed: (cause: unknown) => void,
+    private readonly failed: (cause: unknown) => void,
   ) {
+    this.update(listeners);
+  }
+
+  /** Replace concrete names only after accepting new server-owned prop values. */
+  update(listeners: ActionListeners): void {
+    if (this.disposed || equal(this.listeners, listeners)) return;
+    this.lifetime.abort();
+    this.lifetime = new AbortController();
+    this.listeners = listeners;
     for (const [name, methods] of Object.entries(listeners)) {
       window.addEventListener(
         name,
@@ -50,10 +61,10 @@ export class ActionEvents {
             if (!state(detail))
               throw new Error('Invalid browser event detail.');
             for (const method of methods) {
-              void invoke(method, name, clone(detail)).catch(failed);
+              void this.invoke(method, name, clone(detail)).catch(this.failed);
             }
           } catch (cause: unknown) {
-            failed(cause);
+            this.failed(cause);
           }
         },
         { signal: this.lifetime.signal },
@@ -63,6 +74,7 @@ export class ActionEvents {
 
   /** Release every page-wide listener when the owning client leaves the document. */
   dispose(): void {
+    this.disposed = true;
     this.lifetime.abort();
   }
 }

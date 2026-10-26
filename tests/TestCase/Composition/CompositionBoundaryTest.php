@@ -24,6 +24,16 @@ use PHPUnit\Framework\TestCase;
  */
 class CompositionBoundaryTest extends TestCase
 {
+    public function testPropOnlyBrowserRelationshipsRetainAnEmptyJsonRecord(): void
+    {
+        $relation = new Relation('parent');
+        static::assertSame(['parentId' => 'parent', 'models' => []], $relation->data());
+        static::assertSame('{"parentId":"parent","models":{}}', json_encode(
+            $relation->browserData(),
+            JSON_THROW_ON_ERROR,
+        ));
+    }
+
     /**
      * Reject malformed signed relationship records through the same reader used by snapshots.
      *
