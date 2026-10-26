@@ -1,4 +1,6 @@
-import type { NavigationController } from './controller';
+import type { Alpine } from 'alpinejs';
+import type { TimingDefaults } from '../configuration';
+import { NavigationController } from './controller';
 import { linkDestination, updateCurrent } from './links';
 import { assetPolicy } from './head';
 
@@ -8,6 +10,33 @@ const navigationModifiers = [
   'trail',
   'no-prefetch',
 ];
+
+/**
+ * Install document navigation and discover opted-in regions outside Alpine components.
+ *
+ * Retained island clients receive fresh request context through the supplied callback.
+ * The controller is shared with the existing Interact directive dispatcher.
+ */
+export function installNavigation(
+  Alpine: Alpine,
+  refresh: (root: HTMLElement, incoming: HTMLElement) => void,
+  defaults: TimingDefaults,
+): NavigationController {
+  const controller = new NavigationController(
+    Alpine,
+    refresh,
+    undefined,
+    undefined,
+    defaults,
+  );
+  Alpine.addInitSelector(() =>
+    navigationSelector(Alpine.prefixed('interact:navigate')),
+  );
+  Alpine.addInitSelector(
+    () => `[${Alpine.prefixed('interact:persist').replaceAll(':', '\\:')}]`,
+  );
+  return controller;
+}
 
 /** Discover opted-in links outside x-data with supported modifiers in any order. */
 export function navigationSelector(attribute: string): string {
