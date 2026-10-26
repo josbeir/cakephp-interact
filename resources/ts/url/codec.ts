@@ -1,14 +1,19 @@
-import { equal, forbidden, record } from '../state/values';
+import { equal, record } from '../state/values';
 import type { Json, State } from '../types';
 import type { UrlField, UrlFields, UrlValue } from './types';
 
-const identifier = /^[a-zA-Z_][a-zA-Z0-9_-]*$/;
-export function queryName(name: string): boolean {
-  return name === name.trim() && identifier.test(name) && !forbidden.has(name);
-}
+import { mergeMaps, queryName, stringTree } from './arrays';
+import { queryValue } from './query-value';
+export { queryName } from './arrays';
 
 /** Check a value against the intentionally small, lossless query vocabulary. */
-export function urlValue(value: unknown, type: string): value is UrlValue {
+export function urlValue(
+  value: unknown,
+  type: string,
+  nullable = false,
+): value is UrlValue {
+  if (value === null)
+    return nullable && ['string', 'int', 'float', 'bool'].includes(type);
   switch (type) {
     case 'string':
       return typeof value === 'string';
@@ -19,10 +24,7 @@ export function urlValue(value: unknown, type: string): value is UrlValue {
     case 'float':
       return typeof value === 'number' && Number.isFinite(value);
     case 'array':
-      return (
-        Array.isArray(value) &&
-        value.every((entry: unknown) => typeof entry === 'string')
-      );
+      return typeof value !== 'string' && stringTree(value);
     default:
       return false;
   }
@@ -40,7 +42,9 @@ export function urlFields(value: unknown): value is UrlFields {
       !queryName(field.name) ||
       names.has(field.name) ||
       typeof field.type !== 'string' ||
-      !urlValue(field.default, field.type) ||
+      (field.nullable !== undefined && typeof field.nullable !== 'boolean') ||
+      (field.type === 'array' && field.nullable === true) ||
+      !urlValue(field.default, field.type, field.nullable === true) ||
       typeof field.history !== 'boolean'
     )
       return false;
@@ -52,7 +56,7 @@ export function urlFields(value: unknown): value is UrlFields {
 /** Require every declared query property to be present with its supported value type. */
 export function urlState(values: State, fields: UrlFields): boolean {
   return Object.entries(fields).every(([property, field]) =>
-    urlValue(values[property], field.type),
+    urlValue(values[property], field.type, field.nullable === true),
   );
 }
 
@@ -67,6 +71,7 @@ export function sameFields(left: UrlFields, right: UrlFields): boolean {
         field.name === other.name &&
         field.type === other.type &&
         field.history === other.history &&
+        (field.nullable === true) === (other.nullable === true) &&
         equal(field.default, other.default)
       );
     })
@@ -75,33 +80,20 @@ export function sameFields(left: UrlFields, right: UrlFields): boolean {
 
 /** Decode an owned field; malformed values independently restore its declared default. */
 export function readField(params: URLSearchParams, field: UrlField): Json {
-  let scalar: string | undefined;
-  const items = new Map<string, string>();
-  let size = 0;
-  let list = false;
-  let invalid = false;
-  for (const [key, value] of params) {
-    if (key === field.name) scalar = value;
-    else if (key.startsWith(`${field.name}[`)) {
-      list = true;
-      const match = /^\[(0|[1-9][0-9]*)?\]$/.exec(key.slice(field.name.length));
-      if (!match || match[0] !== key.slice(field.name.length)) invalid = true;
-      else {
-        const index = match[1] ?? String(size);
-        items.set(index, value);
-        size = Math.max(size, Number(index) + 1);
-      }
-    }
-  }
-  if (invalid || (list && scalar !== undefined))
-    return structuredClone(field.default);
+  const raw = queryValue(params, field.name);
+  if (!raw.valid || !raw.present) return structuredClone(field.default);
   if (field.type === 'array') {
-    const keys = [...items.keys()];
-    if (list && keys.every((key, index) => key === String(index)))
-      return [...items.values()];
-    return scalar === '' && !list ? [] : structuredClone(field.default);
+    const tree = raw.value === '' ? [] : raw.value;
+    return typeof tree !== 'string' &&
+      stringTree(tree) &&
+      typeof field.default !== 'string' &&
+      stringTree(field.default)
+      ? mergeMaps(tree, field.default)
+      : structuredClone(field.default);
   }
-  if (list || scalar === undefined) return structuredClone(field.default);
+  if (raw.value === null && field.nullable === true) return null;
+  if (typeof raw.value !== 'string') return structuredClone(field.default);
+  const scalar = raw.value;
   let value: Json = scalar;
   if (field.type === 'bool')
     value = scalar === '1' ? true : scalar === '0' ? false : null;
@@ -137,6 +129,13 @@ function malformedKeys(search: string): Set<string> {
 }
 
 export function readQuery(search: string, fields: UrlFields): State {
+  if (new TextEncoder().encode(search).length > 1_048_576)
+    return Object.fromEntries(
+      Object.entries(fields).map(([property, field]) => [
+        property,
+        structuredClone(field.default),
+      ]),
+    );
   const params = new URLSearchParams(search);
   const invalid = malformedKeys(search);
   return Object.fromEntries(
@@ -155,21 +154,37 @@ export function readQuery(search: string, fields: UrlFields): State {
 export function writeQuery(url: URL, fields: UrlFields, values: State): void {
   for (const [property, field] of Object.entries(fields)) {
     const value = values[property];
-    if (!urlValue(value, field.type))
+    if (!urlValue(value, field.type, field.nullable === true))
       throw new Error('Invalid accepted URL state.');
     for (const key of [...url.searchParams.keys()])
       if (key === field.name || key.startsWith(`${field.name}[`))
         url.searchParams.delete(key);
     if (equal(value, field.default)) continue;
-    if (Array.isArray(value)) {
-      if (!value.length) url.searchParams.append(field.name, '');
-      value.forEach((item, index) =>
-        url.searchParams.append(`${field.name}[${index}]`, String(item)),
-      );
-    } else
-      url.searchParams.append(
-        field.name,
-        typeof value === 'boolean' ? (value ? '1' : '0') : String(value),
-      );
+    appendValue(url.searchParams, field.name, value);
   }
+}
+
+/** Preserve nulls and empty nested arrays without changing ordinary string values. */
+function appendValue(
+  params: URLSearchParams,
+  name: string,
+  value: UrlValue,
+  depth = 0,
+): void {
+  if (value === null) {
+    params.append(`${name}[~null]`, '1');
+  } else if (typeof value === 'object') {
+    const entries = Object.entries(value);
+    if (entries.length === 0)
+      params.append(
+        depth === 0 ? name : `${name}[~empty]`,
+        depth === 0 ? '' : '1',
+      );
+    for (const [key, entry] of entries)
+      appendValue(params, `${name}[${key}]`, entry, depth + 1);
+  } else
+    params.append(
+      name,
+      typeof value === 'boolean' ? (value ? '1' : '0') : String(value),
+    );
 }

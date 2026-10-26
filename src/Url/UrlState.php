@@ -36,7 +36,7 @@ class UrlState
     /**
      * Export validated query names and immutable defaults for browser synchronization.
      *
-     * @return array<string, array{name: string, type: string, default: mixed, history: bool}>
+     * @return array<string, array{name: string, type: string, default: mixed, history: bool, nullable?: bool}>
      */
     public function metadata(Definition $definition, ?string $prefix): array
     {
@@ -59,6 +59,7 @@ class UrlState
             $metadata[$name] = [
                 'name' => ($prefix === null ? '' : $prefix . '_') . $field->url->name,
                 'type' => $field->url->type,
+                ...($field->url->nullable ? ['nullable' => true] : []),
                 'default' => $field->url->default,
                 'history' => $field->url->history,
             ];

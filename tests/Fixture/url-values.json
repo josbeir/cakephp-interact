@@ -1,0 +1,503 @@
+{
+  "fields": {
+    "text": {
+      "type": "string",
+      "default": "start",
+      "nullable": true
+    },
+    "number": {
+      "type": "int",
+      "default": 7,
+      "nullable": true
+    },
+    "ratio": {
+      "type": "float",
+      "default": 1.5,
+      "nullable": true
+    },
+    "flag": {
+      "type": "bool",
+      "default": true,
+      "nullable": true
+    },
+    "filters": {
+      "type": "array",
+      "default": {
+        "status": "",
+        "categories": ["default"],
+        "price": {
+          "min": "",
+          "max": "100"
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "default": ["default"]
+    }
+  },
+  "cases": [
+    {
+      "name": "text null",
+      "property": "text",
+      "query": "value[~null]=1",
+      "expected": null
+    },
+    {
+      "name": "text missing",
+      "property": "text",
+      "query": "external=1",
+      "expected": "start"
+    },
+    {
+      "name": "text wrong marker",
+      "property": "text",
+      "query": "value[~null]=0",
+      "expected": "start"
+    },
+    {
+      "name": "number null",
+      "property": "number",
+      "query": "value[~null]=1",
+      "expected": null
+    },
+    {
+      "name": "number missing",
+      "property": "number",
+      "query": "external=1",
+      "expected": 7
+    },
+    {
+      "name": "number wrong marker",
+      "property": "number",
+      "query": "value[~null]=0",
+      "expected": 7
+    },
+    {
+      "name": "ratio null",
+      "property": "ratio",
+      "query": "value[~null]=1",
+      "expected": null
+    },
+    {
+      "name": "ratio missing",
+      "property": "ratio",
+      "query": "external=1",
+      "expected": 1.5
+    },
+    {
+      "name": "ratio wrong marker",
+      "property": "ratio",
+      "query": "value[~null]=0",
+      "expected": 1.5
+    },
+    {
+      "name": "flag null",
+      "property": "flag",
+      "query": "value[~null]=1",
+      "expected": null
+    },
+    {
+      "name": "flag missing",
+      "property": "flag",
+      "query": "external=1",
+      "expected": true
+    },
+    {
+      "name": "flag wrong marker",
+      "property": "flag",
+      "query": "value[~null]=0",
+      "expected": true
+    },
+    {
+      "name": "empty string",
+      "property": "text",
+      "query": "value=",
+      "expected": ""
+    },
+    {
+      "name": "literal null",
+      "property": "text",
+      "query": "value=null",
+      "expected": "null"
+    },
+    {
+      "name": "literal marker string",
+      "property": "text",
+      "query": "value=~null",
+      "expected": "~null"
+    },
+    {
+      "name": "nullable bool invalid is not null",
+      "property": "flag",
+      "query": "value=no",
+      "expected": true
+    },
+    {
+      "name": "nullable zero",
+      "property": "number",
+      "query": "value=0",
+      "expected": 0
+    },
+    {
+      "name": "nullable false",
+      "property": "flag",
+      "query": "value=0",
+      "expected": false
+    },
+    {
+      "name": "nullable empty number defaults",
+      "property": "number",
+      "query": "value=",
+      "expected": 7
+    },
+    {
+      "name": "map partial defaults",
+      "property": "filters",
+      "query": "value[status]=published",
+      "expected": {
+        "status": "published",
+        "categories": ["default"],
+        "price": {
+          "min": "",
+          "max": "100"
+        }
+      }
+    },
+    {
+      "name": "nested map defaults",
+      "property": "filters",
+      "query": "value[price][min]=10",
+      "expected": {
+        "status": "",
+        "categories": ["default"],
+        "price": {
+          "min": "10",
+          "max": "100"
+        }
+      }
+    },
+    {
+      "name": "list replaces defaults",
+      "property": "filters",
+      "query": "value[categories][]=books&value[categories][]=music",
+      "expected": {
+        "status": "",
+        "categories": ["books", "music"],
+        "price": {
+          "min": "",
+          "max": "100"
+        }
+      }
+    },
+    {
+      "name": "nested empty list",
+      "property": "filters",
+      "query": "value[categories][~empty]=1",
+      "expected": {
+        "status": "",
+        "categories": [],
+        "price": {
+          "min": "",
+          "max": "100"
+        }
+      }
+    },
+    {
+      "name": "nested empty map replaces defaults",
+      "property": "filters",
+      "query": "value[price][~empty]=1",
+      "expected": {
+        "status": "",
+        "categories": ["default"],
+        "price": []
+      }
+    },
+    {
+      "name": "empty root",
+      "property": "filters",
+      "query": "value=",
+      "expected": []
+    },
+    {
+      "name": "empty marker root",
+      "property": "filters",
+      "query": "value[~empty]=1",
+      "expected": []
+    },
+    {
+      "name": "empty item",
+      "property": "items",
+      "query": "value[0]=",
+      "expected": [""]
+    },
+    {
+      "name": "empty nested container",
+      "property": "items",
+      "query": "value[0][~empty]=1",
+      "expected": [[]]
+    },
+    {
+      "name": "nested lists and maps",
+      "property": "items",
+      "query": "value[0][name]=book&value[0][tags][0]=php",
+      "expected": [
+        {
+          "name": "book",
+          "tags": ["php"]
+        }
+      ]
+    },
+    {
+      "name": "map keys and literal number strings",
+      "property": "items",
+      "query": "value[flag]=0&value[id]=001",
+      "expected": {
+        "flag": "0",
+        "id": "001"
+      }
+    },
+    {
+      "name": "duplicate nested leaf last wins",
+      "property": "items",
+      "query": "value[group][name]=one&value[group][name]=two",
+      "expected": {
+        "group": {
+          "name": "two"
+        }
+      }
+    },
+    {
+      "name": "duplicate indexed leaf last wins",
+      "property": "items",
+      "query": "value[0]=one&value[0]=two",
+      "expected": ["two"]
+    },
+    {
+      "name": "append after index",
+      "property": "items",
+      "query": "value[0]=one&value[]=two",
+      "expected": ["one", "two"]
+    },
+    {
+      "name": "unicode with literal percent",
+      "property": "items",
+      "query": "value[name]=caf%C3%A9+%26+%zz",
+      "expected": {
+        "name": "café & %zz"
+      }
+    },
+    {
+      "name": "sparse list",
+      "property": "items",
+      "query": "value[99999999999999999999]=x",
+      "expected": ["default"]
+    },
+    {
+      "name": "reordered list",
+      "property": "items",
+      "query": "value[1]=x&value[0]=y",
+      "expected": ["default"]
+    },
+    {
+      "name": "mixed map list",
+      "property": "items",
+      "query": "value[name]=x&value[0]=y",
+      "expected": ["default"]
+    },
+    {
+      "name": "mixed scalar container",
+      "property": "items",
+      "query": "value=&value[0]=y",
+      "expected": ["default"]
+    },
+    {
+      "name": "mixed container scalar",
+      "property": "items",
+      "query": "value[0]=y&value=",
+      "expected": ["default"]
+    },
+    {
+      "name": "nested conflict",
+      "property": "items",
+      "query": "value[a]=x&value[a][b]=y",
+      "expected": ["default"]
+    },
+    {
+      "name": "nested reverse conflict",
+      "property": "items",
+      "query": "value[a][b]=y&value[a]=x",
+      "expected": ["default"]
+    },
+    {
+      "name": "bad suffix",
+      "property": "items",
+      "query": "value[a]tail=x",
+      "expected": ["default"]
+    },
+    {
+      "name": "bad bracket",
+      "property": "items",
+      "query": "value[[a]]=x",
+      "expected": ["default"]
+    },
+    {
+      "name": "leading zero index",
+      "property": "items",
+      "query": "value[01]=x",
+      "expected": ["default"]
+    },
+    {
+      "name": "unsafe map key",
+      "property": "items",
+      "query": "value[a][__proto__]=x",
+      "expected": ["default"]
+    },
+    {
+      "name": "prototype map key",
+      "property": "items",
+      "query": "value[constructor]=x",
+      "expected": ["default"]
+    },
+    {
+      "name": "invalid utf8",
+      "property": "items",
+      "query": "value[a]=%FF",
+      "expected": ["default"]
+    },
+    {
+      "name": "invalid utf8 key",
+      "property": "items",
+      "query": "value[%FF]=x",
+      "expected": ["default"]
+    },
+    {
+      "name": "nested null rejected",
+      "property": "items",
+      "query": "value[a][~null]=1",
+      "expected": ["default"]
+    },
+    {
+      "name": "root null array rejected",
+      "property": "items",
+      "query": "value[~null]=1",
+      "expected": ["default"]
+    },
+    {
+      "name": "marker sibling",
+      "property": "items",
+      "query": "value[~empty]=1&value[a]=x",
+      "expected": ["default"]
+    },
+    {
+      "name": "marker wrong value",
+      "property": "items",
+      "query": "value[~empty]=0",
+      "expected": ["default"]
+    },
+    {
+      "name": "nested marker",
+      "property": "items",
+      "query": "value[~empty][a]=x",
+      "expected": ["default"]
+    },
+    {
+      "name": "oversize depth",
+      "property": "items",
+      "query": "value[a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a]=x",
+      "expected": ["default"]
+    },
+    {
+      "name": "null marker with sibling",
+      "property": "text",
+      "query": "value[~null]=1&value[a]=x",
+      "expected": "start"
+    },
+    {
+      "name": "non-scalar nullable text",
+      "property": "text",
+      "query": "value[a]=x",
+      "expected": "start"
+    },
+    {
+      "name": "state record depth 31",
+      "property": "items",
+      "query": "value[a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a]=leaf",
+      "expected": {
+        "a": {
+          "a": {
+            "a": {
+              "a": {
+                "a": {
+                  "a": {
+                    "a": {
+                      "a": {
+                        "a": {
+                          "a": {
+                            "a": {
+                              "a": {
+                                "a": {
+                                  "a": {
+                                    "a": {
+                                      "a": {
+                                        "a": {
+                                          "a": {
+                                            "a": {
+                                              "a": {
+                                                "a": {
+                                                  "a": {
+                                                    "a": {
+                                                      "a": {
+                                                        "a": {
+                                                          "a": {
+                                                            "a": {
+                                                              "a": {
+                                                                "a": {
+                                                                  "a": {
+                                                                    "a": "leaf"
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "state record depth 32",
+      "property": "items",
+      "query": "value[a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a][a]=leaf",
+      "expected": ["default"]
+    },
+    {
+      "name": "float precision survives native links",
+      "property": "ratio",
+      "query": "value=1.2345678901234567",
+      "expected": 1.2345678901234567
+    }
+  ]
+}

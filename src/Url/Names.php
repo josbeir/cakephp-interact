@@ -16,17 +16,25 @@ class Names
      */
     public static function require(mixed $name): string
     {
-        if (
-            !is_string($name)
-            || !preg_match('/^[a-zA-Z_][a-zA-Z0-9_-]*$/D', $name)
-            || in_array($name, ['__proto__', 'constructor', 'prototype'], true)
-        ) {
+        if (!is_string($name) || !static::valid($name)) {
             throw new InvalidArgumentException(
                 'URL keys and prefixes require a non-empty identifier without dots or brackets.',
             );
         }
 
         return $name;
+    }
+
+    /**
+     * Check query and map keys without normalizing application identifiers.
+     */
+    public static function valid(mixed $name): bool
+    {
+        return (
+            is_string($name)
+                && preg_match('/^[a-zA-Z_][a-zA-Z0-9_-]*$/D', $name) === 1
+                && !in_array($name, ['__proto__', 'constructor', 'prototype'], true)
+        );
     }
 
     /**

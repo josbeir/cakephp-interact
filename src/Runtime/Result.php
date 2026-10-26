@@ -24,7 +24,7 @@ readonly class Result
     public ?array $realtime;
 
     /**
-     * @var array<string, array{name: string, type: string, default: mixed, history: bool}> URL declarations.
+     * @var array<string, array{name: string, type: string, default: mixed, history: bool, nullable?: bool}> URL declarations.
      */
     public array $url;
 
@@ -54,7 +54,7 @@ readonly class Result
      * @param array{
      *     download?: string,
      *     realtime?: array{lease: string, endpoint: string, subscriptions: list<array{topic: string, mode: string, event: string|null, private: bool}>}|null,
-     *     url?: array<string, array{name: string, type: string, default: mixed, history: bool}>,
+     *     url?: array<string, array{name: string, type: string, default: mixed, history: bool, nullable?: bool}>,
      *     uploads?: array<string, array{multiple: bool, maxSize: int, maxFiles: int, files: list<array{id: string, name: string, size: int}>}>,
      *     state?: array<string, mixed>,
      *     writable?: array<string, array{type: string, nullable: bool}>,

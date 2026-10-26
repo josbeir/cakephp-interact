@@ -44,4 +44,12 @@ class ResourcesController extends AppController
     public function independent(): void
     {
     }
+
+    /**
+     * Exercise nullable and nested query bindings with independent ownership and persistent navigation.
+     */
+    #[Get('/demo/url-state', name: 'demo:url-state')]
+    public function urlState(): void
+    {
+    }
 }

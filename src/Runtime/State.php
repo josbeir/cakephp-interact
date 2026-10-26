@@ -34,7 +34,7 @@ class State
     /**
      * Publish the query bindings owned by one island instance.
      *
-     * @return array<string, array{name: string, type: string, default: mixed, history: bool}>
+     * @return array<string, array{name: string, type: string, default: mixed, history: bool, nullable?: bool}>
      */
     public function urlMetadata(Definition $definition, ?string $prefix): array
     {
@@ -98,7 +98,6 @@ class State
             }
 
             Values::validate($value);
-            $property->url?->validate($value);
 
             /** @var mixed $previous */
             $previous = $values[$name];

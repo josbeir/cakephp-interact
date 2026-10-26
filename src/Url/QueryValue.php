@@ -3,30 +3,32 @@ declare(strict_types=1);
 
 namespace Interact\Url;
 
+use InvalidArgumentException;
+
 /**
- * Reads the raw scalar or indexed-list shape of one allowlisted query parameter.
- * Arbitrary nested keys are rejected without allocating a nested PHP structure.
+ * Parses one allowlisted binding from raw query text, independently of unrelated input.
+ *
+ * Bounded nodes retain exact keys and reject malformed shapes before constructing state.
  */
 readonly class QueryValue
 {
-    public ?string $scalar;
-
-    /**
-     * @var list<string>|null Null means no list representation was supplied.
-     */
-    public ?array $items;
+    public bool $present;
 
     public bool $valid;
 
     /**
-     * Parse scalar and bracket forms, preserving list order and empty strings.
+     * @var string|array<array-key, mixed>|null Decoded input, before declaration validation.
+     */
+    public string|array|null $value;
+
+    /**
+     * Read scalar and bracket forms without normalizing keys or coercing string leaves.
      */
     public function __construct(string $query, string $name)
     {
-        $scalar = null;
-        $items = [];
-        $invalid = false;
-        $list = false;
+        $node = new QueryNode();
+        $present = false;
+        $valid = strlen($query) <= 1_048_576;
         $query = str_starts_with($query, '?') ? substr($query, 1) : $query;
         foreach (explode('&', $query) as $pair) {
             $parts = explode('=', $pair, 2);
@@ -36,29 +38,50 @@ readonly class QueryValue
                 continue;
             }
 
-            if (!mb_check_encoding($key, 'UTF-8') || !mb_check_encoding($value, 'UTF-8')) {
-                $invalid = true;
+            $present = true;
+            if (!$valid || !mb_check_encoding([$key, $value], 'UTF-8')) {
+                $valid = false;
                 continue;
             }
 
-            if ($key === $name) {
-                $scalar = $value;
-            } elseif (str_starts_with($key, $name . '[')) {
-                $list = true;
-                $match = [];
-                if (!preg_match('/^\[(0|[1-9][0-9]*)?\]$/D', substr($key, strlen($name)), $match)) {
-                    $invalid = true;
-                    continue;
+            $suffix = substr($key, strlen($name));
+            if (!preg_match('/^(?:\[[^\[\]]*\])*$/D', $suffix)) {
+                $valid = false;
+                continue;
+            }
+
+            $segments = [];
+            preg_match_all('/\[([^\[\]]*)\]/', $suffix, $segments);
+            try {
+                $path = array_values($segments[1]);
+                if (!array_all(
+                    $path,
+                    static fn(string $segment): bool => (
+                        $segment === ''
+                        || Names::valid($segment)
+                        || preg_match('/^(?:0|[1-9][0-9]*|~null|~empty)$/D', $segment) === 1
+                    ),
+                )) {
+                    throw new InvalidArgumentException('Invalid query path.');
                 }
 
-                $index = $match[1] ?? (string)count($items);
-                $items['index:' . $index] = $value;
+                $node->insert($path, $value);
+            } catch (InvalidArgumentException) {
+                $valid = false;
             }
         }
 
-        $expected = array_map(static fn(int $index): string => 'index:' . $index, array_keys(array_values($items)));
-        $this->valid = !$invalid && (!$list || $scalar === null) && $expected === array_keys($items);
-        $this->scalar = $scalar;
-        $this->items = $list ? array_values($items) : null;
+        $decoded = null;
+        if ($present && $valid) {
+            try {
+                $decoded = $node->value();
+            } catch (InvalidArgumentException) {
+                $valid = false;
+            }
+        }
+
+        $this->present = $present;
+        $this->valid = $valid;
+        $this->value = $decoded;
     }
 }

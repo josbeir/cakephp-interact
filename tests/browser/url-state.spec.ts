@@ -180,3 +180,127 @@ test('malformed URL response state leaves the accepted render and draft intact',
   );
   await expect(page).toHaveURL('/search');
 });
+
+test('nested filters and nullable scalars survive direct links, reloads and independent owners', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto(
+    '/demo/url-state?first_q[~null]=1&first_filters[price][min]=001&first_filters[tags][~empty]=1&second_q=other&external=keep#results',
+  );
+  const first = page.getByRole('region', { name: 'First filters' });
+  const second = page.getByRole('region', { name: 'Second filters' });
+  await expect(first.getByLabel('Query value')).toHaveText('null');
+  await expect(first.getByLabel('Minimum price')).toHaveValue('001');
+  await expect(first.getByLabel('Accepted filters')).toHaveText(
+    '{"status":"","tags":[],"price":{"min":"001","max":"100"}}',
+  );
+  await expect(second.getByLabel('Query', { exact: true })).toHaveValue(
+    'other',
+  );
+  await page.reload();
+  await expect(first.getByLabel('Query value')).toHaveText('null');
+  await expect(first.getByLabel('Minimum price')).toHaveValue('001');
+  expect(selected(page.url(), 'external')).toBe('keep');
+  expect(new URL(page.url()).hash).toBe('#results');
+  expect(errors).toEqual([]);
+});
+
+test('form drafts update nested string values and renderless null stays distinct from empty text', async ({
+  page,
+}) => {
+  await page.goto('/demo/url-state?external=one&external=two');
+  const first = page.getByRole('region', { name: 'First filters' });
+  await first.getByLabel('Maximum price').fill('250');
+  await first.getByLabel('Maximum price').press('Tab');
+  await expect
+    .poll(() => selected(page.url(), 'first_filters[price][max]'))
+    .toBe('250');
+  await first.getByLabel('Query', { exact: true }).fill('');
+  await first.getByLabel('Status', { exact: true }).fill('published');
+  await first.getByLabel('Minimum price').fill('010');
+  await first.getByRole('button', { name: 'Apply filters' }).click();
+  await expect.poll(() => selected(page.url(), 'first_q')).toBe('');
+  await expect
+    .poll(() => selected(page.url(), 'first_filters[status]'))
+    .toBe('published');
+  expect(selected(page.url(), 'first_filters[price][min]')).toBe('010');
+  await first.evaluate((element) =>
+    element.setAttribute('data-renderless-check', 'kept'),
+  );
+  await first.getByRole('button', { name: 'Select null' }).click();
+  await expect(first.getByLabel('Query value')).toHaveText('null');
+  await expect(first).toHaveAttribute('data-renderless-check', 'kept');
+  await expect.poll(() => selected(page.url(), 'first_q[~null]')).toBe('1');
+  expect(selected(page.url(), 'first_q')).toBeNull();
+  expect(new URL(page.url()).searchParams.getAll('external')).toEqual([
+    'one',
+    'two',
+  ]);
+  await page.reload();
+  await expect(first.getByLabel('Query value')).toHaveText('null');
+  await expect(first.getByLabel('Status', { exact: true })).toHaveValue(
+    'published',
+  );
+  await expect(first.getByLabel('Minimum price')).toHaveValue('010');
+});
+
+test('structured history restores filters without replaying actions or losing unrelated drafts during navigation', async ({
+  page,
+}) => {
+  await page.goto(
+    '/demo/url-state?first_filters[status]=published&second_q=other',
+  );
+  const first = page.getByRole('region', { name: 'First filters' });
+  await first.getByRole('button', { name: 'Clear tags' }).click();
+  await expect
+    .poll(() => selected(page.url(), 'first_filters[tags][~empty]'))
+    .toBe('1');
+  await first.getByLabel('Unsent notes').fill('Keep this newer draft');
+  await page.goBack();
+  await expect(first.getByLabel('Accepted filters')).toContainText(
+    '"tags":["initial"]',
+  );
+  await expect(first.getByLabel('Action count')).toHaveText('1');
+  await expect(first.getByLabel('Unsent notes')).toHaveValue(
+    'Keep this newer draft',
+  );
+  await page.goForward();
+  await expect(first.getByLabel('Accepted filters')).toContainText('"tags":[]');
+  await expect(first.getByLabel('Action count')).toHaveText('1');
+  await expect(first.getByLabel('Unsent notes')).toHaveValue(
+    'Keep this newer draft',
+  );
+  const root = page.locator('[data-interact-id]').filter({ has: first });
+  const identity = await root.getAttribute('data-interact-id');
+  await page.getByRole('link', { name: 'Navigate with new query' }).click();
+  await expect(first.getByLabel('Query value')).toHaveText('navigated');
+  await expect(root).toHaveAttribute('data-interact-id', identity ?? 'missing');
+  await expect(first.getByLabel('Unsent notes')).toHaveValue(
+    'Keep this newer draft',
+  );
+  await expect(first.getByLabel('Action count')).toHaveText('1');
+});
+
+test('malformed nested bindings reset only their owning property before rendering', async ({
+  page,
+}) => {
+  const response = await page.goto(
+    '/demo/url-state?first_q=&first_filters[tags][4]=x&second_filters[status]=published',
+  );
+  expect(response?.status()).toBe(200);
+  const first = page.getByRole('region', { name: 'First filters' });
+  await expect(first.getByLabel('Query value')).toHaveText('');
+  await expect(first.getByLabel('Accepted filters')).toHaveText(
+    '{"status":"","tags":["initial"],"price":{"min":"","max":"100"}}',
+  );
+  await expect(
+    page
+      .getByRole('region', { name: 'Second filters' })
+      .getByLabel('Status', { exact: true }),
+  ).toHaveValue('published');
+  await expect
+    .poll(() => selected(page.url(), 'first_filters[tags][4]'))
+    .toBeNull();
+});

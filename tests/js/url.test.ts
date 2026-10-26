@@ -50,7 +50,7 @@ const values: [string, string, UrlValue, UrlValue][] = [
   ['array', 'q[]=a&q[]=b', [], ['a', 'b']],
   ['array', 'q[0]=a&q[1]=b', [], ['a', 'b']],
   ['array', 'q[1]=b', ['default'], ['default']],
-  ['array', 'q[x][y]=bad', [], []],
+  ['array', 'q[x][y]=bad', [], { x: { y: 'bad' } }],
   ['array', 'q=&q[]=a', ['default'], ['default']],
   ['array', 'q=a', ['default'], ['default']],
   ['array', 'q[0]=a&q[0]=b', [], ['b']],

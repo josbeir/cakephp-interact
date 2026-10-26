@@ -172,7 +172,7 @@ class UrlStateTest extends TestCase
             'indexed list' => ['tags', 'tags[0]=one&tags[1]=two', ['one', 'two']],
             'list duplicates' => ['tags', 'tags[0]=one&tags[0]=two', ['two']],
             'sparse list' => ['tags', 'tags[1]=one', ['default']],
-            'nested list' => ['tags', 'tags[x][y]=one', ['default']],
+            'nested map' => ['tags', 'tags[x][y]=one', ['x' => ['y' => 'one']]],
             'mixed list' => ['tags', 'tags=&tags[]=one', ['default']],
             'scalar list' => ['tags', 'tags=one', ['default']],
         ];
@@ -193,11 +193,9 @@ class UrlStateTest extends TestCase
     {
         return [
             ['text', new State(url: true)],
-            ['nullable', new State(writable: true, url: true)],
+            ['nullableArray', new State(writable: true, url: true)],
             ['uninitialized', new State(writable: true, url: true)],
-            ['nested', new State(writable: true, url: true)],
             ['numbers', new State(writable: true, url: true)],
-            ['record', new State(writable: true, url: true)],
             ['unsafe', new State(writable: true, url: true)],
             ['text', new State(writable: true, url: '')],
             ['text', new State(writable: true, url: 'a.b')],

@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Interact\Pagination;
 
 use Interact\Action\RouteContext;
+use Interact\Url\ArrayValue;
+use Interact\Url\QueryWriter;
 use InvalidArgumentException;
 
 /**
@@ -23,7 +25,7 @@ class Links
     /**
      * Capture the current query and accepted URL values for one dataset only.
      *
-     * @param array<string, array{name: string, type: string, default: mixed, history: bool}> $fields Explicit URL declarations.
+     * @param array<string, array{name: string, type: string, default: mixed, history: bool, nullable?: bool}> $fields Explicit URL declarations.
      * @param array<string, mixed> $values Accepted island state.
      */
     public function __construct(
@@ -65,13 +67,9 @@ class Links
         foreach ($this->fields as $name => $field) {
             /** @var mixed $value */
             $value = $values[$name];
-            if ($value === $field['default']) {
-                continue;
-            }
-
-            $query = $value === []
-                ? rawurlencode($field['name']) . '='
-                : http_build_query([$field['name'] => $value], encoding_type: PHP_QUERY_RFC3986);
+            $query = ArrayValue::same($value, $field['default'])
+                ? ''
+                : new QueryWriter()->write($field['name'], $value);
             if ($query !== '') {
                 $pairs[] = $query;
             }

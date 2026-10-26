@@ -12,10 +12,15 @@ class UrlTypes
 
     public ?string $nullable = null;
 
+    /**
+     * @var list<string>|null Deliberately unsupported nullable array.
+     */
+    public ?array $nullableArray = null;
+
     public string $uninitialized;
 
     /**
-     * @var list<list<string>> Deliberately unsupported nested URL values.
+     * @var list<list<string>> Supported nested string URL values.
      */
     public array $nested = [['value']];
 
@@ -25,7 +30,7 @@ class UrlTypes
     public array $numbers = [1];
 
     /**
-     * @var array{key: string} Deliberately unsupported keyed URL values.
+     * @var array{key: string} Supported keyed string URL values.
      */
     public array $record = ['key' => 'value'];
 
