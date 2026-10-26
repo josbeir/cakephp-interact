@@ -52,12 +52,18 @@ outside the link, dragging it, keyboard input, losing window focus, a changed
 link destination, or removing the link abandons the attempt. A mouse-up without
 a handled click also releases it.
 
-Hover prefetches remain separate: a click or press can join a pending hover
-request. Completed hover responses are retained only when their Cache-Control
-permits explicit freshness, for at most 30 seconds, and consumed once. An
-abandoned press's completed response can remain available under the same
-freshness rules; uncached responses and abandoned pending press requests are
-released. Navigation and island requests invalidate unused prefetched pages.
+Hover, focus, mouse-down, and click share the same navigation attempt while
+the link remains hovered or focused. The click consumes the response once,
+including completed responses with `no-store`, `no-cache`, or no explicit
+freshness. Mouse-down takes ownership of the attempt until click or abandonment;
+focus following mouse-down does not start another request.
+
+Leaving or blurring the link, losing window focus, changing its destination,
+or removing it releases an unused hover attempt. After abandonment, completed
+responses remain available only when their Cache-Control permits explicit
+freshness, for at most 30 seconds. Uncached responses and abandoned pending
+requests are released. Navigation and island requests invalidate unused
+prefetched pages.
 
 Use `.no-prefetch` to disable mouse-down and hover prefetching for a link:
 

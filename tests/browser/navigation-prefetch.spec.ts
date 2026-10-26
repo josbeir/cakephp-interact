@@ -25,6 +25,58 @@ async function prefetchLink(page: Page, suffix = ''): Promise<Locator> {
 }
 
 for (const surface of ['Composer', 'application-owned Alpine']) {
+  for (const activation of ['mouse', 'keyboard']) {
+    test(`${surface}: completed hover prefetch serves ${activation} activation with one GET`, async ({
+      page,
+    }) => {
+      if (surface === 'application-owned Alpine') {
+        await page.route('**/interact/js/runtime.js', (route) =>
+          route.fulfill({
+            path: 'tests/test_app/webroot/js/configuration.js',
+            contentType: 'text/javascript',
+          }),
+        );
+      }
+      const link = await prefetchLink(page, '.hover');
+      const notebook = page.locator(
+        '[x-interact\\:persist="notebook"] [data-interact-id]',
+      );
+      const identity = await notebook.getAttribute('data-interact-id');
+      let requests = 0;
+      await page.route('**/navigation/details', async (route) => {
+        requests++;
+        const response = await route.fetch();
+        await route.fulfill({
+          response,
+          headers: { ...response.headers(), 'cache-control': 'no-store' },
+        });
+      });
+      await page.clock.install();
+      const fetched = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === '/navigation/details',
+      );
+      if (activation === 'mouse') await link.hover();
+      else await link.focus();
+      await page.clock.runFor(60);
+      expect(await (await fetched).finished()).toBeNull();
+      await page.clock.runFor(100);
+      await expect(page).toHaveURL('/navigation');
+      expect(requests).toBe(1);
+      await page.clock.resume();
+      if (activation === 'mouse') await link.click();
+      else await link.press('Enter');
+      await expect(
+        page.getByRole('heading', { name: 'Details', exact: true }),
+      ).toBeVisible();
+      await expect(notebook).toHaveAttribute(
+        'data-interact-id',
+        identity ?? 'missing',
+      );
+      expect(requests).toBe(1);
+    });
+  }
+
   for (const policy of ['no-store', 'no-cache', '']) {
     test(`${surface}: a completed ${policy || 'unversioned'} mouse-down response serves the same click once`, async ({
       page,
