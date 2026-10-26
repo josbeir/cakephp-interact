@@ -135,7 +135,7 @@ Create `src/Realtime/WebSocketProvider.php` in your application. The tested sour
 below uses the fixture namespace; replace it with your application's namespace,
 for example `App\Realtime`.
 
-<<< @/../tests/Fixture/WebSocketProvider.php
+<<< @/../tests/Fixture/Realtime/Providers/WebSocketProvider.php
 
 `authorize()` receives topics already selected by fresh, authorized islands. The
 browser cannot add permissions to that set. The gateway issues the opaque token;
@@ -192,7 +192,7 @@ Save this external script as `webroot/js/websocket-feed.js` and load it
 startup event works with both the Composer bundle and an application-owned Alpine
 installation.
 
-<<< @/../tests/Fixture/browser/websocket-feed.js
+<<< @/../tests/Fixture/Realtime/Providers/websocket-feed.js
 
 The adapter authenticates in the first socket message. It reports `connected`
 only after the gateway acknowledges authorization, then passes incoming envelopes
@@ -245,7 +245,7 @@ POST keeps its built-in SSE reader.
 For example, suppose an authorized SSE feed sends `{"text":"Next result\n"}`.
 Register this external script [before Interact starts](/guide/alpine#custom-javascript):
 
-<<< @/../tests/Fixture/browser/text-feed.js
+<<< @/../tests/Fixture/Streaming/Providers/text-feed.js
 
 Inside the receiving island, supply an authorized subscription URL as `$feedUrl`
 through `viewData()` and attach the adapter:

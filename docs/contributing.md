@@ -12,6 +12,45 @@ For installation and fixture setup, start with [the demo](/demo).
 For testing islands in an application, see [Testing islands](/guide/testing).
 The commands below verify the Interact repository itself.
 
+## Test organization
+
+Find tests by the capability they exercise. PHP, JavaScript, and browser suites
+use corresponding feature folders such as `Pagination`, `Composition`, `Uploads`,
+and `UrlState` (lowercase kebab case in JavaScript and browser paths).
+
+| Location                                               | Contents                                                                              |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| `tests/TestCase/<Feature>/`                            | PHPUnit cases for one capability, including its HTTP workflows.                       |
+| `tests/Fixture/<Feature>/`                             | Fixture classes, templates, data, and provider examples owned by that capability.     |
+| `tests/js/<feature>/`                                  | Browser-runtime unit tests with controlled transport and scheduling.                  |
+| `tests/browser/<feature>/`                             | Playwright acceptance tests against the real demo application.                        |
+| `tests/TestSuite/Http/` and `tests/TestSuite/Uploads/` | Shared PHP request and upload-isolation harnesses.                                    |
+| `tests/js/support/` and `tests/browser/support/`       | Shared runner helpers. Browser specs use the test API in `tests/browser/fixtures.ts`. |
+
+Name fixtures after the behavior they demonstrate. For example,
+`tests/Fixture/Pagination/IndependentResourceQueriesIsland.php` exercises two
+independently paginated queries against the same Table. Its template lives in
+that feature's `templates/island/Pagination/` directory. Class docblocks explain
+the scenario and its ownership or security boundaries.
+
+Rendering fixtures retain native CakePHP application, plugin, theme, and override
+layouts under `tests/Fixture/Rendering/`. The quickstart fixture and published
+documentation anchors live under `tests/Fixture/Documentation/`. Keep the bootable
+demo in `tests/test_app/`; it supplies complete interactions without depending on
+test-only fixture classes or templates.
+
+Place cross-feature tests with the capability whose contract they verify. Import
+reusable fixtures from their owning feature, and split unrelated workflows into
+named test classes. Keep runner entry points at their configured locations.
+
+Run a feature in isolation:
+
+```sh
+vendor/bin/phpunit tests/TestCase/Pagination
+npm test -- tests/js/pagination
+npm run test:browser -- tests/browser/pagination --project=chromium
+```
+
 ## PHP checks
 
 ```sh
@@ -75,7 +114,7 @@ Docker is required. Browser tests create their own app instances.
 Use Playwright's native filters and worker override for focused runs:
 
 ```sh
-npm run test:browser -- tests/browser/form-models.spec.ts --project=chromium
+npm run test:browser -- tests/browser/forms/form-models.spec.ts --project=chromium
 npm run test:browser -- --workers=1
 ```
 

@@ -16,7 +16,7 @@ use Interact\UpdatedPaths;
  * Observes composition lifecycle ordering and typed model values independently of application queries.
  * Denied parent scopes must never reach hooks, actions, or rendering.
  */
-#[Render(template: 'island/composition_probe')]
+#[Render(template: 'island/Composition/probe')]
 class ProbeIsland extends Island
 {
     public static int $constructed = 0;

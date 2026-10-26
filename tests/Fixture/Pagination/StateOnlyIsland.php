@@ -11,7 +11,7 @@ use Interact\Pagination\PaginationState;
 /**
  * Exercises fully state-owned paging, sorting, and limits with URL options omitted.
  */
-#[Render(template: 'island/pagination')]
+#[Render(template: 'island/Pagination/resource_listing')]
 class StateOnlyIsland extends PageIsland
 {
     #[State(writable: true)]

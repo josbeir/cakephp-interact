@@ -6,7 +6,7 @@ namespace Interact\Test\TestCase\TestSuite;
 use Cake\Core\Configure;
 use Cake\I18n\DateTime;
 use Cake\TestSuite\TestCase;
-use Interact\Test\TestSuite\UploadFixture;
+use Interact\Test\TestSuite\Uploads\UploadFixture;
 use Interact\Upload\LocalUploadStorage;
 use Interact\Upload\UploadConfig;
 use Interact\Upload\UploadOwner;

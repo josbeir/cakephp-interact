@@ -10,7 +10,7 @@ use Interact\Pagination\PaginationState;
 /**
  * Keeps paging out of URLs while retaining the search field’s explicit URL binding.
  */
-#[Render(template: 'island/pagination')]
+#[Render(template: 'island/Pagination/resource_listing')]
 class PrivatePageIsland extends PageIsland
 {
     #[Pagination(settings: [

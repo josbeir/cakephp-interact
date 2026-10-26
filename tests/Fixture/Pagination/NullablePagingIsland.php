@@ -11,7 +11,7 @@ use Interact\Pagination\PaginationState;
 /**
  * Intentionally declares nullable paging state to verify the explicit object contract.
  */
-#[Render(template: 'island/pagination')]
+#[Render(template: 'island/Pagination/resource_listing')]
 class NullablePagingIsland extends Island
 {
     #[Pagination]

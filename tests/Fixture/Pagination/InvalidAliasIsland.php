@@ -10,7 +10,7 @@ use Interact\Pagination\PaginationState;
 /**
  * Intentionally binds an unknown paging field to verify declaration feedback.
  */
-#[Render(template: 'island/pagination')]
+#[Render(template: 'island/Pagination/resource_listing')]
 class InvalidAliasIsland extends PageIsland
 {
     #[Pagination(url: ['missing' => 'sort'])]

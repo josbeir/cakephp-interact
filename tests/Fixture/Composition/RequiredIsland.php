@@ -12,7 +12,7 @@ use Interact\Island;
  * Requires a reactive input and declares a standalone URL-owned model for invalid-binding tests.
  * Binding that URL-owned value must fail before constructing an application child.
  */
-#[Render(template: 'island/composition_probe')]
+#[Render(template: 'island/Composition/probe')]
 class RequiredIsland extends Island
 {
     #[Prop(reactive: true)]

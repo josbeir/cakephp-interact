@@ -18,7 +18,7 @@ use Interact\Pagination\PaginationState;
  * Exercises native pagination over scoped real SQLite queries without transporting result rows.
  * Server props select test configuration; authorization always precedes query evaluation.
  */
-#[Render(template: 'island/pagination')]
+#[Render(template: 'island/Pagination/resource_listing')]
 class PageIsland extends Island
 {
     use LocatorAwareTrait;

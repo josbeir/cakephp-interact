@@ -23,7 +23,7 @@ async function collect(directory) {
 }
 await collect('docs');
 const published = JSON.parse(
-  await readFile('tests/docs/published-anchors.json', 'utf8'),
+  await readFile('tests/Fixture/Documentation/published-anchors.json', 'utf8'),
 );
 for (const [source, anchors] of Object.entries(published)) {
   const document = pages.get(source.replace(/\.md$/, '.html'));

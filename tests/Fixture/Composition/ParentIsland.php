@@ -12,7 +12,7 @@ use Interact\Island;
  * Supplies typed parent drafts and configurable mount inputs to composition integration tests.
  * The child remains independently stateful across every parent render.
  */
-#[Render(template: 'island/composition_parent')]
+#[Render(template: 'island/Composition/parent')]
 class ParentIsland extends Island
 {
     #[Prop]

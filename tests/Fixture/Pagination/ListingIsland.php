@@ -11,7 +11,7 @@ use Interact\Pagination\PaginationState;
  * Adds explicit writable sorting and page-size capabilities to the basic page fixture.
  * Defaults remain application-controlled and use independent URL aliases.
  */
-#[Render(template: 'island/pagination')]
+#[Render(template: 'island/Pagination/resource_listing')]
 class ListingIsland extends PageIsland
 {
     #[Pagination(
