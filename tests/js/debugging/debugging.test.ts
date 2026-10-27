@@ -182,6 +182,39 @@ describe('native island output', () => {
     expect(loadedFrame().srcdoc).toContain('fresh');
   });
 
+  it('hides output with Escape without clearing it or reopening on repeated keys', () => {
+    const request = new DiagnosticRequest('keyboard');
+    request.show(output('retained dump'));
+    const frame = loadedFrame();
+    const dismiss = () =>
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(frame.hidden).toBe(false);
+    const handled = new KeyboardEvent('keydown', {
+      key: 'Escape',
+      cancelable: true,
+    });
+    handled.preventDefault();
+    document.dispatchEvent(handled);
+    expect(frame.hidden).toBe(false);
+    dismiss();
+    expect(frame.hidden).toBe(true);
+    expect(button('Open island debug').getAttribute('aria-expanded')).toBe(
+      'false',
+    );
+    dismiss();
+    expect(frame.hidden).toBe(true);
+    request.show(output(' continued'));
+    expect(frame.hidden).toBe(true);
+    button('Open island debug').click();
+    expect(frame.hidden).toBe(false);
+    expect(loadedFrame().srcdoc).toContain('retained dump continued');
+    button('Clear island debug').click();
+    dismiss();
+    new DiagnosticRequest('fresh').show(output('fresh dump'));
+    expect(loadedFrame().hidden).toBe(false);
+  });
+
   it('serializes rapid stream documents and discards queued output after navigation', () => {
     const request = new DiagnosticRequest('stream');
     request.show(output('first'));
