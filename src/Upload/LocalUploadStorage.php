@@ -42,8 +42,6 @@ class LocalUploadStorage implements UploadStorageInterface
             throw new UploadRejected(__d('interact', 'The file could not be uploaded. Check its size and try again.'));
         }
 
-        $this->cleanup(10);
-
         return new UploadFilesystem($this->config)->locked($owner, function (string $directory) use (
             $file,
             $owner,
@@ -51,6 +49,7 @@ class LocalUploadStorage implements UploadStorageInterface
             $maxFileSize,
             $maxFiles,
         ): TemporaryUpload {
+            new UploadPruner($this->config)->prune($directory, limit: 10, scanLimit: 100);
             $id = bin2hex(random_bytes(16));
             $path = Path::join($directory, $id . '.bin');
             try {
