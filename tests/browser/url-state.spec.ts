@@ -246,6 +246,35 @@ test('form drafts update nested string values and renderless null stays distinct
   await expect(first.getByLabel('Minimum price')).toHaveValue('010');
 });
 
+test('history restores partial maps with own prototype-named keys without losing drafts', async ({
+  page,
+}) => {
+  await page.goto('/demo/url-state');
+  const first = page.getByRole('region', { name: 'First filters' });
+  await first.getByLabel('Unsent notes').fill('Keep this draft');
+  await page.evaluate(() => {
+    history.pushState(
+      history.state,
+      '',
+      '?first_filters[toString][label]=value',
+    );
+    history.pushState(history.state, '', '?first_q=next');
+  });
+  await page.goBack();
+  await expect(first.getByLabel('Accepted filters')).toContainText(
+    '"toString":{"label":"value"}',
+  );
+  await expect(first.getByLabel('Unsent notes')).toHaveValue('Keep this draft');
+  await expect(first.getByRole('alert')).toBeEmpty();
+  await page.goForward();
+  await expect(first.getByLabel('Query value')).toHaveText('next');
+  await expect(first.getByLabel('Accepted filters')).not.toContainText(
+    'toString',
+  );
+  await expect(first.getByLabel('Unsent notes')).toHaveValue('Keep this draft');
+  await expect(first.getByLabel('Action count')).toHaveText('0');
+});
+
 test('structured history restores filters without replaying actions or losing unrelated drafts during navigation', async ({
   page,
 }) => {

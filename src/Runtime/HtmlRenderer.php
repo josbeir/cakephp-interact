@@ -181,6 +181,10 @@ class HtmlRenderer
             'data-interact-endpoint' => $context->endpoint,
             'data-interact-csrf' => (string)$context->request->getAttribute('csrfToken', ''),
         ];
+        if ($result->errors !== []) {
+            $attributes['data-interact-errors'] = json_encode($result->errors, JSON_THROW_ON_ERROR | JSON_HEX_TAG);
+        }
+
         if ($result->url !== []) {
             $attributes['data-interact-url'] = json_encode((object)$result->url, JSON_THROW_ON_ERROR | JSON_HEX_TAG);
         }

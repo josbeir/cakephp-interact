@@ -150,6 +150,49 @@ describe('island lifecycle and transport', () => {
     root.dataset.interactEndpoint = 'https://elsewhere.test/update';
     expect(() => client(root, vi.fn())).toThrow('same-origin');
   });
+  it('initializes escaped field feedback before Alpine bindings and clears it after success', async () => {
+    const root = element(
+      '<p x-text="$server.errors.title ? $server.errors.title[0] : \'\'"></p>',
+    );
+    root.dataset.interactErrors = JSON.stringify({
+      title: ['Required <strong>title</strong>'],
+    });
+    const value = client(
+      root,
+      vi.fn<Fetcher>().mockResolvedValue(result(payload(root))),
+    );
+    expect(value.bridge.errors).toEqual({
+      title: ['Required <strong>title</strong>'],
+    });
+    expect(root.querySelector('p')?.textContent).toBe(
+      'Required <strong>title</strong>',
+    );
+    expect(root.querySelector('strong')).toBeNull();
+    await value.bridge.call('clear');
+    expect(value.bridge.errors).toEqual({});
+    await vi.waitFor(() =>
+      expect(root.querySelector('p')?.textContent).toBe(''),
+    );
+  });
+
+  it.each([[], null, { title: 'Required' }, { title: [42] }])(
+    'rejects malformed initial feedback %j',
+    (errors) => {
+      const root = element();
+      root.dataset.interactErrors = JSON.stringify(errors);
+      expect(() => client(root, vi.fn())).toThrow('initial validation errors');
+    },
+  );
+
+  it('rejects field feedback on an unloaded placeholder', () => {
+    const root = element();
+    root.dataset.interactState = '{}';
+    root.dataset.interactWritable = '{}';
+    root.dataset.interactLoading = 'manual';
+    root.dataset.interactErrors = '{"title":["Required"]}';
+    expect(() => client(root, vi.fn())).toThrow('initial island state');
+  });
+
   it('flushes pending edits with explicit actions and applies success events', async () => {
     const root = element();
     const event = vi.fn();

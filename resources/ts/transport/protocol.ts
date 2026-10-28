@@ -26,6 +26,22 @@ export function writable(value: unknown): value is Writable {
 }
 
 /**
+ * Validate field feedback shared by initial markup and accepted update responses.
+ */
+export function validationErrors(
+  value: unknown,
+): value is Record<string, string[]> {
+  return (
+    record(value) &&
+    Object.values(value).every(
+      (entry) =>
+        Array.isArray(entry) &&
+        entry.every((message: unknown) => typeof message === 'string'),
+    )
+  );
+}
+
+/**
  * Check the complete update envelope before any server state or effects are applied.
  */
 export function response(value: unknown): value is UpdateResponse {
@@ -55,12 +71,7 @@ export function response(value: unknown): value is UpdateResponse {
       (destination(value.download, true) &&
         record(value.errors) &&
         Object.keys(value.errors).length === 0)) &&
-    record(value.errors) &&
-    Object.values(value.errors).every(
-      (entry) =>
-        Array.isArray(entry) &&
-        entry.every((message: unknown) => typeof message === 'string'),
-    ) &&
+    validationErrors(value.errors) &&
     (value.html !== null || Object.keys(value.errors).length === 0) &&
     Array.isArray(value.events) &&
     value.events.every(
