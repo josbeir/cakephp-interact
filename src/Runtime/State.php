@@ -84,8 +84,9 @@ class State
     public function apply(Island $island, Definition $definition, array $updates): array
     {
         $values = $this->export($island, $definition);
+        $previousValues = $values;
 
-        $changes = [];
+        $owners = [];
         /** @var mixed $value */
         foreach ($updates as $path => $value) {
             $segments = Values::path($path);
@@ -103,9 +104,15 @@ class State
             $replacement = new PathEditor()->apply($previous, $segments, $value);
             if ($previous !== $replacement) {
                 $property->assign($island, $replacement);
-                $values[$name] = $replacement;
-                $changes[] = $path;
+                $values[$name] = $property->read($island);
+                $owners[$name] = true;
             }
+        }
+
+        $changes = [];
+        $diff = new StateChanges();
+        foreach (array_keys($owners) as $name) {
+            array_push($changes, ...$diff->paths($previousValues[$name], $values[$name], $name));
         }
 
         return $changes;
