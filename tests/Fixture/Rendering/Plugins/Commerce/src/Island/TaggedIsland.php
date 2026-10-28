@@ -10,6 +10,4 @@ use Interact\Attribute\Render;
  * Changes the root element while keeping the conventional class-derived template.
  */
 #[Render(tag: 'section')]
-class TaggedIsland extends EditorIsland
-{
-}
+class TaggedIsland extends EditorIsland {}

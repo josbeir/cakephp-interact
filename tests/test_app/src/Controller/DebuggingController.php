@@ -24,7 +24,5 @@ class DebuggingController extends AppController
      * Let application authors try native dumps through normal island interactions.
      */
     #[Get('/debugging', name: 'demo:debugging-example')]
-    public function index(): void
-    {
-    }
+    public function index(): void {}
 }

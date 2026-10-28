@@ -20,9 +20,7 @@ readonly class DocumentPolicy
      *
      * @param list<string> $nonces Values are exposed only through nonce-hiding attributes.
      */
-    public function __construct(public string $fingerprint, public array $nonces)
-    {
-    }
+    public function __construct(public string $fingerprint, public array $nonces) {}
 
     /**
      * Capture final middleware headers without weakening the browser's original policy.

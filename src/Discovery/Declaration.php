@@ -19,6 +19,5 @@ readonly class Declaration
         public ?string $template = null,
         public ?string $element = null,
         public string $tag = 'div',
-    ) {
-    }
+    ) {}
 }

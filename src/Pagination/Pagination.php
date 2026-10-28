@@ -39,8 +39,7 @@ class Pagination
         protected readonly IslandContext $context,
         protected readonly ?string $query = null,
         protected readonly ?Configuration $configuration = null,
-    ) {
-    }
+    ) {}
 
     /**
      * Fetch one native result page, bounding stale page numbers without replaying application actions.

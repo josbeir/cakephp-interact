@@ -14,7 +14,5 @@ use Interact\Island;
 class StaticActionIsland extends Island
 {
     #[Action]
-    public static function save(): void
-    {
-    }
+    public static function save(): void {}
 }

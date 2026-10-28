@@ -10,6 +10,4 @@ use Interact\Attribute\Render;
  * Exercises an explicit native rendering target on an island owned by a plugin.
  */
 #[Render(element: 'card')]
-class ExplicitElementIsland extends Editor
-{
-}
+class ExplicitElementIsland extends Editor {}

@@ -18,9 +18,7 @@ readonly class MountValues
      * @param array<string, mixed> $props Declared mount props.
      * @param array<string, mixed> $bound Initial values for modelable state.
      */
-    public function __construct(public array $props, public array $bound, public ?Relation $relation)
-    {
-    }
+    public function __construct(public array $props, public array $bound, public ?Relation $relation) {}
 
     /**
      * Initialize bound state before authorization and mounting.

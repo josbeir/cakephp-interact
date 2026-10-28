@@ -28,25 +28,19 @@ class ArticlesController extends AppController
      * Demonstrate independent article listeners and reactive event-scope changes.
      */
     #[Get('/events', name: 'demo:events')]
-    public function events(): void
-    {
-    }
+    public function events(): void {}
 
     /**
      * Mount independent examples of typed actions, conditional inputs, and dynamic collections.
      */
     #[Get('/playground', name: 'demo:playground')]
-    public function playground(): void
-    {
-    }
+    public function playground(): void {}
 
     /**
      * Render the documented nested FormHelper example inside the demo layout.
      */
     #[Get('/forms', name: 'demo:forms')]
-    public function forms(): void
-    {
-    }
+    public function forms(): void {}
 
     /**
      * Keep native HTML and FormHelper acceptance fixtures outside the demo navigation.
@@ -61,9 +55,7 @@ class ArticlesController extends AppController
      * Render real forms and nested islands for deterministic polling acceptance tests.
      */
     #[Get('/demo/polling', name: 'demo:polling-fixtures')]
-    public function polling(): void
-    {
-    }
+    public function polling(): void {}
 
     /**
      * Reuse an action template as the island's whole-page content without recursively embedding it.

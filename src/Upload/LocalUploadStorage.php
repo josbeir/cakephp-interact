@@ -20,9 +20,7 @@ class LocalUploadStorage implements UploadStorageInterface
     /**
      * Receive the application's private directory, capacity, and retention settings.
      */
-    public function __construct(protected readonly UploadConfig $config = new UploadConfig())
-    {
-    }
+    public function __construct(protected readonly UploadConfig $config = new UploadConfig()) {}
 
     /**
      * Serialize staging and capacity checks for one session before publishing a complete record.

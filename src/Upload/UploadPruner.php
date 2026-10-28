@@ -16,9 +16,7 @@ class UploadPruner
     /**
      * Share retention settings with staging and the scheduled global sweep.
      */
-    public function __construct(protected readonly UploadConfig $config)
-    {
-    }
+    public function __construct(protected readonly UploadConfig $config) {}
 
     /**
      * Bound inspected entries independently of removals while the caller holds the session lock.

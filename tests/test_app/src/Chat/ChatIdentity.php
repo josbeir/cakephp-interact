@@ -19,9 +19,7 @@ readonly class ChatIdentity
     /**
      * Retain an opaque recipient key rather than exposing the session identifier.
      */
-    public function __construct(public string $recipient)
-    {
-    }
+    public function __construct(public string $recipient) {}
 
     /**
      * Authorize the current request before deriving any private room capabilities.

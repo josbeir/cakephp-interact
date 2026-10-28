@@ -8,6 +8,4 @@ use Interact\Island;
 /**
  * Verifies that the Island suffix is omitted when inferring a missing native template.
  */
-class CounterIsland extends Island
-{
-}
+class CounterIsland extends Island {}

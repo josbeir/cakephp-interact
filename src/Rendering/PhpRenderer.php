@@ -17,9 +17,7 @@ class PhpRenderer implements RendererInterface, PlaceholderRendererInterface, El
     /**
      * Applications can supply a TemplateView subclass with their own helper initialization.
      */
-    public function __construct(protected readonly TemplateView $view)
-    {
-    }
+    public function __construct(protected readonly TemplateView $view) {}
 
     /**
      * Render an island through its declared native template or element.

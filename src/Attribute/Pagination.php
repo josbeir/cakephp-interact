@@ -29,6 +29,5 @@ final readonly class Pagination
         public bool|array $history = false,
         public bool $editableLimit = false,
         public array $defaults = [],
-    ) {
-    }
+    ) {}
 }

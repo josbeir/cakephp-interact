@@ -17,9 +17,7 @@ class OutcomesController extends AppController
      * Render the form and invoice controls inside an ordinary application page.
      */
     #[Get('/outcomes', name: 'demo:outcomes')]
-    public function index(): void
-    {
-    }
+    public function index(): void {}
 
     /**
      * Read the saved article using its normal primary-key lookup.

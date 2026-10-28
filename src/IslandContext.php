@@ -21,8 +21,7 @@ readonly class IslandContext
         public string $scope,
         public string $endpoint,
         public ?string $subscriptionEndpoint = null,
-    ) {
-    }
+    ) {}
 
     /**
      * Bind signed state to the current browser session, including anonymous sessions.

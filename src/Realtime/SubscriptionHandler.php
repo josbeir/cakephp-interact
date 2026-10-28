@@ -31,8 +31,7 @@ class SubscriptionHandler
         protected readonly LeaseCodec $leases,
         protected readonly SubscriptionAuthorizerInterface $authorizer,
         protected readonly Subscriptions $subscriptions,
-    ) {
-    }
+    ) {}
 
     /**
      * Return renewed leases and one provider grant after current application authorization.

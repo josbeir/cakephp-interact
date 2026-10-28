@@ -19,9 +19,7 @@ class State
     /**
      * Receive the URL transport used alongside signed snapshot state.
      */
-    public function __construct(protected readonly UrlState $urlState = new UrlState())
-    {
-    }
+    public function __construct(protected readonly UrlState $urlState = new UrlState()) {}
 
     /**
      * Apply declared query values before initial authorization and mounting.

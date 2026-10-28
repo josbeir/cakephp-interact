@@ -15,17 +15,13 @@ class StreamingController extends AppController
      * Render a self-contained text and element streaming example.
      */
     #[Get('/streaming', name: 'demo:streaming')]
-    public function index(): void
-    {
-    }
+    public function index(): void {}
 
     /**
      * Host a gated browser fixture for observing output before action completion.
      */
     #[Get('/demo/streaming-probe', name: 'demo:streaming-probe')]
-    public function probe(): void
-    {
-    }
+    public function probe(): void {}
 
     /**
      * Observe the current session through an independent native request.

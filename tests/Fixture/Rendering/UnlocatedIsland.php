@@ -8,6 +8,4 @@ use Interact\Island;
 /**
  * Exercises the actionable error for inferred views outside the conventional Island namespace.
  */
-class UnlocatedIsland extends Island
-{
-}
+class UnlocatedIsland extends Island {}

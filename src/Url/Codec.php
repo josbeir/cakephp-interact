@@ -12,9 +12,7 @@ class Codec
     /**
      * Keep scalar conversion replaceable without coupling it to query-shape parsing.
      */
-    public function __construct(protected readonly ScalarCodec $scalars = new ScalarCodec())
-    {
-    }
+    public function __construct(protected readonly ScalarCodec $scalars = new ScalarCodec()) {}
 
     /**
      * Decode a single allowlisted value from page query text.

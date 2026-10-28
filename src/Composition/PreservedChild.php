@@ -20,9 +20,7 @@ class PreservedChild
     /**
      * Receive request signing without requiring it for ordinary standalone preservation.
      */
-    public function __construct(protected readonly ?InputTickets $inputs)
-    {
-    }
+    public function __construct(protected readonly ?InputTickets $inputs) {}
 
     /**
      * Check immutable inputs and produce a preservation marker with an optional capability.

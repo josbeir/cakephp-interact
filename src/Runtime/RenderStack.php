@@ -31,9 +31,7 @@ class RenderStack
     /**
      * Receive request-local signing for parent updates while retaining standalone stack use.
      */
-    public function __construct(protected readonly ?InputTickets $inputs = null)
-    {
-    }
+    public function __construct(protected readonly ?InputTickets $inputs = null) {}
 
     /**
      * Return the current owner when mounting a nested island.

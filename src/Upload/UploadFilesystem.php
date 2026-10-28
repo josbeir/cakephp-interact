@@ -15,9 +15,7 @@ class UploadFilesystem
     /**
      * Share private storage settings with the staging backend.
      */
-    public function __construct(protected readonly UploadConfig $config)
-    {
-    }
+    public function __construct(protected readonly UploadConfig $config) {}
 
     /**
      * Serialize session mutations with a lock outside individual upload lifetimes.

@@ -20,9 +20,7 @@ class Configuration
     /**
      * Bind immutable compiled declarations, rather than retaining an island instance.
      */
-    public function __construct(protected readonly Definition $definition)
-    {
-    }
+    public function __construct(protected readonly Definition $definition) {}
 
     /**
      * Resolve native paginator aliases while requiring numeric bounds for clamping.

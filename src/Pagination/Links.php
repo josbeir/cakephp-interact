@@ -36,8 +36,7 @@ class Links
         protected readonly array $fields,
         protected array $values,
         public readonly RouteContext $routing = new RouteContext(),
-    ) {
-    }
+    ) {}
 
     /**
      * Preserve the final accepted selection of every listing before helper links are rendered.

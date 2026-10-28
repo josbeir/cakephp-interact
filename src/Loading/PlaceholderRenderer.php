@@ -19,9 +19,7 @@ class PlaceholderRenderer
     /**
      * Receive the application's isolated view when custom elements are supported.
      */
-    public function __construct(protected readonly ?TemplateView $view = null)
-    {
-    }
+    public function __construct(protected readonly ?TemplateView $view = null) {}
 
     /**
      * Render an explicit element or the accessible built-in loading controls.

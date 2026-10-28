@@ -19,9 +19,7 @@ class UrlState
     /**
      * Receive the query decoder through the normal service composition boundary.
      */
-    public function __construct(protected readonly Codec $codec = new Codec())
-    {
-    }
+    public function __construct(protected readonly Codec $codec = new Codec()) {}
 
     /**
      * Decode page query values before authorization and mount hooks run.

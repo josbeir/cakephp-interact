@@ -10,6 +10,4 @@ use Interact\Attribute\Render;
  * content.
  */
 #[Render(template: 'Articles/page')]
-class PageIsland extends ListingIsland
-{
-}
+class PageIsland extends ListingIsland {}

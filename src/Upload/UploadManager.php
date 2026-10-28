@@ -22,8 +22,7 @@ class UploadManager
     public function __construct(
         protected readonly UploadStorageInterface $storage = new LocalUploadStorage(),
         protected readonly UploadConfig $config = new UploadConfig(),
-    ) {
-    }
+    ) {}
 
     /**
      * Restore available selections and expose expired files as ordinary field feedback.

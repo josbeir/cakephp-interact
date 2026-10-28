@@ -52,9 +52,7 @@ class ProbeIsland extends Island
     /**
      * Accept the request-local observer through the application container.
      */
-    public function __construct(protected ProbeService $service)
-    {
-    }
+    public function __construct(protected ProbeService $service) {}
 
     /**
      * Observe fresh instance setup before mount or snapshot values are assigned.

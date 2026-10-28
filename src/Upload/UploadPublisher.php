@@ -22,8 +22,7 @@ class UploadPublisher
     public function __construct(
         protected readonly UploadStorageInterface $storage = new LocalUploadStorage(),
         protected readonly UploadConfig $config = new UploadConfig(),
-    ) {
-    }
+    ) {}
 
     /**
      * Publish references and display metadata while releasing files explicitly removed by PHP.

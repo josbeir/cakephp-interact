@@ -29,8 +29,7 @@ class ResponseBuilder
         protected readonly UploadManager $uploads,
         protected readonly RenderStack $stack,
         protected ?Subscriptions $subscriptions = null,
-    ) {
-    }
+    ) {}
 
     /**
      * Enable subscription metadata for subsequent accepted responses.

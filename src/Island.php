@@ -157,32 +157,24 @@ abstract class Island
      * Runs once per runtime-created instance, including loading placeholders. Keep
      * resource access and draft initialization in the authorized lifecycle hooks.
      */
-    public function initialize(): void
-    {
-    }
+    public function initialize(): void {}
 
     /**
      * Authorize initial mounts and updates before application behavior and rendering.
      */
-    public function authorize(IslandContext $context): void
-    {
-    }
+    public function authorize(IslandContext $context): void {}
 
     /**
      * Initialize state once, after props are assigned and access is authorized.
      */
-    public function mount(): void
-    {
-    }
+    public function mount(): void {}
 
     /**
      * React to accepted writable edits and reactive parent props before an exposed action is invoked.
      *
      * @param UpdatedPaths $paths Reported writable paths, reactive prop names, and restored URL properties.
      */
-    public function updated(UpdatedPaths $paths): void
-    {
-    }
+    public function updated(UpdatedPaths $paths): void {}
 
     /**
      * Supply computed template variables without adding them to the signed snapshot.

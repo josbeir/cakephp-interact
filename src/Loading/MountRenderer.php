@@ -31,8 +31,7 @@ class MountRenderer
         protected readonly SnapshotCodec $snapshots,
         protected readonly Hydrator $hydrator,
         protected readonly State $state,
-    ) {
-    }
+    ) {}
 
     /**
      * Run the mount hook immediately or return a mount-only browser capability.

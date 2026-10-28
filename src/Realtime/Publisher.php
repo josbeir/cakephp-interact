@@ -16,9 +16,7 @@ class Publisher implements PublisherInterface
     /**
      * Inject only the provider's delivery capability, keeping construction transport-neutral.
      */
-    public function __construct(protected readonly BroadcasterInterface $broadcaster)
-    {
-    }
+    public function __construct(protected readonly BroadcasterInterface $broadcaster) {}
 
     /**
      * Deliver an explicitly constructed message without changing its identity.

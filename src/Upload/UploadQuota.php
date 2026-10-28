@@ -14,9 +14,7 @@ class UploadQuota
     /**
      * Share private storage settings with the staging backend.
      */
-    public function __construct(protected readonly UploadConfig $config)
-    {
-    }
+    public function __construct(protected readonly UploadConfig $config) {}
 
     /**
      * Count all session records, including unacknowledged transfers, before committing another file.

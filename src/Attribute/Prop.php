@@ -17,7 +17,5 @@ final readonly class Prop
     /**
      * Allow verified parent renders to replace this input without remounting the child.
      */
-    public function __construct(public bool $reactive = false)
-    {
-    }
+    public function __construct(public bool $reactive = false) {}
 }

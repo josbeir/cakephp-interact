@@ -20,9 +20,7 @@ class OutcomeResponder
     /**
      * Receive replaceable CakePHP destination resolution at the response boundary.
      */
-    public function __construct(protected readonly DestinationResolver $destinations = new DestinationResolver())
-    {
-    }
+    public function __construct(protected readonly DestinationResolver $destinations = new DestinationResolver()) {}
 
     /**
      * Resolve effects before rendering and emit them only for an accepted action.

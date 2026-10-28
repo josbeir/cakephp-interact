@@ -8,6 +8,4 @@ namespace TestApp\Island\Article;
  *
  * The dedicated acceptance page keeps these timers separate from the ordinary editing demo.
  */
-class PollingEditorIsland extends EditorIsland
-{
-}
+class PollingEditorIsland extends EditorIsland {}

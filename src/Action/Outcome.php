@@ -21,6 +21,5 @@ readonly class Outcome
         public array|string|UriInterface $destination,
         public bool $replace = false,
         public bool $navigate = false,
-    ) {
-    }
+    ) {}
 }

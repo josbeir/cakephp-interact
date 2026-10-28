@@ -22,8 +22,7 @@ class UploadRestorer
      */
     public function __construct(
         protected readonly UploadStorageInterface $storage = new LocalUploadStorage(),
-    ) {
-    }
+    ) {}
 
     /**
      * Restore available selections and report unavailable files without executing an action.

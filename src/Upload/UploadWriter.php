@@ -15,9 +15,7 @@ class UploadWriter
     /**
      * Share private storage settings with the staging backend.
      */
-    public function __construct(protected readonly UploadConfig $config)
-    {
-    }
+    public function __construct(protected readonly UploadConfig $config) {}
 
     /**
      * Bound bytes from the actual stream, including files with missing or inaccurate size metadata.

@@ -24,8 +24,7 @@ readonly class UploadOwner
         public string $scope,
         public string $island,
         public string $field,
-    ) {
-    }
+    ) {}
 
     /**
      * Select a private session directory without exposing its session identifier.

@@ -22,8 +22,7 @@ class UploadMutator
     public function __construct(
         protected readonly UploadStorageInterface $storage = new LocalUploadStorage(),
         protected readonly UploadConfig $config = new UploadConfig(),
-    ) {
-    }
+    ) {}
 
     /**
      * Stage a file or remove a selected reference after authorization succeeds.

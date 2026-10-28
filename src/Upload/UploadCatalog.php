@@ -14,9 +14,7 @@ class UploadCatalog
     /**
      * Share private storage settings with the staging backend.
      */
-    public function __construct(protected readonly UploadConfig $config)
-    {
-    }
+    public function __construct(protected readonly UploadConfig $config) {}
 
     /**
      * Read only a live record belonging to the exact signed field owner.

@@ -23,8 +23,7 @@ class UpdateErrorListener implements EventListenerInterface
     public function __construct(
         protected readonly FailureResponder $failures,
         protected readonly Diagnostics $diagnostics = new Diagnostics(),
-    ) {
-    }
+    ) {}
 
     /**
      * Subscribe at the normal CakePHP exception rendering boundary.

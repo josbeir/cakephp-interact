@@ -8,6 +8,4 @@ use Interact\Island;
 /**
  * Exercises default lifecycle behavior without adding application-specific state or actions.
  */
-class PlainIsland extends Island
-{
-}
+class PlainIsland extends Island {}

@@ -8,6 +8,4 @@ use Commerce\Island\Article\EditorIsland as Editor;
 /**
  * Supplies a vendor-namespaced plugin island with inherited behavior and its own native view.
  */
-class ProductCardIsland extends Editor
-{
-}
+class ProductCardIsland extends Editor {}

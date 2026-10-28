@@ -18,9 +18,7 @@ class SessionBinding
     /**
      * Retain the request's native session rather than a second session implementation.
      */
-    public function __construct(protected readonly Session $session)
-    {
-    }
+    public function __construct(protected readonly Session $session) {}
 
     /**
      * Follow session renewals until emission freezes the browser binding.

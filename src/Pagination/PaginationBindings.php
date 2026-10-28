@@ -18,9 +18,7 @@ readonly class PaginationBindings
     /**
      * Retain immutable declaration options without retaining an island instance.
      */
-    public function __construct(protected Pagination $declaration)
-    {
-    }
+    public function __construct(protected Pagination $declaration) {}
 
     /**
      * Publish typed scalar bindings and reject undeclared paging capabilities.
