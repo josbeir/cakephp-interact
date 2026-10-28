@@ -3,9 +3,6 @@ import type { IslandClient } from '../client';
 import type { State } from '../types';
 import { relation } from './protocol';
 import { ChildBinding } from './child-binding';
-import { clone } from '../state/values';
-import { changedWritable } from '../state/drafts';
-import { readMetadata } from '../transport/metadata';
 
 /**
  * Owns the active parent/child connections for one Alpine installation.
@@ -44,19 +41,12 @@ export class Relationships {
         flush(sent);
       },
       preserve: (incoming) => {
-        let values: State | undefined;
+        const values: State = {};
         for (const link of this.links) {
           if (link.parent !== client && link.child !== client) continue;
-          values ??= clone(incoming);
-          link.preserve(client, values, epoch);
+          Object.assign(values, link.preserve(client, incoming, epoch));
         }
-        return values
-          ? changedWritable(
-              values,
-              incoming,
-              readMetadata(client.root).writable,
-            )
-          : {};
+        return values;
       },
       capture: () => {
         for (const link of this.links)

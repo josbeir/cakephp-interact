@@ -83,6 +83,55 @@ test('a delayed child action cannot replace a newer parent reset', async ({
   expect(presetRequests).toBe(1);
 });
 
+test('a delayed parent reset keeps newer child dates while clearing the independent selection', async ({
+  page,
+}) => {
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let intercepted = false;
+  await page.route('**/_interact/update', async (route) => {
+    const request: unknown = route.request().postDataJSON();
+    if (
+      typeof request === 'object' &&
+      request !== null &&
+      'action' in request &&
+      request.action === 'clear'
+    ) {
+      const response = await route.fetch();
+      intercepted = true;
+      await held;
+      await route.fulfill({ response });
+    } else await route.continue();
+  });
+  await page.goto('/composition');
+  const order = page.getByRole('region', { name: 'Parent draft', exact: true });
+  const range = page.getByRole('region', { name: 'Date range', exact: true });
+  const picker = page.getByRole('region', {
+    name: 'Resource picker',
+    exact: true,
+  });
+  await picker.getByRole('button').first().click();
+  await expect(order.locator('[data-selection]')).not.toHaveText('None');
+  await range.getByLabel('Start date').fill('2026-01-01');
+  await expect(order.locator('[data-range]')).toHaveText('2026-01-01 /');
+  await order.getByRole('button', { name: 'Clear selection' }).click();
+  await expect.poll(() => intercepted).toBe(true);
+  await range.getByRole('button', { name: 'Use January' }).click();
+  await expect(order.locator('[data-range]')).toHaveText(
+    '2026-01-01 / 2026-01-31',
+  );
+  release();
+  await expect(order.locator('..')).not.toHaveAttribute('aria-busy');
+  await expect(order.locator('[data-selection]')).toHaveText('None');
+  await expect(range.getByLabel('Start date')).toHaveValue('2026-01-01');
+  await expect(range.getByLabel('End date')).toHaveValue('2026-01-31');
+  await expect(order.locator('[data-range]')).toHaveText(
+    '2026-01-01 / 2026-01-31',
+  );
+});
+
 test('reactive props refresh an existing child and modelable PHP changes reach the parent', async ({
   page,
 }) => {

@@ -716,8 +716,8 @@ export class IslandClient {
     this.controls.captureCustom();
     this.composition?.capture();
     const newer = {
-      ...this.composition?.preserve(payload.state),
       ...newerWritable(this.bridge.state, sent, payload.state, this.writable),
+      ...this.composition?.preserve(payload.state),
     };
     if (this.urlTarget && invocation?.urlRestore?.epoch !== this.url?.epoch())
       Object.assign(newer, this.urlTarget.values);

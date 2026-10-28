@@ -423,6 +423,48 @@ it('keeps a later accepted child action when an older parent response arrives', 
   ).toHaveLength(1);
 });
 
+it.each([false, true])(
+  'keeps epoch-protected child values and independent parent map changes (renderless: %s)',
+  async (renderless) => {
+    let release = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const { parent, child } = await fixture({
+      parentRenderless: renderless,
+      childRenderless: renderless,
+      parentServer: async (_request, current) => {
+        await held;
+        return mergeChanges(current, {
+          'data.value': 'stale',
+          'data.flag': true,
+          'data.server': 'accepted',
+        });
+      },
+      childServer: async (_request, current) => ({ ...current, end: 'new' }),
+    });
+    const saving = parent.client.bridge.call('save');
+    await vi.waitFor(() => expect(parent.requests).toHaveLength(1));
+    expect(await child.client.bridge.call('choose')).toEqual({ ok: true });
+    expect(parent.client.bridge.state.data).toMatchObject({
+      value: '',
+      end: 'new',
+    });
+    release();
+    expect(await saving).toEqual({ ok: true });
+    expect(parent.client.bridge.state.data).toEqual({
+      value: '',
+      end: 'new',
+      flag: true,
+      selected: null,
+      items: [],
+      server: 'accepted',
+    });
+    expect(child.client.bridge.state.value).toBe('');
+    expect(child.client.bridge.state.end).toBe('new');
+  },
+);
+
 it('reports a removed parent model path instead of copying undefined into a late child response', async () => {
   let release: () => void = () => {};
   const held = new Promise<void>((resolve) => {

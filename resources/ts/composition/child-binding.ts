@@ -123,19 +123,22 @@ export class ChildBinding {
     }
   }
 
-  /** Preserve a later accepted reset even when its value equals an older request's original draft. */
-  preserve(client: IslandClient, incoming: State, epoch: number): void {
+  /** Return bound-path overrides for later accepted results, including resets equal to the sent draft. */
+  preserve(client: IslandClient, incoming: State, epoch: number): State {
+    const changes: State = {};
     for (const [name, binding] of Object.entries(this.relation.models)) {
       if (client === this.child && epoch < this.parentEpoch) {
         const value = read(this.parent.bridge.state, binding.path);
-        if (value !== undefined) write(incoming, name, this.copy(value));
+        if (value !== undefined && !equal(value, read(incoming, name)))
+          changes[name] = this.copy(value);
       }
       if (client === this.parent && epoch < this.childEpoch) {
         const value = this.child.bridge.state[name];
-        if (value !== undefined)
-          write(incoming, binding.path, this.copy(value));
+        if (value !== undefined && !equal(value, read(incoming, binding.path)))
+          changes[binding.path] = this.copy(value);
       }
     }
+    return changes;
   }
 
   /** Record meaningful accepted writes; an unrelated background refresh does not supersede an action. */
