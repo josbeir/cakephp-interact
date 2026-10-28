@@ -598,6 +598,52 @@
         "status": "published",
         "tags": ["initial"]
       }
+    },
+    {
+      "name": "own toString map",
+      "property": "filters",
+      "query": "value[toString][label]=value",
+      "expected": {
+        "status": "",
+        "categories": ["default"],
+        "price": {
+          "min": "",
+          "max": "100"
+        },
+        "toString": {
+          "label": "value"
+        }
+      }
+    },
+    {
+      "name": "own valueOf list",
+      "property": "filters",
+      "query": "value[valueOf][0]=one",
+      "expected": {
+        "status": "",
+        "categories": ["default"],
+        "price": {
+          "min": "",
+          "max": "100"
+        },
+        "valueOf": ["one"]
+      }
+    },
+    {
+      "name": "nested hasOwnProperty map",
+      "property": "filters",
+      "query": "value[price][hasOwnProperty][code]=keep",
+      "expected": {
+        "status": "",
+        "categories": ["default"],
+        "price": {
+          "min": "",
+          "max": "100",
+          "hasOwnProperty": {
+            "code": "keep"
+          }
+        }
+      }
     }
   ],
   "roundTrips": [

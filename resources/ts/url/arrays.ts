@@ -31,7 +31,7 @@ export function mergeMaps(value: UrlArray, defaults: UrlArray): UrlArray {
   if (Array.isArray(value) || Array.isArray(defaults)) return value;
   const merged = structuredClone(defaults);
   for (const [key, entry] of Object.entries(value)) {
-    const previous = defaults[key];
+    const previous = Object.hasOwn(defaults, key) ? defaults[key] : undefined;
     merged[key] =
       typeof entry !== 'string' &&
       previous !== undefined &&
