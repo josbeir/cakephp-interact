@@ -18,6 +18,30 @@ use Interact\Upload\UploadPruner;
  */
 class UploadCleanupTest extends UploadStorageTestCase
 {
+    public function testCleanupSharesItsRemovalLimitAcrossSessions(): void
+    {
+        DateTime::setTestNow(new DateTime('2026-10-20 12:00:00'));
+        $storage = new LocalUploadStorage(new UploadConfig(['directory' => $this->directory, 'ttl' => 1]));
+        $paths = [];
+        foreach (['first-session', 'second-session'] as $session) {
+            $owner = new UploadOwner($session, 'default', 'island', 'file');
+            $file = $storage->put($this->incoming(), $owner);
+            $paths[] = $this->directory . '/' . $owner->sessionKey() . '/' . $file->id;
+        }
+
+        DateTime::setTestNow(new DateTime('2026-10-20 12:00:02'));
+        static::assertSame(1, $storage->cleanup(1));
+        static::assertCount(1, array_filter($paths, static fn(string $path): bool => is_file($path . '.json')));
+        static::assertCount(1, array_filter($paths, static fn(string $path): bool => is_file($path . '.bin')));
+        static::assertSame(1, $storage->cleanup());
+        foreach ($paths as $path) {
+            static::assertFileDoesNotExist($path . '.json');
+            static::assertFileDoesNotExist($path . '.bin');
+        }
+
+        static::assertSame(0, $storage->cleanup());
+    }
+
     public function testCleanupReclaimsOldOrphansAndIncompleteMetadataWhileRetainingRecentFiles(): void
     {
         $config = new UploadConfig(['directory' => $this->directory, 'ttl' => 60]);
