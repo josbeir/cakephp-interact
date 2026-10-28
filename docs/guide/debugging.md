@@ -43,7 +43,10 @@ become application `interact:stream` events.
 
 The viewer shows the latest diagnostic request, combining that request's stream
 chunks. New output does not take application focus. Use **Hide** to collapse it,
-**Show** to expand it, and **Clear** to release its contents. **Copy** copies
+**Show** to expand it, and **Clear** to release its contents. **Escape** also
+collapses the output while focus is on the page or viewer controls. Keypresses
+inside the sandboxed output frame do not reach the page; move focus to the viewer
+controls to use Escape. **Copy** copies
 readable dump text when the browser allows clipboard access. The viewer follows
 the application's color scheme. Enhanced navigation clears the viewer too.
 

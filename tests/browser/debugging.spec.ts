@@ -95,6 +95,35 @@ test('native JSON dumps stay readable and inert while normal updates and focus w
   expect(errors).toEqual([]);
 });
 
+test('Escape hides debug output from the page and viewer controls without clearing it', async ({
+  page,
+}) => {
+  await page.goto('/demo/debugging');
+  const inspect = page
+    .getByRole('button', { name: 'Inspect island', exact: true })
+    .first();
+  await inspect.click();
+  const frame = page.getByTitle('Captured island output');
+  await expect(frame).toBeVisible();
+  await expect(inspect).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(frame).toBeHidden();
+  await expect(inspect).toBeFocused();
+  const show = page.getByRole('button', { name: 'Open island debug' });
+  await expect(show).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('Escape');
+  await show.click();
+  await expect(frame).toBeVisible();
+  await expect(
+    page.frameLocator('iframe[title="Captured island output"]').locator('pre'),
+  ).toContainText('global dump');
+  await page
+    .getByRole('button', { name: 'Close island debug' })
+    .press('Escape');
+  await expect(frame).toBeHidden();
+  await expect(show).toBeFocused();
+});
+
 test('renderless, validation and failed requests all expose dumps without masking their outcomes', async ({
   page,
 }) => {

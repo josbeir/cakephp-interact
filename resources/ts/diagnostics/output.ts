@@ -182,6 +182,17 @@ class OutputViewer {
     });
     this.shadow.append(header, metadata);
     document.addEventListener('interact:navigating', () => this.clear());
+    document.addEventListener('keydown', (event) => {
+      if (
+        event.key !== 'Escape' ||
+        event.defaultPrevented ||
+        !this.host.isConnected ||
+        this.frame.hidden
+      )
+        return;
+      this.frame.hidden = true;
+      this.controls();
+    });
   }
 
   /** Append only this request's bounded output without taking application focus. */
