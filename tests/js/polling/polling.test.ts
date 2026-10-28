@@ -88,6 +88,20 @@ afterEach(() => {
 });
 
 describe('polling through the Alpine bridge', () => {
+  it('keeps mount-time feedback until an explicit successful request clears it', async () => {
+    const root = element('<section x-interact:poll.100ms></section>');
+    root.dataset.interactErrors = '{"title":["Required"]}';
+    const { client, fetcher } = mount(root);
+    await vi.advanceTimersByTimeAsync(500);
+    expect(client.bridge.errors).toEqual({ title: ['Required'] });
+    expect(fetcher).not.toHaveBeenCalled();
+    await client.bridge.call('clear');
+    expect(client.bridge.errors).toEqual({});
+    expect(fetcher).toHaveBeenCalledOnce();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
   it('refreshes through the normal CSRF-protected transport without changing the protocol', async () => {
     const root = element('<section x-interact:poll.100ms></section>');
     const { fetcher } = mount(root);

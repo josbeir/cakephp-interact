@@ -159,6 +159,10 @@ state and staged files can still be unsaved application data.
 feedback without pausing the island. FormHelper can read the entity's original
 validation errors separately.
 
+Errors supplied during `mount()` are available immediately, including on the
+first eager render. Deferred islands receive their initial feedback when loading
+finishes. A subsequent successful request replaces that feedback normally.
+
 ```html
 <ul role="alert">
   <template

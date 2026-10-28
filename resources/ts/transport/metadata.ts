@@ -5,7 +5,7 @@ import { uploadMetadata } from '../uploads/protocol';
 import type { UploadMetadata } from '../uploads/types';
 import type { State, Writable } from '../types';
 import { state } from '../state/values';
-import { writable } from './protocol';
+import { validationErrors, writable } from './protocol';
 import { realtimeMetadata } from '../realtime/protocol';
 import { actionListeners } from '../events/actions';
 import type { ActionListeners } from '../events/actions';
@@ -22,6 +22,7 @@ export interface MountMetadata {
   snapshot: string;
   state: State;
   writable: Writable;
+  errors: Record<string, string[]>;
   endpoint: string;
   csrf: string;
   uploads: UploadMetadata;
@@ -34,6 +35,9 @@ export interface MountMetadata {
  * @throws Error When the markup cannot safely initialize an island client.
  */
 export function readMetadata(root: HTMLElement): MountMetadata {
+  const errors: unknown = JSON.parse(root.dataset.interactErrors ?? '{}');
+  if (!validationErrors(errors))
+    throw new Error('Invalid initial validation errors.');
   const listeners: unknown = JSON.parse(root.dataset.interactListeners ?? '{}');
   if (!actionListeners(listeners))
     throw new Error('Invalid action listener metadata.');
@@ -67,7 +71,8 @@ export function readMetadata(root: HTMLElement): MountMetadata {
       ? !urlState(initial, url)
       : Object.keys(initial).length > 0 ||
         Object.keys(fields).length > 0 ||
-        Object.keys(uploads).length > 0)
+        Object.keys(uploads).length > 0 ||
+        Object.keys(errors).length > 0)
   )
     throw new Error('Invalid initial island state.');
   const id = root.dataset.interactId ?? '';
@@ -89,6 +94,7 @@ export function readMetadata(root: HTMLElement): MountMetadata {
     snapshot,
     state: initial,
     writable: fields,
+    errors,
     endpoint: endpoint.href,
     csrf: root.dataset.interactCsrf ?? '',
   };

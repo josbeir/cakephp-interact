@@ -192,7 +192,7 @@ export class IslandClient {
       busy: false,
       pending: (selector, ...args) => this.requests.pending(selector, ...args),
       loading: (selector, ...args) => this.requests.loading(selector, ...args),
-      errors: {},
+      errors: this.metadata.errors,
       error: null,
       get paused() {
         return activity.paused;
