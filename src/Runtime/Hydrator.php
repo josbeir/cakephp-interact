@@ -18,9 +18,7 @@ class Hydrator
     /**
      * Share the runtime's state contract when checking restored values.
      */
-    public function __construct(protected readonly State $state = new State())
-    {
-    }
+    public function __construct(protected readonly State $state = new State()) {}
 
     /**
      * Assign only properties present in the compiled declaration, preserving their native types.

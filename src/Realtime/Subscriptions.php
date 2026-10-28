@@ -22,9 +22,7 @@ class Subscriptions
     /**
      * Share the lease signer and explicit provider availability with render callers.
      */
-    public function __construct(protected readonly LeaseCodec $leases, protected readonly bool $enabled = true)
-    {
-    }
+    public function __construct(protected readonly LeaseCodec $leases, protected readonly bool $enabled = true) {}
 
     /**
      * Validate request-local declarations before exposing browser routing metadata.

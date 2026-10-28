@@ -86,9 +86,7 @@ class ListingIsland extends Island
      * Re-render visible rows after an editor saves without resetting the listing draft.
      */
     #[Action(on: 'article-saved')]
-    public function articleSaved(): void
-    {
-    }
+    public function articleSaved(): void {}
 
     /**
      * Load the visible article page through model finders without serializing query results.

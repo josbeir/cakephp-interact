@@ -74,26 +74,26 @@ class RealtimeHttpTest extends HttpTestCase
         $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
         /** @var mixed $token */
         $token = Hash::get($payload, 'grant.data.token');
-        static::assertIsString($token);
+        $this->assertIsString($token);
         $claims = Values::map(json_decode(
             json_encode(JWT::decode($token, new Key(str_repeat('s', 32), 'HS256')), JSON_THROW_ON_ERROR),
             true,
             flags: JSON_THROW_ON_ERROR,
         ));
-        static::assertSame(['subscribe'], Hash::get($claims, 'authorization_details.0.actions'));
-        static::assertMatchesRegularExpression(
+        $this->assertSame(['subscribe'], Hash::get($claims, 'authorization_details.0.actions'));
+        $this->assertMatchesRegularExpression(
             '/^demo\/private\/[a-f0-9]{64}$/',
             (string)Hash::get($claims, 'authorization_details.0.topics.0.match'),
         );
         $this->assertResponseNotContains('forbidden/topic');
-        static::assertArrayNotHasKey('snapshot', Values::map(Hash::get($payload, 'islands.' . $mount['id'])));
+        $this->assertArrayNotHasKey('snapshot', Values::map(Hash::get($payload, 'islands.' . $mount['id'])));
     }
 
     public function testCustomScopedSubscriptionEndpointSurvivesSynchronizationAndRenderlessActions(): void
     {
         $mount = $this->mounted(url: '/realtime/scoped');
         $metadata = $this->metadata();
-        static::assertSame('/realtime/subscribe', $metadata['endpoint']);
+        $this->assertSame('/realtime/subscribe', $metadata['endpoint']);
         $snapshot = $mount['snapshot'];
         foreach ([null, 'reply', null] as $action) {
             $this->requestAsJson();
@@ -106,9 +106,9 @@ class RealtimeHttpTest extends HttpTestCase
             ], JSON_THROW_ON_ERROR));
             $this->assertResponseOk();
             $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
-            static::assertSame('/realtime/subscribe', Hash::get($payload, 'realtime.endpoint'));
+            $this->assertSame('/realtime/subscribe', Hash::get($payload, 'realtime.endpoint'));
             if ($action === 'reply') {
-                static::assertNull($payload['html']);
+                $this->assertNull($payload['html']);
             }
 
             $snapshot = $this->nextSnapshot();
@@ -142,13 +142,13 @@ class RealtimeHttpTest extends HttpTestCase
         $this->update(['snapshot' => $this->nextSnapshot(), 'action' => 'reply']);
         $this->assertResponseOk();
         $updates = $this->publisher->getUpdates();
-        static::assertCount(11, $updates);
-        static::assertTrue($updates[0]->isPrivate());
-        static::assertMatchesRegularExpression('/^demo\/private\/[a-f0-9]{64}$/', $updates[0]->getTopics()[0]);
-        static::assertSame([$updates[0]->getTopics()[0] . '/reply'], $updates[1]->getTopics());
-        static::assertStringContainsString('message-sent', $updates[0]->getData());
-        static::assertStringContainsString('"html":false', $updates[2]->getData());
-        static::assertStringContainsString('"html":true', $updates[10]->getData());
+        $this->assertCount(11, $updates);
+        $this->assertTrue($updates[0]->isPrivate());
+        $this->assertMatchesRegularExpression('/^demo\/private\/[a-f0-9]{64}$/', $updates[0]->getTopics()[0]);
+        $this->assertSame([$updates[0]->getTopics()[0] . '/reply'], $updates[1]->getTopics());
+        $this->assertStringContainsString('message-sent', $updates[0]->getData());
+        $this->assertStringContainsString('"html":false', $updates[2]->getData());
+        $this->assertStringContainsString('"html":true', $updates[10]->getData());
     }
 
     public function testPermissionChangesAndSnapshotSubstitutionCannotRenewSubscriptions(): void
@@ -209,10 +209,10 @@ class RealtimeHttpTest extends HttpTestCase
         ]);
         $this->assertResponseCode(422);
         $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
-        static::assertSame(['Choose a display name.'], Hash::get($payload, 'errors.name'));
-        static::assertSame(['Write a message first.'], Hash::get($payload, 'errors.message'));
-        static::assertIsString($payload['html']);
-        static::assertSame([], $this->publisher->getUpdates());
+        $this->assertSame(['Choose a display name.'], Hash::get($payload, 'errors.name'));
+        $this->assertSame(['Write a message first.'], Hash::get($payload, 'errors.message'));
+        $this->assertIsString($payload['html']);
+        $this->assertSame([], $this->publisher->getUpdates());
         $this->update([
             'snapshot' => $this->nextSnapshot(),
             'action' => 'send',
@@ -220,11 +220,11 @@ class RealtimeHttpTest extends HttpTestCase
         ]);
         $this->assertResponseOk();
         $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
-        static::assertSame('', Hash::get($payload, 'state.message'));
-        static::assertSame([], $payload['errors']);
-        static::assertIsString($payload['html'], 'The first valid send clears previously rendered errors.');
-        static::assertSame(['demo/chat'], $this->publisher->getUpdates()[0]->getTopics());
-        static::assertStringContainsString('message-sent', $this->publisher->getUpdates()[0]->getData());
+        $this->assertSame('', Hash::get($payload, 'state.message'));
+        $this->assertSame([], $payload['errors']);
+        $this->assertIsString($payload['html'], 'The first valid send clears previously rendered errors.');
+        $this->assertSame(['demo/chat'], $this->publisher->getUpdates()[0]->getTopics());
+        $this->assertStringContainsString('message-sent', $this->publisher->getUpdates()[0]->getData());
         $this->get('/realtime');
         $this->assertResponseContains('&lt;b&gt;Ada&lt;/b&gt;');
         $this->assertResponseContains('Hello &lt;script&gt;bad()&lt;/script&gt;');
@@ -261,10 +261,10 @@ class RealtimeHttpTest extends HttpTestCase
         ]);
         $this->assertResponseOk();
         $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
-        static::assertSame('', Hash::get($payload, 'state.message'));
-        static::assertTrue(Hash::get($payload, 'state.deliveryIssue'));
-        static::assertSame('chat-sent', Hash::get($payload, 'events.0.name'));
-        static::assertSame([], $payload['errors']);
+        $this->assertSame('', Hash::get($payload, 'state.message'));
+        $this->assertTrue(Hash::get($payload, 'state.deliveryIssue'));
+        $this->assertSame('chat-sent', Hash::get($payload, 'events.0.name'));
+        $this->assertSame([], $payload['errors']);
         $this->get('/realtime');
         $this->assertResponseContains('Saved during an outage.');
     }

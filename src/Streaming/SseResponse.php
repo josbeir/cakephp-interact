@@ -29,8 +29,7 @@ class SseResponse
     public function __construct(
         protected readonly FailureResponder $failures = new FailureResponder(),
         protected readonly ExceptionTrap $exceptions = new ExceptionTrap(),
-    ) {
-    }
+    ) {}
 
     /**
      * Select a non-seekable body without executing the action before headers are emitted.

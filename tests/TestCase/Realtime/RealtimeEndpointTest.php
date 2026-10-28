@@ -104,18 +104,18 @@ class RealtimeEndpointTest extends TestCase
     {
         $runtime = $this->runtime();
         $mount = $runtime->mount('RealtimeFixture', ['recordId' => 7], 'root', $this->context);
-        static::assertSame('/admin/islands/subscribe', $mount->realtime['endpoint'] ?? null);
+        $this->assertSame('/admin/islands/subscribe', $mount->realtime['endpoint'] ?? null);
         $context = new RequestContext($this->context->request, 'administration', '/admin/islands/update');
         $result = $runtime->update([
             'snapshot' => $mount->snapshot,
             'updates' => ['draft' => 'changed'],
             'subscriptionEndpoint' => '/untrusted/subscribe',
         ], $context);
-        static::assertSame('/admin/islands/subscribe', $result->realtime['endpoint'] ?? null);
+        $this->assertSame('/admin/islands/subscribe', $result->realtime['endpoint'] ?? null);
         $data = $this->snapshots->open($result->snapshot, $context->binding(), $context->scope);
-        static::assertSame('/admin/islands/subscribe', $data['subscriptionEndpoint'] ?? null);
+        $this->assertSame('/admin/islands/subscribe', $data['subscriptionEndpoint'] ?? null);
         $next = $runtime->update(['snapshot' => $result->snapshot], $context);
-        static::assertSame('/admin/islands/subscribe', $next->realtime['endpoint'] ?? null);
+        $this->assertSame('/admin/islands/subscribe', $next->realtime['endpoint'] ?? null);
     }
 
     public function testLazyInitializationRetainsTheCustomEndpointBeforeAnySubscriptionExists(): void
@@ -128,12 +128,12 @@ class RealtimeEndpointTest extends TestCase
             $this->context,
             new Options('manual'),
         );
-        static::assertNull($pending->realtime);
+        $this->assertNull($pending->realtime);
         $context = new RequestContext($this->context->request, 'administration', '/admin/islands/update');
         $initialized = $runtime->update(['snapshot' => $pending->snapshot, 'initialize' => true], $context);
-        static::assertSame('/admin/islands/subscribe', $initialized->realtime['endpoint'] ?? null);
+        $this->assertSame('/admin/islands/subscribe', $initialized->realtime['endpoint'] ?? null);
         $next = $runtime->update(['snapshot' => $initialized->snapshot], $context);
-        static::assertSame('/admin/islands/subscribe', $next->realtime['endpoint'] ?? null);
+        $this->assertSame('/admin/islands/subscribe', $next->realtime['endpoint'] ?? null);
     }
 
     public function testNewNestedIslandsInheritTheSignedParentSubscriptionEndpoint(): void
@@ -162,15 +162,15 @@ class RealtimeEndpointTest extends TestCase
         $nodes = new XPath(HTMLDocument::createFromString(
             '<!doctype html><html><head><title>Endpoint test</title></head><body>' . $result->html . '</body></html>',
         ))->query('//*[@data-interact-realtime]');
-        static::assertSame(2, $nodes->length);
+        $this->assertSame(2, $nodes->length);
         foreach ($nodes as $node) {
-            static::assertInstanceOf(Element::class, $node);
+            $this->assertInstanceOf(Element::class, $node);
             $metadata = Values::map(json_decode(
                 (string)$node->getAttribute('data-interact-realtime'),
                 true,
                 flags: JSON_THROW_ON_ERROR,
             ));
-            static::assertSame('/admin/islands/subscribe', $metadata['endpoint']);
+            $this->assertSame('/admin/islands/subscribe', $metadata['endpoint']);
         }
     }
 
@@ -208,7 +208,7 @@ class RealtimeEndpointTest extends TestCase
             'state' => [],
             'children' => [],
         ]);
-        static::assertNull($data->subscriptionEndpoint);
+        $this->assertNull($data->subscriptionEndpoint);
     }
 
     public function testPersistedMountIdentityDistinguishesSubscriptionConfigurations(): void
@@ -231,6 +231,6 @@ class RealtimeEndpointTest extends TestCase
             new SnapshotData($data + ['subscriptionEndpoint' => '/other/subscribe']),
             $this->context,
         );
-        static::assertNotSame($first, $other);
+        $this->assertNotSame($first, $other);
     }
 }

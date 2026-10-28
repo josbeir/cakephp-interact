@@ -10,6 +10,4 @@ use Interact\Attribute\Render;
  * Exercises an explicit native rendering target on an island owned by a plugin.
  */
 #[Render(template: 'literal.name')]
-class LiteralTemplateIsland extends Editor
-{
-}
+class LiteralTemplateIsland extends Editor {}

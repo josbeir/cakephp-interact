@@ -38,14 +38,15 @@ readonly class Binding
     public static function fromProperty(ReflectionProperty $property, State $state): static
     {
         $type = $property->getType();
+        $typeName = $type instanceof ReflectionNamedType ? $type->getName() : null;
         if (
             !$state->writable
             || !$property->hasDefaultValue()
             || !$type instanceof ReflectionNamedType
-            || !in_array($type->getName(), ['string', 'int', 'float', 'bool', 'array'], true)
+            || !in_array($typeName, ['string', 'int', 'float', 'bool', 'array'], true)
             || (
                 $type->allowsNull()
-                && $type->getName() === 'array'
+                && $typeName === 'array'
             )
         ) {
             throw new InvalidArgumentException(
@@ -55,7 +56,7 @@ readonly class Binding
 
         return new static(
             is_string($state->url) ? $state->url : $property->getName(),
-            $type->getName(),
+            $typeName,
             $property->getDefaultValue(),
             $state->history,
             $type->allowsNull(),

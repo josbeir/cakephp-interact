@@ -29,8 +29,7 @@ class WebSocketProvider implements BroadcasterInterface, SubscriptionAuthorizerI
         protected readonly string $socketUrl,
         #[SensitiveParameter]
         protected readonly string $apiKey,
-    ) {
-    }
+    ) {}
 
     /**
      * Forward the normalized envelope and delivery privacy through the management API.

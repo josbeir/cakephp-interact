@@ -8,6 +8,4 @@ namespace TestApp\Island\Article;
  *
  * The application's existing list finders and child keys remain authoritative.
  */
-class PollingListIsland extends ListingIsland
-{
-}
+class PollingListIsland extends ListingIsland {}

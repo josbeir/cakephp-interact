@@ -21,20 +21,20 @@ class DocumentPolicyTest extends TestCase
         ])
             ->withHeader('Content-Security-Policy-Report-Only', "style-src 'nonce-style_-='; report-uri /reports");
         $before = DocumentPolicy::fromResponse($response);
-        static::assertSame(['script+/==', 'style_-='], $before->nonces);
+        $this->assertSame(['script+/==', 'style_-='], $before->nonces);
         $rotated = $response->withHeader('Content-Security-Policy', [
             "script-src 'self' 'nonce-freshScript'; style-src-elem 'nonce-freshStyle'; object-src 'none'",
             "default-src 'nonce-freshScript'; script-src-elem 'nonce-freshScript'",
         ])->withHeader('Content-Security-Policy-Report-Only', "style-src 'nonce-freshStyle'; report-uri /reports");
-        static::assertSame($before->fingerprint, DocumentPolicy::fromResponse($rotated)->fingerprint);
-        static::assertSame(['freshScript', 'freshStyle'], DocumentPolicy::fromResponse($rotated)->nonces);
+        $this->assertSame($before->fingerprint, DocumentPolicy::fromResponse($rotated)->fingerprint);
+        $this->assertSame(['freshScript', 'freshStyle'], DocumentPolicy::fromResponse($rotated)->nonces);
         $merged = $rotated->withHeader('Content-Security-Policy', str_replace(
             'freshStyle',
             'freshScript',
             $rotated->getHeader('Content-Security-Policy'),
         ))
             ->withHeader('Content-Security-Policy-Report-Only', "style-src 'nonce-freshScript'; report-uri /reports");
-        static::assertNotSame($before->fingerprint, DocumentPolicy::fromResponse($merged)->fingerprint);
+        $this->assertNotSame($before->fingerprint, DocumentPolicy::fromResponse($merged)->fingerprint);
     }
 
     public function testAllOtherPolicyBytesAndNonceCapabilitiesRequireFreshDocument(): void
@@ -64,15 +64,15 @@ class DocumentPolicyTest extends TestCase
             $response->withHeader('Referrer-Policy', 'no-referrer'),
             $response->withHeader('Permissions-Policy', 'camera=()'),
         ] as $changed) {
-            static::assertNotSame($before->fingerprint, DocumentPolicy::fromResponse($changed)->fingerprint);
+            $this->assertNotSame($before->fingerprint, DocumentPolicy::fromResponse($changed)->fingerprint);
         }
 
         $unsupported = new Response()->withHeader(
             'Content-Security-Policy',
             "img-src 'nonce-original'; report-uri /'nonce-original'",
         );
-        static::assertSame([], DocumentPolicy::fromResponse($unsupported)->nonces);
-        static::assertNotSame(
+        $this->assertSame([], DocumentPolicy::fromResponse($unsupported)->nonces);
+        $this->assertNotSame(
             DocumentPolicy::fromResponse($unsupported)->fingerprint,
             DocumentPolicy::fromResponse($unsupported->withHeader(
                 'Content-Security-Policy',

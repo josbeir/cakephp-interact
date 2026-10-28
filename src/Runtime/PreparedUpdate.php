@@ -25,8 +25,7 @@ class PreparedUpdate
         public readonly bool $stream,
         public readonly string $id,
         protected readonly Closure $execute,
-    ) {
-    }
+    ) {}
 
     /**
      * Finish hooks, action execution, and normal result construction exactly once.

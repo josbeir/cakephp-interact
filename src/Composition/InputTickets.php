@@ -24,9 +24,7 @@ class InputTickets
     /**
      * Reuse snapshot signing, expiry, session binding, and middleware-scope verification.
      */
-    public function __construct(protected readonly SnapshotCodec $snapshots)
-    {
-    }
+    public function __construct(protected readonly SnapshotCodec $snapshots) {}
 
     /**
      * Read the untrusted optional ticket without accepting another transport type.

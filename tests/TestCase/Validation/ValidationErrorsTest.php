@@ -38,7 +38,7 @@ class ValidationErrorsTest extends TestCase
         $island = new PlainIsland();
         $island->setErrors([...$original, '_form' => ['Please review these fields.']]);
 
-        static::assertSame(
+        $this->assertSame(
             [
                 'title' => ['A title is required.'],
                 'author.name' => ['An author is required.'],
@@ -47,8 +47,8 @@ class ValidationErrorsTest extends TestCase
             ],
             $island->errors(),
         );
-        static::assertSame($original, $article->getErrors());
-        static::assertSame(['_empty' => 'A title is required.'], $article->getError('title'));
+        $this->assertSame($original, $article->getErrors());
+        $this->assertSame(['_empty' => 'A title is required.'], $article->getError('title'));
     }
 
     /**
@@ -95,7 +95,7 @@ class ValidationErrorsTest extends TestCase
     {
         $island = new PlainIsland();
         $island->setErrors($input);
-        static::assertSame($expected, $island->errors());
+        $this->assertSame($expected, $island->errors());
     }
 
     public function testSettingErrorsReplacesFeedbackAndAnEmptyArrayClearsIt(): void
@@ -103,9 +103,9 @@ class ValidationErrorsTest extends TestCase
         $island = new PlainIsland();
         $island->setErrors(['title' => ['Invalid.']]);
         $island->setErrors(['_form' => ['Unavailable.']]);
-        static::assertSame(['_form' => ['Unavailable.']], $island->errors());
+        $this->assertSame(['_form' => ['Unavailable.']], $island->errors());
         $island->setErrors([]);
-        static::assertSame([], $island->errors());
+        $this->assertSame([], $island->errors());
     }
 
     /**
@@ -140,9 +140,9 @@ class ValidationErrorsTest extends TestCase
         $island->setErrors(['title' => ['Existing error.']]);
         try {
             $island->setErrors(['valid' => ['Valid message.'], ...$input]);
-            static::fail('Malformed validation feedback must fail.');
+            $this->fail('Malformed validation feedback must fail.');
         } catch (InvalidArgumentException) {
-            static::assertSame(['title' => ['Existing error.']], $island->errors());
+            $this->assertSame(['title' => ['Existing error.']], $island->errors());
         }
     }
 
@@ -155,7 +155,7 @@ class ValidationErrorsTest extends TestCase
 
         $island = new PlainIsland();
         $island->setErrors(['field' => $messages]);
-        static::assertSame(['field' . str_repeat('.child', 32) => ['Required.']], $island->errors());
+        $this->assertSame(['field' . str_repeat('.child', 32) => ['Required.']], $island->errors());
 
         $cyclic = [];
         $cyclic['child'] = &$cyclic;

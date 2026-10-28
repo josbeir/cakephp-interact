@@ -23,9 +23,7 @@ class FrankenPhp
      *
      * @param non-empty-string $root Absolute repository root.
      */
-    public function __construct(protected readonly string $root)
-    {
-    }
+    public function __construct(protected readonly string $root) {}
 
     /**
      * Build the same pinned PHP/Intl image for preview and acceptance tests.

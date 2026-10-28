@@ -15,7 +15,5 @@ use Interact\Island;
 class LifecycleActionIsland extends Island
 {
     #[Action]
-    public function mount(): void
-    {
-    }
+    public function mount(): void {}
 }

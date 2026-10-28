@@ -8,6 +8,4 @@ use Interact\Island;
 /**
  * Verifies that a conventional name cannot select a non-instantiable island base.
  */
-abstract class AbstractIsland extends Island
-{
-}
+abstract class AbstractIsland extends Island {}

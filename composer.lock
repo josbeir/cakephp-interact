@@ -61,18 +61,18 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/cakephp/cakephp.git",
-                "reference": "dd15e441a1b7259fca2a4e66f8175a583d3e4003"
+                "reference": "d5d303dee51cb91973fa7e6d21b0771a4e9f37d2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/cakephp/cakephp/zipball/dd15e441a1b7259fca2a4e66f8175a583d3e4003",
-                "reference": "dd15e441a1b7259fca2a4e66f8175a583d3e4003",
+                "url": "https://api.github.com/repos/cakephp/cakephp/zipball/d5d303dee51cb91973fa7e6d21b0771a4e9f37d2",
+                "reference": "d5d303dee51cb91973fa7e6d21b0771a4e9f37d2",
                 "shasum": ""
             },
             "require": {
                 "brick/varexporter": "^0.7.0",
                 "cakephp/chronos": "4.x-dev",
-                "composer/ca-bundle": "^1.5",
+                "composer/ca-bundle": "^1.6",
                 "ext-intl": "*",
                 "ext-json": "*",
                 "ext-mbstring": "*",
@@ -118,7 +118,7 @@
                 "cakephp/validation": "self.version"
             },
             "require-dev": {
-                "boundwize/structarmed": "^0.14",
+                "boundwize/structarmed": "^0.19",
                 "cakephp/cakephp-codesniffer": "6.x-dev",
                 "cakephp/mago-rules": "dev-main",
                 "http-interop/http-factory-tests": "^2.0",
@@ -179,7 +179,7 @@
                 "issues": "https://github.com/cakephp/cakephp/issues",
                 "source": "https://github.com/cakephp/cakephp"
             },
-            "time": "2026-10-14T17:59:39+00:00"
+            "time": "2026-10-28T13:29:41+00:00"
         },
         {
             "name": "cakephp/chronos",
@@ -247,16 +247,16 @@
         },
         {
             "name": "composer/ca-bundle",
-            "version": "1.5.14",
+            "version": "1.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/composer/ca-bundle.git",
-                "reference": "0c8abba0634f637bd78c4e451981da368d403463"
+                "reference": "2c99cf2e92516985dea4914812b93d9daf01cdd6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/composer/ca-bundle/zipball/0c8abba0634f637bd78c4e451981da368d403463",
-                "reference": "0c8abba0634f637bd78c4e451981da368d403463",
+                "url": "https://api.github.com/repos/composer/ca-bundle/zipball/2c99cf2e92516985dea4914812b93d9daf01cdd6",
+                "reference": "2c99cf2e92516985dea4914812b93d9daf01cdd6",
                 "shasum": ""
             },
             "require": {
@@ -303,7 +303,7 @@
             "support": {
                 "irc": "irc://irc.freenode.org/composer",
                 "issues": "https://github.com/composer/ca-bundle/issues",
-                "source": "https://github.com/composer/ca-bundle/tree/1.5.14"
+                "source": "https://github.com/composer/ca-bundle/tree/1.6.0"
             },
             "funding": [
                 {
@@ -315,7 +315,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-08-21T14:57:29+00:00"
+            "time": "2026-10-20T20:14:05+00:00"
         },
         {
             "name": "laminas/laminas-diactoros",
@@ -1069,12 +1069,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/cakephp/mago-rules.git",
-                "reference": "66e7cda5a236736132af752ac99716f33c31554b"
+                "reference": "3696cdf78311f83994e4f3526a3fda7e715a7150"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/cakephp/mago-rules/zipball/66e7cda5a236736132af752ac99716f33c31554b",
-                "reference": "66e7cda5a236736132af752ac99716f33c31554b",
+                "url": "https://api.github.com/repos/cakephp/mago-rules/zipball/3696cdf78311f83994e4f3526a3fda7e715a7150",
+                "reference": "3696cdf78311f83994e4f3526a3fda7e715a7150",
                 "shasum": ""
             },
             "require": {
@@ -1100,20 +1100,20 @@
                 "issues": "https://github.com/cakephp/mago-rules/issues",
                 "source": "https://github.com/cakephp/mago-rules/tree/main"
             },
-            "time": "2026-10-03T11:36:09+00:00"
+            "time": "2026-10-28T15:23:00+00:00"
         },
         {
             "name": "carthage-software/mago",
-            "version": "1.57.0",
+            "version": "1.59.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/carthage-software/mago.git",
-                "reference": "9656cd55d51d96bd6dc57f1f1e73c15f22cb7cc3"
+                "reference": "95a25d686a2b584c387326e466d6ead8c885465d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/carthage-software/mago/zipball/9656cd55d51d96bd6dc57f1f1e73c15f22cb7cc3",
-                "reference": "9656cd55d51d96bd6dc57f1f1e73c15f22cb7cc3",
+                "url": "https://api.github.com/repos/carthage-software/mago/zipball/95a25d686a2b584c387326e466d6ead8c885465d",
+                "reference": "95a25d686a2b584c387326e466d6ead8c885465d",
                 "shasum": ""
             },
             "require": {
@@ -1155,7 +1155,7 @@
             ],
             "support": {
                 "issues": "https://github.com/carthage-software/mago/issues",
-                "source": "https://github.com/carthage-software/mago/tree/1.57.0"
+                "source": "https://github.com/carthage-software/mago/tree/1.59.0"
             },
             "funding": [
                 {
@@ -1163,7 +1163,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-14T07:10:47+00:00"
+            "time": "2026-10-25T00:59:15+00:00"
         },
         {
             "name": "firebase/php-jwt",
@@ -1462,11 +1462,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.3.1",
+            "version": "2.3.3",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/6155239b488e95d26d1ebd95c6b4bb294d7f09db",
-                "reference": "6155239b488e95d26d1ebd95c6b4bb294d7f09db",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/4b57dc8ca7456b635d1661845f44bc060b02c6b0",
+                "reference": "4b57dc8ca7456b635d1661845f44bc060b02c6b0",
                 "shasum": ""
             },
             "require": {
@@ -1522,7 +1522,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-08T21:09:11+00:00"
+            "time": "2026-10-27T14:06:26+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",
@@ -1883,16 +1883,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "12.5.39",
+            "version": "12.5.42",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "4e8cbead3741cc57f16d142f4c5dc73c2747820a"
+                "reference": "1d6dbe748c079e5d2b03bca1be69d0f4cc52a578"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/4e8cbead3741cc57f16d142f4c5dc73c2747820a",
-                "reference": "4e8cbead3741cc57f16d142f4c5dc73c2747820a",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/1d6dbe748c079e5d2b03bca1be69d0f4cc52a578",
+                "reference": "1d6dbe748c079e5d2b03bca1be69d0f4cc52a578",
                 "shasum": ""
             },
             "require": {
@@ -1961,7 +1961,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.39"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.42"
             },
             "funding": [
                 {
@@ -1969,25 +1969,25 @@
                     "type": "other"
                 }
             ],
-            "time": "2026-10-12T15:27:27+00:00"
+            "time": "2026-10-27T04:15:03+00:00"
         },
         {
             "name": "rector/rector",
-            "version": "2.7.0",
+            "version": "2.8.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/rectorphp/rector.git",
-                "reference": "4d6a39b7fff302cac0ce90cd959a53c2f6a32776"
+                "reference": "10c96546bb72b38b4e2e9960fcd3f884d7fa02eb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rectorphp/rector/zipball/4d6a39b7fff302cac0ce90cd959a53c2f6a32776",
-                "reference": "4d6a39b7fff302cac0ce90cd959a53c2f6a32776",
+                "url": "https://api.github.com/repos/rectorphp/rector/zipball/10c96546bb72b38b4e2e9960fcd3f884d7fa02eb",
+                "reference": "10c96546bb72b38b4e2e9960fcd3f884d7fa02eb",
                 "shasum": ""
             },
             "require": {
                 "php": "^7.4|^8.0",
-                "phpstan/phpstan": "^2.3.0"
+                "phpstan/phpstan": "^2.3.2"
             },
             "conflict": {
                 "rector/rector-doctrine": "*",
@@ -2018,7 +2018,7 @@
             ],
             "support": {
                 "issues": "https://github.com/rectorphp/rector/issues",
-                "source": "https://github.com/rectorphp/rector/tree/2.7.0"
+                "source": "https://github.com/rectorphp/rector/tree/2.8.1"
             },
             "funding": [
                 {
@@ -2026,7 +2026,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-06T08:46:45+00:00"
+            "time": "2026-10-26T13:03:01+00:00"
         },
         {
             "name": "revolt/event-loop",

@@ -87,19 +87,19 @@ class RenderlessTest extends UploadStorageTestCase
             'action' => 'remember',
             'updates' => ['title' => 'accepted'],
         ], $this->context);
-        static::assertNull($result->payload()['html']);
-        static::assertSame(1, $this->views());
-        static::assertSame(1, $result->state['count']);
-        static::assertSame('accepted', $result->state['title']);
-        static::assertSame([['name' => 'remembered', 'detail' => ['count' => 1]]], $result->events);
-        static::assertArrayHasKey('file', $result->uploads);
+        $this->assertNull($result->payload()['html']);
+        $this->assertSame(1, $this->views());
+        $this->assertSame(1, $result->state['count']);
+        $this->assertSame('accepted', $result->state['title']);
+        $this->assertSame([['name' => 'remembered', 'detail' => ['count' => 1]]], $result->events);
+        $this->assertArrayHasKey('file', $result->uploads);
         $next = $this->codec->open($result->snapshot, $this->context->binding(), $this->context->scope);
-        static::assertSame($first['children'], $next['children']);
-        static::assertIsArray($next['state']);
-        static::assertSame('accepted', $next['state']['title']);
+        $this->assertSame($first['children'], $next['children']);
+        $this->assertIsArray($next['state']);
+        $this->assertSame('accepted', $next['state']['title']);
         $rendered = $this->runtime->update(['snapshot' => $result->snapshot], $this->context);
-        static::assertStringContainsString('data-interact-preserve', $rendered->html);
-        static::assertSame(2, $this->views());
+        $this->assertStringContainsString('data-interact-preserve', $rendered->html);
+        $this->assertSame(2, $this->views());
     }
 
     public function testOwnedUploadsRemainRestorableAcrossRenderlessSaves(): void
@@ -118,19 +118,19 @@ class RenderlessTest extends UploadStorageTestCase
             ],
             new IslandContext($request, 'default', '/_interact/update'),
         );
-        static::assertIsString($staged->payload()['html']);
-        static::assertCount(1, $staged->uploads['file']['files']);
+        $this->assertIsString($staged->payload()['html']);
+        $this->assertCount(1, $staged->uploads['file']['files']);
         $saved = $this->runtime->update(['snapshot' => $staged->snapshot, 'action' => 'remember'], $this->context);
-        static::assertNull($saved->payload()['html']);
-        static::assertSame($staged->uploads, $saved->uploads);
+        $this->assertNull($saved->payload()['html']);
+        $this->assertSame($staged->uploads, $saved->uploads);
         $before = $this->codec->open($staged->snapshot, $this->context->binding(), $this->context->scope);
         $after = $this->codec->open($saved->snapshot, $this->context->binding(), $this->context->scope);
-        static::assertSame($before['uploads'], $after['uploads']);
-        static::assertArrayNotHasKey('file', $saved->state);
+        $this->assertSame($before['uploads'], $after['uploads']);
+        $this->assertArrayNotHasKey('file', $saved->state);
         $next = $this->runtime->update(['snapshot' => $saved->snapshot, 'action' => 'remember'], $this->context);
-        static::assertNull($next->payload()['html']);
-        static::assertSame($saved->uploads, $next->uploads);
-        static::assertSame([], $next->errors);
+        $this->assertNull($next->payload()['html']);
+        $this->assertSame($saved->uploads, $next->uploads);
+        $this->assertSame([], $next->errors);
     }
 
     public function testConditionalChoiceResetsBetweenRequests(): void
@@ -141,44 +141,44 @@ class RenderlessTest extends UploadStorageTestCase
             'action' => 'conditional',
             'args' => [1],
         ], $this->context);
-        static::assertNull($skipped->payload()['html']);
+        $this->assertNull($skipped->payload()['html']);
         $rendered = $this->runtime->update([
             'snapshot' => $skipped->snapshot,
             'action' => 'conditional',
             'args' => [5],
         ], $this->context);
-        static::assertIsString($rendered->payload()['html']);
-        static::assertSame(6, $rendered->state['count']);
-        static::assertSame(2, $this->views());
+        $this->assertIsString($rendered->payload()['html']);
+        $this->assertSame(6, $rendered->state['count']);
+        $this->assertSame(2, $this->views());
     }
 
     public function testValidationRendersAndClearsFeedbackBeforeSkippingAgain(): void
     {
         $initial = $this->runtime->mount('Renderless', [], 'parent', $this->context);
         $failed = $this->runtime->update(['snapshot' => $initial->snapshot, 'action' => 'invalid'], $this->context);
-        static::assertIsString($failed->payload()['html']);
-        static::assertSame([], $failed->events);
+        $this->assertIsString($failed->payload()['html']);
+        $this->assertSame([], $failed->events);
         $snapshot = $this->codec->open($failed->snapshot, $this->context->binding(), $this->context->scope);
-        static::assertTrue($snapshot['renderedErrors']);
+        $this->assertTrue($snapshot['renderedErrors']);
         $cleared = $this->runtime->update(['snapshot' => $failed->snapshot, 'action' => 'remember'], $this->context);
-        static::assertIsString($cleared->payload()['html']);
-        static::assertSame([], $cleared->errors);
+        $this->assertIsString($cleared->payload()['html']);
+        $this->assertSame([], $cleared->errors);
         $again = $this->runtime->update(['snapshot' => $cleared->snapshot, 'action' => 'remember'], $this->context);
-        static::assertNull($again->payload()['html']);
-        static::assertSame(3, $this->views());
+        $this->assertNull($again->payload()['html']);
+        $this->assertSame(3, $this->views());
     }
 
     public function testDownloadsAndRedirectsKeepTheirOutcomeContracts(): void
     {
         $initial = $this->runtime->mount('Renderless', [], 'parent', $this->context);
         $download = $this->runtime->update(['snapshot' => $initial->snapshot, 'action' => 'download'], $this->context);
-        static::assertSame('/report', $download->download);
-        static::assertNull($download->payload()['html']);
-        static::assertSame(1, $download->state['count']);
+        $this->assertSame('/report', $download->download);
+        $this->assertNull($download->payload()['html']);
+        $this->assertSame(1, $download->state['count']);
         $redirect = $this->runtime->update(['snapshot' => $download->snapshot, 'action' => 'leave'], $this->context);
-        static::assertArrayHasKey('redirect', $redirect->payload());
-        static::assertArrayNotHasKey('snapshot', $redirect->payload());
-        static::assertSame(1, $this->views());
+        $this->assertArrayHasKey('redirect', $redirect->payload());
+        $this->assertArrayNotHasKey('snapshot', $redirect->payload());
+        $this->assertSame(1, $this->views());
     }
 
     public function testReadOnlyStateStillRejectsUpdates(): void
@@ -210,25 +210,25 @@ class RenderlessTest extends UploadStorageTestCase
                 throw new RuntimeException('Failed action');
             });
         } catch (RuntimeException) {
-            static::assertTrue($effects->skipsRender());
+            $this->assertTrue($effects->skipsRender());
         }
 
         $effects->capture(static function (): void {});
-        static::assertFalse($effects->skipsRender());
+        $this->assertFalse($effects->skipsRender());
         $this->expectException(LogicException::class);
         new RenderlessIsland()->skipRender();
     }
 
     public function testFeedbackMarkerRejectsInvalidSignedTypes(): void
     {
-        static::assertFalse(RenderPolicy::renderedErrors([]));
-        static::assertFalse(RenderPolicy::renderedErrors(['renderedErrors' => false]));
+        $this->assertFalse(RenderPolicy::renderedErrors([]));
+        $this->assertFalse(RenderPolicy::renderedErrors(['renderedErrors' => false]));
         foreach ([null, 'true', 1, []] as $value) {
             try {
                 RenderPolicy::renderedErrors(['renderedErrors' => $value]);
-                static::fail('Invalid feedback metadata was accepted.');
+                $this->fail('Invalid feedback metadata was accepted.');
             } catch (InvalidArgumentException $exception) {
-                static::assertSame('Invalid signed validation feedback marker.', $exception->getMessage());
+                $this->assertSame('Invalid signed validation feedback marker.', $exception->getMessage());
             }
         }
     }

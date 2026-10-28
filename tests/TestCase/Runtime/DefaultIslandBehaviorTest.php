@@ -16,7 +16,7 @@ class DefaultIslandBehaviorTest extends TestCase
     public function testDefaultViewDataAndInvalidBrowserEvent(): void
     {
         $island = new PlainIsland();
-        static::assertSame([], $island->viewData());
+        $this->assertSame([], $island->viewData());
         $this->expectException(InvalidArgumentException::class);
         $island->dispatch('bad name');
     }

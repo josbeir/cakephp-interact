@@ -49,17 +49,17 @@ class DebuggingStreamTest extends TestCase
             return '';
         });
         try {
-            static::assertSame('', (string)$response->getBody());
+            $this->assertSame('', (string)$response->getBody());
         } finally {
             ob_end_clean();
         }
 
-        static::assertGreaterThan(2, $observed);
-        static::assertSame(count($frames) - 1, $observed);
+        $this->assertGreaterThan(2, $observed);
+        $this->assertSame(count($frames) - 1, $observed);
         $diagnostics = [];
         foreach ($frames as $frame) {
-            static::assertSame(1, substr_count($frame, "\n\n"));
-            static::assertLessThan(1_048_576, strlen($frame));
+            $this->assertSame(1, substr_count($frame, "\n\n"));
+            $this->assertLessThan(1_048_576, strlen($frame));
             $message = Values::map(json_decode(
                 substr($frame, strlen("event: interact\ndata: "), -2),
                 true,
@@ -70,11 +70,11 @@ class DebuggingStreamTest extends TestCase
             }
         }
 
-        static::assertSame('preparation', $diagnostics[0]['output']);
-        static::assertTrue($diagnostics[array_key_last($diagnostics)]['truncated']);
+        $this->assertSame('preparation', $diagnostics[0]['output']);
+        $this->assertTrue($diagnostics[array_key_last($diagnostics)]['truncated']);
         foreach ($diagnostics as $diagnostic) {
-            static::assertIsString($diagnostic['output']);
-            static::assertTrue(mb_check_encoding($diagnostic['output'], 'UTF-8'));
+            $this->assertIsString($diagnostic['output']);
+            $this->assertTrue(mb_check_encoding($diagnostic['output'], 'UTF-8'));
         }
     }
 
@@ -104,9 +104,9 @@ class DebuggingStreamTest extends TestCase
             Configure::write('debug', $previous);
         }
 
-        static::assertStringContainsString('"type":"result"', $output);
-        static::assertStringNotContainsString('diagnostic', $output);
-        static::assertStringNotContainsString('development only', $output);
+        $this->assertStringContainsString('"type":"result"', $output);
+        $this->assertStringNotContainsString('diagnostic', $output);
+        $this->assertStringNotContainsString('development only', $output);
     }
 
     /**

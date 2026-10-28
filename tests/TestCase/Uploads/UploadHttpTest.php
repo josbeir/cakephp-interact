@@ -79,9 +79,9 @@ class UploadHttpTest extends HttpTestCase
                 ->files(),
             false,
         );
-        static::assertCount(1, $saved);
-        static::assertSame('a plain text document', file_get_contents($saved[0]->getPathname()));
-        static::assertMatchesRegularExpression(
+        $this->assertCount(1, $saved);
+        $this->assertSame('a plain text document', file_get_contents($saved[0]->getPathname()));
+        $this->assertMatchesRegularExpression(
             '/"document":\{"multiple":false,"maxSize":\d+,"maxFiles":1,"files":\[\]\}/',
             (string)$this->response?->getBody(),
         );
@@ -162,20 +162,20 @@ class UploadHttpTest extends HttpTestCase
         $this->assertResponseOk();
         /** @var mixed $payload */
         $payload = json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR);
-        static::assertIsArray($payload);
+        $this->assertIsArray($payload);
         /** @var mixed $metadata */
         $metadata = $payload['uploads'];
-        static::assertIsArray($metadata);
+        $this->assertIsArray($metadata);
         /** @var mixed $attachments */
         $attachments = $metadata['attachments'];
-        static::assertIsArray($attachments);
+        $this->assertIsArray($attachments);
         /** @var mixed $files */
         $files = $attachments['files'];
-        static::assertIsArray($files);
-        static::assertCount(2, $files);
+        $this->assertIsArray($files);
+        $this->assertCount(2, $files);
         /** @var mixed $first */
         $first = $files[0];
-        static::assertIsArray($first);
+        $this->assertIsArray($first);
         $this->update([
             'snapshot' => $this->nextSnapshot(),
             'upload' => ['kind' => 'remove', 'field' => 'attachments', 'id' => $first['id']],

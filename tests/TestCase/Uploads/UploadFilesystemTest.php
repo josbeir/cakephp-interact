@@ -50,11 +50,11 @@ class UploadFilesystemTest extends TestCase
             ): void {
                 $invoked = true;
             });
-            static::fail('A failed lock must reject staging.');
+            $this->fail('A failed lock must reject staging.');
         } catch (RuntimeException $runtimeException) {
-            static::assertSame('Cannot lock temporary uploads.', $runtimeException->getMessage());
-            static::assertSame(1, UploadFailureStream::$unlocked);
-            static::assertSame(1, UploadFailureStream::$closed);
+            $this->assertSame('Cannot lock temporary uploads.', $runtimeException->getMessage());
+            $this->assertSame(1, UploadFailureStream::$unlocked);
+            $this->assertSame(1, UploadFailureStream::$closed);
         }
     }
 
@@ -69,9 +69,9 @@ class UploadFilesystemTest extends TestCase
                 throw $failure;
             });
         } catch (RuntimeException $runtimeException) {
-            static::assertSame($failure, $runtimeException);
-            static::assertSame(1, UploadFailureStream::$unlocked);
-            static::assertSame(1, UploadFailureStream::$closed);
+            $this->assertSame($failure, $runtimeException);
+            $this->assertSame(1, UploadFailureStream::$unlocked);
+            $this->assertSame(1, UploadFailureStream::$closed);
         }
     }
 
@@ -83,10 +83,10 @@ class UploadFilesystemTest extends TestCase
         $file = new UploadedFile($source, 14, UPLOAD_ERR_OK, 'notes.txt');
         try {
             new UploadWriter(new UploadConfig())->copy($file, 'interactuploadfault://short-write');
-            static::fail('A short write must not publish a truncated file.');
+            $this->fail('A short write must not publish a truncated file.');
         } catch (RuntimeException $runtimeException) {
-            static::assertSame('Cannot write temporary upload.', $runtimeException->getMessage());
-            static::assertSame(1, UploadFailureStream::$closed);
+            $this->assertSame('Cannot write temporary upload.', $runtimeException->getMessage());
+            $this->assertSame(1, UploadFailureStream::$closed);
         }
     }
 }

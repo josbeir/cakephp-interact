@@ -66,12 +66,12 @@ class UploadBoundaryTest extends UploadStorageTestCase
         $island = new DocumentUpload();
         try {
             new UploadRestorer($storage)->restore($island, $definition, $selection, $context);
-            static::fail('A single-file field cannot restore two references.');
+            $this->fail('A single-file field cannot restore two references.');
         } catch (InvalidArgumentException $invalidArgumentException) {
-            static::assertSame('Invalid single-file selection.', $invalidArgumentException->getMessage());
-            static::assertNull($island->document);
-            static::assertNotNull($storage->find($first->id, $owner));
-            static::assertNotNull($storage->find($second->id, $owner));
+            $this->assertSame('Invalid single-file selection.', $invalidArgumentException->getMessage());
+            $this->assertNull($island->document);
+            $this->assertNotNull($storage->find($first->id, $owner));
+            $this->assertNotNull($storage->find($second->id, $owner));
         }
     }
 
@@ -98,9 +98,9 @@ class UploadBoundaryTest extends UploadStorageTestCase
         symlink($session, $this->directory . '/linked-session');
         try {
             DateTime::setTestNow(new DateTime('2026-10-20 12:00:02'));
-            static::assertSame(1, $storage->cleanup());
-            static::assertFileDoesNotExist($session . '/' . $file->id . '.json');
-            static::assertSame(0, $storage->cleanup());
+            $this->assertSame(1, $storage->cleanup());
+            $this->assertFileDoesNotExist($session . '/' . $file->id . '.json');
+            $this->assertSame(0, $storage->cleanup());
         } finally {
             unlink($this->directory . '/linked-session');
         }
@@ -115,8 +115,8 @@ class UploadBoundaryTest extends UploadStorageTestCase
         $link = $session . '/' . str_repeat('a', 32) . '.json';
         symlink($session . '/' . $file->id . '.json', $link);
         $second = $storage->put($this->incoming(), $owner);
-        static::assertNotNull($storage->find($second->id, $owner));
-        static::assertNull($storage->find(str_repeat('a', 32), $owner));
+        $this->assertNotNull($storage->find($second->id, $owner));
+        $this->assertNull($storage->find(str_repeat('a', 32), $owner));
     }
 
     public function testInterruptedPhpUploadsNeverCreatePrivateStaging(): void
@@ -127,10 +127,10 @@ class UploadBoundaryTest extends UploadStorageTestCase
                 new UploadedFile('php://temp', 0, UPLOAD_ERR_PARTIAL),
                 new UploadOwner('session', 'scope', 'island', 'file'),
             );
-            static::fail('Incomplete requests must not enter staging.');
+            $this->fail('Incomplete requests must not enter staging.');
         } catch (UploadRejected $uploadRejected) {
-            static::assertStringContainsString('could not be uploaded', $uploadRejected->getMessage());
-            static::assertDirectoryDoesNotExist($this->directory);
+            $this->assertStringContainsString('could not be uploaded', $uploadRejected->getMessage());
+            $this->assertDirectoryDoesNotExist($this->directory);
         }
     }
 }

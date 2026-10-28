@@ -6,6 +6,4 @@ namespace Commerce\Island;
 /**
  * Verifies that convention-based resolution rejects unrelated classes before construction.
  */
-class NotAnIsland
-{
-}
+class NotAnIsland {}

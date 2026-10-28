@@ -15,7 +15,5 @@ use Interact\Island;
 class HiddenActionIsland extends Island
 {
     #[Action]
-    protected function save(): void
-    {
-    }
+    protected function save(): void {}
 }

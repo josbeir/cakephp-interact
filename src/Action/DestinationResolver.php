@@ -16,9 +16,7 @@ class DestinationResolver
     /**
      * Keep URL policy replaceable independently of CakePHP route generation.
      */
-    public function __construct(protected readonly DestinationPolicy $policy = new DestinationPolicy())
-    {
-    }
+    public function __construct(protected readonly DestinationPolicy $policy = new DestinationPolicy()) {}
 
     /**
      * Generate a destination with the mounting page's defaults and current trusted origin.

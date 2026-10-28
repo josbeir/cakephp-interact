@@ -20,9 +20,7 @@ readonly class ParentValues
      * @param array<string, mixed> $props Verified reactive prop replacements.
      * @param array<string, mixed> $models Verified bound state values.
      */
-    public function __construct(public array $props = [], public array $models = [])
-    {
-    }
+    public function __construct(public array $props = [], public array $models = []) {}
 
     /**
      * Apply parent-owned props and return only names whose values actually changed.

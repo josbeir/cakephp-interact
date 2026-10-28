@@ -75,8 +75,8 @@ class ActionOutcomeTest extends TestCase
             'action' => 'leave',
             'args' => ['https://payment.example/checkout', true],
         ], $context);
-        static::assertInstanceOf(RedirectResult::class, $result);
-        static::assertSame(
+        $this->assertInstanceOf(RedirectResult::class, $result);
+        $this->assertSame(
             [
                 'version' => 1,
                 'id' => $mount->id,
@@ -84,8 +84,8 @@ class ActionOutcomeTest extends TestCase
             ],
             $result->payload(),
         );
-        static::assertSame('', $result->snapshot);
-        static::assertSame([], $result->events);
+        $this->assertSame('', $result->snapshot);
+        $this->assertSame([], $result->events);
     }
 
     public function testDownloadRendersUpdatedStateAndKeepsRoutingDefaultsSigned(): void
@@ -98,11 +98,11 @@ class ActionOutcomeTest extends TestCase
             'action' => 'download',
             'args' => ['/file'],
         ], $context);
-        static::assertSame('/file', $result->payload()['download']);
-        static::assertSame(1, $result->state['exports']);
-        static::assertSame('exported', $result->events[0]['name']);
+        $this->assertSame('/file', $result->payload()['download']);
+        $this->assertSame(1, $result->state['exports']);
+        $this->assertSame('exported', $result->events[0]['name']);
         $signed = new SnapshotCodec(str_repeat('o', 32))->open($result->snapshot, $context->binding(), $context->scope);
-        static::assertSame(
+        $this->assertSame(
             ['plugin' => null, 'controller' => 'Articles', 'action' => 'edit', 'prefix' => 'Admin'],
             $signed['routing'],
         );
@@ -119,9 +119,9 @@ class ActionOutcomeTest extends TestCase
                 'action' => 'invalid',
                 'args' => [$download],
             ], $context);
-            static::assertSame(['draft' => ['Required.']], $result->errors);
-            static::assertArrayNotHasKey('redirect', $result->payload());
-            static::assertArrayNotHasKey('download', $result->payload());
+            $this->assertSame(['draft' => ['Required.']], $result->errors);
+            $this->assertArrayNotHasKey('redirect', $result->payload());
+            $this->assertArrayNotHasKey('download', $result->payload());
         }
     }
 
@@ -135,8 +135,8 @@ class ActionOutcomeTest extends TestCase
             'action' => 'download',
             'args' => ['/file'],
         ], $context);
-        static::assertNotEmpty($result->errors);
-        static::assertNull($result->download);
+        $this->assertNotEmpty($result->errors);
+        $this->assertNull($result->download);
     }
 
     public function testConflictingOutcomesAreRejected(): void
@@ -174,7 +174,7 @@ class ActionOutcomeTest extends TestCase
         try {
             $effects->capture(static fn() => throw new LogicException('Application failure.'));
         } catch (LogicException $logicException) {
-            static::assertSame('Application failure.', $logicException->getMessage());
+            $this->assertSame('Application failure.', $logicException->getMessage());
         }
 
         $this->expectException(LogicException::class);
@@ -251,9 +251,9 @@ class ActionOutcomeTest extends TestCase
             'action' => 'download',
             'args' => ['/file'],
         ], $updateContext);
-        static::assertInstanceOf(Result::class, $child);
+        $this->assertInstanceOf(Result::class, $child);
         $data = new SnapshotCodec(str_repeat('o', 32))->open($child->snapshot, $context->binding(), $context->scope);
-        static::assertSame(RouteContext::fromRequest($context->request)->defaults, $data['routing']);
+        $this->assertSame(RouteContext::fromRequest($context->request)->defaults, $data['routing']);
     }
 
     public function testRouteResolutionUsesPagePrefixAndPluginInsteadOfEndpointDefaults(): void
@@ -277,7 +277,7 @@ class ActionOutcomeTest extends TestCase
                 $routing,
                 new UriFactory()->createUri('http://localhost'),
             );
-            static::assertSame('/admin/articles/index?q=cake#results', $url);
+            $this->assertSame('/admin/articles/index?q=cake#results', $url);
         } finally {
             Router::setRouteCollection($previous);
         }
@@ -286,7 +286,7 @@ class ActionOutcomeTest extends TestCase
     public function testNativeUrisAndDefaultPortsAreAccepted(): void
     {
         $uri = new UriFactory()->createUri('https://example.test:443/file');
-        static::assertSame('https://example.test/file', new DestinationResolver()->resolve(
+        $this->assertSame('https://example.test/file', new DestinationResolver()->resolve(
             new Outcome('download', $uri),
             new RouteContext(),
             $uri,
@@ -296,7 +296,7 @@ class ActionOutcomeTest extends TestCase
     public function testSchemeRelativeDefaultPortDownloadsAreSameOrigin(): void
     {
         $origin = new UriFactory()->createUri('https://example.test/');
-        static::assertSame('//example.test:443/file', new DestinationResolver()->resolve(
+        $this->assertSame('//example.test:443/file', new DestinationResolver()->resolve(
             new Outcome('download', '//example.test:443/file'),
             new RouteContext(),
             $origin,
@@ -306,21 +306,21 @@ class ActionOutcomeTest extends TestCase
     public function testPartialArraysUsePageDefaultsWithoutChangingNamedRoutes(): void
     {
         $routing = RouteContext::fromRequest($this->context()->request);
-        static::assertSame(
+        $this->assertSame(
             ['plugin' => null, 'prefix' => null],
             RouteContext::fromRequest($this->context()->request->withAttribute('params', [
                 'plugin' => false,
                 'prefix' => false,
             ]))->defaults,
         );
-        static::assertSame(
+        $this->assertSame(
             ['action' => 'index', 'controller' => 'Articles', 'plugin' => null, 'prefix' => 'Admin'],
             $routing->complete(['action' => 'index']),
         );
-        static::assertSame('edit', $routing->complete([])['action']);
-        static::assertSame('index', $routing->complete(['controller' => 'Other'])['action']);
-        static::assertSame(['_name' => 'article'], $routing->complete(['_name' => 'article']));
-        static::assertSame(['_path' => 'Articles::index'], $routing->complete(['_path' => 'Articles::index']));
+        $this->assertSame('edit', $routing->complete([])['action']);
+        $this->assertSame('index', $routing->complete(['controller' => 'Other'])['action']);
+        $this->assertSame(['_name' => 'article'], $routing->complete(['_name' => 'article']));
+        $this->assertSame(['_path' => 'Articles::index'], $routing->complete(['_path' => 'Articles::index']));
     }
 
     /**

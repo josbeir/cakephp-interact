@@ -28,8 +28,7 @@ class MercureProvider implements BroadcasterInterface, SubscriptionAuthorizerInt
         protected readonly MercurePublisher $publisher,
         protected readonly TokenFactoryInterface $tokens,
         protected readonly string $publicUrl,
-    ) {
-    }
+    ) {}
 
     /**
      * Publish a normalized envelope without automatically retrying an uncertain delivery.

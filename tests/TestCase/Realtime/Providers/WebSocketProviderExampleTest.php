@@ -51,7 +51,7 @@ class WebSocketProviderExampleTest extends TestCase
             'management-only',
         );
         $grant = $provider->authorize(['articles/1'], $expires);
-        static::assertSame(
+        $this->assertSame(
             [
                 'driver' => 'websocket',
                 'data' => [
@@ -63,7 +63,7 @@ class WebSocketProviderExampleTest extends TestCase
             ],
             $grant->data(),
         );
-        static::assertStringNotContainsString('management-only', json_encode($grant->data(), JSON_THROW_ON_ERROR));
+        $this->assertStringNotContainsString('management-only', json_encode($grant->data(), JSON_THROW_ON_ERROR));
     }
 
     public function testContainerUsesCustomProviderForApplicationPublishing(): void
@@ -105,8 +105,8 @@ class WebSocketProviderExampleTest extends TestCase
             new RealtimeServices()->register($container);
             /** @var mixed $publisher */
             $publisher = $container->get(PublisherInterface::class);
-            static::assertInstanceOf(PublisherInterface::class, $publisher);
-            static::assertSame($provider, $container->get(SubscriptionAuthorizerInterface::class));
+            $this->assertInstanceOf(PublisherInterface::class, $publisher);
+            $this->assertSame($provider, $container->get(SubscriptionAuthorizerInterface::class));
             $publisher->publish('articles/1', $message);
         } finally {
             Configure::write('Interact.realtime', $previous);

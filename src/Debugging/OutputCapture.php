@@ -26,9 +26,7 @@ class OutputCapture
     /**
      * Retain the server-selected presentation policy for this request only.
      */
-    public function __construct(protected readonly bool $viewer)
-    {
-    }
+    public function __construct(protected readonly bool $viewer) {}
 
     /**
      * Capture direct output while preserving the callback's value and exceptions.

@@ -15,11 +15,11 @@ class ModelOptionsTest extends TestCase
     public function testChildDelayOmissionRemainsDistinctFromAnExplicitDelay(): void
     {
         $reader = new ModelOptions();
-        static::assertSame(
+        $this->assertSame(
             ['path' => 'draft', 'timing' => 'live'],
             $reader->read(['path' => 'draft', 'timing' => 'live']),
         );
-        static::assertSame(
+        $this->assertSame(
             ['path' => 'draft', 'timing' => 'live', 'delay' => 250],
             $reader->read(['path' => 'draft', 'timing' => 'live', 'delay' => 250]),
         );

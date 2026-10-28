@@ -18,22 +18,22 @@ class HttpMarkerTest extends HttpTestCase
     {
         $this->mounted();
         $request = new ServerRequest();
-        static::assertFalse($request->is('interact'));
+        $this->assertFalse($request->is('interact'));
         foreach (['true', 'false', '1', '', 'TRUE', 'true, true'] as $value) {
             $marked = $request->withHeader('interact', $value);
             $marked->clearDetectorCache();
-            static::assertSame($value === 'true', $marked->is('interact'));
+            $this->assertSame($value === 'true', $marked->is('interact'));
         }
 
         $json = $request->withHeader('Accept', 'application/json');
-        static::assertFalse($json->is('interact'));
+        $this->assertFalse($json->is('interact'));
     }
 
     public function testDocumentsDoNotEchoTheMarkerAndUnmarkedUpdatesRemainSupported(): void
     {
         $this->configRequest(['headers' => ['Interact' => 'true']]);
         $mount = $this->mounted();
-        static::assertFalse($this->response?->hasHeader('Interact'));
+        $this->assertFalse($this->response?->hasHeader('Interact'));
         $this->update(['snapshot' => $mount['snapshot']]);
         $this->assertResponseOk();
         $this->assertHeader('Interact', 'true');

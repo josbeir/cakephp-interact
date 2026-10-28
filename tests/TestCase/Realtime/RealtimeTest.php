@@ -88,21 +88,21 @@ class RealtimeTest extends TestCase
 
     public function testDeclarationsAndMessagesPreserveTheExistingDisplayVocabulary(): void
     {
-        static::assertSame('refresh', Subscription::refresh('records/1')->mode);
-        static::assertSame('event', Subscription::listen('users/1', 'notice', false)->mode);
-        static::assertFalse(Subscription::listen('users/1', private: false)->data()['private']);
-        static::assertSame('stream', Subscription::stream('jobs/1')->mode);
+        $this->assertSame('refresh', Subscription::refresh('records/1')->mode);
+        $this->assertSame('event', Subscription::listen('users/1', 'notice', false)->mode);
+        $this->assertFalse(Subscription::listen('users/1', private: false)->data()['private']);
+        $this->assertSame('stream', Subscription::stream('jobs/1')->mode);
         $message = new Message(
             'changed',
             ['null' => null, 'false' => false, 'zero' => 0, 'empty' => ''],
             id: 'stable-id',
         );
         $data = Values::map(json_decode($message->encode('records/1'), true, flags: JSON_THROW_ON_ERROR));
-        static::assertSame('stable-id', $data['id']);
-        static::assertSame($message->detail, $data['detail']);
-        static::assertSame('records/1', $data['topic']);
-        static::assertFalse(Message::text('output', 'answer', '<b>text</b>')->display['html'] ?? null);
-        static::assertTrue(Message::html('output', 'answer', '<b>safe</b>', true)->display['replace'] ?? null);
+        $this->assertSame('stable-id', $data['id']);
+        $this->assertSame($message->detail, $data['detail']);
+        $this->assertSame('records/1', $data['topic']);
+        $this->assertFalse(Message::text('output', 'answer', '<b>text</b>')->display['html'] ?? null);
+        $this->assertTrue(Message::html('output', 'answer', '<b>safe</b>', true)->display['replace'] ?? null);
     }
 
     /**
@@ -145,41 +145,41 @@ class RealtimeTest extends TestCase
     public function testMountAndRenderlessResultsExportSubscriptionMetadata(): void
     {
         $mount = $this->runtime->mount('RealtimeFixture', ['recordId' => 7], 'first', $this->context);
-        static::assertNotNull($mount->realtime);
-        static::assertSame(
+        $this->assertNotNull($mount->realtime);
+        $this->assertSame(
             ['initialize', 'authorize', 'mount', 'viewData', 'subscriptions'],
             RealtimeFixtureIsland::$trace,
         );
-        static::assertStringContainsString('data-interact-realtime=', $mount->html);
-        static::assertSame('/subscribe', $mount->realtime['endpoint']);
-        static::assertSame('records/7', $mount->realtime['subscriptions'][0]['topic']);
-        static::assertSame($mount->realtime, $mount->payload()['realtime']);
+        $this->assertStringContainsString('data-interact-realtime=', $mount->html);
+        $this->assertSame('/subscribe', $mount->realtime['endpoint']);
+        $this->assertSame('records/7', $mount->realtime['subscriptions'][0]['topic']);
+        $this->assertSame($mount->realtime, $mount->payload()['realtime']);
         $result = $this->runtime->update(['snapshot' => $mount->snapshot, 'action' => 'unsubscribe'], $this->context);
-        static::assertNull($result->payload()['html']);
-        static::assertNull($result->realtime);
+        $this->assertNull($result->payload()['html']);
+        $this->assertNull($result->realtime);
     }
 
     public function testRenewalReauthorizesWithoutApplicationBehaviorAndCannotChangeTopics(): void
     {
         $mount = $this->runtime->mount('RealtimeFixture', ['recordId' => 7], 'first', $this->context);
-        static::assertNotNull($mount->realtime);
+        $this->assertNotNull($mount->realtime);
         $provider = $this->createMock(SubscriptionAuthorizerInterface::class);
         $provider->expects($this->once())
             ->method('authorize')
-            ->with(['records/7'], static::callback(static fn(int $expires): bool => $expires > time()))
+            ->with(['records/7'], $this->callback(static fn(int $expires): bool => $expires > time()))
             ->willReturn(new Grant('test', ['url' => '/feed'], time() + 300));
         RealtimeFixtureIsland::$trace = [];
         $body = $this->authorize($provider, [$mount->id => $mount->realtime['lease']]);
-        static::assertSame(['initialize', 'authorize', 'subscriptions'], RealtimeFixtureIsland::$trace);
-        static::assertSame('test', Hash::get($body, 'grant.driver'));
-        static::assertSame('records/7', Hash::get($body, 'islands.' . $mount->id . '.subscriptions.0.topic'));
-        static::assertArrayNotHasKey('snapshot', Values::map(Hash::get($body, 'islands.' . $mount->id)));
+        $this->assertSame(['initialize', 'authorize', 'subscriptions'], RealtimeFixtureIsland::$trace);
+        $this->assertSame('test', Hash::get($body, 'grant.driver'));
+        $this->assertSame('records/7', Hash::get($body, 'islands.' . $mount->id . '.subscriptions.0.topic'));
+        $this->assertArrayNotHasKey('snapshot', Values::map(Hash::get($body, 'islands.' . $mount->id)));
     }
 
     public function testUnauthorizedOrForgedMembersDoNotRemoveOtherAuthorizedTopics(): void
     {
         $mount = $this->runtime->mount('RealtimeFixture', ['recordId' => 7], 'first', $this->context);
-        static::assertNotNull($mount->realtime);
+        $this->assertNotNull($mount->realtime);
         $provider = $this->createMock(SubscriptionAuthorizerInterface::class);
         $provider->expects($this->once())
             ->method('authorize')
@@ -189,17 +189,17 @@ class RealtimeTest extends TestCase
             'forged' => $mount->snapshot,
             'bad' => 12,
         ]);
-        static::assertArrayHasKey('lease', Values::map(Hash::get($body, 'islands.' . $mount->id)));
-        static::assertArrayHasKey('error', Values::map(Hash::get($body, 'islands.forged')));
-        static::assertArrayHasKey('error', Values::map(Hash::get($body, 'islands.bad')));
+        $this->assertArrayHasKey('lease', Values::map(Hash::get($body, 'islands.' . $mount->id)));
+        $this->assertArrayHasKey('error', Values::map(Hash::get($body, 'islands.forged')));
+        $this->assertArrayHasKey('error', Values::map(Hash::get($body, 'islands.bad')));
         $denied = $this->authorize($provider, [$mount->id => $mount->realtime['lease']], false);
-        static::assertNull($denied['grant']);
-        static::assertSame(
+        $this->assertNull($denied['grant']);
+        $this->assertSame(
             ['error' => 'Subscription authorization failed.'],
             Hash::get($denied, 'islands.' . $mount->id),
         );
         $mismatch = $this->authorize($provider, ['other' => $mount->realtime['lease']]);
-        static::assertArrayHasKey('error', Values::map(Hash::get($mismatch, 'islands.other')));
+        $this->assertArrayHasKey('error', Values::map(Hash::get($mismatch, 'islands.other')));
     }
 
     public function testNumericTopicsRemainStringsWhenDeduplicatingAcrossIslands(): void
@@ -212,7 +212,7 @@ class RealtimeTest extends TestCase
                 'numeric-' . $index,
                 $this->context,
             );
-            static::assertNotNull($mount->realtime);
+            $this->assertNotNull($mount->realtime);
             $tokens[$mount->id] = $mount->realtime['lease'];
         }
 
@@ -222,12 +222,12 @@ class RealtimeTest extends TestCase
             '/hub',
         );
         $body = $this->authorize($provider, $tokens);
-        static::assertSame(['123', '0', '0123'], Hash::get($body, 'grant.data.topics'));
+        $this->assertSame(['123', '0', '0123'], Hash::get($body, 'grant.data.topics'));
     }
 
     public function testEmptyProviderConfigurationSerializesAsARecord(): void
     {
-        static::assertSame(
+        $this->assertSame(
             '{"driver":"custom","data":{},"expires":1234}',
             json_encode(new Grant('custom', [], 1234)->data(), JSON_THROW_ON_ERROR),
         );
@@ -236,7 +236,7 @@ class RealtimeTest extends TestCase
     public function testSubscriptionLeasesCannotAuthorizeOrdinaryActions(): void
     {
         $mount = $this->runtime->mount('RealtimeFixture', ['recordId' => 7], 'first', $this->context);
-        static::assertNotNull($mount->realtime);
+        $this->assertNotNull($mount->realtime);
         $this->expectException(InvalidSnapshotException::class);
         $this->runtime->update(['snapshot' => $mount->realtime['lease'], 'action' => 'unsubscribe'], $this->context);
     }
@@ -247,9 +247,9 @@ class RealtimeTest extends TestCase
         $codec = new LeaseCodec(str_repeat('k', 32), clock: static function () use (&$now): int {
             return $now;
         });
-        static::assertSame(1300, $codec->expires());
+        $this->assertSame(1300, $codec->expires());
         $token = $codec->seal(['id' => 'a'], 'session', 'scope');
-        static::assertSame(['id' => 'a'], $codec->open($token, 'session', 'scope'));
+        $this->assertSame(['id' => 'a'], $codec->open($token, 'session', 'scope'));
         $now = 1300;
         $this->expectException(InvalidSnapshotException::class);
         $codec->open($token, 'session', 'scope');
@@ -277,7 +277,7 @@ class RealtimeTest extends TestCase
     public function testAuthorizationInfrastructureFailuresAreNotReportedAsPermissionDenials(): void
     {
         $mount = $this->runtime->mount('RealtimeFixture', ['recordId' => 7], 'first', $this->context);
-        static::assertNotNull($mount->realtime);
+        $this->assertNotNull($mount->realtime);
         $definition = $this->registry->definition('RealtimeFixture');
         $island = $this->createMock(RealtimeFixtureIsland::class);
         $island->expects($this->once())
@@ -313,9 +313,9 @@ class RealtimeTest extends TestCase
     {
         try {
             new Grant('provider', [], 0);
-            static::fail('Expected expiry validation.');
+            $this->fail('Expected expiry validation.');
         } catch (InvalidArgumentException $invalidArgumentException) {
-            static::assertStringContainsString('expiry', $invalidArgumentException->getMessage());
+            $this->assertStringContainsString('expiry', $invalidArgumentException->getMessage());
         }
 
         $this->expectException(InvalidArgumentException::class);
@@ -331,18 +331,18 @@ class RealtimeTest extends TestCase
         $provider->publish('records/1', Message::event('changed', ['id' => 1]));
 
         $grant = $provider->authorize(['records/1'], time() + 300);
-        static::assertSame('mercure', $grant->driver);
-        static::assertSame(['records/1'], $grant->data['topics']);
-        static::assertIsString($grant->data['token']);
+        $this->assertSame('mercure', $grant->driver);
+        $this->assertSame(['records/1'], $grant->data['topics']);
+        $this->assertIsString($grant->data['token']);
         $claims = Values::map(json_decode(
             json_encode(JWT::decode($grant->data['token'], new Key($secret, 'HS256')), JSON_THROW_ON_ERROR),
             true,
             flags: JSON_THROW_ON_ERROR,
         ));
-        static::assertSame(['subscribe'], Hash::get($claims, 'authorization_details.0.actions'));
-        static::assertSame('records/1', Hash::get($claims, 'authorization_details.0.topics.0.match'));
-        static::assertIsArray($claims['authorization_details']);
-        static::assertCount(1, $claims['authorization_details']);
+        $this->assertSame(['subscribe'], Hash::get($claims, 'authorization_details.0.actions'));
+        $this->assertSame('records/1', Hash::get($claims, 'authorization_details.0.topics.0.match'));
+        $this->assertIsArray($claims['authorization_details']);
+        $this->assertCount(1, $claims['authorization_details']);
     }
 
     public function testPublisherShortcutsShareConstructionAcrossProviders(): void
@@ -363,11 +363,11 @@ class RealtimeTest extends TestCase
 
         $message = new Message('explicit', id: 'retained');
         $publisher->publish('topic', $message);
-        static::assertSame(['id' => 7], $messages[0][1]->detail);
-        static::assertFalse($messages[1][1]->display['html'] ?? null);
-        static::assertTrue($messages[2][1]->display['replace'] ?? null);
-        static::assertFalse($messages[2][2]);
-        static::assertSame($message, $messages[3][1]);
+        $this->assertSame(['id' => 7], $messages[0][1]->detail);
+        $this->assertFalse($messages[1][1]->display['html'] ?? null);
+        $this->assertTrue($messages[2][1]->display['replace'] ?? null);
+        $this->assertFalse($messages[2][2]);
+        $this->assertSame($message, $messages[3][1]);
     }
 
     public function testPublisherRejectsMisspelledDisplayOptions(): void

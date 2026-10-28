@@ -68,27 +68,27 @@ class LazyLoadingTest extends TestCase
         $runtime = $this->runtime();
         $context = $this->context();
         $initial = $runtime->mount('Lazy', ['recordId' => 4], 'report', $context, new Options('manual'));
-        static::assertSame(['authorize:'], LazyIsland::$trace);
-        static::assertSame([], $initial->state);
-        static::assertSame([], $initial->writable);
-        static::assertStringContainsString('data-interact-loading="manual"', $initial->html);
-        static::assertStringContainsString('Load content', $initial->html);
+        $this->assertSame(['authorize:'], LazyIsland::$trace);
+        $this->assertSame([], $initial->state);
+        $this->assertSame([], $initial->writable);
+        $this->assertStringContainsString('data-interact-loading="manual"', $initial->html);
+        $this->assertStringContainsString('Load content', $initial->html);
         $codec = new SnapshotCodec(str_repeat('l', 32));
         $pending = new PendingMount($codec->open($initial->snapshot, $context->binding(), $context->scope));
-        static::assertSame(['recordId' => 4, 'label' => 'Report'], $pending->props);
+        $this->assertSame(['recordId' => 4, 'label' => 'Report'], $pending->props);
         $loaded = $runtime->update([
             'snapshot' => $initial->snapshot,
             'initialize' => true,
             'pageQuery' => '?q=latest',
         ], $context);
-        static::assertSame(['authorize:', 'authorize:latest', 'mount', 'view'], LazyIsland::$trace);
-        static::assertSame($initial->id, $loaded->id);
-        static::assertSame('latest', $loaded->state['query']);
-        static::assertSame(4, $loaded->state['count']);
-        static::assertStringNotContainsString('data-interact-loading', $loaded->html);
+        $this->assertSame(['authorize:', 'authorize:latest', 'mount', 'view'], LazyIsland::$trace);
+        $this->assertSame($initial->id, $loaded->id);
+        $this->assertSame('latest', $loaded->state['query']);
+        $this->assertSame(4, $loaded->state['count']);
+        $this->assertStringNotContainsString('data-interact-loading', $loaded->html);
         $updated = $runtime->update(['snapshot' => $loaded->snapshot, 'action' => 'increment'], $context);
-        static::assertSame(5, $updated->state['count']);
-        static::assertSame(
+        $this->assertSame(5, $updated->state['count']);
+        $this->assertSame(
             1,
             count(array_filter(LazyIsland::$trace, static fn(string $item): bool => $item === 'mount')),
         );
@@ -107,10 +107,10 @@ class LazyLoadingTest extends TestCase
 
         $runtime = new Factory(new Registry(), new SnapshotCodec(str_repeat('p', 32)))->create($view, $context);
         $default = $runtime->mount('ResourceReport', [], 'default', $context, new Options('manual', 'Loading/report'));
-        static::assertStringContainsString('Resource report placeholder', $default->html);
-        static::assertStringNotContainsString('host-only', $default->html);
-        static::assertSame('host-only', $view->get('heading'));
-        static::assertSame([], $default->state);
+        $this->assertStringContainsString('Resource report placeholder', $default->html);
+        $this->assertStringNotContainsString('host-only', $default->html);
+        $this->assertSame('host-only', $view->get('heading'));
+        $this->assertSame([], $default->state);
         $custom = $runtime->mount(
             'ResourceReport',
             ['heading' => '<Custom report>'],
@@ -118,11 +118,11 @@ class LazyLoadingTest extends TestCase
             $context,
             new Options('manual', 'Loading/report'),
         );
-        static::assertStringContainsString('&lt;Custom report&gt;', $custom->html);
+        $this->assertStringContainsString('&lt;Custom report&gt;', $custom->html);
         $loaded = $runtime->update(['snapshot' => $default->snapshot, 'initialize' => true], $context);
-        static::assertSame(1, $loaded->state['mounts']);
+        $this->assertSame(1, $loaded->state['mounts']);
         $refreshed = $runtime->update(['snapshot' => $loaded->snapshot, 'action' => 'refreshReport'], $context);
-        static::assertSame(1, $refreshed->state['refreshes']);
+        $this->assertSame(1, $refreshed->state['refreshes']);
     }
 
     public function testPermissionIsRecheckedBeforeDeferredHooks(): void
@@ -135,9 +135,9 @@ class LazyLoadingTest extends TestCase
                 ['snapshot' => $pending->snapshot, 'initialize' => true],
                 new IslandContext($context->request->withAttribute('denied', true), 'lazy', '/updates'),
             );
-            static::fail('Permission changes must reject initialization.');
+            $this->fail('Permission changes must reject initialization.');
         } catch (ForbiddenException) {
-            static::assertSame(['authorize:', 'authorize:'], LazyIsland::$trace);
+            $this->assertSame(['authorize:', 'authorize:'], LazyIsland::$trace);
         }
     }
 
@@ -185,14 +185,14 @@ class LazyLoadingTest extends TestCase
                     'initialize' => true,
                     'pageQuery' => '?q=current',
                 ], $context);
-                static::assertFalse($fail);
-                static::assertSame('current', $result->state['query']);
+                $this->assertFalse($fail);
+                $this->assertSame('current', $result->state['query']);
             } catch (RuntimeException $exception) {
-                static::assertTrue($fail);
-                static::assertSame('Render failure', $exception->getMessage());
+                $this->assertTrue($fail);
+                $this->assertSame('Render failure', $exception->getMessage());
             }
 
-            static::assertSame($before, $runtime->contextState());
+            $this->assertSame($before, $runtime->contextState());
         }
     }
 
@@ -239,9 +239,9 @@ class LazyLoadingTest extends TestCase
         $pending = $runtime->mount('Lazy', ['recordId' => 1], 'report', $context, new Options('lazy'));
         try {
             $runtime->update(['snapshot' => $pending->snapshot] + $input, $context);
-            static::fail('Pending ticket misuse must be rejected.');
+            $this->fail('Pending ticket misuse must be rejected.');
         } catch (InvalidArgumentException) {
-            static::assertSame(['authorize:'], LazyIsland::$trace);
+            $this->assertSame(['authorize:'], LazyIsland::$trace);
         }
     }
 
@@ -313,9 +313,9 @@ class LazyLoadingTest extends TestCase
                 ['snapshot' => $pending->snapshot, 'initialize' => true],
                 new IslandContext($context->request->withUploadedFiles(['file' => $file]), 'lazy', '/updates'),
             );
-            static::fail('Initialization must reject files.');
+            $this->fail('Initialization must reject files.');
         } catch (InvalidArgumentException) {
-            static::assertSame(['authorize:'], LazyIsland::$trace);
+            $this->assertSame(['authorize:'], LazyIsland::$trace);
         }
 
         $codec = new SnapshotCodec(str_repeat('l', 32));
@@ -331,9 +331,9 @@ class LazyLoadingTest extends TestCase
         $declaration = new Declaration('child', element: 'child');
         try {
             $stack->placeholder(static fn(): string => $stack->preserve($declaration, [], 'child')->html ?? '');
-            static::fail('Placeholder children must not escape into parent ownership.');
+            $this->fail('Placeholder children must not escape into parent ownership.');
         } catch (InvalidArgumentException) {
-            static::assertNull($stack->preserve($declaration, [], 'child'));
+            $this->assertNull($stack->preserve($declaration, [], 'child'));
         }
     }
 
@@ -363,11 +363,11 @@ class LazyLoadingTest extends TestCase
             'initialize' => true,
             'pageQuery' => '?report_q=current',
         ], $context);
-        static::assertNull($loaded->state['label']);
-        static::assertSame(0, $loaded->state['count']);
-        static::assertSame('current', $loaded->state['query']);
+        $this->assertNull($loaded->state['label']);
+        $this->assertSame(0, $loaded->state['count']);
+        $this->assertSame('current', $loaded->state['query']);
         $data = new SnapshotCodec(str_repeat('l', 32))->open($loaded->snapshot, $context->binding(), $context->scope);
-        static::assertSame(
+        $this->assertSame(
             ['controller' => 'Reports', 'action' => 'index', 'plugin' => null, 'prefix' => 'Admin'],
             $data['routing'],
         );

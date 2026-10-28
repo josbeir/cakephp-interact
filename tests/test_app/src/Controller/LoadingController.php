@@ -14,15 +14,11 @@ class LoadingController extends AppController
      * Render independently loaded cards inside a retained parent island.
      */
     #[Get('/loading', name: 'demo:loading')]
-    public function index(): void
-    {
-    }
+    public function index(): void {}
 
     /**
      * Exercise post-load multipart bindings through the real application middleware.
      */
     #[Get('/demo/loading-upload', name: 'demo:loading-upload')]
-    public function upload(): void
-    {
-    }
+    public function upload(): void {}
 }

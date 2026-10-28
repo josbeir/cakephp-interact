@@ -116,17 +116,17 @@ class IslandIsolationTest extends TestCase
         $plugins = Plugin::getCollection();
         $routes = Router::getRouteCollection();
         $this->testIsland('Counter')->assertSet('count', 0);
-        static::assertTrue(Plugin::isLoaded('Construction'));
-        static::assertTrue(Plugin::isLoaded('Bootstrap'));
-        static::assertTrue(Plugin::isLoaded('PluginBootstrap'));
-        static::assertTrue(Plugin::isLoaded('Routes'));
-        static::assertTrue(Plugin::isLoaded('PluginRoutes'));
+        $this->assertTrue(Plugin::isLoaded('Construction'));
+        $this->assertTrue(Plugin::isLoaded('Bootstrap'));
+        $this->assertTrue(Plugin::isLoaded('PluginBootstrap'));
+        $this->assertTrue(Plugin::isLoaded('Routes'));
+        $this->assertTrue(Plugin::isLoaded('PluginRoutes'));
         $this->cleanupIslandTests();
 
-        static::assertSame($plugins, Plugin::getCollection());
-        static::assertSame($routes, Router::getRouteCollection());
-        static::assertSame(['Existing'], Plugin::loaded());
-        static::assertSame(['Existing'], array_keys(Router::getRouteCollection()->named()));
+        $this->assertSame($plugins, Plugin::getCollection());
+        $this->assertSame($routes, Router::getRouteCollection());
+        $this->assertSame(['Existing'], Plugin::loaded());
+        $this->assertSame(['Existing'], array_keys(Router::getRouteCollection()->named()));
     }
 
     public function testRepeatedBootsCannotAccumulatePluginsOrDuplicateNamedRoutes(): void
@@ -134,8 +134,8 @@ class IslandIsolationTest extends TestCase
         for ($iteration = 0; $iteration < 2; $iteration++) {
             $this->testIsland('Counter')->call('adjust', 1)->assertSet('count', 1);
             $this->cleanupIslandTests();
-            static::assertSame(['Existing'], Plugin::loaded());
-            static::assertSame(['Existing'], array_keys(Router::getRouteCollection()->named()));
+            $this->assertSame(['Existing'], Plugin::loaded());
+            $this->assertSame(['Existing'], array_keys(Router::getRouteCollection()->named()));
         }
     }
 
@@ -148,8 +148,8 @@ class IslandIsolationTest extends TestCase
             $this->testIsland('Counter');
         } finally {
             $this->cleanupIslandTests();
-            static::assertSame(['Existing'], Plugin::loaded());
-            static::assertSame(['Existing'], array_keys(Router::getRouteCollection()->named()));
+            $this->assertSame(['Existing'], Plugin::loaded());
+            $this->assertSame(['Existing'], array_keys(Router::getRouteCollection()->named()));
         }
     }
 }

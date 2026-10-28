@@ -26,7 +26,5 @@ class ProbeService
     /**
      * Supply a visible marker for dependency-injection assertions.
      */
-    public function __construct(public string $marker = 'real service')
-    {
-    }
+    public function __construct(public string $marker = 'real service') {}
 }

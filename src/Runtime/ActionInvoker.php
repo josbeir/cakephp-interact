@@ -22,9 +22,7 @@ class ActionInvoker
     /**
      * Keep browser outcome handling separate from action signature validation.
      */
-    public function __construct(protected readonly OutcomeResponder $outcomes = new OutcomeResponder())
-    {
-    }
+    public function __construct(protected readonly OutcomeResponder $outcomes = new OutcomeResponder()) {}
 
     /**
      * Select an action response without making the runtime own browser effect details.

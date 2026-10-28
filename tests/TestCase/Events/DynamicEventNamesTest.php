@@ -62,20 +62,20 @@ class DynamicEventNamesTest extends TestCase
         $resolver = new ListenerNames(['scope:{scope}:{articleId}:{articleId}' => [
             'articleSaved',
         ]], $definition->properties);
-        static::assertSame(
+        $this->assertSame(
             ['scope:public:0:0' => ['articleSaved']],
             $resolver->resolve(['scope' => 'public', 'articleId' => 0]),
         );
-        static::assertSame(['scope::2:2' => ['articleSaved']], $resolver->resolve(['scope' => '', 'articleId' => 2]));
-        static::assertSame(['scope:public:1:1' => ['articleSaved']], $resolver->resolve(new ScopedListenerIsland()));
+        $this->assertSame(['scope::2:2' => ['articleSaved']], $resolver->resolve(['scope' => '', 'articleId' => 2]));
+        $this->assertSame(['scope:public:1:1' => ['articleSaved']], $resolver->resolve(new ScopedListenerIsland()));
         $runtime = $this->runtime();
         $first = $runtime->mount('Scoped', ['articleId' => 1], 'first', $this->context());
         $second = $runtime->mount('Scoped', ['articleId' => 2], 'second', $this->context());
-        static::assertSame(['articleSaved', 'firstArticle'], $first->listeners['article-saved:1']);
-        static::assertSame(['articleSaved'], $second->listeners['article-saved:2']);
-        static::assertSame(['firstArticle'], $second->listeners['article-saved:1']);
-        static::assertArrayNotHasKey('article-saved:2', $first->listeners);
-        static::assertEquals((object)$second->listeners, $second->payload()['listeners']);
+        $this->assertSame(['articleSaved', 'firstArticle'], $first->listeners['article-saved:1']);
+        $this->assertSame(['articleSaved'], $second->listeners['article-saved:2']);
+        $this->assertSame(['firstArticle'], $second->listeners['article-saved:1']);
+        $this->assertArrayNotHasKey('article-saved:2', $first->listeners);
+        $this->assertEquals((object)$second->listeners, $second->payload()['listeners']);
     }
 
     /**
@@ -156,8 +156,8 @@ class DynamicEventNamesTest extends TestCase
             'action' => 'selectArticle',
             'args' => [2],
         ], $context);
-        static::assertNull($changed->payload()['html']);
-        static::assertSame(['articleSaved'], $changed->listeners['article-saved:2']);
+        $this->assertNull($changed->payload()['html']);
+        $this->assertSame(['articleSaved'], $changed->listeners['article-saved:2']);
         $accepted = $runtime->update([
             'snapshot' => $changed->snapshot,
             'action' => 'articleSaved',
@@ -165,9 +165,9 @@ class DynamicEventNamesTest extends TestCase
             'args' => [[]],
             'updates' => ['draft' => 'keep'],
         ], $context);
-        static::assertSame(['articleId' => 2], $accepted->state['received']);
-        static::assertSame('keep', $accepted->state['draft']);
-        static::assertStringContainsString('&quot;article-saved:2&quot;', $accepted->html);
+        $this->assertSame(['articleId' => 2], $accepted->state['received']);
+        $this->assertSame('keep', $accepted->state['draft']);
+        $this->assertStringContainsString('&quot;article-saved:2&quot;', $accepted->html);
         $this->expectException(InvalidArgumentException::class);
         $runtime->update([
             'snapshot' => $accepted->snapshot,
@@ -224,11 +224,11 @@ class DynamicEventNamesTest extends TestCase
         $runtime = $this->runtime();
         $context = $this->context();
         $pending = $runtime->mount('Scoped', ['articleId' => 2], null, $context, new Options('manual'));
-        static::assertSame([], $pending->listeners);
-        static::assertStringNotContainsString('data-interact-listeners', $pending->html);
+        $this->assertSame([], $pending->listeners);
+        $this->assertStringNotContainsString('data-interact-listeners', $pending->html);
         $loaded = $runtime->update(['snapshot' => $pending->snapshot, 'initialize' => true], $context);
-        static::assertSame(['articleSaved'], $loaded->listeners['article-saved:2']);
-        static::assertStringNotContainsString('{articleId}', $loaded->html);
+        $this->assertSame(['articleSaved'], $loaded->listeners['article-saved:2']);
+        $this->assertStringNotContainsString('{articleId}', $loaded->html);
     }
 
     #[DataProvider('parentEvents')]
@@ -238,10 +238,10 @@ class DynamicEventNamesTest extends TestCase
         $context = $this->context();
         $parent = $runtime->mount('ScopedParent', [], null, $context);
         $snapshots = [];
-        static::assertSame(2, preg_match_all('/data-interact-snapshot="([^"]+)"/', $parent->html, $snapshots));
+        $this->assertSame(2, preg_match_all('/data-interact-snapshot="([^"]+)"/', $parent->html, $snapshots));
         $changed = $runtime->update(['snapshot' => $parent->snapshot, 'updates' => ['articleId' => 2]], $context);
         $ticket = [];
-        static::assertSame(1, preg_match('/data-interact-parent-inputs="([^"]+)"/', $changed->html, $ticket));
+        $this->assertSame(1, preg_match('/data-interact-parent-inputs="([^"]+)"/', $changed->html, $ticket));
         if ($event === 'article-saved:1') {
             $this->expectException(InvalidArgumentException::class);
         }
@@ -253,8 +253,8 @@ class DynamicEventNamesTest extends TestCase
             'event' => $event,
             'args' => [[]],
         ], $context);
-        static::assertSame(['articleId' => 2], $result->state['received']);
-        static::assertSame(['articleSaved'], $result->listeners['article-saved:2']);
+        $this->assertSame(['articleId' => 2], $result->state['received']);
+        $this->assertSame(['articleSaved'], $result->listeners['article-saved:2']);
     }
 
     /**

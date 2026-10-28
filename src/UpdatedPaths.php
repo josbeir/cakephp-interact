@@ -22,9 +22,7 @@ readonly class UpdatedPaths implements IteratorAggregate
      *
      * @param list<string> $paths Reported paths, matched exactly without parent or wildcard expansion.
      */
-    public function __construct(protected array $paths)
-    {
-    }
+    public function __construct(protected array $paths) {}
 
     /**
      * Check whether the hook received this exact path.

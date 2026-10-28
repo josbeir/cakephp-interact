@@ -18,9 +18,7 @@ class CallbackRenderer implements RendererInterface
      *
      * @param \Closure(\Interact\Discovery\Definition, array<string, mixed>): string $render Rendering callback.
      */
-    public function __construct(protected readonly Closure $render)
-    {
-    }
+    public function __construct(protected readonly Closure $render) {}
 
     /**
      * Delegate rendering to the configured callback with the current island variables.

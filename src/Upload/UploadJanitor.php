@@ -15,9 +15,7 @@ class UploadJanitor
     /**
      * Share private storage settings with the staging backend.
      */
-    public function __construct(protected readonly UploadConfig $config)
-    {
-    }
+    public function __construct(protected readonly UploadConfig $config) {}
 
     /**
      * Delete expired records without traversing client-supplied paths or following symlinks.

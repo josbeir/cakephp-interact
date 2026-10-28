@@ -8,6 +8,4 @@ use Commerce\Island\Article\EditorIsland as PluginEditor;
 /**
  * Verifies that an application subclass owns its inferred template independently of its parent.
  */
-class EditorIsland extends PluginEditor
-{
-}
+class EditorIsland extends PluginEditor {}

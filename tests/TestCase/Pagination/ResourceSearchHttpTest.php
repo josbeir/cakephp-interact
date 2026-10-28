@@ -22,16 +22,16 @@ class ResourceSearchHttpTest extends HttpTestCase
         $document = HTMLDocument::createFromString((string)$this->response?->getBody());
         $xpath = new XPath($document);
         $xpath->registerNamespace('html', 'http://www.w3.org/1999/xhtml');
-        static::assertSame(
+        $this->assertSame(
             1,
             $xpath->query(
                 '//html:nav[@aria-label="Demo pages"]/html:a[@aria-current="page" and normalize-space(.)="Search"]',
             )->length,
         );
-        static::assertSame(20, $xpath->query('//html:table/html:tbody/html:tr')->length);
+        $this->assertSame(20, $xpath->query('//html:table/html:tbody/html:tr')->length);
         $root = $xpath->query('//*[@data-interact-state]')->item(0);
-        static::assertInstanceOf(Element::class, $root);
-        static::assertJsonStringEqualsJsonString(
+        $this->assertInstanceOf(Element::class, $root);
+        $this->assertJsonStringEqualsJsonString(
             '{"controlPrefix":"ResourceSearch","notes":"","search":"","category":"","level":"","paging":{"page":1,"sort":"title","direction":"asc","limit":20}}',
             (string)$root->getAttribute('data-interact-state'),
         );
@@ -41,14 +41,14 @@ class ResourceSearchHttpTest extends HttpTestCase
             $labels[] = $option->textContent;
         }
 
-        static::assertSame(['Title: A–Z', 'Title: Z–A', 'Shortest read first', 'Longest read first'], $labels);
+        $this->assertSame(['Title: A–Z', 'Title: Z–A', 'Shortest read first', 'Longest read first'], $labels);
         $selected = $xpath->query(
             '//html:select[@*[name()="x-interact:model.change" and .="paging.sort"]]/html:option[@selected]',
         );
-        static::assertSame(1, $selected->length);
+        $this->assertSame(1, $selected->length);
         $selectedOption = $selected->item(0);
-        static::assertInstanceOf(Element::class, $selectedOption);
-        static::assertSame('title', $selectedOption->getAttribute('value'));
+        $this->assertInstanceOf(Element::class, $selectedOption);
+        $this->assertSame('title', $selectedOption->getAttribute('value'));
     }
 
     public function testResourceSearchCombinesFiltersAndResetsPaginationAfterEdits(): void

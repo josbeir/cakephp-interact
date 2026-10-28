@@ -37,8 +37,8 @@ class NumericTransportTest extends TestCase
     public function testAcceptedValuesRemainUnchanged(int|float|string $value): void
     {
         $event = new BrowserEvent('selected', ['id' => $value]);
-        static::assertSame(['id' => $value], $event->detail);
-        static::assertEquals($event->detail, json_decode(json_encode($event->detail, JSON_THROW_ON_ERROR), true));
+        $this->assertSame(['id' => $value], $event->detail);
+        $this->assertEquals($event->detail, json_decode(json_encode($event->detail, JSON_THROW_ON_ERROR), true));
     }
 
     /**

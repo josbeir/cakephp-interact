@@ -28,6 +28,5 @@ class RenderFrame
         public readonly ?Definition $definition = null,
         public readonly ?SnapshotData $identity = null,
         public readonly ?IslandContext $context = null,
-    ) {
-    }
+    ) {}
 }

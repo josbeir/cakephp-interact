@@ -30,16 +30,16 @@ class UploadCleanupTest extends UploadStorageTestCase
         }
 
         DateTime::setTestNow(new DateTime('2026-10-20 12:00:02'));
-        static::assertSame(1, $storage->cleanup(1));
-        static::assertCount(1, array_filter($paths, static fn(string $path): bool => is_file($path . '.json')));
-        static::assertCount(1, array_filter($paths, static fn(string $path): bool => is_file($path . '.bin')));
-        static::assertSame(1, $storage->cleanup());
+        $this->assertSame(1, $storage->cleanup(1));
+        $this->assertCount(1, array_filter($paths, static fn(string $path): bool => is_file($path . '.json')));
+        $this->assertCount(1, array_filter($paths, static fn(string $path): bool => is_file($path . '.bin')));
+        $this->assertSame(1, $storage->cleanup());
         foreach ($paths as $path) {
-            static::assertFileDoesNotExist($path . '.json');
-            static::assertFileDoesNotExist($path . '.bin');
+            $this->assertFileDoesNotExist($path . '.json');
+            $this->assertFileDoesNotExist($path . '.bin');
         }
 
-        static::assertSame(0, $storage->cleanup());
+        $this->assertSame(0, $storage->cleanup());
     }
 
     public function testCleanupReclaimsOldOrphansAndIncompleteMetadataWhileRetainingRecentFiles(): void
@@ -61,13 +61,13 @@ class UploadCleanupTest extends UploadStorageTestCase
         $unrelated = $directory . '/application.txt';
         file_put_contents($unrelated, 'unrelated');
         touch($unrelated, $now - 60);
-        static::assertSame(2, $storage->cleanup());
-        static::assertFileDoesNotExist($base . '.bin');
-        static::assertFileDoesNotExist($temporary);
-        static::assertFileExists($recent);
-        static::assertFileExists($unrelated);
-        static::assertFileExists($directory . '/.lock');
-        static::assertSame(0, $storage->cleanup());
+        $this->assertSame(2, $storage->cleanup());
+        $this->assertFileDoesNotExist($base . '.bin');
+        $this->assertFileDoesNotExist($temporary);
+        $this->assertFileExists($recent);
+        $this->assertFileExists($unrelated);
+        $this->assertFileExists($directory . '/.lock');
+        $this->assertSame(0, $storage->cleanup());
     }
 
     public function testCleanupDoesNotRemovePairedBytesOrFollowAnOrphanSymlink(): void
@@ -80,9 +80,9 @@ class UploadCleanupTest extends UploadStorageTestCase
         touch($directory . '/' . $file->id . '.bin', time() - 120);
         $linked = $directory . '/' . str_repeat('d', 32) . '.bin';
         symlink($directory . '/' . $file->id . '.bin', $linked);
-        static::assertSame(0, $storage->cleanup());
-        static::assertNotNull($storage->find($file->id, $owner));
-        static::assertTrue(is_link($linked));
+        $this->assertSame(0, $storage->cleanup());
+        $this->assertNotNull($storage->find($file->id, $owner));
+        $this->assertTrue(is_link($linked));
     }
 
     public function testStagingDoesNotScanAnotherSessionsDamagedRecords(): void
@@ -93,7 +93,7 @@ class UploadCleanupTest extends UploadStorageTestCase
         file_put_contents($this->directory . '/' . $other->sessionKey() . '/' . $file->id . '.json', '{}');
         $owner = new UploadOwner('current-session', 'default', 'island', 'file');
         $accepted = $storage->put($this->incoming(), $owner);
-        static::assertNotNull($storage->find($accepted->id, $owner));
+        $this->assertNotNull($storage->find($accepted->id, $owner));
     }
 
     public function testScanBudgetCountsLiveAndSkippedEntriesRatherThanOnlyDeletions(): void
@@ -137,7 +137,7 @@ class UploadCleanupTest extends UploadStorageTestCase
         $first = $storage->put($this->incoming(), $owner);
         DateTime::setTestNow(new DateTime('2026-10-20 12:00:02'));
         $second = $storage->put($this->incoming(), $owner);
-        static::assertNull($storage->find($first->id, $owner));
-        static::assertNotNull($storage->find($second->id, $owner));
+        $this->assertNull($storage->find($first->id, $owner));
+        $this->assertNotNull($storage->find($second->id, $owner));
     }
 }

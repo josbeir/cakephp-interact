@@ -11,6 +11,4 @@ use RuntimeException;
  * Storage failures remain ordinary exceptions for application logging; this exception
  * is reserved for safe capacity, expiry, and incoming-upload messages.
  */
-class UploadRejected extends RuntimeException
-{
-}
+class UploadRejected extends RuntimeException {}

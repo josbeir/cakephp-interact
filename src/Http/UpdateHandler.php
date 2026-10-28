@@ -32,8 +32,7 @@ class UpdateHandler
         protected readonly FailureResponder $failures,
         protected readonly SseResponse $streams = new SseResponse(),
         protected readonly Diagnostics $diagnostics = new Diagnostics(),
-    ) {
-    }
+    ) {}
 
     /**
      * Validate a POST request and return an uncached, versioned JSON response.

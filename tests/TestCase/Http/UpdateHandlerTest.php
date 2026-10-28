@@ -44,17 +44,17 @@ class UpdateHandlerTest extends TestCase
             'action' => 'adjust',
             'args' => [1],
         ]), $response);
-        static::assertSame(200, $result->getStatusCode());
-        static::assertSame('true', $result->getHeaderLine('Interact'));
-        static::assertSame('kept', $result->getHeaderLine('X-Application'));
-        static::assertSame('application/json', $result->getHeaderLine('Content-Type'));
-        static::assertSame('no-store', $result->getHeaderLine('Cache-Control'));
-        static::assertStringContainsString('"count":1', (string)$result->getBody());
+        $this->assertSame(200, $result->getStatusCode());
+        $this->assertSame('true', $result->getHeaderLine('Interact'));
+        $this->assertSame('kept', $result->getHeaderLine('X-Application'));
+        $this->assertSame('application/json', $result->getHeaderLine('Content-Type'));
+        $this->assertSame('no-store', $result->getHeaderLine('Cache-Control'));
+        $this->assertStringContainsString('"count":1', (string)$result->getBody());
         $failure = $handler->handle($request->withParsedBody(['version' => 2]), $response);
-        static::assertSame(400, $failure->getStatusCode());
-        static::assertSame('true', $failure->getHeaderLine('Interact'));
-        static::assertSame('kept', $failure->getHeaderLine('X-Application'));
-        static::assertStringContainsString('invalid_request', (string)$failure->getBody());
+        $this->assertSame(400, $failure->getStatusCode());
+        $this->assertSame('true', $failure->getHeaderLine('Interact'));
+        $this->assertSame('kept', $failure->getHeaderLine('X-Application'));
+        $this->assertStringContainsString('invalid_request', (string)$failure->getBody());
     }
 
     public function testDiscardedOversizedMultipartBodiesReceiveSpecificFeedback(): void
@@ -71,12 +71,12 @@ class UpdateHandlerTest extends TestCase
                 ->withParsedBody([]),
             new Response(),
         );
-        static::assertSame($limit > 0 ? 413 : 400, $response->getStatusCode());
-        static::assertStringContainsString(
+        $this->assertSame($limit > 0 ? 413 : 400, $response->getStatusCode());
+        $this->assertStringContainsString(
             $limit > 0 ? 'upload_too_large' : 'invalid_request',
             (string)$response->getBody(),
         );
-        static::assertSame('application/json', $response->getHeaderLine('Content-Type'));
+        $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
     }
 
     public function testMalformedMultipartAndOversizedJsonFailWithoutRenderingHtml(): void
@@ -89,15 +89,15 @@ class UpdateHandlerTest extends TestCase
         foreach ([null, '{}', str_repeat('x', 1_048_577)] as $payload) {
             $result = $handler->handle($request->withHeader('Content-Type', 'multipart/form-data')
                 ->withParsedBody(['payload' => $payload]), new Response());
-            static::assertSame(400, $result->getStatusCode());
-            static::assertSame('application/json', $result->getHeaderLine('Content-Type'));
+            $this->assertSame(400, $result->getStatusCode());
+            $this->assertSame('application/json', $result->getHeaderLine('Content-Type'));
         }
 
         $oversized = $request->withBody(new Stream('php://temp', 'w+'));
         $oversized->getBody()->write(str_repeat('x', 1_048_577));
-        static::assertSame(400, $handler->handle($oversized, new Response())->getStatusCode());
-        static::assertSame(405, $handler->handle($request->withMethod('GET'), new Response())->getStatusCode());
-        static::assertSame(
+        $this->assertSame(400, $handler->handle($oversized, new Response())->getStatusCode());
+        $this->assertSame(405, $handler->handle($request->withMethod('GET'), new Response())->getStatusCode());
+        $this->assertSame(
             400,
             $handler->handle($request->withParam('interactScope', false)
                 ->withParsedBody(['version' => 1]), new Response())

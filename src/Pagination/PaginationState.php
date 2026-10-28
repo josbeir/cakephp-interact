@@ -19,6 +19,5 @@ class PaginationState
         public string $sort = '',
         public string $direction = 'asc',
         public int $limit = 20,
-    ) {
-    }
+    ) {}
 }

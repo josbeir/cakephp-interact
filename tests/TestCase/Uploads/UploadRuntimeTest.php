@@ -50,9 +50,9 @@ class UploadRuntimeTest extends UploadStorageTestCase
                 ['snapshot' => $mount->snapshot, 'upload' => ['kind' => 'stage', 'field' => 'document']],
                 new IslandContext($request, 'default', '/update'),
             );
-            static::fail('Revoked access must reject the transfer.');
+            $this->fail('Revoked access must reject the transfer.');
         } catch (ForbiddenException) {
-            static::assertDirectoryDoesNotExist($this->directory);
+            $this->assertDirectoryDoesNotExist($this->directory);
         }
 
         $this->expectException(ForbiddenException::class);

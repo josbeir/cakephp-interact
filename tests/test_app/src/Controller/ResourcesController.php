@@ -25,39 +25,29 @@ class ResourcesController extends AppController
      * Render a normal CakePHP page containing the resource-search island.
      */
     #[Get('/search', name: 'demo:search')]
-    public function index(): void
-    {
-    }
+    public function index(): void {}
 
     /**
      * Show the same resource listing without exposing filter or paging parameters in URLs.
      */
     #[Get('/search/state-only', name: 'demo:search:state-only')]
-    public function stateOnly(): void
-    {
-    }
+    public function stateOnly(): void {}
 
     /**
      * Render independent URL-bound listings with explicit per-instance prefixes.
      */
     #[Get('/search/independent', name: 'demo:search:independent')]
-    public function independent(): void
-    {
-    }
+    public function independent(): void {}
 
     /**
      * Show two independently configured Table listings within one island.
      */
     #[Get('/search/multiple', name: 'demo:search:multiple')]
-    public function multiple(): void
-    {
-    }
+    public function multiple(): void {}
 
     /**
      * Exercise nullable and nested query bindings with independent ownership and persistent navigation.
      */
     #[Get('/demo/url-state', name: 'demo:url-state')]
-    public function urlState(): void
-    {
-    }
+    public function urlState(): void {}
 }

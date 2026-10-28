@@ -27,8 +27,8 @@ class CompositionBoundaryTest extends TestCase
     public function testPropOnlyBrowserRelationshipsRetainAnEmptyJsonRecord(): void
     {
         $relation = new Relation('parent');
-        static::assertSame(['parentId' => 'parent', 'models' => []], $relation->data());
-        static::assertSame('{"parentId":"parent","models":{}}', json_encode(
+        $this->assertSame(['parentId' => 'parent', 'models' => []], $relation->data());
+        $this->assertSame('{"parentId":"parent","models":{}}', json_encode(
             $relation->browserData(),
             JSON_THROW_ON_ERROR,
         ));
@@ -125,10 +125,10 @@ class CompositionBoundaryTest extends TestCase
         $stack = new RenderStack();
         $frame = $stack->push(['key:child' => $child]);
         $result = $stack->preserve(new Declaration('Child', tag: 'section'), ['id' => 7], 'child');
-        static::assertSame('<section data-interact-preserve="child"></section>', $result?->html);
-        static::assertSame(['key:child' => $child], $frame->children);
+        $this->assertSame('<section data-interact-preserve="child"></section>', $result?->html);
+        $this->assertSame(['key:child' => $child], $frame->children);
         $stack->pop();
-        static::assertNull($stack->parent());
+        $this->assertNull($stack->parent());
     }
 
     /**
@@ -157,7 +157,7 @@ class CompositionBoundaryTest extends TestCase
         $stack = new RenderStack();
         for ($depth = 0; $depth < 32; $depth++) {
             $frame = $stack->push([]);
-            static::assertSame($frame, $stack->parent());
+            $this->assertSame($frame, $stack->parent());
         }
 
         $this->expectException(InvalidArgumentException::class);

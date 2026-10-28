@@ -28,9 +28,7 @@ class Registry
     /**
      * The container may be omitted for dependency-free islands in standalone views.
      */
-    public function __construct(protected readonly ?ContainerInterface $container = null)
-    {
-    }
+    public function __construct(protected readonly ?ContainerInterface $container = null) {}
 
     /**
      * Register a nonstandard class or explicit name without replacing another island.

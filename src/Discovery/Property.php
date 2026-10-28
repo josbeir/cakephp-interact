@@ -79,13 +79,14 @@ readonly class Property
      */
     protected function transportType(ReflectionNamedType $type): string
     {
-        if (!$type->isBuiltin() || !in_array($type->getName(), ['string', 'int', 'float', 'bool', 'array'], true)) {
+        $name = $type->getName();
+        if (!$type->isBuiltin() || !in_array($name, ['string', 'int', 'float', 'bool', 'array'], true)) {
             throw new InvalidArgumentException(
                 'Props and state require public, mutable, typed JSON-compatible properties.',
             );
         }
 
-        return $type->getName();
+        return $name;
     }
 
     /**

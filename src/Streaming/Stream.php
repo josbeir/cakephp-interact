@@ -28,8 +28,7 @@ class Stream
         protected readonly Closure $send,
         protected readonly RendererInterface $renderer,
         protected readonly Definition $definition,
-    ) {
-    }
+    ) {}
 
     /**
      * Append or replace text without interpreting it as HTML.

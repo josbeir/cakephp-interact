@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { test, expect } from './fixtures';
 
 test('the public demo supports draft dumps, renderless updates, validation and failure recovery', async ({
@@ -80,7 +81,9 @@ test('native JSON dumps stay readable and inert while normal updates and focus w
   await expect(viewer).toBeVisible();
   const frame = page.frameLocator('iframe[title="Captured island output"]');
   await expect(frame.locator('pre')).toContainText('global dump');
-  await expect(frame.locator('pre')).toContainText('********');
+  await expect(frame.locator('pre')).toContainText(
+    createHash('sha256').update('Initial').digest('hex'),
+  );
   await expect(frame.locator('script, img')).toHaveCount(0);
   await expect(
     page.locator('[data-interact-id] .cake-debug-output'),

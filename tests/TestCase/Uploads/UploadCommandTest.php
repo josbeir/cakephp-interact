@@ -20,8 +20,8 @@ class UploadCommandTest extends TestCase
         $fixture->configure();
         try {
             $io = $this->createMock(ConsoleIoInterface::class);
-            $io->expects($this->once())->method('out')->with(static::stringContains('expired uploads.'));
-            static::assertSame(0, new CommandRunner(new Application(CONFIG), 'cake')->run(
+            $io->expects($this->once())->method('out')->with($this->stringContains('expired uploads.'));
+            $this->assertSame(0, new CommandRunner(new Application(CONFIG), 'cake')->run(
                 ['cake', 'interact.cleanup_uploads'],
                 $io,
             ));

@@ -14,7 +14,5 @@ class RenderlessController extends AppController
      * Render the FormHelper example with application-owned layout and styling.
      */
     #[Get('/renderless', name: 'demo:renderless')]
-    public function index(): void
-    {
-    }
+    public function index(): void {}
 }

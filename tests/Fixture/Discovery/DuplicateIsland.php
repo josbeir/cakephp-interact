@@ -10,6 +10,4 @@ use Interact\Test\Fixture\Runtime\CounterIsland;
  * Supplies a distinct class for explicit registration-name collision checks.
  */
 #[Render(template: 'unused')]
-class DuplicateIsland extends CounterIsland
-{
-}
+class DuplicateIsland extends CounterIsland {}

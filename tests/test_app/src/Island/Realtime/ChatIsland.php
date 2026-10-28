@@ -44,9 +44,7 @@ class ChatIsland extends Island
     /**
      * Allow the ordinary preview to send messages without optional hub infrastructure.
      */
-    public function __construct(protected readonly ?PublisherInterface $publisher = null)
-    {
-    }
+    public function __construct(protected readonly ?PublisherInterface $publisher = null) {}
 
     /**
      * Resolve the application's Table before authorization and state restoration.

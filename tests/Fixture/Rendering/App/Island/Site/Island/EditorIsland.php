@@ -8,6 +8,4 @@ use Interact\Island;
 /**
  * Exercises an application namespace that itself contains an Island segment.
  */
-class EditorIsland extends Island
-{
-}
+class EditorIsland extends Island {}

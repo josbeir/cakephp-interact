@@ -32,8 +32,7 @@ class Factory
         protected readonly UploadManager $uploads = new UploadManager(),
         protected readonly Configuration $configuration = new Configuration(),
         protected readonly ?Subscriptions $subscriptions = null,
-    ) {
-    }
+    ) {}
 
     /**
      * Create the runtime before configuring its helper to avoid recursive construction.
