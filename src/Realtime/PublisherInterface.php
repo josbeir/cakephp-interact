@@ -11,11 +11,8 @@ namespace Interact\Realtime;
  */
 interface PublisherInterface extends BroadcasterInterface
 {
-    /**
-     * Publish one message, requiring private delivery unless explicitly made public.
-     */
-    public function publish(string $topic, Message $message, bool $private = true): void;
-
+    // Privacy is forwarded delivery data; Mago cannot inspect implementations from this interface.
+    // @mago-expect lint:no-boolean-flag-parameter
     /**
      * Publish a named JSON notification or refresh signal.
      *

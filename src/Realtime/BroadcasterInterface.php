@@ -11,6 +11,8 @@ namespace Interact\Realtime;
  */
 interface BroadcasterInterface
 {
+    // Privacy is forwarded delivery data; Mago cannot inspect implementations from this interface.
+    // @mago-expect lint:no-boolean-flag-parameter
     /**
      * Deliver one message, throwing on failure without automatic retries.
      */
