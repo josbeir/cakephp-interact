@@ -6,6 +6,7 @@ namespace Interact\Security;
 use Closure;
 use InvalidArgumentException;
 use JsonException;
+use LengthException;
 use SensitiveParameter;
 
 /**
@@ -17,6 +18,9 @@ use SensitiveParameter;
  */
 class SnapshotCodec
 {
+    /** Maximum complete token size accepted on both issuance and verification. */
+    protected const int MAX_TOKEN_BYTES = 524_288;
+
     /**
      * @var \Closure(): int Current UTC epoch seconds.
      */
@@ -45,6 +49,7 @@ class SnapshotCodec
      * Issue a signed JSON snapshot bound to the current session and middleware scope.
      *
      * @param array<string, mixed> $data Validated island state and identities.
+     * @throws LengthException When the signed token would exceed the verification limit.
      */
     public function seal(array $data, string $binding, string $scope): string
     {
@@ -57,7 +62,14 @@ class SnapshotCodec
         ], JSON_THROW_ON_ERROR | JSON_HEX_TAG);
         $payload = rtrim(strtr(base64_encode($json), '+/', '-_'), '=');
 
-        return $payload . '.' . $this->signature($payload);
+        $token = $payload . '.' . $this->signature($payload);
+        if (strlen($token) > static::MAX_TOKEN_BYTES) {
+            throw new LengthException(
+                'Signed island token exceeds the 512 KiB limit. Reduce transported props and state.',
+            );
+        }
+
+        return $token;
     }
 
     /**
@@ -70,7 +82,10 @@ class SnapshotCodec
     public function open(#[SensitiveParameter] string $token, string $binding, string $scope): array
     {
         $parts = [];
-        if (strlen($token) > 524_288 || !preg_match('/^([a-zA-Z0-9_-]+)\.([a-f0-9]{64})$/D', $token, $parts)) {
+        if (
+            strlen($token) > static::MAX_TOKEN_BYTES
+            || !preg_match('/^([a-zA-Z0-9_-]+)\.([a-f0-9]{64})$/D', $token, $parts)
+        ) {
             throw new InvalidSnapshotException('Invalid snapshot.');
         }
 

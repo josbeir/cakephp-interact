@@ -129,6 +129,12 @@ encryption or single-use guarantees. Replaying a valid snapshot is possible unti
 expiry. An application requiring idempotent payments or other durable operations
 must implement that guarantee in its business layer.
 
+Signed tokens, including subscription leases and parent-input tickets, are limited
+to 512 KiB after encoding and signing. Issuing a larger token throws
+`LengthException` before it can be delivered as usable state. The limit includes
+identity metadata and Base64 overhead; the separate 1 MiB request-envelope limit
+does not increase it.
+
 A failed connection does not establish whether the server performed an action. Interact does not automatically retry actions. Disposing an island or aborting fetch does not cancel server execution.
 
 Do not cache personalized island HTML across sessions. Update responses use `Cache-Control: no-store`.
