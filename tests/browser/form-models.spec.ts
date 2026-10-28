@@ -2,6 +2,64 @@ import { expect, test } from './fixtures';
 import { islandId, targetsIsland } from './requests';
 
 for (const kind of ['HTML', 'FormHelper']) {
+  test(`${kind} retains server-added rows and newer typing in the same array draft`, async ({
+    page,
+  }) => {
+    await page.goto(kind === 'HTML' ? '/demo/form-fixtures' : '/forms');
+    const region = page.getByRole('region', {
+      name: `${kind} article`,
+      exact: true,
+    });
+    const id = await islandId(region.locator('[data-interact-id]').first());
+    const title = region.getByLabel('Title', { exact: true });
+    await title.fill('Original');
+    let release: () => void = () => {};
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let received: () => void = () => {};
+    const ready = new Promise<void>((resolve) => {
+      received = resolve;
+    });
+    await page.route('**/_interact/update', async (route) => {
+      if (!targetsIsland(route.request(), id)) {
+        await route.continue();
+        return;
+      }
+      const reply = await route.fetch();
+      received();
+      await pending;
+      await route.fulfill({ response: reply });
+    });
+    await region
+      .getByRole('button', { name: 'Add comment', exact: true })
+      .click();
+    await ready;
+    await title.fill('Typed while adding');
+    const response = page.waitForResponse((reply) =>
+      targetsIsland(reply.request(), id),
+    );
+    release();
+    await response;
+    await expect(
+      region.getByLabel('Comment 2 text', { exact: true }),
+    ).toBeVisible();
+    await expect(title).toHaveValue('Typed while adding');
+    const draft = await title.evaluate((element) => {
+      if (!window.Alpine) throw new Error('Missing Alpine runtime.');
+      return window.Alpine.evaluate<string>(element, '$server.exportDraft()');
+    });
+    expect(JSON.parse(draft)).toMatchObject({
+      data: {
+        title: 'Typed while adding',
+        comments: [
+          { body: '', approved: false },
+          { body: '', approved: false },
+        ],
+      },
+    });
+  });
+
   test(`${kind} native form binds nested drafts, validates, and saves with keyboard submission`, async ({
     page,
   }) => {

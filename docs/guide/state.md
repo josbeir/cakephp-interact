@@ -120,6 +120,15 @@ public array $form = ['address' => ['city' => '']];
 Bind nested values using dotted paths such as `form.address.city`. See
 [nested input bindings](/directives/model#nested-values).
 
+When a response arrives, newer local edits to named fields survive alongside
+independent server changes in the same array draft. Conflicts on the same field
+retain the newer local value, including explicit map-key removals.
+
+Lists retain newer local edits as a whole when both sides change their existing
+items or structure. Server-only appends are retained when the preceding items
+still match the sent baseline and the local list length is unchanged. Interact
+does not infer row identities after removals or reordering.
+
 <span id="compute-data-for-a-render"></span>
 
 ## viewData()
