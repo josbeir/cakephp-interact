@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test';
 import { newerWritable } from '../../../resources/ts/state/drafts';
 import { mergeChanges } from '../../../resources/ts/state/paths';
+import { clone } from '../../../resources/ts/state/values';
 import type { Json } from '../../../resources/ts/types';
 
 describe('newer array drafts', () => {
@@ -39,6 +40,27 @@ describe('newer array drafts', () => {
       { title: 'typed' },
       { server: 'new' },
       { title: 'typed', server: 'new' },
+    ],
+    [
+      'server removal of an own toString key',
+      { label: 'old', toString: 'text' },
+      { label: 'new', toString: 'text' },
+      { label: 'old' },
+      { label: 'new' },
+    ],
+    [
+      'local removal of an own valueOf key',
+      { label: 'old', valueOf: 'text' },
+      { label: 'new' },
+      { label: 'old', valueOf: 'server' },
+      { label: 'new' },
+    ],
+    [
+      'new own keys with prototype names',
+      { label: 'old' },
+      { label: 'new', hasOwnProperty: 'local' },
+      { label: 'old', toString: 'server' },
+      { label: 'new', hasOwnProperty: 'local', toString: 'server' },
     ],
     [
       'server list appends',
@@ -95,6 +117,7 @@ describe('newer array drafts', () => {
       ),
     );
     expect(result).toEqual({ data: expected });
+    expect(clone(result)).toEqual(result);
     expect({ sent, current, accepted }).toEqual(original);
   });
 

@@ -69,7 +69,11 @@ function reconcile(
       ...Object.keys(baseline),
       ...Object.keys(current),
     ])) {
-      const value = reconcile(current[key], baseline[key], accepted[key]);
+      const value = reconcile(
+        Object.hasOwn(current, key) ? current[key] : undefined,
+        Object.hasOwn(baseline, key) ? baseline[key] : undefined,
+        Object.hasOwn(accepted, key) ? accepted[key] : undefined,
+      );
       if (value === undefined) delete merged[key];
       else merged[key] = value;
     }
