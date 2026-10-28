@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Url;
 
 use Interact\Attribute\State;
+use Interact\Runtime\TransportNumber;
 use InvalidArgumentException;
 use ReflectionNamedType;
 use ReflectionProperty;
@@ -71,8 +72,8 @@ readonly class Binding
             || match ($this->type) {
                 'string' => is_string($value),
                 'bool' => is_bool($value),
-                'int' => is_int($value) && abs($value) <= 9_007_199_254_740_991,
-                'float' => (is_float($value) || is_int($value)) && is_finite((float)$value),
+                'int' => is_int($value) && TransportNumber::accepts($value),
+                'float' => (is_float($value) || is_int($value)) && TransportNumber::accepts($value),
                 'array' => is_array($value) && ArrayValue::accepts($value),
                 default => false,
             };

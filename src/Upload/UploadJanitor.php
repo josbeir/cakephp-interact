@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Interact\Upload;
 
-use Cake\I18n\DateTime;
 use Cake\Utility\Fs\Finder;
 use Cake\Utility\Fs\Path;
 use RuntimeException;
@@ -33,6 +32,10 @@ class UploadJanitor
         foreach (new Finder()->in($this->config->directory)
             ->recursive(false)
             ->directories() as $entry) {
+            if ($removed >= $limit) {
+                return $removed;
+            }
+
             $directory = $entry->getPathname();
             if (is_link($directory)) {
                 continue;
@@ -48,21 +51,7 @@ class UploadJanitor
                     continue;
                 }
 
-                foreach (new Finder()->in($directory)
-                    ->recursive(false)
-                    ->name('*.json')
-                    ->files() as $recordFile) {
-                    $path = $recordFile->getPathname();
-                    if ($removed >= $limit) {
-                        return $removed;
-                    }
-
-                    $record = new UploadRecordReader()->read($path);
-                    if ($record !== null && $record['expires'] <= new DateTime()->getTimestamp()) {
-                        new UploadFilesystem($this->config)->remove(substr($path, 0, -5));
-                        $removed++;
-                    }
-                }
+                $removed += new UploadPruner($this->config)->prune($directory, $limit - $removed);
             } finally {
                 flock($lock, LOCK_UN);
                 fclose($lock);

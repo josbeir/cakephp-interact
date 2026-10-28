@@ -389,7 +389,7 @@ class PaginationTest extends TestCase
     {
         $mount = $this->runtime->mount('StateOnly', [], null, $this->context);
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid pagination page: expected a browser-safe integer.');
+        $this->expectExceptionMessage('Island numbers exceed browser precision. Use strings for larger identifiers.');
         $this->runtime->update([
             'snapshot' => $mount->snapshot,
             'updates' => ['paging.page' => PHP_INT_MAX],

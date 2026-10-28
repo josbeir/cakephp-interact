@@ -216,6 +216,35 @@ describe('island lifecycle and transport', () => {
       updates: { title: 'newer' },
     });
   });
+  it('keeps a server-added form row while another field is edited during the request', async () => {
+    const root = element('<input x-interact:model="form.name">');
+    let finish: (response: Response) => void = () => {};
+    const fetcher = vi.fn<Fetcher>().mockReturnValue(
+      new Promise<Response>((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const value = client(root, fetcher);
+    const pending = value.bridge.call('addComment');
+    const input = control(root, 'input', HTMLInputElement);
+    input.value = 'newer name';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    finish(
+      result(
+        payload(root, {
+          ...initial,
+          form: { name: '', comments: [{ body: '' }] },
+        }),
+      ),
+    );
+    await expect(pending).resolves.toEqual({ ok: true });
+    expect(value.bridge.state.form).toEqual({
+      name: 'newer name',
+      comments: [{ body: '' }],
+    });
+    expect(control(root, 'input', HTMLInputElement).value).toBe('newer name');
+  });
+
   it('keeps queued arguments and their activity targets detached from application mutations', async () => {
     const root = element();
     let finish: (response: Response) => void = () => {};

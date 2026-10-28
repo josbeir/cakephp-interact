@@ -3,9 +3,11 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\Security;
 
+use Interact\Realtime\LeaseCodec;
 use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotCodec;
 use InvalidArgumentException;
+use LengthException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use SensitiveParameter;
@@ -16,6 +18,37 @@ use SensitiveParameter;
  */
 class SnapshotCodecTest extends TestCase
 {
+    /**
+     * Check the common token-size contract for snapshots and subscription-only leases.
+     *
+     * @return iterable<string, array{SnapshotCodec}>
+     */
+    public static function codecs(): iterable
+    {
+        yield 'snapshot' => [new SnapshotCodec(str_repeat('s', 32), clock: static fn(): int => 100)];
+        yield 'subscription lease' => [new LeaseCodec(str_repeat('s', 32), clock: static fn(): int => 100)];
+    }
+
+    /**
+     * Accept the exact token boundary and reject its next byte before returning a token.
+     */
+    #[DataProvider('codecs')]
+    public function testIssuanceAndVerificationShareTheExactSizeBoundary(SnapshotCodec $codec): void
+    {
+        $empty = $codec->seal(['body' => ''], 'session', 'admin');
+        $parts = explode('.', $empty);
+        $json = base64_decode(strtr($parts[0], '-_', '+/'), true);
+        static::assertIsString($json);
+        // The token includes one separator and a 64-character signature.
+        $body = str_repeat('x', max(0, intdiv((524_288 - 65) * 3, 4) - strlen($json)));
+        $token = $codec->seal(['body' => $body], 'session', 'admin');
+        static::assertSame(524_288, strlen($token));
+        static::assertSame(['body' => $body], $codec->open($token, 'session', 'admin'));
+        $this->expectException(LengthException::class);
+        $this->expectExceptionMessage('512 KiB');
+        $codec->seal(['body' => $body . 'x'], 'session', 'admin');
+    }
+
     public function testRoundTripAndExactExpiryBoundary(): void
     {
         $time = 100;

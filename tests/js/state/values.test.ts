@@ -81,12 +81,20 @@ describe('transport values', () => {
       '',
       [1, null],
       { nested: { enabled: false } },
+      Number.MAX_SAFE_INTEGER,
+      -Number.MAX_SAFE_INTEGER,
+      1.5,
+      '9007199254740993',
     ])
       expect(json(value)).toBe(true);
     for (const value of [
       undefined,
       NaN,
       Infinity,
+      Number.MAX_SAFE_INTEGER + 1,
+      -Number.MAX_SAFE_INTEGER - 1,
+      1e20,
+      { id: Number.MAX_SAFE_INTEGER + 1 },
       () => 0,
       JSON.parse('{"__proto__":1}'),
       { constructor: 'bad' },

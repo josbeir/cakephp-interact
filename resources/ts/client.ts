@@ -28,7 +28,7 @@ import { RequestQueue } from './scheduling/request-queue';
 import { RequestLifecycle } from './diagnostics/request-lifecycle';
 import type { RequestKind } from './diagnostics/types';
 import { Poller } from './scheduling/poller';
-import { changedWritable } from './state/drafts';
+import { changedWritable, newerWritable } from './state/drafts';
 import { clone, equal } from './state/values';
 import { readMetadata } from './transport/metadata';
 import type { MountMetadata } from './transport/metadata';
@@ -717,7 +717,7 @@ export class IslandClient {
     this.composition?.capture();
     const newer = {
       ...this.composition?.preserve(payload.state),
-      ...changedWritable(this.bridge.state, sent, this.writable),
+      ...newerWritable(this.bridge.state, sent, payload.state, this.writable),
     };
     if (this.urlTarget && invocation?.urlRestore?.epoch !== this.url?.epoch())
       Object.assign(newer, this.urlTarget.values);

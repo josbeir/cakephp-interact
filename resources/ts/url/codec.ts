@@ -1,5 +1,5 @@
 import { read, validPath } from '../state/paths';
-import { equal, record } from '../state/values';
+import { equal, jsonNumber, record } from '../state/values';
 import type { Json, State } from '../types';
 import type { UrlField, UrlFields, UrlValue } from './types';
 
@@ -23,7 +23,7 @@ export function urlValue(
     case 'int':
       return typeof value === 'number' && Number.isSafeInteger(value);
     case 'float':
-      return typeof value === 'number' && Number.isFinite(value);
+      return typeof value === 'number' && jsonNumber(value);
     case 'array':
       return typeof value !== 'string' && stringTree(value);
     default:

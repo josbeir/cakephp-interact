@@ -176,8 +176,10 @@ Keep staging outside the webroot. Configure PHP's `upload_max_filesize`,
 multipart envelope. Those limits can reject a request before application file
 validation. The existing 1 MiB JSON-envelope limit remains separate from bytes.
 
-Staging performs bounded expiry cleanup. Also schedule the CakePHP command so
-abandoned files are removed when the application is idle:
+Staging checks at most 100 entries in the uploading session's directory and
+removes at most 10 expired records or abandoned fragments while holding that
+session's lock. It does not scan other sessions. Schedule the CakePHP command
+for a complete sweep, including when the application is idle:
 
 ```sh
 bin/cake interact.cleanup_uploads
@@ -188,6 +190,12 @@ lifetime; uploads do not restore a form after reload or extend page expiry.
 Missing or expired files block the requested action and ask for reselection,
 while preserving ordinary drafts and other available files. Draft export does
 not contain file contents or restore chooser selections.
+
+Cleanup also removes orphaned file bytes and incomplete metadata files once
+their modification time is at least one retention period old. Recent fragments,
+active locked sessions, and unrelated files are retained. Cleanup does not follow
+symlinks. Session lock files stay in place so concurrent processes always
+synchronize on the same lock.
 
 For a different staging backend, replace `UploadStorageInterface` through the
 application container. Its contract covers owned staging, restoration, deletion,

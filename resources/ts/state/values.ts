@@ -5,6 +5,11 @@ import type { Json, State } from '../types';
  */
 export const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
 
+/** Keep numeric transport within the same finite, lossless integer range as PHP. */
+export function jsonNumber(value: number): boolean {
+  return Number.isFinite(value) && Math.abs(value) <= Number.MAX_SAFE_INTEGER;
+}
+
 /**
  * Recognize plain records without accepting class instances or arrays.
  */
@@ -26,7 +31,7 @@ export function json(value: unknown, depth = 0): value is Json {
   if (depth > 32) return false;
   if (value === null || typeof value === 'string' || typeof value === 'boolean')
     return true;
-  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value === 'number') return jsonNumber(value);
   if (Array.isArray(value))
     return value.every((entry: unknown) => json(entry, depth + 1));
   return (
