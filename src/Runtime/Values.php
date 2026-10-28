@@ -40,11 +40,13 @@ class Values
      */
     public static function validate(mixed $value, int $depth = 0): void
     {
-        if ($depth > 32 || is_object($value) || is_resource($value) || is_float($value) && !is_finite($value)) {
+        if ($depth > 32 || is_object($value) || is_resource($value)) {
             throw new InvalidArgumentException(
                 'Island values must be finite JSON-compatible values, at most 32 levels deep.',
             );
         }
+
+        TransportNumber::validate($value);
 
         if (is_array($value)) {
             /** @var mixed $entry */

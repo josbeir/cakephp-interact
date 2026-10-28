@@ -90,18 +90,23 @@ public function mount(): void
 
 ## Supported types
 
-| PHP type                | Transported value             |
-| ----------------------- | ----------------------------- |
-| `string`                | String, including `''`        |
-| `int`                   | Integer, including `0`        |
-| `float`                 | Finite number                 |
-| `bool`                  | `true` or `false`             |
-| Nullable supported type | Value or `null`               |
-| `array`                 | Nested JSON-compatible values |
+| PHP type                | Transported value                                |
+| ----------------------- | ------------------------------------------------ |
+| `string`                | String, including `''`                           |
+| `int`                   | Safe integer, including `0`                      |
+| `float`                 | Finite number within the numeric transport range |
+| `bool`                  | `true` or `false`                                |
+| Nullable supported type | Value or `null`                                  |
+| `array`                 | Nested JSON-compatible values                    |
 
 Declare concrete property types. Required props may be uninitialized until
 mounting. Entities, queries, services, resources, and arbitrary objects cannot
 be transported. Files use [`#[Upload]`](/guide/uploads).
+
+Numbers must be between `-9007199254740991` and `9007199254740991`, inclusive,
+to avoid silent integer rounding in the browser. This applies recursively to
+state, props, action arguments, and event details, including integer-valued
+floats. Use strings for larger identifiers, for example `'9007199254740993'`.
 
 <span id="bind-other-native-controls"></span>
 

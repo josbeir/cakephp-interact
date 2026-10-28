@@ -41,6 +41,7 @@ const values: [string, string, UrlValue, UrlValue][] = [
   ['int', 'q=9007199254740992', 1, 1],
   ['float', 'q=2.25e2', 1.5, 225],
   ['float', 'q=1e999', 1.5, 1.5],
+  ['float', 'q=9007199254740993', 1.5, 1.5],
   ['float', 'q=NaN', 1.5, 1.5],
   ['bool', 'q=1', false, true],
   ['bool', 'q=0', true, false],

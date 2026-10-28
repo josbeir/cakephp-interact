@@ -165,6 +165,7 @@ class UrlStateTest extends TestCase
             'float' => ['ratio', 'ratio=2.25e2', 225.0],
             'invalid float' => ['ratio', 'ratio=INF', 1.5],
             'float overflow' => ['ratio', 'ratio=1e999', 1.5],
+            'unsafe integer as float' => ['ratio', 'ratio=9007199254740993', 1.5],
             'missing list' => ['tags', '', ['default']],
             'empty list' => ['tags', 'tags=', []],
             'empty item' => ['tags', 'tags[]=', ['']],
