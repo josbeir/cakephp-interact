@@ -65,7 +65,7 @@ class DocumentationMarkupTest extends TestCase
                             'form' => ['address' => ['city' => '']],
                         ]);
                         file_put_contents($directory . 'element/example.php', $group[2]);
-                        static::assertSame(
+                        $this->assertSame(
                             $controls->collect($group[1]),
                             $controls->collect($view->element('example')),
                             $source . ': paired examples must expose the same bindings and choices.',
@@ -75,7 +75,7 @@ class DocumentationMarkupTest extends TestCase
                 }
             }
 
-            static::assertGreaterThanOrEqual(10, $count, 'The documented native control variations must be checked.');
+            $this->assertGreaterThanOrEqual(10, $count, 'The documented native control variations must be checked.');
         } finally {
             Configure::write('App.paths.templates', $previous);
             if (is_file($directory . 'element/example.php')) {

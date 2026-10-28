@@ -20,7 +20,7 @@ class PlaygroundHttpTest extends HttpTestCase
         $this->assertResponseContains('href="/demo.css"');
         $xpath = new XPath(HTMLDocument::createFromString((string)$this->response?->getBody()));
         $xpath->registerNamespace('html', 'http://www.w3.org/1999/xhtml');
-        static::assertSame(
+        $this->assertSame(
             1,
             $xpath->query(
                 '//html:nav[@aria-label="Demo pages"]/html:a[@aria-current="page" and normalize-space(.)="Playground"]',
@@ -36,7 +36,7 @@ class PlaygroundHttpTest extends HttpTestCase
     {
         $first = $this->mounted(url: '/playground');
         $second = $this->mounted(1, '/playground');
-        static::assertNotSame($first['id'], $second['id']);
+        $this->assertNotSame($first['id'], $second['id']);
         $this->update(['snapshot' => $first['snapshot'], 'action' => 'adjust', 'args' => [5]]);
         $this->assertResponseOk();
         $this->assertResponseContains('"count":5');

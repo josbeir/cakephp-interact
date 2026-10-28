@@ -87,14 +87,14 @@ class DeclarationTest extends TestCase
     public function testAcceptsInferredTemplates(): void
     {
         $declaration = new Render();
-        static::assertNull($declaration->template);
-        static::assertNull($declaration->element);
+        $this->assertNull($declaration->template);
+        $this->assertNull($declaration->element);
     }
 
     public function testAcceptsNativeElementDeclarations(): void
     {
         $declaration = new Render(element: 'sample');
-        static::assertSame('sample', $declaration->element);
+        $this->assertSame('sample', $declaration->element);
     }
 
     public function testRejectsUnsafeRootTags(): void

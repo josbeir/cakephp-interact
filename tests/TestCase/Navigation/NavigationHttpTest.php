@@ -30,12 +30,12 @@ class NavigationHttpTest extends HttpTestCase
         $document = HTMLDocument::createFromString((string)$this->response?->getBody());
         $mount = new XPath($document)->query('//*[@data-interact-mount]')
             ->item(0);
-        static::assertInstanceOf(Element::class, $mount);
+        $this->assertInstanceOf(Element::class, $mount);
         $fingerprint = $mount->getAttribute('data-interact-mount');
-        static::assertIsString($fingerprint);
+        $this->assertIsString($fingerprint);
         $second = $this->mounted(url: '/navigation/details');
-        static::assertNotSame($first['id'], $second['id']);
-        static::assertSame($before, $this->metadata());
+        $this->assertNotSame($first['id'], $second['id']);
+        $this->assertSame($before, $this->metadata());
         $this->assertResponseContains('data-interact-mount="' . $fingerprint . '"');
         $this->mounted(url: '/navigation/details?edition=new');
         $this->assertResponseNotContains('data-interact-mount="' . $fingerprint . '"');
@@ -70,10 +70,10 @@ class NavigationHttpTest extends HttpTestCase
         try {
             $this->mounted(url: '/navigation/details');
             $after = $this->metadata();
-            static::assertSame('deployment-2', $after['application']);
-            static::assertSame($before['policy'], $after['policy']);
-            static::assertSame($before['session'], $after['session']);
-            static::assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $after['session']);
+            $this->assertSame('deployment-2', $after['application']);
+            $this->assertSame($before['policy'], $after['policy']);
+            $this->assertSame($before['session'], $after['session']);
+            $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $after['session']);
         } finally {
             Configure::delete('Interact.navigationVersion');
         }
@@ -99,19 +99,19 @@ class NavigationHttpTest extends HttpTestCase
             new Response(['type' => 'html', 'body' => '<p>No helper marker</p>']),
         ] as $response) {
             $handler->method('handle')->willReturn($response);
-            static::assertSame($response, $middleware->process($request, $handler));
+            $this->assertSame($response, $middleware->process($request, $handler));
             $handler = $this->createStub(RequestHandlerInterface::class);
         }
 
         $handler->method('handle')->willReturn($document);
-        static::assertSame($document, $middleware->process($request->withMethod('POST'), $handler));
+        $this->assertSame($document, $middleware->process($request->withMethod('POST'), $handler));
         $first = $middleware->process($request, $handler);
-        static::assertStringContainsString('interact-navigation', (string)$first->getBody());
-        static::assertFalse($first->hasHeader('ETag'));
+        $this->assertStringContainsString('interact-navigation', (string)$first->getBody());
+        $this->assertFalse($first->hasHeader('ETag'));
         $handler = $this->createStub(RequestHandlerInterface::class);
         $handler->method('handle')->willReturn($document->withHeader('Content-Security-Policy', "script-src 'self'"));
         $second = $middleware->process($request, $handler);
-        static::assertNotSame((string)$first->getBody(), (string)$second->getBody());
+        $this->assertNotSame((string)$first->getBody(), (string)$second->getBody());
     }
 
     public function testRotatingNoncesUseNativeHiddenMarkersAndStableCompatibility(): void
@@ -121,22 +121,22 @@ class NavigationHttpTest extends HttpTestCase
         $before = (string)$this->response?->getBody();
         $header = $this->response?->getHeaderLine('Content-Security-Policy');
         $this->mounted(url: '/navigation/nonces/details');
-        static::assertSame($first, $this->metadata());
-        static::assertNotSame($header, $this->response?->getHeaderLine('Content-Security-Policy'));
-        static::assertNotSame($before, (string)$this->response?->getBody());
+        $this->assertSame($first, $this->metadata());
+        $this->assertNotSame($header, $this->response?->getHeaderLine('Content-Security-Policy'));
+        $this->assertNotSame($before, (string)$this->response?->getBody());
         $document = HTMLDocument::createFromString((string)$this->response?->getBody());
         $markers = new XPath($document)->query('//*[@name="interact-navigation-nonce"]');
-        static::assertSame(2, $markers->length);
+        $this->assertSame(2, $markers->length);
         foreach ($markers as $index => $marker) {
-            static::assertInstanceOf(Element::class, $marker);
+            $this->assertInstanceOf(Element::class, $marker);
             $nonce = $marker->getAttribute('nonce');
-            static::assertNotEmpty($nonce);
-            static::assertSame((string)$index, $marker->getAttribute('content'));
-            static::assertStringContainsString(
+            $this->assertNotEmpty($nonce);
+            $this->assertSame((string)$index, $marker->getAttribute('content'));
+            $this->assertStringContainsString(
                 "'nonce-" . (string)$nonce . "'",
                 (string)$this->response?->getHeaderLine('Content-Security-Policy'),
             );
-            static::assertStringNotContainsString((string)$nonce, json_encode($first, JSON_THROW_ON_ERROR));
+            $this->assertStringNotContainsString((string)$nonce, json_encode($first, JSON_THROW_ON_ERROR));
         }
     }
 

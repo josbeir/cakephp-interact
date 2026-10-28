@@ -32,13 +32,13 @@ class PaginationDeclarationTest extends TestCase
         $registry = new Registry();
         $first = $registry->create($definition);
         $second = $registry->create($definition);
-        static::assertInstanceOf(PageIsland::class, $first);
-        static::assertInstanceOf(PageIsland::class, $second);
-        static::assertNotSame($first->paging, $second->paging);
-        static::assertSame(5, $first->paging->limit);
+        $this->assertInstanceOf(PageIsland::class, $first);
+        $this->assertInstanceOf(PageIsland::class, $second);
+        $this->assertNotSame($first->paging, $second->paging);
+        $this->assertSame(5, $first->paging->limit);
         $first->paging->page = 3;
-        static::assertSame(1, $second->paging->page);
-        static::assertSame(
+        $this->assertSame(1, $second->paging->page);
+        $this->assertSame(
             ['page' => 3, 'sort' => '', 'direction' => 'asc'],
             new State()->export($first, $definition)['paging'],
         );
@@ -48,10 +48,10 @@ class PaginationDeclarationTest extends TestCase
     {
         $definition = new Definition(IndependentResourceQueriesIsland::class);
         $island = new Registry()->create($definition);
-        static::assertInstanceOf(IndependentResourceQueriesIsland::class, $island);
+        $this->assertInstanceOf(IndependentResourceQueriesIsland::class, $island);
         $configuration = new Configuration($definition);
-        static::assertSame('paging', $configuration->select($island, $island->paging)->name);
-        static::assertSame('other', $configuration->select($island, $island->other)->name);
+        $this->assertSame('paging', $configuration->select($island, $island->paging)->name);
+        $this->assertSame('other', $configuration->select($island, $island->other)->name);
         $this->expectException(InvalidArgumentException::class);
         $configuration->select($island, null);
     }
@@ -77,21 +77,21 @@ class PaginationDeclarationTest extends TestCase
         );
         $island = new PageIsland();
         $property->initialize($island);
-        static::assertSame(2, $island->paging->page);
-        static::assertSame('title', $island->paging->sort);
-        static::assertSame('desc', $island->paging->direction);
-        static::assertSame(10, $island->paging->limit);
+        $this->assertSame(2, $island->paging->page);
+        $this->assertSame('title', $island->paging->sort);
+        $this->assertSame('desc', $island->paging->direction);
+        $this->assertSame(10, $island->paging->limit);
         $bindings = $property->bindings();
-        static::assertSame(['paging.page', 'paging.sort', 'paging.limit'], array_keys($bindings));
-        static::assertSame('p', $bindings['paging.page']->name);
-        static::assertTrue($bindings['paging.page']->history);
-        static::assertFalse($bindings['paging.sort']->history);
-        static::assertSame(['type' => 'int', 'nullable' => false], $property->writableFields()['paging.limit']);
+        $this->assertSame(['paging.page', 'paging.sort', 'paging.limit'], array_keys($bindings));
+        $this->assertSame('p', $bindings['paging.page']->name);
+        $this->assertTrue($bindings['paging.page']->history);
+        $this->assertFalse($bindings['paging.sort']->history);
+        $this->assertSame(['type' => 'int', 'nullable' => false], $property->writableFields()['paging.limit']);
         $owned = $island->paging;
         $property->assign($island, ['page' => 4, 'sort' => '', 'direction' => 'asc', 'limit' => 20]);
-        static::assertSame($owned, $island->paging);
-        static::assertSame(4, $island->paging->page);
-        static::assertSame(20, $island->paging->limit);
+        $this->assertSame($owned, $island->paging);
+        $this->assertSame(4, $island->paging->page);
+        $this->assertSame(20, $island->paging->limit);
     }
 
     public function testConventionalUrlNamesAndPrefixesRemainIndependentOfThePhpProperty(): void
@@ -100,10 +100,10 @@ class PaginationDeclarationTest extends TestCase
             new ReflectionProperty(PageIsland::class, 'paging'),
             new Pagination(url: true),
         );
-        static::assertSame('page', $property->bindings()['paging.page']->name);
+        $this->assertSame('page', $property->bindings()['paging.page']->name);
         $metadata = new UrlState()->metadata(new Definition(IndependentResourceQueriesIsland::class), 'catalog');
-        static::assertSame('catalog_p', $metadata['paging.page']['name']);
-        static::assertSame('catalog_other_page', $metadata['other.page']['name']);
+        $this->assertSame('catalog_p', $metadata['paging.page']['name']);
+        $this->assertSame('catalog_other_page', $metadata['other.page']['name']);
     }
 
     /**

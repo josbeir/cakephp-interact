@@ -55,25 +55,25 @@ class IslandLifecycleTest extends TestCase
         $runtime = $this->runtime();
         $context = $this->context();
         $initial = $runtime->mount('Counter', ['recordId' => 7], 'first', $context);
-        static::assertSame('mounted', $initial->state['locked']);
-        static::assertStringStartsWith('<section ', $initial->html);
-        static::assertStringContainsString('data-interact-csrf="csrf-test"', $initial->html);
-        static::assertStringContainsString('x-data="interact"', $initial->html);
-        static::assertArrayNotHasKey('locked', $initial->writable);
+        $this->assertSame('mounted', $initial->state['locked']);
+        $this->assertStringStartsWith('<section ', $initial->html);
+        $this->assertStringContainsString('data-interact-csrf="csrf-test"', $initial->html);
+        $this->assertStringContainsString('x-data="interact"', $initial->html);
+        $this->assertArrayNotHasKey('locked', $initial->writable);
         $updated = $runtime->update([
             'snapshot' => $initial->snapshot,
             'updates' => ['count' => 4],
             'action' => 'increment',
             'args' => [2],
         ], $context);
-        static::assertSame(6, $updated->state['count']);
-        static::assertSame('count', $updated->state['locked']);
-        static::assertSame($initial->id, $updated->id);
-        static::assertSame([['name' => 'counter-saved', 'detail' => ['count' => 6]]], $updated->events);
-        static::assertSame(1, $updated->payload()['version']);
+        $this->assertSame(6, $updated->state['count']);
+        $this->assertSame('count', $updated->state['locked']);
+        $this->assertSame($initial->id, $updated->id);
+        $this->assertSame([['name' => 'counter-saved', 'detail' => ['count' => 6]]], $updated->events);
+        $this->assertSame(1, $updated->payload()['version']);
         $other = $runtime->mount('Counter', ['recordId' => 8], 'other', $context);
-        static::assertNotSame($initial->id, $other->id);
-        static::assertSame(0, $other->state['count']);
+        $this->assertNotSame($initial->id, $other->id);
+        $this->assertSame(0, $other->state['count']);
     }
 
     public function testNestedEditsPreserveScalarDistinctions(): void
@@ -91,19 +91,19 @@ class IslandLifecycleTest extends TestCase
                 'enabled' => true,
             ],
         ], $context);
-        static::assertSame(
+        $this->assertSame(
             ['title' => '', 'tags' => ['a'], 'address' => ['city' => 'Ghent']],
             $updated->state['form'],
         );
-        static::assertSame(0.0, $updated->state['amount']);
-        static::assertTrue($updated->state['enabled']);
+        $this->assertSame(0.0, $updated->state['amount']);
+        $this->assertTrue($updated->state['enabled']);
         $again = $runtime->update([
             'snapshot' => $updated->snapshot,
             'updates' => ['amount' => null, 'enabled' => false, 'form.address' => null],
         ], $context);
-        static::assertNull($again->state['amount']);
-        static::assertFalse($again->state['enabled']);
-        static::assertSame(['title' => '', 'tags' => ['a'], 'address' => null], $again->state['form']);
+        $this->assertNull($again->state['amount']);
+        $this->assertFalse($again->state['enabled']);
+        $this->assertSame(['title' => '', 'tags' => ['a'], 'address' => null], $again->state['form']);
     }
 
     public function testValidationSuppressesSuccessEvents(): void
@@ -112,8 +112,8 @@ class IslandLifecycleTest extends TestCase
         $context = $this->context();
         $initial = $runtime->mount('Counter', ['recordId' => 1], 'first', $context);
         $result = $runtime->update(['snapshot' => $initial->snapshot, 'action' => 'invalid'], $context);
-        static::assertSame(['count' => ['Invalid count.']], $result->errors);
-        static::assertSame([], $result->events);
+        $this->assertSame(['count' => ['Invalid count.']], $result->errors);
+        $this->assertSame([], $result->events);
     }
 
     public function testPublicLifecycleMethodCannotBeCalledAsAction(): void
@@ -197,13 +197,13 @@ class IslandLifecycleTest extends TestCase
             'action' => 'accept',
             'args' => ['title', true, ['one'], null],
         ], $context);
-        static::assertSame(['title' => 'title', 'tags' => ['one']], $result->state['form']);
+        $this->assertSame(['title' => 'title', 'tags' => ['one']], $result->state['form']);
         $result = $runtime->update([
             'snapshot' => $result->snapshot,
             'action' => 'accept',
             'args' => ['', false, [], 1.5],
         ], $context);
-        static::assertSame(1.5, $result->state['amount']);
+        $this->assertSame(1.5, $result->state['amount']);
     }
 
     public function testMountRejectsStateAsProps(): void
@@ -263,12 +263,12 @@ class IslandLifecycleTest extends TestCase
         $reference->runtime = $runtime;
         try {
             $runtime->mount('Counter', ['recordId' => 1], 'parent', $context);
-            static::fail('Duplicate keys must fail.');
+            $this->fail('Duplicate keys must fail.');
         } catch (InvalidArgumentException $invalidArgumentException) {
-            static::assertStringContainsString('Duplicate', $invalidArgumentException->getMessage());
+            $this->assertStringContainsString('Duplicate', $invalidArgumentException->getMessage());
         }
 
-        static::assertStringContainsString(
+        $this->assertStringContainsString(
             'Child',
             $runtime->mount('Counter', ['recordId' => 2], 'parent', $context)->html,
         );

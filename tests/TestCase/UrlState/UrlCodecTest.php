@@ -58,9 +58,9 @@ class UrlCodecTest extends TestCase
             new State(writable: true, url: 'value'),
         );
         $codec = new Codec();
-        static::assertSame($expected, $codec->read($query, 'value', $binding));
+        $this->assertSame($expected, $codec->read($query, 'value', $binding));
         $encoded = new QueryWriter()->write('value', $expected);
-        static::assertSame($expected, $codec->read($encoded, 'value', $binding));
+        $this->assertSame($expected, $codec->read($encoded, 'value', $binding));
     }
 
     /**
@@ -81,12 +81,12 @@ class UrlCodecTest extends TestCase
         $values = ['query' => null, 'filters' => ['tags' => [], 'status' => ''], 'page' => 1];
         $links = new Links('/search', 'external=one&external=two&q=old&filters[tags][]=old', $fields, $values);
         $url = $links->generate(['page' => 2], ['page']);
-        static::assertStringContainsString('external=one&external=two', $url);
-        static::assertStringContainsString('q%5B~null%5D=1', $url);
-        static::assertStringContainsString('filters%5Btags%5D%5B~empty%5D=1', $url);
-        static::assertStringContainsString('filters%5Bstatus%5D=', $url);
-        static::assertStringContainsString('page=2', $url);
-        static::assertStringNotContainsString('old', $url);
+        $this->assertStringContainsString('external=one&external=two', $url);
+        $this->assertStringContainsString('q%5B~null%5D=1', $url);
+        $this->assertStringContainsString('filters%5Btags%5D%5B~empty%5D=1', $url);
+        $this->assertStringContainsString('filters%5Bstatus%5D=', $url);
+        $this->assertStringContainsString('page=2', $url);
+        $this->assertStringNotContainsString('old', $url);
     }
 
     /**
@@ -97,12 +97,12 @@ class UrlCodecTest extends TestCase
         $default = ['code' => '01', 'tags' => ['a', 'b']];
         $fields = ['filters' => ['name' => 'filters', 'type' => 'array', 'default' => $default, 'history' => false]];
         $same = new Links('/search', '', $fields, ['filters' => ['tags' => ['a', 'b'], 'code' => '01']]);
-        static::assertSame('/search', $same->generate([], []));
+        $this->assertSame('/search', $same->generate([], []));
         $changed = new Links('/search', '', $fields, ['filters' => ['tags' => ['b', 'a'], 'code' => '1']]);
-        static::assertStringContainsString('filters%5Bcode%5D=1', $changed->generate([], []));
-        static::assertFalse(ArrayValue::same(['code' => '01'], ['other' => '01']));
-        static::assertFalse(ArrayValue::same(['code' => '01'], ['code' => '01', 'other' => '']));
-        static::assertFalse(ArrayValue::same(['a'], ['code' => 'a']));
+        $this->assertStringContainsString('filters%5Bcode%5D=1', $changed->generate([], []));
+        $this->assertFalse(ArrayValue::same(['code' => '01'], ['other' => '01']));
+        $this->assertFalse(ArrayValue::same(['code' => '01'], ['code' => '01', 'other' => '']));
+        $this->assertFalse(ArrayValue::same(['a'], ['code' => 'a']));
     }
 
     /**
@@ -127,9 +127,9 @@ class UrlCodecTest extends TestCase
             new CallbackRenderer(static fn(): string => '<p>URL filters</p>'),
         );
         $mount = $runtime->mount('UrlFilters', [], null, $context);
-        static::assertSame('', $mount->state['query']);
-        static::assertTrue($mount->url['query']['nullable'] ?? null);
-        static::assertSame(
+        $this->assertSame('', $mount->state['query']);
+        $this->assertTrue($mount->url['query']['nullable'] ?? null);
+        $this->assertSame(
             ['status' => '', 'tags' => ['initial'], 'price' => ['min' => '010', 'max' => '100']],
             $mount->state['filters'],
         );
@@ -137,7 +137,7 @@ class UrlCodecTest extends TestCase
             'snapshot' => $mount->snapshot,
             'updates' => ['filters.price.min' => '020'],
         ], $context);
-        static::assertSame(
+        $this->assertSame(
             ['status' => '', 'tags' => ['initial'], 'price' => ['min' => '020', 'max' => '100']],
             $changed->state['filters'],
         );
@@ -146,8 +146,8 @@ class UrlCodecTest extends TestCase
             'action' => 'selectNull',
             'updates' => ['notes' => 'keep'],
         ], $context);
-        static::assertNull($null->state['query']);
-        static::assertNull($null->payload()['html']);
+        $this->assertNull($null->state['query']);
+        $this->assertNull($null->payload()['html']);
         $restored = $runtime->update([
             'snapshot' => $null->snapshot,
             'urlRestore' => true,
@@ -156,9 +156,9 @@ class UrlCodecTest extends TestCase
                 'filters' => ['status' => 'published', 'tags' => [], 'price' => ['min' => '0', 'max' => '100']],
             ],
         ], $context);
-        static::assertSame('keep', $restored->state['notes']);
-        static::assertSame(1, $restored->state['calls']);
-        static::assertSame(
+        $this->assertSame('keep', $restored->state['notes']);
+        $this->assertSame(1, $restored->state['calls']);
+        $this->assertSame(
             ['status' => 'published', 'tags' => [], 'price' => ['min' => '0', 'max' => '100']],
             $restored->state['filters'],
         );
@@ -179,13 +179,13 @@ class UrlCodecTest extends TestCase
             new ReflectionProperty(StructuredUrlTypes::class, 'items'),
             new State(writable: true, url: 'value'),
         );
-        static::assertSame(['default'], new Codec()->read('value=' . str_repeat('x', 1_048_576), 'value', $binding));
+        $this->assertSame(['default'], new Codec()->read('value=' . str_repeat('x', 1_048_576), 'value', $binding));
         $value = 'leaf';
         for ($depth = 0; $depth < 33; $depth++) {
             $value = [$value];
         }
 
-        static::assertFalse(ArrayValue::accepts($value));
+        $this->assertFalse(ArrayValue::accepts($value));
         $this->expectException(InvalidArgumentException::class);
         new QueryWriter()->write('value', $value);
     }
@@ -220,7 +220,7 @@ class UrlCodecTest extends TestCase
 
         $codec = new Codec();
         $query = new QueryWriter()->write('value', $accepted);
-        static::assertSame($accepted, $codec->read($query, 'value', $binding));
+        $this->assertSame($accepted, $codec->read($query, 'value', $binding));
         $links = new Links(
             '/search',
             'external=keep',
@@ -228,7 +228,7 @@ class UrlCodecTest extends TestCase
             ['value' => $accepted],
         );
         $query = parse_url($links->generate([], []), PHP_URL_QUERY);
-        static::assertIsString($query);
-        static::assertSame($accepted, $codec->read($query, 'value', $binding));
+        $this->assertIsString($query);
+        $this->assertSame($accepted, $codec->read($query, 'value', $binding));
     }
 }

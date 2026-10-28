@@ -72,18 +72,18 @@ class ConfigurationTest extends TestCase
     public function testDefaultsAndExplicitSigningSettings(): void
     {
         $defaults = Configuration::read();
-        static::assertSame(1800, $defaults->snapshotTtl);
-        static::assertSame(TemplateView::class, $defaults->viewClass);
-        static::assertSame('Interact.runtime', $defaults->script);
-        static::assertSame(['block' => 'script', 'defer' => true], $defaults->scriptOptions);
+        $this->assertSame(1800, $defaults->snapshotTtl);
+        $this->assertSame(TemplateView::class, $defaults->viewClass);
+        $this->assertSame('Interact.runtime', $defaults->script);
+        $this->assertSame(['block' => 'script', 'defer' => true], $defaults->scriptOptions);
         $defaultToken = $defaults->snapshots()->seal(['count' => 1], 'session', 'default');
-        static::assertSame(['count' => 1], $defaults->snapshots()->open($defaultToken, 'session', 'default'));
+        $this->assertSame(['count' => 1], $defaults->snapshots()->open($defaultToken, 'session', 'default'));
 
         Configure::write('Interact.snapshots', ['ttl' => 1, 'key' => str_repeat('k', 32)]);
         $settings = Configuration::read();
         $token = $settings->snapshots()->seal(['count' => 2], 'session', 'default');
-        static::assertSame(1, $settings->snapshotTtl);
-        static::assertSame(['count' => 2], new SnapshotCodec(str_repeat('k', 32))->open($token, 'session', 'default'));
+        $this->assertSame(1, $settings->snapshotTtl);
+        $this->assertSame(['count' => 2], new SnapshotCodec(str_repeat('k', 32))->open($token, 'session', 'default'));
         $expired = new SnapshotCodec(str_repeat('k', 32), clock: static fn(): int => time() + 2);
         $this->expectException(InvalidSnapshotException::class);
         $expired->open($token, 'session', 'default');
@@ -164,12 +164,12 @@ class ConfigurationTest extends TestCase
         Configure::write('Interact.assets.script', false);
         $view = new View();
         new InteractHelper($view);
-        static::assertStringNotContainsString('<script', $view->fetch('script'));
-        static::assertStringContainsString('interact:navigation', $view->fetch('script'));
+        $this->assertStringNotContainsString('<script', $view->fetch('script'));
+        $this->assertStringContainsString('interact:navigation', $view->fetch('script'));
         Configure::delete('Interact');
         $view = new View();
         new InteractHelper($view, ['autoScript' => false, 'document' => false]);
-        static::assertSame('', $view->fetch('script'));
+        $this->assertSame('', $view->fetch('script'));
     }
 
     public function testNativeAssetOptionsNonceEscapingAndDeduplication(): void
@@ -182,13 +182,13 @@ class ConfigurationTest extends TestCase
         new InteractHelper($view);
         new InteractHelper($view, ['document' => false]);
         $scripts = $view->fetch('assets');
-        static::assertSame('', $view->fetch('script'));
-        static::assertSame(1, substr_count($scripts, '<script'));
-        static::assertStringContainsString('https://assets.example/runtime.js', $scripts);
-        static::assertStringContainsString('nonce="nonce&quot;value"', $scripts);
-        static::assertStringContainsString('integrity="sha256-test"', $scripts);
-        static::assertStringContainsString('defer="defer"', $scripts);
-        static::assertSame(
+        $this->assertSame('', $view->fetch('script'));
+        $this->assertSame(1, substr_count($scripts, '<script'));
+        $this->assertStringContainsString('https://assets.example/runtime.js', $scripts);
+        $this->assertStringContainsString('nonce="nonce&quot;value"', $scripts);
+        $this->assertStringContainsString('integrity="sha256-test"', $scripts);
+        $this->assertStringContainsString('defer="defer"', $scripts);
+        $this->assertSame(
             'script',
             new Configuration(['assets' => ['scriptOptions' => ['block' => true]]])->scriptBlock,
         );
@@ -202,28 +202,28 @@ class ConfigurationTest extends TestCase
         $plugin->services($container);
         /** @var mixed $codec */
         $codec = $container->get(SnapshotCodec::class);
-        static::assertInstanceOf(SnapshotCodec::class, $codec);
+        $this->assertInstanceOf(SnapshotCodec::class, $codec);
         $token = $codec->seal(['configured' => true], 'session', 'default');
-        static::assertSame(
+        $this->assertSame(
             ['configured' => true],
             new SnapshotCodec(str_repeat('s', 32))->open($token, 'session', 'default'),
         );
-        static::assertInstanceOf(Factory::class, $container->get(Factory::class));
+        $this->assertInstanceOf(Factory::class, $container->get(Factory::class));
         $custom = new SnapshotCodec(str_repeat('c', 32));
         $replacement = new Container();
         $replacement->addShared(SnapshotCodec::class, $custom);
 
         $plugin->services($replacement);
-        static::assertSame($custom, $replacement->get(SnapshotCodec::class));
+        $this->assertSame($custom, $replacement->get(SnapshotCodec::class));
     }
 
     public function testOnlyThePluginRegistersTheEndpointAndKeepsApplicationReplacements(): void
     {
         $container = new Container();
         new UploadServices()->register($container);
-        static::assertFalse($container->hasDefinition(UpdateHandler::class));
+        $this->assertFalse($container->hasDefinition(UpdateHandler::class));
         new InteractPlugin()->services($container);
-        static::assertNotSame($container->get(UpdateHandler::class), $container->get(UpdateHandler::class));
+        $this->assertNotSame($container->get(UpdateHandler::class), $container->get(UpdateHandler::class));
         $custom = new UpdateHandler(
             new Factory(new Registry(), new SnapshotCodec(str_repeat('h', 32))),
             new FailureResponder(),
@@ -231,7 +231,7 @@ class ConfigurationTest extends TestCase
         $replacement = new Container();
         $replacement->addShared(UpdateHandler::class, $custom);
         new InteractPlugin()->services($replacement);
-        static::assertSame($custom, $replacement->get(UpdateHandler::class));
+        $this->assertSame($custom, $replacement->get(UpdateHandler::class));
     }
 
     public function testConfiguredViewHelpersRenderMountUpdatePlaceholderAndFallback(): void
@@ -251,13 +251,13 @@ class ConfigurationTest extends TestCase
 
         $runtime = $factory->create($host, $context);
         $initial = $runtime->mount(ConfigurationIsland::class, [], 'configured', $context);
-        static::assertStringContainsString('Configured view: 0', $initial->html);
-        static::assertStringNotContainsString('never transported', $initial->html);
+        $this->assertStringContainsString('Configured view: 0', $initial->html);
+        $this->assertStringNotContainsString('never transported', $initial->html);
         $updated = $factory->create(new TemplateView($request), $context)->update([
             'snapshot' => $initial->snapshot,
             'action' => 'increment',
         ], $context);
-        static::assertStringContainsString('Configured view: 1', $updated->html);
+        $this->assertStringContainsString('Configured view: 1', $updated->html);
         $pending = $runtime->mount(
             ConfigurationIsland::class,
             [],
@@ -265,13 +265,13 @@ class ConfigurationTest extends TestCase
             $context,
             new Options('manual', 'configuration_placeholder'),
         );
-        static::assertStringContainsString('Configured placeholder', $pending->html);
+        $this->assertStringContainsString('Configured placeholder', $pending->html);
         $loaded = $runtime->update(['snapshot' => $pending->snapshot, 'initialize' => true], $context);
-        static::assertStringContainsString('Configured view: 0', $loaded->html);
+        $this->assertStringContainsString('Configured view: 0', $loaded->html);
         $view = new ConfigurationView($request);
         $factory->create($view, $context)->mount(ConfigurationIsland::class, [], 'reused', $context);
-        static::assertTrue($view->helpers()->has('Interact'));
+        $this->assertTrue($view->helpers()->has('Interact'));
         $helper = new InteractHelper(new View($request), ['autoScript' => false, 'endpoint' => '/_interact/update']);
-        static::assertStringContainsString('Configured view: 0', $helper->render(ConfigurationIsland::class));
+        $this->assertStringContainsString('Configured view: 0', $helper->render(ConfigurationIsland::class));
     }
 }

@@ -38,12 +38,12 @@ class SnapshotCodecTest extends TestCase
         $empty = $codec->seal(['body' => ''], 'session', 'admin');
         $parts = explode('.', $empty);
         $json = base64_decode(strtr($parts[0], '-_', '+/'), true);
-        static::assertIsString($json);
+        $this->assertIsString($json);
         // The token includes one separator and a 64-character signature.
         $body = str_repeat('x', max(0, intdiv((524_288 - 65) * 3, 4) - strlen($json)));
         $token = $codec->seal(['body' => $body], 'session', 'admin');
-        static::assertSame(524_288, strlen($token));
-        static::assertSame(['body' => $body], $codec->open($token, 'session', 'admin'));
+        $this->assertSame(524_288, strlen($token));
+        $this->assertSame(['body' => $body], $codec->open($token, 'session', 'admin'));
         $this->expectException(LengthException::class);
         $this->expectExceptionMessage('512 KiB');
         $codec->seal(['body' => $body . 'x'], 'session', 'admin');
@@ -56,7 +56,7 @@ class SnapshotCodecTest extends TestCase
             return $time;
         });
         $token = $codec->seal(['null' => null, 'zero' => 0, 'empty' => '', 'false' => false], 'session', 'admin');
-        static::assertSame(
+        $this->assertSame(
             ['null' => null, 'zero' => 0, 'empty' => '', 'false' => false],
             $codec->open($token, 'session', 'admin'),
         );

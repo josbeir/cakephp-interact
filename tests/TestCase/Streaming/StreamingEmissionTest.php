@@ -78,29 +78,39 @@ class StreamingEmissionTest extends TestCase
             StreamingIsland::$afterChunk = null;
         }
 
-        static::assertSame('', $body);
-        static::assertSame(2, $observed, 'The action must observe its earlier frames already flushed.');
-        static::assertCount(6, $frames);
+        $this->assertSame('', $body);
+        $this->assertSame(2, $observed, 'The action must observe its earlier frames already flushed.');
+        $this->assertCount(6, $frames);
+        $this->assertStreamedFrames($frames, $test->result()->id);
+    }
+
+    /**
+     * Verify the emitted protocol envelope, escaping, and authoritative terminal state.
+     *
+     * @param list<string> $frames Complete flushed SSE events.
+     */
+    protected function assertStreamedFrames(array $frames, string $id): void
+    {
         $messages = array_map($this->decodeFrame(...), $frames);
         foreach ($messages as $message) {
-            static::assertSame(1, $message['version']);
-            static::assertSame($test->result()->id, $message['id']);
+            $this->assertSame(1, $message['version']);
+            $this->assertSame($id, $message['id']);
         }
 
-        static::assertSame(['target', 'target', 'target', 'event', 'event', 'result'], array_column($messages, 'type'));
-        static::assertSame('', $messages[0]['content']);
-        static::assertTrue($messages[0]['replace']);
-        static::assertSame('<unsafe> €', $messages[1]['content']);
-        static::assertStringContainsString('\\u003Cunsafe\\u003E', $frames[1]);
-        static::assertSame("<p>&lt;escaped&gt;</p>\n", $messages[2]['content']);
-        static::assertSame(200, $messages[5]['status']);
+        $this->assertSame(['target', 'target', 'target', 'event', 'event', 'result'], array_column($messages, 'type'));
+        $this->assertSame('', $messages[0]['content']);
+        $this->assertTrue($messages[0]['replace']);
+        $this->assertSame('<unsafe> €', $messages[1]['content']);
+        $this->assertStringContainsString('\\u003Cunsafe\\u003E', $frames[1]);
+        $this->assertSame("<p>&lt;escaped&gt;</p>\n", $messages[2]['content']);
+        $this->assertSame(200, $messages[5]['status']);
         /** @var mixed $payload */
         $payload = $messages[5]['payload'];
-        static::assertIsArray($payload);
+        $this->assertIsArray($payload);
         /** @var mixed $state */
         $state = $payload['state'];
-        static::assertIsArray($state);
-        static::assertSame('Complete', $state['answer']);
+        $this->assertIsArray($state);
+        $this->assertSame('Complete', $state['answer']);
     }
 
     /**
@@ -140,7 +150,7 @@ class StreamingEmissionTest extends TestCase
         $padding = ($available % $width) + $extra;
         assert($copies >= 0 && $padding >= 0, 'The fixture envelope must leave room for boundary data.');
         $message['content'] = str_repeat($unit, $copies) . str_repeat('x', $padding);
-        static::assertSame(1_048_576 + $extra, strlen(json_encode($message, $flags)));
+        $this->assertSame(1_048_576 + $extra, strlen(json_encode($message, $flags)));
         $update = new PreparedUpdate(true, 'streaming', static function (Closure $send) use ($message): Result {
             $send($message);
 
@@ -149,17 +159,17 @@ class StreamingEmissionTest extends TestCase
         $logger = $this->createMock(ExceptionTrap::class);
         $logger->expects($extra === 0 ? static::never() : static::once())
             ->method('logException')
-            ->with(static::isInstanceOf(LengthException::class), static::anything());
+            ->with($this->isInstanceOf(LengthException::class), $this->anything());
         $frames = $this->emit($update, $logger);
-        static::assertCount($extra === 0 ? 2 : 1, $frames);
+        $this->assertCount($extra === 0 ? 2 : 1, $frames);
         $first = $this->decodeFrame($frames[0]);
-        static::assertSame($extra === 0 ? 'target' : 'failure', $first['type']);
+        $this->assertSame($extra === 0 ? 'target' : 'failure', $first['type']);
         if ($extra === 0) {
-            static::assertSame("event: interact\ndata: " . json_encode($message, $flags) . "\n\n", $frames[0]);
-            static::assertSame('result', $this->decodeFrame($frames[1])['type']);
+            $this->assertSame("event: interact\ndata: " . json_encode($message, $flags) . "\n\n", $frames[0]);
+            $this->assertSame('result', $this->decodeFrame($frames[1])['type']);
         } else {
-            static::assertSame(500, $first['status']);
-            static::assertStringNotContainsString('1 MiB', $frames[0]);
+            $this->assertSame(500, $first['status']);
+            $this->assertStringNotContainsString('1 MiB', $frames[0]);
         }
     }
 
@@ -173,12 +183,12 @@ class StreamingEmissionTest extends TestCase
         $logger = $this->createMock(ExceptionTrap::class);
         $logger->expects(static::once())
             ->method('logException')
-            ->with(static::isInstanceOf(LengthException::class), static::anything());
+            ->with($this->isInstanceOf(LengthException::class), $this->anything());
         $frames = $this->emit($update, $logger);
-        static::assertCount(1, $frames);
+        $this->assertCount(1, $frames);
         $message = $this->decodeFrame($frames[0]);
-        static::assertSame('failure', $message['type']);
-        static::assertSame(500, $message['status']);
+        $this->assertSame('failure', $message['type']);
+        $this->assertSame(500, $message['status']);
     }
 
     /**

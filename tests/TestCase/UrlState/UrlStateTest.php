@@ -63,20 +63,20 @@ class UrlStateTest extends TestCase
         $runtime = $this->runtime();
         $context = $this->context('articles_q=cake&articles_page=3&articles_tags[]=one&articles_tags[]=two');
         $mount = $runtime->mount('Url', [], 'first', $context, 'articles');
-        static::assertSame(['cake', '3'], $mount->state['observed']);
-        static::assertSame(['one', 'two'], $mount->state['tags']);
-        static::assertSame('articles_q', $mount->url['search']['name']);
-        static::assertSame('start', $mount->url['search']['default']);
-        static::assertStringContainsString('data-interact-url=', $mount->html);
+        $this->assertSame(['cake', '3'], $mount->state['observed']);
+        $this->assertSame(['one', 'two'], $mount->state['tags']);
+        $this->assertSame('articles_q', $mount->url['search']['name']);
+        $this->assertSame('start', $mount->url['search']['default']);
+        $this->assertStringContainsString('data-interact-url=', $mount->html);
         $updated = $runtime->update([
             'snapshot' => $mount->snapshot,
             'updates' => ['search' => 'new'],
             'action' => 'increment',
         ], $context);
-        static::assertSame(1, $updated->state['page']);
-        static::assertSame(1, $updated->state['calls']);
-        static::assertSame($mount->url, $updated->url);
-        static::assertArrayHasKey('url', $updated->payload());
+        $this->assertSame(1, $updated->state['page']);
+        $this->assertSame(1, $updated->state['calls']);
+        $this->assertSame($mount->url, $updated->url);
+        $this->assertArrayHasKey('url', $updated->payload());
     }
 
     public function testMalformedQueryEncodingFallsBackBeforeSigningAndRendering(): void
@@ -87,11 +87,11 @@ class UrlStateTest extends TestCase
             'first',
             $this->context('q=%FF&tags[]=valid&tags[]=%C3&page=3'),
         );
-        static::assertSame('start', $result->state['search']);
-        static::assertSame(['default'], $result->state['tags']);
-        static::assertSame(3, $result->state['page']);
-        static::assertSame(['start', '3'], $result->state['observed']);
-        static::assertNotEmpty($result->snapshot);
+        $this->assertSame('start', $result->state['search']);
+        $this->assertSame(['default'], $result->state['tags']);
+        $this->assertSame(3, $result->state['page']);
+        $this->assertSame(['start', '3'], $result->state['observed']);
+        $this->assertNotEmpty($result->snapshot);
     }
 
     public function testHistoryRestorationReportsTheCompleteSetAndPreservesUnrelatedState(): void
@@ -108,12 +108,12 @@ class UrlStateTest extends TestCase
             'urlRestore' => true,
             'updates' => ['search' => 'earlier', 'page' => 3, 'enabled' => false, 'ratio' => 1.5, 'tags' => []],
         ], $context);
-        static::assertSame(3, $restored->state['page']);
-        static::assertSame('keep', $restored->state['draft']);
-        static::assertSame(0, $restored->state['calls']);
-        static::assertSame(['search', 'page', 'enabled', 'ratio', 'tags'], $restored->state['observed']);
+        $this->assertSame(3, $restored->state['page']);
+        $this->assertSame('keep', $restored->state['draft']);
+        $this->assertSame(0, $restored->state['calls']);
+        $this->assertSame(['search', 'page', 'enabled', 'ratio', 'tags'], $restored->state['observed']);
         $normalized = $runtime->update(['snapshot' => $restored->snapshot, 'updates' => ['page' => 900]], $context);
-        static::assertSame(10, $normalized->state['page']);
+        $this->assertSame(10, $normalized->state['page']);
     }
 
     public function testQueryValuesAreAuthorizedOnMount(): void
@@ -183,8 +183,8 @@ class UrlStateTest extends TestCase
     public function testCodec(string $property, string $query, mixed $expected): void
     {
         $field = new Definition(UrlIsland::class)->properties[$property]->url;
-        static::assertInstanceOf(Binding::class, $field);
-        static::assertSame($expected, new Codec()->read($query, $field->name, $field));
+        $this->assertInstanceOf(Binding::class, $field);
+        $this->assertSame($expected, new Codec()->read($query, $field->name, $field));
     }
 
     /**
@@ -298,10 +298,10 @@ class UrlStateTest extends TestCase
             'action' => 'increment',
             'pageQuery' => 'child_q=linked&child_page=4',
         ], $context);
-        static::assertStringContainsString('&quot;search&quot;:&quot;linked&quot;', $shown->html);
-        static::assertStringContainsString('&quot;page&quot;:4', $shown->html);
+        $this->assertStringContainsString('&quot;search&quot;:&quot;linked&quot;', $shown->html);
+        $this->assertStringContainsString('&quot;page&quot;:4', $shown->html);
         $preserved = $runtime->update(['snapshot' => $shown->snapshot, 'pageQuery' => 'child_q=other'], $context);
-        static::assertStringContainsString('data-interact-preserve=', $preserved->html);
+        $this->assertStringContainsString('data-interact-preserve=', $preserved->html);
     }
 
     public function testInvalidSignedChildPrefixIsRejected(): void

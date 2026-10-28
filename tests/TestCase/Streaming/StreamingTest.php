@@ -66,23 +66,23 @@ class StreamingTest extends TestCase
             'action' => 'generate',
             'updates' => ['answer' => 'edited'],
         ], $this->context);
-        static::assertTrue($prepared->stream);
-        static::assertSame(['authorize'], StreamingIsland::lifecycle());
+        $this->assertTrue($prepared->stream);
+        $this->assertSame(['authorize'], StreamingIsland::lifecycle());
         $messages = [];
         $result = $prepared->run(static function (array $message) use (&$messages): void {
             $messages[] = $message;
         });
-        static::assertSame(['authorize', 'updated', 'action'], StreamingIsland::lifecycle());
-        static::assertSame('Complete', $result->state['answer']);
-        static::assertStringContainsString('Complete', $result->html);
-        static::assertSame('<unsafe> €', $messages[1]['content']);
-        static::assertSame("<p>&lt;escaped&gt;</p>\n", $messages[2]['content']);
-        static::assertTrue($messages[2]['html']);
+        $this->assertSame(['authorize', 'updated', 'action'], StreamingIsland::lifecycle());
+        $this->assertSame('Complete', $result->state['answer']);
+        $this->assertStringContainsString('Complete', $result->html);
+        $this->assertSame('<unsafe> €', $messages[1]['content']);
+        $this->assertSame("<p>&lt;escaped&gt;</p>\n", $messages[2]['content']);
+        $this->assertTrue($messages[2]['html']);
         /** @var mixed */
         $detail = $messages[3]['detail'];
-        static::assertIsArray($detail);
-        static::assertSame(50, $detail['percent']);
-        static::assertSame([['name' => 'finished', 'detail' => []]], $result->events);
+        $this->assertIsArray($detail);
+        $this->assertSame(50, $detail['percent']);
+        $this->assertSame([['name' => 'finished', 'detail' => []]], $result->events);
         $this->expectException(LogicException::class);
         $prepared->run();
     }
@@ -97,7 +97,7 @@ class StreamingTest extends TestCase
             ->assertSet('answer', 'Complete')
             ->assertDispatched('finished');
         $test->call('retain')->assertStreamed('answer', 'Retained', replace: true)->assertNotRendered();
-        static::assertInstanceOf(RenderlessResult::class, $test->result());
+        $this->assertInstanceOf(RenderlessResult::class, $test->result());
         $test->sync()->assertSee('Retained');
     }
 
@@ -114,9 +114,9 @@ class StreamingTest extends TestCase
         }, $stream);
         try {
             $effects->stream();
-            static::fail('Leaked capability');
+            $this->fail('Leaked capability');
         } catch (LogicException) {
-            static::assertTrue(true);
+            $this->assertTrue(true);
         }
 
         $test = new IslandTest($this->factory, $this->context, 'Streaming');
@@ -126,9 +126,9 @@ class StreamingTest extends TestCase
         ] as $attempt) {
             try {
                 $attempt();
-                static::fail('Streaming outside action accepted');
+                $this->fail('Streaming outside action accepted');
             } catch (LogicException $exception) {
-                static::assertStringContainsString('stream: true', $exception->getMessage());
+                $this->assertStringContainsString('stream: true', $exception->getMessage());
             }
         }
     }
@@ -146,9 +146,9 @@ class StreamingTest extends TestCase
         ] as $attempt) {
             try {
                 $attempt();
-                static::fail('Invalid stream accepted');
+                $this->fail('Invalid stream accepted');
             } catch (InvalidArgumentException) {
-                static::assertTrue(true);
+                $this->assertTrue(true);
             }
         }
 
@@ -169,28 +169,28 @@ class StreamingTest extends TestCase
         StreamingIsland::$lifecycle = [];
         $response = $handler->handle($request, new Response()->withHeader('X-Application', 'kept')
             ->withHeader('Content-Length', '1'));
-        static::assertSame(['authorize'], StreamingIsland::lifecycle());
-        static::assertStringContainsString('text/event-stream', $response->getHeaderLine('Content-Type'));
-        static::assertSame('kept', $response->getHeaderLine('X-Application'));
-        static::assertSame('true', $response->getHeaderLine('Interact'));
-        static::assertFalse($response->hasHeader('Content-Length'));
+        $this->assertSame(['authorize'], StreamingIsland::lifecycle());
+        $this->assertStringContainsString('text/event-stream', $response->getHeaderLine('Content-Type'));
+        $this->assertSame('kept', $response->getHeaderLine('X-Application'));
+        $this->assertSame('true', $response->getHeaderLine('Interact'));
+        $this->assertFalse($response->hasHeader('Content-Length'));
         StreamingIsland::$afterChunk = function (): void {
             static::assertFalse($this->context->request->getSession()->started());
         };
-        static::assertSame('', (string)$response->getBody());
-        static::assertSame(6, count($writer->messages));
-        static::assertSame('result', $writer->messages[5]['type']);
-        static::assertSame(200, $writer->messages[5]['status']);
+        $this->assertSame('', (string)$response->getBody());
+        $this->assertSame(6, count($writer->messages));
+        $this->assertSame('result', $writer->messages[5]['type']);
+        $this->assertSame(200, $writer->messages[5]['status']);
         /** @var mixed */
         $payload = $writer->messages[5]['payload'];
-        static::assertIsArray($payload);
+        $this->assertIsArray($payload);
         /** @var mixed */
         $state = $payload['state'];
-        static::assertInstanceOf(stdClass::class, $state);
-        static::assertSame('Complete', $state->answer);
-        static::assertFalse($request->getSession()->started());
-        static::assertSame('', (string)$response->getBody());
-        static::assertCount(6, $writer->messages);
+        $this->assertInstanceOf(stdClass::class, $state);
+        $this->assertSame('Complete', $state->answer);
+        $this->assertFalse($request->getSession()->started());
+        $this->assertSame('', (string)$response->getBody());
+        $this->assertCount(6, $writer->messages);
     }
 
     public function testValidationAndOutcomesKeepTheirSemanticStatusInsideTheStream(): void
@@ -221,16 +221,16 @@ class StreamingTest extends TestCase
                 $request,
                 new Response(),
             );
-            static::assertSame(200, $response->getStatusCode());
-            static::assertSame('', (string)$response->getBody());
+            $this->assertSame(200, $response->getStatusCode());
+            $this->assertSame('', (string)$response->getBody());
             $last = $writer->messages[count($writer->messages) - 1];
-            static::assertSame('result', $last['type']);
-            static::assertSame($status, $last['status']);
+            $this->assertSame('result', $last['type']);
+            $this->assertSame($status, $last['status']);
             if ($status === 422) {
                 /** @var mixed */
                 $payload = $last['payload'];
-                static::assertIsArray($payload);
-                static::assertSame([], $payload['events']);
+                $this->assertIsArray($payload);
+                $this->assertSame([], $payload['events']);
             }
         }
     }
@@ -253,17 +253,17 @@ class StreamingTest extends TestCase
                 'args' => ['failure'],
             ]);
         $response = $handler->handle($request, new Response());
-        static::assertSame('', (string)$response->getBody());
+        $this->assertSame('', (string)$response->getBody());
         $last = $writer->messages[count($writer->messages) - 1];
-        static::assertSame('failure', $last['type']);
-        static::assertSame(500, $last['status']);
-        static::assertStringNotContainsString('Private diagnostic', json_encode($last, JSON_THROW_ON_ERROR));
+        $this->assertSame('failure', $last['type']);
+        $this->assertSame(500, $last['status']);
+        $this->assertStringNotContainsString('Private diagnostic', json_encode($last, JSON_THROW_ON_ERROR));
         StreamingIsland::$allowed = false;
         $response = $handler->handle($request, new Response());
-        static::assertSame(403, $response->getStatusCode());
-        static::assertSame('application/json', $response->getHeaderLine('Content-Type'));
+        $this->assertSame(403, $response->getStatusCode());
+        $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
         StreamingIsland::$allowed = true;
-        static::assertSame(
+        $this->assertSame(
             400,
             $handler->handle($request->withParsedBody([
                 'version' => 1,
@@ -280,8 +280,8 @@ class StreamingTest extends TestCase
         $context = new RequestContext($this->context->request, 'default', '/update');
         $binding = $context->binding();
         $context->release();
-        static::assertSame($binding, $context->binding());
-        static::assertFalse($context->request->getSession()->started());
+        $this->assertSame($binding, $context->binding());
+        $this->assertFalse($context->request->getSession()->started());
     }
 
     public function testOrdinaryBindingFollowsSessionRenewalUntilEmissionFreezesIt(): void
@@ -291,11 +291,11 @@ class StreamingTest extends TestCase
         $session->expects(static::exactly(3))->method('id')->willReturn('original', 'renewed', 'renewed');
         $session->expects(static::once())->method('close');
         $context = new RequestContext(new ServerRequest(['session' => $session]), 'default', '/update');
-        static::assertSame('original', $context->binding());
-        static::assertSame('renewed', $context->binding());
+        $this->assertSame('original', $context->binding());
+        $this->assertSame('renewed', $context->binding());
         $context->release();
-        static::assertSame('renewed', $context->binding());
-        static::assertSame('renewed', $context->binding());
+        $this->assertSame('renewed', $context->binding());
+        $this->assertSame('renewed', $context->binding());
     }
 
     public function testJsonOnlyClientsReceiveTheFinalResultWithoutOpeningAStream(): void
@@ -311,8 +311,8 @@ class StreamingTest extends TestCase
             $request,
             new Response(),
         );
-        static::assertSame('application/json', $response->getHeaderLine('Content-Type'));
-        static::assertStringContainsString('Complete', (string)$response->getBody());
-        static::assertSame([], $writer->messages);
+        $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
+        $this->assertStringContainsString('Complete', (string)$response->getBody());
+        $this->assertSame([], $writer->messages);
     }
 }

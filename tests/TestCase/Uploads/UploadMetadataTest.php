@@ -74,9 +74,9 @@ class UploadMetadataTest extends UploadStorageTestCase
         $path = 'interactmetadata://record.json';
         UploadMetadataStream::$files[$path] = 'previous record';
         new UploadFilesystem(new UploadConfig())->write($path, $this->record);
-        static::assertSame(['previous record'], UploadMetadataStream::$observed);
-        static::assertSame([$path => json_encode($this->record, JSON_THROW_ON_ERROR)], UploadMetadataStream::$files);
-        static::assertSame(1, UploadMetadataStream::$closed);
+        $this->assertSame(['previous record'], UploadMetadataStream::$observed);
+        $this->assertSame([$path => json_encode($this->record, JSON_THROW_ON_ERROR)], UploadMetadataStream::$files);
+        $this->assertSame(1, UploadMetadataStream::$closed);
     }
 
     public function testShortWritesNeverPublishPartialMetadataAndCleanUpTheirStagingFile(): void

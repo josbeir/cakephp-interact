@@ -23,7 +23,7 @@ public function inspect(): void
 
 Here, `data` is an application-declared island property. The global `debug()`
 alias works too when enabled by the application. CakePHP retains its formatting,
-source locations, output masks, and return value.
+source locations, and return value.
 
 Try `/debugging` in the [demo application](/demo#debugging): edit the message,
 inspect JSON and streaming dumps, validate an empty draft, or trigger an
@@ -155,8 +155,8 @@ Debugger::log($this->data);
   This feature does not support displaying them as completed diagnostic updates.
   Xdebug breakpoints work independently of the response transport.
 - Capture includes direct `echo`, `print_r()`, and similar buffered output. It
-  cannot distinguish those bytes from dumps. CakePHP masks its own dumps;
-  Interact cannot apply those masks to arbitrary output.
+  cannot distinguish those bytes from dumps. CakePHP 6 no longer masks dump
+  values, and Interact does not redact captured output. Do not dump secrets.
 - Retention is limited to 256 KiB per request. Excess output is discarded and
   truncation is shown. Invalid UTF-8 is replaced before JSON encoding. Streaming
   diagnostics are split to respect the existing frame-size limit.

@@ -50,7 +50,7 @@ class EventActionsTest extends TestCase
         $detail = ['value' => 'unpacked'];
         $island->dispatch('other', ...$detail);
         $island->dispatch('empty');
-        static::assertSame(
+        $this->assertSame(
             [
                 [
                     'name' => 'article-saved',
@@ -102,10 +102,10 @@ class EventActionsTest extends TestCase
     public function testMetadataListsAllListenersAndRejectsMalformedDeclarations(): void
     {
         $definition = new Definition(ListenerIsland::class);
-        static::assertSame(['saved', 'refresh'], $definition->listeners->resolve([])['article-saved']);
+        $this->assertSame(['saved', 'refresh'], $definition->listeners->resolve([])['article-saved']);
         $mount = $this->runtime()->mount('Listener', [], null, $this->context());
-        static::assertStringContainsString('data-interact-listeners=', $mount->html);
-        static::assertStringContainsString(
+        $this->assertStringContainsString('data-interact-listeners=', $mount->html);
+        $this->assertStringContainsString(
             '&quot;article-saved&quot;:[&quot;saved&quot;,&quot;refresh&quot;]',
             $mount->html,
         );
@@ -125,18 +125,18 @@ class EventActionsTest extends TestCase
             'args' => [['published' => true, 'note' => '', 'id' => 0, 'unused' => 'ignored']],
             'updates' => ['draft' => 'keep'],
         ], $context);
-        static::assertSame(
+        $this->assertSame(
             ['id' => 0, 'title' => 'Default', 'note' => '', 'published' => true],
             $result->state['received'],
         );
-        static::assertSame('keep', $result->state['draft']);
-        static::assertSame([['name' => 'handled', 'detail' => ['id' => 0]]], $result->events);
+        $this->assertSame('keep', $result->state['draft']);
+        $this->assertSame([['name' => 'handled', 'detail' => ['id' => 0]]], $result->events);
         $ordinary = $runtime->update([
             'snapshot' => $result->snapshot,
             'action' => 'saved',
             'args' => [42, 'Positional'],
         ], $context);
-        static::assertSame(
+        $this->assertSame(
             ['id' => 42, 'title' => 'Positional', 'note' => null, 'published' => false],
             $ordinary->state['received'],
         );
@@ -153,7 +153,7 @@ class EventActionsTest extends TestCase
             'event' => 'article-saved',
             'args' => [['id' => 1]],
         ], $context);
-        static::assertSame(['refreshed' => true], $result->state['received']);
+        $this->assertSame(['refreshed' => true], $result->state['received']);
     }
 
     public function testRenderlessHandlersAcceptStructuredArgumentsAndValidationStillRenders(): void
@@ -167,17 +167,17 @@ class EventActionsTest extends TestCase
             'event' => 'selection',
             'args' => [['selection' => ['id' => 1], 'score' => 2]],
         ], $context);
-        static::assertNull($result->payload()['html']);
-        static::assertSame(['score' => 2.0, 'selection' => ['id' => 1]], $result->state['received']);
+        $this->assertNull($result->payload()['html']);
+        $this->assertSame(['score' => 2.0, 'selection' => ['id' => 1]], $result->state['received']);
         $invalid = $runtime->update([
             'snapshot' => $result->snapshot,
             'action' => 'invalid',
             'event' => 'invalid',
             'args' => [[]],
         ], $context);
-        static::assertNotSame('', $invalid->html);
-        static::assertSame(['draft' => ['Invalid draft.']], $invalid->errors);
-        static::assertSame([], $invalid->events);
+        $this->assertNotSame('', $invalid->html);
+        $this->assertSame(['draft' => ['Invalid draft.']], $invalid->errors);
+        $this->assertSame([], $invalid->events);
     }
 
     /**
@@ -241,16 +241,16 @@ class EventActionsTest extends TestCase
         $runtime = $this->runtime();
         $context = $this->context();
         $pending = $runtime->mount('Listener', [], null, $context, new Options('manual'));
-        static::assertStringNotContainsString('data-interact-listeners', $pending->html);
+        $this->assertStringNotContainsString('data-interact-listeners', $pending->html);
         $loaded = $runtime->update(['snapshot' => $pending->snapshot, 'initialize' => true], $context);
-        static::assertStringContainsString('data-interact-listeners', $loaded->html);
+        $this->assertStringContainsString('data-interact-listeners', $loaded->html);
         $result = $runtime->update([
             'snapshot' => $loaded->snapshot,
             'action' => 'saved',
             'event' => 'article-saved',
             'args' => [['id' => 1]],
         ], $context);
-        static::assertSame(
+        $this->assertSame(
             ['id' => 1, 'title' => 'Default', 'note' => null, 'published' => false],
             $result->state['received'],
         );
@@ -267,13 +267,13 @@ class EventActionsTest extends TestCase
             'event' => 'report',
             'args' => [['id' => 7]],
         ], $context);
-        static::assertTrue($prepared->stream);
+        $this->assertTrue($prepared->stream);
         $frames = [];
         $result = $prepared->run(static function (array $message) use (&$frames): void {
             $frames[] = $message;
         });
-        static::assertSame([['type' => 'event', 'name' => 'progress', 'detail' => ['id' => 7]]], $frames);
-        static::assertSame(['id' => 7], $result->state['received']);
-        static::assertNull($result->payload()['html']);
+        $this->assertSame([['type' => 'event', 'name' => 'progress', 'detail' => ['id' => 7]]], $frames);
+        $this->assertSame(['id' => 7], $result->state['received']);
+        $this->assertNull($result->payload()['html']);
     }
 }

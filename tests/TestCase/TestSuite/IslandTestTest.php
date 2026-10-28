@@ -128,18 +128,18 @@ class IslandTestTest extends TestCase
         $identity = $test->result()->id;
         $test->call('record', 3)->assertSet('count', 8)->assertSee('Construction: 2');
         $test->sync()->assertSet('count', 8)->assertSee('Construction: 3');
-        static::assertSame($identity, $test->result()->id);
-        static::assertSame(3, $probe->constructions);
-        static::assertSame([0, 0, 0], $probe->initializationCounts);
-        static::assertSame(3, $probe->renders);
-        static::assertSame('GET', $probe->requests[0]->getMethod());
-        static::assertFalse($probe->requests[0]->hasHeader('Interact'));
-        static::assertSame('POST', $probe->requests[1]->getMethod());
-        static::assertSame('true', $probe->requests[1]->getHeaderLine('Interact'));
-        static::assertSame('/_interact/update', $probe->requests[1]->getUri()->getPath());
-        static::assertSame('record', $probe->requests[1]->getData('action'));
-        static::assertSame('application/json', $probe->requests[1]->getHeaderLine('Content-Type'));
-        static::assertStringContainsString('data-interact-preserve', $test->result()->html);
+        $this->assertSame($identity, $test->result()->id);
+        $this->assertSame(3, $probe->constructions);
+        $this->assertSame([0, 0, 0], $probe->initializationCounts);
+        $this->assertSame(3, $probe->renders);
+        $this->assertSame('GET', $probe->requests[0]->getMethod());
+        $this->assertFalse($probe->requests[0]->hasHeader('Interact'));
+        $this->assertSame('POST', $probe->requests[1]->getMethod());
+        $this->assertSame('true', $probe->requests[1]->getHeaderLine('Interact'));
+        $this->assertSame('/_interact/update', $probe->requests[1]->getUri()->getPath());
+        $this->assertSame('record', $probe->requests[1]->getData('action'));
+        $this->assertSame('application/json', $probe->requests[1]->getHeaderLine('Content-Type'));
+        $this->assertStringContainsString('data-interact-preserve', $test->result()->html);
     }
 
     public function testSetAndFillSendImmediateDistinctBatchesOfWritablePaths(): void
@@ -181,7 +181,7 @@ class IslandTestTest extends TestCase
             ->assertHasErrors(['title', 'data.rows.0.body'])
             ->assertHasNoErrors(['other'])
             ->assertNotDispatched('suppressed');
-        static::assertSame(['Required.'], $test->result()->errors['title']);
+        $this->assertSame(['Required.'], $test->result()->errors['title']);
         $test->set('title', 'Valid')->call('validate')->assertHasNoErrors();
     }
 
@@ -208,8 +208,8 @@ class IslandTestTest extends TestCase
             ->assertSet('count', 6)
             ->assertDispatched('recorded')
             ->assertHasNoErrors();
-        static::assertInstanceOf(RenderlessResult::class, $test->result());
-        static::assertSame(1, $probe->renders);
+        $this->assertInstanceOf(RenderlessResult::class, $test->result());
+        $this->assertSame(1, $probe->renders);
         $test->sync()->assertRendered()->assertSet('count', 6)->assertSee('Count: 6');
     }
 
@@ -259,7 +259,7 @@ class IslandTestTest extends TestCase
         try {
             $test->withRequest($request->withAttribute('allowed', false))->call('record');
         } finally {
-            static::assertSame(1, $probe->renders);
+            $this->assertSame(1, $probe->renders);
         }
     }
 
@@ -318,7 +318,7 @@ class IslandTestTest extends TestCase
     {
         /** @var mixed $paths */
         $paths = Configure::read('App.paths.templates');
-        static::assertIsArray($paths);
+        $this->assertIsArray($paths);
         Configure::write('App.paths.templates', [
             dirname(__DIR__, 2) . '/Fixture/Rendering/overrides/',
             ...$paths,
@@ -339,7 +339,7 @@ class IslandTestTest extends TestCase
             ->assertHasNoErrors()
             ->assertSet('saved', true)
             ->assertDispatched('article-saved', ['id' => 1]);
-        static::assertSame(
+        $this->assertSame(
             'Saved through fluent testing',
             $this->getTableLocator()->get('Articles')->get(1)->get('title'),
         );
@@ -356,10 +356,10 @@ class IslandTestTest extends TestCase
         $this->testIsland('Testing')->assertSee('mocked service');
         $this->cleanupIslandTests();
         $this->cleanupContainer();
-        static::assertSame($plugins, Plugin::getCollection());
-        static::assertSame($routes, Router::getRouteCollection());
-        static::assertSame($events, EventManager::instance());
-        static::assertSame($request, Router::getRequest());
+        $this->assertSame($plugins, Plugin::getCollection());
+        $this->assertSame($routes, Router::getRouteCollection());
+        $this->assertSame($events, EventManager::instance());
+        $this->assertSame($request, Router::getRequest());
         $this->configApplication(Application::class, [CONFIG]);
         $this->testIsland('Testing')->assertSee('real service')->assertDontSee('mocked service');
     }
@@ -378,7 +378,7 @@ class IslandTestTest extends TestCase
         $context = new IslandContext($request, 'custom-scope', '/custom-update');
         $test = new IslandTest($this->getIslandTestFactory(), $context, 'Testing');
         $test->call('record')->assertSet('count', 6);
-        static::assertStringContainsString('data-interact-endpoint="/custom-update"', $test->result()->html);
+        $this->assertStringContainsString('data-interact-endpoint="/custom-update"', $test->result()->html);
     }
 
     /**

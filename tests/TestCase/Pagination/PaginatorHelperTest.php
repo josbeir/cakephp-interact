@@ -92,18 +92,18 @@ class PaginatorHelperTest extends TestCase
             'number' => '<li><a class="custom" href="{{url}}"><strong>{{text}}</strong></a></li>',
         ]);
         $html = $this->helper->numbers();
-        static::assertStringContainsString('class="custom"', $html);
-        static::assertStringContainsString('p=1&amp;order=title&amp;dir=desc', $html);
-        static::assertStringContainsString('external=a.b&amp;external=keep', $html);
-        static::assertStringNotContainsString('data-interact', $html);
-        static::assertStringContainsString('data-interact-pagination', $result->links->markup());
-        static::assertStringContainsString('&quot;page&quot;:1', $result->links->markup());
-        static::assertStringContainsString('http://localhost/catalog/7?', $this->helper->generateUrl(
+        $this->assertStringContainsString('class="custom"', $html);
+        $this->assertStringContainsString('p=1&amp;order=title&amp;dir=desc', $html);
+        $this->assertStringContainsString('external=a.b&amp;external=keep', $html);
+        $this->assertStringNotContainsString('data-interact', $html);
+        $this->assertStringContainsString('data-interact-pagination', $result->links->markup());
+        $this->assertStringContainsString('&quot;page&quot;:1', $result->links->markup());
+        $this->assertStringContainsString('http://localhost/catalog/7?', $this->helper->generateUrl(
             ['page' => 1],
             [],
             ['fullBase' => true],
         ));
-        static::assertStringContainsString('&order=title&dir=desc', $this->helper->generateUrl(
+        $this->assertStringContainsString('&order=title&dir=desc', $this->helper->generateUrl(
             ['page' => 1],
             [],
             ['escape' => false],
@@ -117,9 +117,9 @@ class PaginatorHelperTest extends TestCase
         $restore = $this->helper->islandScope($result);
         $this->helper->options(['sortFormat' => 'combined']);
         $html = $this->helper->sort('title', 'Title');
-        static::assertStringContainsString('p=1&amp;order=title', $html);
-        static::assertStringNotContainsString('order=title-asc', $html);
-        static::assertStringContainsString('&quot;direction&quot;:&quot;asc&quot;', $result->links->markup());
+        $this->assertStringContainsString('p=1&amp;order=title', $html);
+        $this->assertStringNotContainsString('order=title-asc', $html);
+        $this->assertStringContainsString('&quot;direction&quot;:&quot;asc&quot;', $result->links->markup());
         $restore();
     }
 
@@ -131,13 +131,13 @@ class PaginatorHelperTest extends TestCase
         $inner = $this->helper->islandScope($this->paginatedFixture('/inner'));
         $this->helper->setTemplates(['nextActive' => '<a class="inner" href="{{url}}">{{text}}</a>']);
         $this->helper->options(['sortFormat' => 'separate']);
-        static::assertStringContainsString('/inner?', $this->helper->next('Next'));
+        $this->assertStringContainsString('/inner?', $this->helper->next('Next'));
         $inner();
-        static::assertSame('combined', $this->helper->getConfig('options.sortFormat'));
-        static::assertStringContainsString('class="outer"', $this->helper->next('Next'));
-        static::assertStringContainsString('/outer?', $this->helper->next('Next'));
+        $this->assertSame('combined', $this->helper->getConfig('options.sortFormat'));
+        $this->assertStringContainsString('class="outer"', $this->helper->next('Next'));
+        $this->assertStringContainsString('/outer?', $this->helper->next('Next'));
         $outer();
-        static::assertSame('separate', $this->helper->getConfig('options.sortFormat'));
+        $this->assertSame('separate', $this->helper->getConfig('options.sortFormat'));
     }
 
     public function testFailedTemplateRenderingRestoresHelperAndViewScopes(): void
@@ -148,13 +148,13 @@ class PaginatorHelperTest extends TestCase
             $this->view->island(new Declaration('Throwing', 'island/Rendering/throws_exception'), [
                 'rows' => $this->paginatedFixture('/inner'),
             ]);
-            static::fail('Expected template failure.');
+            $this->fail('Expected template failure.');
         } catch (RuntimeException $runtimeException) {
-            static::assertSame('Template failure.', $runtimeException->getMessage());
+            $this->assertSame('Template failure.', $runtimeException->getMessage());
         }
 
-        static::assertSame('retained', $this->view->get('outside'));
-        static::assertStringContainsString('/outer?', $this->helper->next('Next'));
+        $this->assertSame('retained', $this->view->get('outside'));
+        $this->assertStringContainsString('/outer?', $this->helper->next('Next'));
         $restore();
     }
 
@@ -170,17 +170,17 @@ class PaginatorHelperTest extends TestCase
         Router::createRouteBuilder('/')->connect('/alternate', ['controller' => 'Resources', 'action' => 'index']);
         $native = new PaginatedResultSet([], ['currentPage' => 1]);
         $this->helper->setPaginated($native);
-        static::assertStringContainsString('/alternate', $this->helper->generateUrl(['page' => 2], [
+        $this->assertStringContainsString('/alternate', $this->helper->generateUrl(['page' => 2], [
             'controller' => 'Resources',
             'action' => 'index',
         ]));
         $result = $this->paginatedFixture();
         $this->helper->islandScope($result);
-        static::assertStringContainsString('/alternate', $this->helper->generateUrl(['page' => 2], [
+        $this->assertStringContainsString('/alternate', $this->helper->generateUrl(['page' => 2], [
             'controller' => 'Resources',
             'action' => 'index',
         ]));
-        static::assertSame('', $result->links->markup());
+        $this->assertSame('', $result->links->markup());
     }
 
     public function testRejectsHelpersThatCannotIsolatePaginationWithoutChangingViewVariables(): void
@@ -190,12 +190,12 @@ class PaginatorHelperTest extends TestCase
         $this->view->set('outside', 'retained');
         try {
             $this->view->island(new Declaration('Throwing', 'island/Rendering/throws_exception'), []);
-            static::fail('Expected incompatible helper error.');
+            $this->fail('Expected incompatible helper error.');
         } catch (LogicException $logicException) {
-            static::assertStringContainsString('must extend', $logicException->getMessage());
+            $this->assertStringContainsString('must extend', $logicException->getMessage());
         }
 
-        static::assertSame('retained', $this->view->get('outside'));
+        $this->assertSame('retained', $this->view->get('outside'));
     }
 
     public function testStateOnlyTargetsPreserveCustomMarkupWithoutExposingPagingValues(): void
@@ -206,16 +206,16 @@ class PaginatorHelperTest extends TestCase
         $restore = $this->helper->islandScope($result);
         $this->helper->setTemplates(['nextActive' => '<a class="custom" href="{{url}}"><strong>{{text}}</strong></a>']);
         $html = $this->helper->next('Next');
-        static::assertStringContainsString('class="custom"', $html);
-        static::assertStringContainsString('<strong>Next</strong>', $html);
-        static::assertMatchesRegularExpression(
+        $this->assertStringContainsString('class="custom"', $html);
+        $this->assertStringContainsString('<strong>Next</strong>', $html);
+        $this->assertMatchesRegularExpression(
             '/href="\/catalog\?external=keep#interact-pagination-[0-9a-f]{24}"/',
             $html,
         );
-        static::assertStringNotContainsString('sort=', $html);
-        static::assertStringNotContainsString('page=', $html);
-        static::assertNotSame($this->helper->generateUrl(['page' => 3]), $this->helper->generateUrl(['page' => 3]));
-        static::assertStringContainsString('&quot;page&quot;:3', $links->markup());
+        $this->assertStringNotContainsString('sort=', $html);
+        $this->assertStringNotContainsString('page=', $html);
+        $this->assertNotSame($this->helper->generateUrl(['page' => 3]), $this->helper->generateUrl(['page' => 3]));
+        $this->assertStringContainsString('&quot;page&quot;:3', $links->markup());
         $restore();
     }
 
@@ -241,13 +241,13 @@ class PaginatorHelperTest extends TestCase
         ]);
         $this->helper->islandScope(new Paginated($this->paginatedFixture(), $links, ['page', 'sort', 'direction']));
         $next = $this->helper->next('Next');
-        static::assertStringContainsString('?external=keep&amp;order=title&amp;dir=desc#interact-pagination-', $next);
-        static::assertStringNotContainsString('page=', $next);
-        static::assertStringContainsString('&quot;page&quot;:3', $links->markup());
+        $this->assertStringContainsString('?external=keep&amp;order=title&amp;dir=desc#interact-pagination-', $next);
+        $this->assertStringNotContainsString('page=', $next);
+        $this->assertStringContainsString('&quot;page&quot;:3', $links->markup());
         $sort = $this->helper->sort('title');
-        static::assertStringContainsString('?external=keep&amp;order=title#interact-pagination-', $sort);
-        static::assertStringContainsString('&quot;page&quot;:1', $links->markup());
-        static::assertStringContainsString('&quot;direction&quot;:&quot;asc&quot;', $links->markup());
+        $this->assertStringContainsString('?external=keep&amp;order=title#interact-pagination-', $sort);
+        $this->assertStringContainsString('&quot;page&quot;:1', $links->markup());
+        $this->assertStringContainsString('&quot;direction&quot;:&quot;asc&quot;', $links->markup());
     }
 
     public function testUrlEncodingPreservesEmptyListsFalseAndUnrelatedRepeatedParameters(): void
@@ -262,7 +262,7 @@ class PaginatorHelperTest extends TestCase
             'tags' => [],
             'enabled' => false,
         ]);
-        static::assertSame('/catalog?external=a&external=b&p=2&tags=&enabled=0', $links->generate(['page' => 2], [
+        $this->assertSame('/catalog?external=a&external=b&p=2&tags=&enabled=0', $links->generate(['page' => 2], [
             'page',
         ]));
     }

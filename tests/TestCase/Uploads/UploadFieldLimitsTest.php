@@ -57,17 +57,17 @@ class UploadFieldLimitsTest extends UploadStorageTestCase
         $reflection = new ReflectionProperty(UploadTypesIsland::class, 'multiple');
         $config = new UploadConfig(['maxFileSize' => '2MB', 'maxFiles' => 5]);
         $inherited = new UploadProperty($reflection, new Upload(true));
-        static::assertSame(2_097_152, $inherited->fileSize($config));
-        static::assertSame(5, $inherited->fileCount($config));
+        $this->assertSame(2_097_152, $inherited->fileSize($config));
+        $this->assertSame(5, $inherited->fileCount($config));
         $smaller = new UploadProperty($reflection, new Upload(true, ' 1.5MB ', 3));
-        static::assertSame(1_572_864, $smaller->maxFileSize);
-        static::assertSame(1_572_864, $smaller->fileSize($config));
-        static::assertSame(3, $smaller->fileCount($config));
+        $this->assertSame(1_572_864, $smaller->maxFileSize);
+        $this->assertSame(1_572_864, $smaller->fileSize($config));
+        $this->assertSame(3, $smaller->fileCount($config));
         $larger = new UploadProperty($reflection, new Upload(true, '10MB', 10));
-        static::assertSame(2_097_152, $larger->fileSize($config));
-        static::assertSame(5, $larger->fileCount($config));
+        $this->assertSame(2_097_152, $larger->fileSize($config));
+        $this->assertSame(5, $larger->fileCount($config));
         $single = new UploadProperty(new ReflectionProperty(UploadTypesIsland::class, 'single'), new Upload());
-        static::assertSame(1, $single->fileCount($config));
+        $this->assertSame(1, $single->fileCount($config));
     }
 
     public function testFieldSizeCountsActualBytesAndRemovesRejectedStagingBytes(): void
@@ -77,10 +77,10 @@ class UploadFieldLimitsTest extends UploadStorageTestCase
         $accepted = $storage->put($this->incoming('12345'), $owner, maxFileSize: 5);
         try {
             $storage->put($this->incoming('123456'), $owner, maxFileSize: 5);
-            static::fail('The actual byte count must respect the field ceiling.');
+            $this->fail('The actual byte count must respect the field ceiling.');
         } catch (UploadRejected) {
-            static::assertNotNull($storage->find($accepted->id, $owner));
-            static::assertCount(
+            $this->assertNotNull($storage->find($accepted->id, $owner));
+            $this->assertCount(
                 1,
                 new Finder()->in(Path::join($this->directory, $owner->sessionKey()))
                     ->recursive(false)
@@ -99,11 +99,11 @@ class UploadFieldLimitsTest extends UploadStorageTestCase
         $otherFile = $storage->put($this->incoming(), $other, maxFiles: 1);
         try {
             $storage->put($this->incoming(), $owner, maxFiles: 1);
-            static::fail('A field cannot reuse a slot occupied by an unacknowledged upload.');
+            $this->fail('A field cannot reuse a slot occupied by an unacknowledged upload.');
         } catch (UploadRejected) {
-            static::assertNotNull($storage->find($first->id, $owner));
-            static::assertNotNull($storage->find($otherFile->id, $other));
-            static::assertCount(
+            $this->assertNotNull($storage->find($first->id, $owner));
+            $this->assertNotNull($storage->find($otherFile->id, $other));
+            $this->assertCount(
                 2,
                 new Finder()->in(Path::join($this->directory, $owner->sessionKey()))
                     ->recursive(false)
@@ -119,7 +119,7 @@ class UploadFieldLimitsTest extends UploadStorageTestCase
         $owner = new UploadOwner('session', 'default', 'island', 'single');
         $first = $storage->put($this->incoming('first'), $owner, maxFiles: 1);
         $next = $storage->put($this->incoming('next'), $owner, $first->id, maxFiles: 1);
-        static::assertNotNull($storage->find($first->id, $owner));
-        static::assertSame('next', $storage->find($next->id, $owner)?->getStream()->getContents());
+        $this->assertNotNull($storage->find($first->id, $owner));
+        $this->assertSame('next', $storage->find($next->id, $owner)?->getStream()->getContents());
     }
 }

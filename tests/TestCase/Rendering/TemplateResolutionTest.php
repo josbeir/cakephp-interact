@@ -100,8 +100,8 @@ class TemplateResolutionTest extends TestCase
     public function testCompilesClassDerivedAndExplicitTargets(string $class, string $target, ?string $owner): void
     {
         $definition = new Definition($class);
-        static::assertSame($owner, $definition->plugin);
-        static::assertSame(
+        $this->assertSame($owner, $definition->plugin);
+        $this->assertSame(
             $target,
             $definition->declaration->element ?? $definition->declaration->template,
         );
@@ -123,19 +123,19 @@ class TemplateResolutionTest extends TestCase
         ]));
         $registry = new Registry();
         $registry->register(Editor::class);
-        static::assertSame('Commerce', $registry->definition('Commerce.Article/Editor')->plugin);
+        $this->assertSame('Commerce', $registry->definition('Commerce.Article/Editor')->plugin);
     }
 
     public function testNamesResolveOnDemandWithoutRegistrationOrDiscovery(): void
     {
         $registry = new Registry();
         $editor = $registry->definition('Commerce.article/editor');
-        static::assertSame(Editor::class, $editor->class);
-        static::assertSame('Commerce', $editor->plugin);
-        static::assertSame($editor, $registry->definition('Commerce.Article/Editor'));
-        static::assertNotSame($registry->create($editor), $registry->create($editor));
-        static::assertSame(ProductCard::class, $registry->definition('Acme/Catalog.product_card')->class);
-        static::assertSame('Commerce.island/Article/editor', $editor->declaration->template);
+        $this->assertSame(Editor::class, $editor->class);
+        $this->assertSame('Commerce', $editor->plugin);
+        $this->assertSame($editor, $registry->definition('Commerce.Article/Editor'));
+        $this->assertNotSame($registry->create($editor), $registry->create($editor));
+        $this->assertSame(ProductCard::class, $registry->definition('Acme/Catalog.product_card')->class);
+        $this->assertSame('Commerce.island/Article/editor', $editor->declaration->template);
     }
 
     public function testClassReferencesResolveToTheSameCachedNames(): void
@@ -147,13 +147,13 @@ class TemplateResolutionTest extends TestCase
         ] as $class => $name) {
             $registry = new Registry();
             $definition = $registry->resolve($class);
-            static::assertSame($name, $definition->declaration->name);
-            static::assertSame($definition, $registry->definition($name));
-            static::assertSame($definition, $registry->resolve($class));
-            static::assertSame($definition, $registry->resolve($name));
+            $this->assertSame($name, $definition->declaration->name);
+            $this->assertSame($definition, $registry->definition($name));
+            $this->assertSame($definition, $registry->resolve($class));
+            $this->assertSame($definition, $registry->resolve($name));
 
             $namedRegistry = new Registry();
-            static::assertSame($namedRegistry->definition($name), $namedRegistry->resolve($class));
+            $this->assertSame($namedRegistry->definition($name), $namedRegistry->resolve($class));
         }
     }
 
@@ -161,7 +161,7 @@ class TemplateResolutionTest extends TestCase
     {
         $registry = new Registry();
         $registry->register(CounterIsland::class, 'External');
-        static::assertSame($registry->definition('External'), $registry->resolve(CounterIsland::class));
+        $this->assertSame($registry->definition('External'), $registry->resolve(CounterIsland::class));
     }
 
     /**
@@ -211,12 +211,12 @@ class TemplateResolutionTest extends TestCase
         $helper->attach(new Factory(new Registry(), $codec)->create($view, $context), $context);
         foreach (['Commerce.article/editor', Editor::class] as $selector) {
             $html = $helper->render($selector);
-            static::assertStringContainsString('Application override: 0', $html);
+            $this->assertStringContainsString('Application override: 0', $html);
             $matches = [];
-            static::assertSame(1, preg_match('/data-interact-snapshot="([^"]+)"/', $html, $matches));
+            $this->assertSame(1, preg_match('/data-interact-snapshot="([^"]+)"/', $html, $matches));
             $data = $codec->open(html_entity_decode($matches[1]), $context->binding(), $context->scope);
-            static::assertSame('Commerce.Article/Editor', $data['alias']);
-            static::assertSame('Commerce.Article/Editor', $data['key']);
+            $this->assertSame('Commerce.Article/Editor', $data['alias']);
+            $this->assertSame('Commerce.Article/Editor', $data['key']);
         }
     }
 
@@ -253,8 +253,8 @@ class TemplateResolutionTest extends TestCase
     public function testRenderCanChangeOnlyTheRootTag(): void
     {
         $definition = new Registry()->definition('Commerce.Tagged');
-        static::assertSame('Commerce.island/tagged', $definition->declaration->template);
-        static::assertSame('section', $definition->declaration->tag);
+        $this->assertSame('Commerce.island/tagged', $definition->declaration->template);
+        $this->assertSame('section', $definition->declaration->tag);
     }
 
     public function testConfiguredApplicationNamespaceDeterminesTheIslandRoot(): void
@@ -263,8 +263,8 @@ class TemplateResolutionTest extends TestCase
         Configure::write('App.namespace', 'Interact\\Test\\Fixture\\Rendering\\App\\Island\\Site');
         try {
             $definition = new Registry()->definition('Editor');
-            static::assertSame('island/editor', $definition->declaration->template);
-            static::assertSame('Editor', $definition->declaration->name);
+            $this->assertSame('island/editor', $definition->declaration->template);
+            $this->assertSame('Editor', $definition->declaration->name);
         } finally {
             Configure::write('App.namespace', $namespace);
         }
@@ -276,30 +276,30 @@ class TemplateResolutionTest extends TestCase
         $registry->register(Editor::class, 'shop_editor');
 
         $definition = $registry->definition('ShopEditor');
-        static::assertSame(Editor::class, $definition->class);
-        static::assertSame('Commerce.island/Article/editor', $definition->declaration->template);
+        $this->assertSame(Editor::class, $definition->class);
+        $this->assertSame('Commerce.island/Article/editor', $definition->declaration->template);
     }
 
     public function testPluginTemplateAndItsRelativeElementsRenderNatively(): void
     {
         $html = new PhpRenderer(new TemplateView())->render(new Definition(Editor::class), ['count' => 3]);
-        static::assertStringContainsString('Plugin editor: 3', $html);
-        static::assertStringContainsString('Commerce marker', $html);
-        static::assertStringNotContainsString('Application marker', $html);
+        $this->assertStringContainsString('Plugin editor: 3', $html);
+        $this->assertStringContainsString('Commerce marker', $html);
+        $this->assertStringNotContainsString('Application marker', $html);
     }
 
     public function testApplicationOverridesPluginTemplatesAndElements(): void
     {
         $this->enableOverrides();
         $renderer = new PhpRenderer(new TemplateView());
-        static::assertStringContainsString('Application override: 4', $renderer->render(new Definition(Editor::class), [
+        $this->assertStringContainsString('Application override: 4', $renderer->render(new Definition(Editor::class), [
             'count' => 4,
         ]));
-        static::assertStringContainsString('Application element override: 5', $renderer->render(
+        $this->assertStringContainsString('Application element override: 5', $renderer->render(
             new Definition(ExplicitElement::class),
             ['count' => 5],
         ));
-        static::assertStringContainsString('Application catalog override: 6', $renderer->render(
+        $this->assertStringContainsString('Application catalog override: 6', $renderer->render(
             new Definition(CrossPlugin::class),
             ['count' => 6],
         ));
@@ -308,14 +308,14 @@ class TemplateResolutionTest extends TestCase
     public function testCrossPluginAndLiteralDotTargetsRetainNativeSemantics(): void
     {
         $renderer = new PhpRenderer(new TemplateView());
-        static::assertStringContainsString('Catalog card: 2', $renderer->render(new Definition(CrossPlugin::class), [
+        $this->assertStringContainsString('Catalog card: 2', $renderer->render(new Definition(CrossPlugin::class), [
             'count' => 2,
         ]));
-        static::assertStringContainsString('Literal dot template', $renderer->render(
+        $this->assertStringContainsString('Literal dot template', $renderer->render(
             new Definition(LiteralTemplate::class),
             [],
         ));
-        static::assertStringContainsString('Plugin element: 1', $renderer->render(
+        $this->assertStringContainsString('Plugin element: 1', $renderer->render(
             new Definition(ExplicitElement::class),
             ['count' => 1],
         ));
@@ -329,7 +329,7 @@ class TemplateResolutionTest extends TestCase
             'path' => $this->fixtures . 'theme/',
         ]));
         $view = new TemplateView(viewOptions: ['theme' => 'PreviewTheme']);
-        static::assertStringContainsString('Theme override', new PhpRenderer($view)->render(
+        $this->assertStringContainsString('Theme override', new PhpRenderer($view)->render(
             new Definition(Editor::class),
             ['count' => 0],
         ));
@@ -342,9 +342,9 @@ class TemplateResolutionTest extends TestCase
             'count' => 2,
             'child' => new Definition(LocalEditor::class)->declaration,
         ]);
-        static::assertSame(2, substr_count($html, 'Commerce marker'));
-        static::assertStringContainsString('Application marker', $html);
-        static::assertStringContainsString('Application editor: 2', $html);
+        $this->assertSame(2, substr_count($html, 'Commerce marker'));
+        $this->assertStringContainsString('Application marker', $html);
+        $this->assertStringContainsString('Application editor: 2', $html);
         $this->assertHostScope($view);
     }
 
@@ -353,9 +353,9 @@ class TemplateResolutionTest extends TestCase
         $view = $this->hostView();
         try {
             $view->island(new Declaration('throwing', template: 'island/Rendering/throws_exception'), []);
-            static::fail('The template must throw.');
+            $this->fail('The template must throw.');
         } catch (RuntimeException $runtimeException) {
-            static::assertSame('Template failure.', $runtimeException->getMessage());
+            $this->assertSame('Template failure.', $runtimeException->getMessage());
         }
 
         $this->assertHostScope($view);
@@ -366,9 +366,9 @@ class TemplateResolutionTest extends TestCase
         $view = $this->hostView();
         try {
             new PhpRenderer($view)->render(new Definition(CounterIsland::class), []);
-            static::fail('The inferred template must be missing.');
+            $this->fail('The inferred template must be missing.');
         } catch (MissingTemplateException $missingTemplateException) {
-            static::assertStringContainsString('island/counter.php', $missingTemplateException->getMessage());
+            $this->assertStringContainsString('island/counter.php', $missingTemplateException->getMessage());
         }
 
         $this->assertHostScope($view);
@@ -380,8 +380,8 @@ class TemplateResolutionTest extends TestCase
             new Declaration('extending', template: 'island/Rendering/extends_parent'),
             [],
         );
-        static::assertStringContainsString('<article>', $html);
-        static::assertStringContainsString('Extended island', $html);
+        $this->assertStringContainsString('<article>', $html);
+        $this->assertStringContainsString('Extended island', $html);
     }
 
     public function testRenderingRequiresCompiledDefaults(): void
@@ -403,7 +403,7 @@ class TemplateResolutionTest extends TestCase
         $factory = new Factory($registry, new SnapshotCodec(str_repeat('v', 32)));
         $runtime = $factory->create($this->hostView(), $context);
         $initial = $runtime->mount(Editor::class, [], 'editor', $context);
-        static::assertStringContainsString('Application override: 0', $initial->html);
+        $this->assertStringContainsString('Application override: 0', $initial->html);
         $freshFactory = new Factory(new Registry(), new SnapshotCodec(str_repeat('v', 32)));
         $handler = new UpdateHandler($freshFactory, new FailureResponder());
         $response = $handler->handle($request->withParam('plugin', 'Interact')
@@ -412,14 +412,14 @@ class TemplateResolutionTest extends TestCase
                 'snapshot' => $initial->snapshot,
                 'action' => 'increment',
             ]), new Response());
-        static::assertSame(200, $response->getStatusCode());
-        static::assertStringContainsString('Application override: 1', (string)$response->getBody());
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertStringContainsString('Application override: 1', (string)$response->getBody());
         $pending = $runtime->mount(Editor::class, [], 'deferred', $context, new Options('manual'));
         $initialized = $freshFactory->create($this->hostView(), $context)->update([
             'snapshot' => $pending->snapshot,
             'initialize' => true,
         ], $context);
-        static::assertStringContainsString('Application override: 0', $initialized->html);
+        $this->assertStringContainsString('Application override: 0', $initialized->html);
     }
 
     /**

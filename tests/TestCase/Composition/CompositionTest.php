@@ -125,17 +125,17 @@ class CompositionTest extends TestCase
         $mount = $this->runtime->mount('CompositionParent', [], null, $this->context);
         $child = static::metadataValue($mount, 'data-interact-relation');
         $relation = Values::map(json_decode($child, true, flags: JSON_THROW_ON_ERROR));
-        static::assertSame($mount->id, $relation['parentId']);
+        $this->assertSame($mount->id, $relation['parentId']);
         $snapshot = static::metadataValue($mount, 'data-interact-snapshot');
         $data = $this->open($snapshot);
-        static::assertSame('CompositionParent', $data['alias']);
+        $this->assertSame('CompositionParent', $data['alias']);
         $children = Values::map($data['children']);
         $identity = Values::map($children['key:probe']);
-        static::assertSame(
+        $this->assertSame(
             ['value' => '', 'selected' => null, 'flag' => false, 'count' => 0, 'items' => []],
             $identity['values'],
         );
-        static::assertSame(1, ProbeIsland::$constructed);
+        $this->assertSame(1, ProbeIsland::$constructed);
     }
 
     public function testParentPropsUseTheLatestChildSnapshotAndReportOneAuthorizedUpdateHook(): void
@@ -158,15 +158,15 @@ class CompositionTest extends TestCase
             'updates' => ['value' => ' newest '],
             'action' => 'normalize',
         ], $this->context);
-        static::assertSame($child->id, $next->id);
-        static::assertSame('changed', $next->state['scope']);
-        static::assertSame('Keep my draft', $next->state['notes']);
-        static::assertSame('NEWEST', $next->state['value']);
-        static::assertSame(['scope', 'value'], $next->state['changed']);
-        static::assertSame(1, $next->state['mounts']);
-        static::assertSame(1, $next->state['calls']);
-        static::assertNull($next->payload()['html']);
-        static::assertStringNotContainsString(
+        $this->assertSame($child->id, $next->id);
+        $this->assertSame('changed', $next->state['scope']);
+        $this->assertSame('Keep my draft', $next->state['notes']);
+        $this->assertSame('NEWEST', $next->state['value']);
+        $this->assertSame(['scope', 'value'], $next->state['changed']);
+        $this->assertSame(1, $next->state['mounts']);
+        $this->assertSame(1, $next->state['calls']);
+        $this->assertNull($next->payload()['html']);
+        $this->assertStringNotContainsString(
             'data-interact-parent-inputs',
             $this->runtime->update(['snapshot' => $parent->snapshot], $this->context)->html,
         );
@@ -216,15 +216,15 @@ class CompositionTest extends TestCase
             'urlRestore' => true,
             'updates' => ['page' => $page, 'filter' => ''],
         ], $this->context);
-        static::assertSame($expected['paths'], $next->state['changed']);
-        static::assertSame($expected['value'], $next->state['value']);
-        static::assertSame($expected['count'], $next->state['count']);
-        static::assertSame($page, $next->state['page']);
-        static::assertSame('', $next->state['filter']);
-        static::assertSame('Keep this draft', $next->state['notes']);
-        static::assertSame('changed', $next->state['scope']);
-        static::assertSame(1, $next->state['mounts']);
-        static::assertSame(0, $next->state['calls']);
+        $this->assertSame($expected['paths'], $next->state['changed']);
+        $this->assertSame($expected['value'], $next->state['value']);
+        $this->assertSame($expected['count'], $next->state['count']);
+        $this->assertSame($page, $next->state['page']);
+        $this->assertSame('', $next->state['filter']);
+        $this->assertSame('Keep this draft', $next->state['notes']);
+        $this->assertSame('changed', $next->state['scope']);
+        $this->assertSame(1, $next->state['mounts']);
+        $this->assertSame(0, $next->state['calls']);
     }
 
     /**
@@ -279,10 +279,10 @@ class CompositionTest extends TestCase
             'parentInputs' => $ticket,
             'initialize' => true,
         ], $this->context);
-        static::assertSame('latest', $child->state['scope']);
-        static::assertSame('initial selection', $child->state['value']);
-        static::assertSame(1, $child->state['mounts']);
-        static::assertSame([], $child->state['changed']);
+        $this->assertSame('latest', $child->state['scope']);
+        $this->assertSame('initial selection', $child->state['value']);
+        $this->assertSame(1, $child->state['mounts']);
+        $this->assertSame([], $child->state['changed']);
     }
 
     /**
@@ -305,9 +305,9 @@ class CompositionTest extends TestCase
         ProbeIsland::$constructed = 0;
         try {
             $this->runtime->update(['snapshot' => $snapshots[1][1], 'parentInputs' => $ticket], $this->context);
-            static::fail('Invalid parent inputs must fail.');
+            $this->fail('Invalid parent inputs must fail.');
         } catch (InvalidSnapshotException) {
-            static::assertSame(0, ProbeIsland::$constructed);
+            $this->assertSame(0, ProbeIsland::$constructed);
         }
     }
 
@@ -353,12 +353,12 @@ class CompositionTest extends TestCase
         $parent = new ParentIsland();
         $parent->data['resourceId'] = null;
         $mount = $bindings->prepare([], 'data.resourceId', $picker, $this->frame($parent));
-        static::assertSame(['category' => 'cakephp'], $mount->props);
-        static::assertSame(['value' => null], $mount->bound);
-        static::assertSame('data.resourceId', $mount->relation?->models['value']['path']);
-        static::assertNull($bindings->resolve(null, $picker, null));
-        static::assertNull(Relation::read(null));
-        static::assertSame('allowed', new PropInputs()->props(new Definition(ProbeIsland::class), [])['scope']);
+        $this->assertSame(['category' => 'cakephp'], $mount->props);
+        $this->assertSame(['value' => null], $mount->bound);
+        $this->assertSame('data.resourceId', $mount->relation?->models['value']['path']);
+        $this->assertNull($bindings->resolve(null, $picker, null));
+        $this->assertNull(Relation::read(null));
+        $this->assertSame('allowed', new PropInputs()->props(new Definition(ProbeIsland::class), [])['scope']);
     }
 
     public function testPreparationReadsCurrentBoundValuesOnceWithoutConstructingTheChild(): void
@@ -374,15 +374,15 @@ class CompositionTest extends TestCase
             'items' => 'data.items',
         ];
         $prepared = $bindings->prepare([], $models, $child, $frame);
-        static::assertSame(1, $bindings->relationResolutions);
-        static::assertSame(1, $bindings->resolutions);
-        static::assertSame(['selected' => null, 'flag' => false, 'count' => 0, 'items' => []], $prepared->bound);
-        static::assertSame(0, ProbeIsland::$constructed);
-        static::assertEquals($prepared->relation, $bindings->resolve($models, $child, $frame));
-        static::assertSame(2, $bindings->resolutions);
+        $this->assertSame(1, $bindings->relationResolutions);
+        $this->assertSame(1, $bindings->resolutions);
+        $this->assertSame(['selected' => null, 'flag' => false, 'count' => 0, 'items' => []], $prepared->bound);
+        $this->assertSame(0, ProbeIsland::$constructed);
+        $this->assertEquals($prepared->relation, $bindings->resolve($models, $child, $frame));
+        $this->assertSame(2, $bindings->resolutions);
         $parent->data['count'] = 4;
-        static::assertSame(4, $bindings->prepare([], $models, $child, $frame)->bound['count']);
-        static::assertSame(3, $bindings->resolutions);
+        $this->assertSame(4, $bindings->prepare([], $models, $child, $frame)->bound['count']);
+        $this->assertSame(3, $bindings->resolutions);
     }
 
     public function testPreparationHonorsCustomResolutionAndRejectsInvalidReplacementValues(): void
@@ -397,15 +397,15 @@ class CompositionTest extends TestCase
             ->with(null, $child, $frame)
             ->willReturn($relation);
         $prepared = $bindings->prepare([], null, $child, $frame);
-        static::assertSame($relation, $prepared->relation);
-        static::assertSame(['count' => 0], $prepared->bound);
-        static::assertSame(1, $bindings->resolutions);
+        $this->assertSame($relation, $prepared->relation);
+        $this->assertSame(['count' => 0], $prepared->bound);
+        $this->assertSame(1, $bindings->resolutions);
         $parent->data['count'] = 'invalid';
         try {
             $bindings->prepare([], null, $child, $frame);
-            static::fail('Custom relationships must validate their selected values.');
+            $this->fail('Custom relationships must validate their selected values.');
         } catch (InvalidArgumentException $invalidArgumentException) {
-            static::assertStringContainsString('expected int', $invalidArgumentException->getMessage());
+            $this->assertStringContainsString('expected int', $invalidArgumentException->getMessage());
         }
 
         $bindings = $this->createPartialMock(ModelBindings::class, ['resolve']);
@@ -437,13 +437,13 @@ class CompositionTest extends TestCase
             return $relation;
         };
         $prepared = $bindings->prepare([], ['count' => 'data.count'], $child, $frame);
-        static::assertSame(['count' => 0], $prepared->bound);
-        static::assertSame(2, $bindings->resolutions);
-        static::assertSame(0, ProbeIsland::$constructed);
+        $this->assertSame(['count' => 0], $prepared->bound);
+        $this->assertSame(2, $bindings->resolutions);
+        $this->assertSame(0, ProbeIsland::$constructed);
         $bindings->afterResolve = null;
         $parent->data['count'] = 4;
-        static::assertSame(4, $bindings->prepare([], ['count' => 'data.count'], $child, $frame)->bound['count']);
-        static::assertSame(3, $bindings->resolutions);
+        $this->assertSame(4, $bindings->prepare([], ['count' => 'data.count'], $child, $frame)->bound['count']);
+        $this->assertSame(3, $bindings->resolutions);
         $bindings = new CountingBindings();
         $bindings->afterResolve = static fn(?Relation $relation): Relation => new Relation(
             $relation->parentId ?? 'parent',
@@ -455,9 +455,9 @@ class CompositionTest extends TestCase
             new Definition(ProbeIsland::class),
             $this->frame(),
         );
-        static::assertSame(['selected' => null], $prepared->bound);
-        static::assertSame(['selected'], array_keys($prepared->relation->models ?? []));
-        static::assertSame(2, $bindings->resolutions);
+        $this->assertSame(['selected' => null], $prepared->bound);
+        $this->assertSame(['selected'], array_keys($prepared->relation->models ?? []));
+        $this->assertSame(2, $bindings->resolutions);
     }
 
     /**
@@ -527,12 +527,12 @@ class CompositionTest extends TestCase
             'count' => ['path' => 'count', 'timing' => 'live', 'delay' => 0],
             'items' => 'items',
         ]);
-        static::assertSame(
+        $this->assertSame(
             ['flag' => true, 'count' => 0, 'items' => []],
             new BoundValues()->values($relation, new Definition(ProbeIsland::class), $this->frame($probe)),
         );
-        static::assertSame(0, $relation->models['count']['delay'] ?? null);
-        static::assertSame($relation->data(), Relation::read($relation->data())?->data());
+        $this->assertSame(0, $relation->models['count']['delay'] ?? null);
+        $this->assertSame($relation->data(), Relation::read($relation->data())?->data());
     }
 
     public function testModelBindingNeedsAParent(): void

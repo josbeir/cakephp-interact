@@ -62,17 +62,17 @@ class FailureTest extends TestCase
     public function testSafeFailureContract(Throwable $exception, int $status, string $code): void
     {
         $response = new FailureResponder()->fromException($exception);
-        static::assertSame($status, $response->getStatusCode());
-        static::assertSame('application/json', $response->getHeaderLine('Content-Type'));
-        static::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
-        static::assertSame('true', $response->getHeaderLine('Interact'));
+        $this->assertSame($status, $response->getStatusCode());
+        $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
+        $this->assertSame('no-store', $response->getHeaderLine('Cache-Control'));
+        $this->assertSame('true', $response->getHeaderLine('Interact'));
         $body = (string)$response->getBody();
-        static::assertStringNotContainsString('private', $body);
+        $this->assertStringNotContainsString('private', $body);
         /** @var array{version: int, error: array{code: string, message: string}} $payload */
         $payload = json_decode($body, true, flags: JSON_THROW_ON_ERROR);
-        static::assertSame(1, $payload['version']);
-        static::assertSame($code, $payload['error']['code']);
-        static::assertNotSame('', $payload['error']['message']);
+        $this->assertSame(1, $payload['version']);
+        $this->assertSame($code, $payload['error']['code']);
+        $this->assertNotSame('', $payload['error']['message']);
     }
 
     public function testHttpHeadersArePreserved(): void
@@ -81,13 +81,13 @@ class FailureTest extends TestCase
         $exception->setHeader('WWW-Authenticate', 'Bearer');
 
         $response = new FailureResponder()->fromException($exception);
-        static::assertSame('Bearer', $response->getHeaderLine('WWW-Authenticate'));
+        $this->assertSame('Bearer', $response->getHeaderLine('WWW-Authenticate'));
     }
 
     public function testExceptionListenerOnlyFormatsUnhandledUpdateRoutes(): void
     {
         $listener = new UpdateErrorListener(new FailureResponder());
-        static::assertSame(['Exception.beforeRender' => 'render'], $listener->implementedEvents());
+        $this->assertSame(['Exception.beforeRender' => 'render'], $listener->implementedEvents());
         $request = new ServerRequest(['params' => [
             'plugin' => 'Interact',
             'controller' => 'Interact',
@@ -101,15 +101,15 @@ class FailureTest extends TestCase
         $listener->render($event);
         /** @var mixed $response */
         $response = $event->getResult();
-        static::assertInstanceOf(Response::class, $response);
-        static::assertSame(500, $response->getStatusCode());
-        static::assertSame('true', $response->getHeaderLine('Interact'));
+        $this->assertInstanceOf(Response::class, $response);
+        $this->assertSame(500, $response->getStatusCode());
+        $this->assertSame('true', $response->getHeaderLine('Interact'));
         $event->setResult(new Response(['status' => 418]));
         $listener->render($event);
         /** @var mixed $handled */
         $handled = $event->getResult();
-        static::assertInstanceOf(Response::class, $handled);
-        static::assertSame(418, $handled->getStatusCode());
+        $this->assertInstanceOf(Response::class, $handled);
+        $this->assertSame(418, $handled->getStatusCode());
         foreach ([
             [],
             ['request' => $request],
@@ -123,7 +123,7 @@ class FailureTest extends TestCase
         ] as $data) {
             $ignored = new Event('Exception.beforeRender', data: $data);
             $listener->render($ignored);
-            static::assertNull($ignored->getResult());
+            $this->assertNull($ignored->getResult());
         }
     }
 
@@ -143,9 +143,9 @@ class FailureTest extends TestCase
         ] as [$snapshot, $binding, $scope, $reason]) {
             try {
                 $codec->open($snapshot, $binding, $scope);
-                static::fail('An invalid snapshot was accepted.');
+                $this->fail('An invalid snapshot was accepted.');
             } catch (InvalidSnapshotException $exception) {
-                static::assertSame($reason, $exception->reason);
+                $this->assertSame($reason, $exception->reason);
             }
         }
     }
@@ -169,8 +169,8 @@ class FailureTest extends TestCase
         $middleware->setEventManager($events);
 
         $response = $middleware->handleException($exception, $request);
-        static::assertSame(500, $response->getStatusCode());
-        static::assertStringContainsString('server_error', (string)$response->getBody());
-        static::assertStringNotContainsString('Private diagnostic', (string)$response->getBody());
+        $this->assertSame(500, $response->getStatusCode());
+        $this->assertStringContainsString('server_error', (string)$response->getBody());
+        $this->assertStringNotContainsString('Private diagnostic', (string)$response->getBody());
     }
 }

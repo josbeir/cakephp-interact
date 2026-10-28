@@ -59,25 +59,25 @@ class StreamingElementTest extends TestCase
         $view->set('count', 99);
         $renderer = new PhpRenderer($view);
         $definition = new Definition(CrossPluginIsland::class);
-        static::assertSame('Acme/Catalog.island/product_card', $definition->declaration->template);
-        static::assertStringContainsString('Plugin element: 7', $renderer->element($definition, 'card', [
+        $this->assertSame('Acme/Catalog.island/product_card', $definition->declaration->template);
+        $this->assertStringContainsString('Plugin element: 7', $renderer->element($definition, 'card', [
             'count' => 7,
         ]));
-        static::assertStringContainsString('Commerce marker', $renderer->element($definition, 'marker', []));
-        static::assertStringContainsString('Application marker', $renderer->element(
+        $this->assertStringContainsString('Commerce marker', $renderer->element($definition, 'marker', []));
+        $this->assertStringContainsString('Application marker', $renderer->element(
             new Definition(EditorIsland::class),
             'marker',
             [],
         ));
-        static::assertStringContainsString('Commerce marker', $renderer->element(
+        $this->assertStringContainsString('Commerce marker', $renderer->element(
             new Definition(EditorIsland::class),
             'Commerce.marker',
             [],
         ));
-        static::assertSame('Commerce', $view->getPlugin());
-        static::assertSame('Host', $view->getTemplatePath());
-        static::assertSame('Admin', $view->getSubDir());
-        static::assertSame(99, $view->get('count'));
+        $this->assertSame('Commerce', $view->getPlugin());
+        $this->assertSame('Host', $view->getTemplatePath());
+        $this->assertSame('Admin', $view->getSubDir());
+        $this->assertSame(99, $view->get('count'));
     }
 
     public function testStreamedElementsHonorApplicationOverrides(): void
@@ -87,7 +87,7 @@ class StreamingElementTest extends TestCase
             $this->fixtures . 'templates/',
         ]);
         $renderer = new PhpRenderer(new TemplateView());
-        static::assertStringContainsString('Application element override: 8', $renderer->element(
+        $this->assertStringContainsString('Application element override: 8', $renderer->element(
             new Definition(CrossPluginIsland::class),
             'card',
             ['count' => 8],

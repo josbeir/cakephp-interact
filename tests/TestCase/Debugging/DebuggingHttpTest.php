@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Interact\Test\TestCase\Debugging;
 
 use Cake\Core\Configure;
+use Cake\Error\Debug\HtmlFormatter;
+use Cake\Error\Debugger;
 use Cake\Error\Renderer\WebExceptionRenderer;
 use Cake\Event\EventManager;
 use Interact\Runtime\Values;
@@ -33,39 +35,44 @@ class DebuggingHttpTest extends HttpTestCase
         $this->post('/_interact/update', json_encode(['version' => 1] + $data, JSON_THROW_ON_ERROR));
     }
 
-    public function testDumpsPreserveActionsMaskingAndSignedState(): void
+    public function testDumpsPreserveNativeFormattingAndSignedState(): void
     {
         $mount = $this->mounted(url: '/demo/debugging');
         $this->update(['snapshot' => $mount['snapshot'], 'action' => 'inspect', 'updates' => ['value' => 'Draft']]);
         $this->assertResponseOk();
         $payload = $this->payload();
         $output = Values::map($payload['diagnostics']);
-        static::assertIsString($output['output']);
-        static::assertStringContainsString('authorized', $output['output']);
-        static::assertStringContainsString('initialized', $output['output']);
-        static::assertStringContainsString('updated', $output['output']);
-        static::assertStringContainsString('Draft', $output['output']);
-        static::assertStringContainsString('********', $output['output']);
-        static::assertStringNotContainsString(hash('sha256', 'Draft'), $output['output']);
-        static::assertTrue($output['viewer']);
-        static::assertFalse($output['truncated']);
-        static::assertSame('Inspected', Values::map($payload['state'])['value']);
-        static::assertIsString($payload['html']);
-        static::assertStringNotContainsString('authorized', $payload['html']);
-        static::assertStringNotContainsString('debugExecuted', $payload['html']);
-        static::assertIsString($payload['snapshot']);
+        $this->assertIsString($output['output']);
+        $this->assertStringContainsString('authorized', $output['output']);
+        $this->assertStringContainsString('initialized', $output['output']);
+        $this->assertStringContainsString('updated', $output['output']);
+        $this->assertStringContainsString('Draft', $output['output']);
+        $this->assertStringContainsString(
+            new HtmlFormatter()->dump(Debugger::exportVarAsNodes([
+                'value' => 'Draft',
+                'password' => hash('sha256', 'Draft'),
+            ])),
+            $output['output'],
+        );
+        $this->assertTrue($output['viewer']);
+        $this->assertFalse($output['truncated']);
+        $this->assertSame('Inspected', Values::map($payload['state'])['value']);
+        $this->assertIsString($payload['html']);
+        $this->assertStringNotContainsString('authorized', $payload['html']);
+        $this->assertStringNotContainsString('debugExecuted', $payload['html']);
+        $this->assertIsString($payload['snapshot']);
         $snapshot = base64_decode(strtr(explode('.', $payload['snapshot'])[0], '-_', '+/'), true);
-        static::assertIsString($snapshot);
-        static::assertStringNotContainsString('diagnostics', $snapshot);
+        $this->assertIsString($snapshot);
+        $this->assertStringNotContainsString('diagnostics', $snapshot);
 
         $this->update(['snapshot' => $this->nextSnapshot(), 'action' => 'inspectOnly']);
         $this->assertResponseOk();
-        static::assertNull($this->payload()['html']);
-        static::assertArrayHasKey('diagnostics', $this->payload());
+        $this->assertNull($this->payload()['html']);
+        $this->assertArrayHasKey('diagnostics', $this->payload());
         $this->update(['snapshot' => $this->nextSnapshot(), 'action' => 'inspect', 'args' => ['validation']]);
         $this->assertResponseCode(422);
-        static::assertArrayHasKey('diagnostics', $this->payload());
-        static::assertSame(['Invalid value.'], Values::map($this->payload()['errors'])['value']);
+        $this->assertArrayHasKey('diagnostics', $this->payload());
+        $this->assertSame(['Invalid value.'], Values::map($this->payload()['errors'])['value']);
     }
 
     public function testOutputSurvivesExpectedAndUnexpectedFailuresWithoutChangingCakeLogging(): void
@@ -76,10 +83,10 @@ class DebuggingHttpTest extends HttpTestCase
             $this->update(['snapshot' => $mount['snapshot'], 'action' => 'inspect', 'args' => [$mode]]);
             $this->assertResponseCode($status);
             $output = Values::map($this->payload()['diagnostics']);
-            static::assertIsString($output['output']);
-            static::assertStringContainsString('global dump', $output['output']);
-            static::assertArrayHasKey('error', $this->payload());
-            static::assertArrayNotHasKey('state', $this->payload());
+            $this->assertIsString($output['output']);
+            $this->assertStringContainsString('global dump', $output['output']);
+            $this->assertArrayHasKey('error', $this->payload());
+            $this->assertArrayNotHasKey('state', $this->payload());
         }
     }
 
@@ -90,7 +97,7 @@ class DebuggingHttpTest extends HttpTestCase
         try {
             $this->update(['snapshot' => $mount['snapshot'], 'action' => 'inspect']);
             $this->assertResponseOk();
-            static::assertFalse(Values::map($this->payload()['diagnostics'])['viewer']);
+            $this->assertFalse(Values::map($this->payload()['diagnostics'])['viewer']);
             Configure::write('Interact.debug.enabled', false);
             ob_start();
             try {
@@ -99,8 +106,8 @@ class DebuggingHttpTest extends HttpTestCase
                 $output = (string)ob_get_clean();
             }
 
-            static::assertStringContainsString('global dump', $output);
-            static::assertArrayNotHasKey('diagnostics', $this->payload());
+            $this->assertStringContainsString('global dump', $output);
+            $this->assertArrayNotHasKey('diagnostics', $this->payload());
         } finally {
             Configure::delete('Interact.debug');
         }
@@ -127,9 +134,9 @@ class DebuggingHttpTest extends HttpTestCase
         ], JSON_THROW_ON_ERROR)]);
         $this->assertResponseOk();
         $output = Values::map($this->payload()['diagnostics']);
-        static::assertIsString($output['output']);
-        static::assertStringContainsString('updated', $output['output']);
-        static::assertStringContainsString('debug.txt', (string)$this->response?->getBody());
+        $this->assertIsString($output['output']);
+        $this->assertStringContainsString('updated', $output['output']);
+        $this->assertStringContainsString('debug.txt', (string)$this->response?->getBody());
     }
 
     public function testStreamingDiagnosticsPrecedeTheirProgressAndTerminalFrames(): void
@@ -161,10 +168,10 @@ class DebuggingHttpTest extends HttpTestCase
             }
 
             $this->assertHeader('Content-Type', 'text/event-stream; charset=UTF-8');
-            static::assertStringContainsString('"type":"diagnostic"', $body);
-            static::assertStringContainsString('before progress', $body);
-            static::assertStringContainsString('"type":"target"', $body);
-            static::assertStringContainsString($mode === 'success' ? '"type":"result"' : '"type":"failure"', $body);
+            $this->assertStringContainsString('"type":"diagnostic"', $body);
+            $this->assertStringContainsString('before progress', $body);
+            $this->assertStringContainsString('"type":"target"', $body);
+            $this->assertStringContainsString($mode === 'success' ? '"type":"result"' : '"type":"failure"', $body);
         }
     }
 
@@ -174,12 +181,12 @@ class DebuggingHttpTest extends HttpTestCase
         $this->update(['snapshot' => $mount['snapshot'], 'initialize' => true]);
         $this->assertResponseOk();
         $payload = $this->payload();
-        static::assertIsString($payload['html']);
-        static::assertStringContainsString('template output', $payload['html']);
+        $this->assertIsString($payload['html']);
+        $this->assertStringContainsString('template output', $payload['html']);
         $output = Values::map($payload['diagnostics']);
-        static::assertIsString($output['output']);
-        static::assertStringContainsString('initialized', $output['output']);
-        static::assertStringNotContainsString('template output', $output['output']);
+        $this->assertIsString($output['output']);
+        $this->assertStringContainsString('initialized', $output['output']);
+        $this->assertStringNotContainsString('template output', $output['output']);
     }
 
     public function testPublicDemoInspectsEditableDraftsAndValidatesWithoutPersistence(): void
@@ -193,28 +200,28 @@ class DebuggingHttpTest extends HttpTestCase
         ]);
         $this->assertResponseOk();
         $payload = $this->payload();
-        static::assertSame(1, Values::map($payload['state'])['inspections']);
+        $this->assertSame(1, Values::map($payload['state'])['inspections']);
         $output = Values::map($payload['diagnostics']);
-        static::assertIsString($output['output']);
-        static::assertStringContainsString('User draft', $output['output']);
+        $this->assertIsString($output['output']);
+        $this->assertStringContainsString('User draft', $output['output']);
         $this->update(['snapshot' => $this->nextSnapshot(), 'action' => 'inspectOnly']);
         $this->assertResponseOk();
-        static::assertNull($this->payload()['html']);
-        static::assertSame(2, Values::map($this->payload()['state'])['inspections']);
+        $this->assertNull($this->payload()['html']);
+        $this->assertSame(2, Values::map($this->payload()['state'])['inspections']);
         $this->update([
             'snapshot' => $this->nextSnapshot(),
             'action' => 'inspectValidation',
             'updates' => ['message' => ''],
         ]);
         $this->assertResponseCode(422);
-        static::assertSame(['Enter a message before validating.'], Values::map($this->payload()['errors'])['message']);
+        $this->assertSame(['Enter a message before validating.'], Values::map($this->payload()['errors'])['message']);
         $this->update([
             'snapshot' => $this->nextSnapshot(),
             'action' => 'inspectValidation',
             'updates' => ['message' => 'Corrected'],
         ]);
         $this->assertResponseOk();
-        static::assertSame('Message is valid', Values::map($this->payload()['state'])['status']);
+        $this->assertSame('Message is valid', Values::map($this->payload()['state'])['status']);
     }
 
     /**

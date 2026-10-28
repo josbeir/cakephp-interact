@@ -25,12 +25,12 @@ class RenderlessHttpTest extends HttpTestCase
         $this->assertResponseOk();
         $this->assertResponseContains('"html":null');
         $first = $this->payload();
-        static::assertSame(1, $first['state']['savedCount']);
+        $this->assertSame(1, $first['state']['savedCount']);
         /** @var mixed $id */
         $id = $first['state']['articleId'];
-        static::assertIsInt($id);
+        $this->assertIsInt($id);
         $table = $this->getTableLocator()->get('FormArticles');
-        static::assertSame('Renderless draft', $table->get($id)->get('title'));
+        $this->assertSame('Renderless draft', $table->get($id)->get('title'));
         $this->update([
             'snapshot' => $this->nextSnapshot(),
             'action' => 'saveDraft',
@@ -38,10 +38,10 @@ class RenderlessHttpTest extends HttpTestCase
         ]);
         $this->assertResponseCode(422);
         $failed = $this->payload();
-        static::assertIsString($failed['html']);
-        static::assertStringContainsString('Enter a title.', $failed['html']);
-        static::assertSame([], $failed['events']);
-        static::assertSame('Renderless draft', $table->get($id)->get('title'));
+        $this->assertIsString($failed['html']);
+        $this->assertStringContainsString('Enter a title.', $failed['html']);
+        $this->assertSame([], $failed['events']);
+        $this->assertSame('Renderless draft', $table->get($id)->get('title'));
         $this->update([
             'snapshot' => $this->nextSnapshot(),
             'action' => 'saveDraft',
@@ -49,14 +49,14 @@ class RenderlessHttpTest extends HttpTestCase
         ]);
         $this->assertResponseOk();
         $cleared = $this->payload();
-        static::assertIsString($cleared['html']);
-        static::assertStringNotContainsString('Enter a title.', $cleared['html']);
-        static::assertSame('Corrected draft', $table->get($id)->get('title'));
+        $this->assertIsString($cleared['html']);
+        $this->assertStringNotContainsString('Enter a title.', $cleared['html']);
+        $this->assertSame('Corrected draft', $table->get($id)->get('title'));
         $this->update(['snapshot' => $this->nextSnapshot(), 'action' => 'saveDraft']);
         $this->assertResponseContains('"html":null');
-        static::assertSame(3, $this->payload()['state']['savedCount']);
+        $this->assertSame(3, $this->payload()['state']['savedCount']);
         $this->update(['snapshot' => $this->nextSnapshot()]);
-        static::assertIsString($this->payload()['html']);
+        $this->assertIsString($this->payload()['html']);
     }
 
     public function testConditionalRenderingAndCurrentAuthorization(): void
@@ -65,8 +65,8 @@ class RenderlessHttpTest extends HttpTestCase
         $this->update(['snapshot' => $mount['snapshot'], 'action' => 'signal']);
         $this->assertResponseContains('"html":null');
         $this->update(['snapshot' => $this->nextSnapshot(), 'action' => 'signal', 'args' => [5]]);
-        static::assertIsString($this->payload()['html']);
-        static::assertSame(6, $this->payload()['state']['signals']);
+        $this->assertIsString($this->payload()['html']);
+        $this->assertSame(6, $this->payload()['state']['signals']);
         $snapshot = $this->nextSnapshot();
         Configure::write('Error.exceptionRenderer', WebExceptionRenderer::class);
         $this->session(['demo.role' => 'viewer']);

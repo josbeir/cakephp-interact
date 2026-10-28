@@ -73,8 +73,8 @@ class RealtimeConfigurationTest extends TestCase
             static fn(): SubscriptionAuthorizerInterface => $authorizer,
         );
         new RealtimeServices()->register($container);
-        static::assertSame($broadcaster, $container->get(BroadcasterInterface::class));
-        static::assertSame($authorizer, $container->get(SubscriptionAuthorizerInterface::class));
+        $this->assertSame($broadcaster, $container->get(BroadcasterInterface::class));
+        $this->assertSame($authorizer, $container->get(SubscriptionAuthorizerInterface::class));
     }
 
     public function testMissingPublicHubUrlFailsClearly(): void
@@ -130,9 +130,9 @@ class RealtimeConfigurationTest extends TestCase
         $token = new MercureTokens()->create()
             ->create(['records/1'], [], ['exp' => time() + 300]);
         $claims = JWT::decode($token, new Key($secret, 'HS256'));
-        static::assertSame('explicit-issuer', $claims->iss);
-        static::assertSame('configured-audience', $claims->aud);
-        static::assertSame('configured-subject', $claims->sub);
-        static::assertSame('configured-client', $claims->client_id);
+        $this->assertSame('explicit-issuer', $claims->iss);
+        $this->assertSame('configured-audience', $claims->aud);
+        $this->assertSame('configured-subject', $claims->sub);
+        $this->assertSame('configured-client', $claims->client_id);
     }
 }
