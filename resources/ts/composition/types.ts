@@ -4,6 +4,7 @@ import type { State } from '../types';
 export interface CompositionHooks {
   /** Read the client's detached request snapshot without mutating it. */
   begin(action: string | null, sent: State): void;
+  /** Return authoritative bound-path overrides without replacing unrelated map fields. */
   preserve(incoming: State): State;
   capture(): void;
   flush(sent: State): void;
