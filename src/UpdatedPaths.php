@@ -10,7 +10,7 @@ use Traversable;
 /**
  * Supplies immutable path membership checks to the updated() lifecycle hook.
  *
- * Paths describe accepted state edits, reactive props, uploads, or restored URL
+ * Paths describe changed state values, reactive props, uploads, or restored URL
  * properties. History restoration can report properties whose values did not change.
  *
  * @implements IteratorAggregate<int, string>

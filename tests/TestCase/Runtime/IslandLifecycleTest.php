@@ -106,6 +106,38 @@ class IslandLifecycleTest extends TestCase
         $this->assertSame(['title' => '', 'tags' => ['a'], 'address' => null], $again->state['form']);
     }
 
+    public function testWholeDraftAndDottedEditsReportTheSameNestedPath(): void
+    {
+        $runtime = $this->runtime();
+        $context = $this->context();
+        $mount = $runtime->mount('Counter', ['recordId' => 1], 'first', $context);
+        foreach ([['form.title' => 'Changed'], ['form' => ['title' => 'Changed', 'tags' => []]]] as $updates) {
+            $result = $runtime->update(['snapshot' => $mount->snapshot, 'updates' => $updates], $context);
+            $this->assertSame('form.title', $result->state['locked']);
+            $this->assertSame(['title' => 'Changed', 'tags' => []], $result->state['form']);
+        }
+    }
+
+    public function testRevertedAndNormalizedValuesDoNotInvokeUpdated(): void
+    {
+        $runtime = $this->runtime();
+        $context = $this->context();
+        $mount = $runtime->mount('Counter', ['recordId' => 1], 'first', $context);
+        $reverted = $runtime->update([
+            'snapshot' => $mount->snapshot,
+            'updates' => ['form.title' => 'Temporary', 'form' => ['title' => '', 'tags' => []]],
+        ], $context);
+        $this->assertSame('mounted', $reverted->state['locked']);
+        $first = $runtime->update([
+            'snapshot' => $mount->snapshot,
+            'action' => 'accept',
+            'args' => ['', false, [], 0],
+        ], $context);
+        $next = $runtime->update(['snapshot' => $first->snapshot, 'updates' => ['amount' => 0]], $context);
+        $this->assertSame(0.0, $next->state['amount']);
+        $this->assertSame('mounted', $next->state['locked']);
+    }
+
     public function testValidationSuppressesSuccessEvents(): void
     {
         $runtime = $this->runtime();

@@ -154,6 +154,20 @@ class IslandTestTest extends TestCase
             ->assertSet('data.rows.0.body', 'Nested edit')
             ->assertSet('paths', ['title', 'data.rows.0.body'])
             ->assertSet('count', 7);
+        $this->testIsland('Testing')
+            ->set('data.zero', 1)
+            ->assertSet('paths', ['data.zero']);
+        $this->testIsland('Testing')
+            ->fill([
+                'data' => [
+                    'nullable' => null,
+                    'enabled' => false,
+                    'zero' => 1,
+                    'empty' => '',
+                    'rows' => [['body' => 'Draft']],
+                ],
+            ])
+            ->assertSet('paths', ['data.zero']);
     }
 
     public function testStateAssertionsPreserveJsonScalarDistinctionsAndEscaping(): void

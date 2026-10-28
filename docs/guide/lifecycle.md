@@ -114,7 +114,12 @@ public function updated(UpdatedPaths $paths): void
 
 Receives an immutable `Interact\UpdatedPaths` object after authorization and before the action.
 It contains accepted writable paths and changed reactive prop names.
-Ordinary updates report changed paths.
+Ordinary updates report paths whose values changed, independently of whether the
+browser sent a dotted edit or replaced an entire array draft. For example, changing
+only `data.country` reports `data.country` in both cases. Unchanged siblings are omitted.
+Same-length lists report changed positions; changing a list's size, replacing a
+container with a scalar, or changing a key that cannot be expressed as a dotted
+path reports the containing path. Map key order alone is not a value change.
 Use it to clear dependent fields or reset pagination. History restoration supplies
 the complete URL-property set, including unchanged values; see [URL state](/guide/url-state). Successful file staging
 also invokes it for the affected top-level field.
