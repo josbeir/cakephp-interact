@@ -388,6 +388,7 @@ describe('form model discovery and values', () => {
       if (!peer || !source) throw new Error('Missing group members.');
       source.checked = true;
       source.dispatchEvent(new Event('input', { bubbles: true }));
+      source.dispatchEvent(new Event('change', { bubbles: true }));
       if (mutation === 'remove') peer.remove();
       if (mutation === 'rename') peer.name = 'renamed';
       if (mutation === 'reassign') peer.setAttribute('form', 'unbound');
@@ -418,6 +419,7 @@ describe('form model discovery and values', () => {
     const source = input(root, 'tags[]');
     source.checked = true;
     source.dispatchEvent(new Event('input', { bubbles: true }));
+    source.dispatchEvent(new Event('change', { bubbles: true }));
     source.remove();
     await Promise.resolve();
     await vi.advanceTimersByTimeAsync(60);

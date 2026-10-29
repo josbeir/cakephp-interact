@@ -7,6 +7,8 @@ export type ModelBinding = {
   path: string;
   timing: 'defer' | 'live' | 'blur' | 'change';
   delay: number;
+  /** Whether the directive explicitly requests debounce, including for selections. */
+  explicitDebounce: boolean;
 };
 
 /**
@@ -45,5 +47,10 @@ export function modelBinding(
     throw new Error(
       'Debounce requires a live model and a delay from 0 to 60000 ms.',
     );
-  return { path: expression, timing, delay: timing === 'live' ? delay : 250 };
+  return {
+    path: expression,
+    timing,
+    delay: timing === 'live' ? delay : 250,
+    explicitDebounce: seen.has('debounce'),
+  };
 }

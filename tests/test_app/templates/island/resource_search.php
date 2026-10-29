@@ -36,7 +36,7 @@ $this->Paginator->setTemplates([
                 'value' => $search,
                 'maxlength' => 200,
                 'placeholder' => 'Search 1,200 resources…',
-                'x-interact:model.live.debounce.300ms' => 'search',
+                'x-interact:model.live.debounce.300ms' => '',
                 'aria-describedby' => $controlPrefix . '-hint',
                 'autocomplete' => 'off',
             ]) ?>
@@ -48,26 +48,26 @@ $this->Paginator->setTemplates([
                 'options' => $categories,
                 'empty' => 'All topics',
                 'value' => $category,
-                'x-interact:model.change' => 'category',
+                'x-interact:model.live' => '',
             ]) ?>
             <?= $this->Form->control('level', [
                 'label' => 'Difficulty',
                 'options' => $levels,
                 'empty' => 'All levels',
                 'value' => $level,
-                'x-interact:model.change' => 'level',
+                'x-interact:model.live' => '',
             ]) ?>
             <?= $this->Form->control('sort', [
                 'label' => 'Sort by',
                 'options' => ['title' => 'Title: A–Z', 'title-desc' => 'Title: Z–A', 'shortest' => 'Shortest read first', 'longest' => 'Longest read first'],
                 'value' => $paging->sort,
-                'x-interact:model.change' => 'paging.sort',
+                'x-interact:model.live' => 'paging.sort',
             ]) ?>
             <?= $this->Form->control('limit', [
                 'label' => 'Per page',
                 'options' => [10 => '10 results', 20 => '20 results', 50 => '50 results'],
                 'value' => $paging->limit,
-                'x-interact:model.change' => 'paging.limit',
+                'x-interact:model.live' => 'paging.limit',
             ]) ?>
         </div>
         <details>
@@ -76,7 +76,7 @@ $this->Paginator->setTemplates([
                 'type' => 'textarea',
                 'label' => 'Reading notes',
                 'value' => $notes,
-                'x-interact:model' => 'notes',
+                'x-interact:model' => '',
             ]) ?>
         </details>
     <?= $this->Form->end() ?>

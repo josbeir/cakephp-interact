@@ -223,6 +223,7 @@ export class IslandClient {
       this.bridge,
       () => this.writable,
       (cause) => this.failed(requestError('client_error', null, cause)),
+      (control, binding) => this.uploads.bind(control, binding),
     );
     this.url = Object.keys(this.metadata.url).length
       ? pageUrl(window).register(
@@ -272,6 +273,17 @@ export class IslandClient {
     if (control instanceof HTMLInputElement && control.type === 'file')
       return this.uploads.bind(control, binding);
     return this.controls.bindModel(control, binding);
+  }
+
+  /** Bind a native name through the same ownership, draft, and upload workflows. */
+  bindNamedModel(
+    control: Control,
+    modifiers: string[],
+    debounce: number,
+    prefix: string,
+  ): () => void {
+    if (!this.mounted) throw new Error('Models require a loaded island.');
+    return this.controls.bindNamedModel(control, modifiers, debounce, prefix);
   }
 
   /**

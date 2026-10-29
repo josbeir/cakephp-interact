@@ -56,6 +56,7 @@ function fixture(
     path: 'document',
     timing: 'defer',
     delay: 250,
+    explicitDebounce: false,
   };
   const choose = (file = new File(['text'], 'notes.txt'), change = true) => {
     Object.defineProperty(input, 'files', {
@@ -114,9 +115,9 @@ it('restores accepted files, clears native required, and restores it when the bi
 });
 
 it.each([
-  { path: 'missing', timing: 'defer', delay: 250 },
-  { path: 'document', timing: 'change', delay: 250 },
-  { path: 'document', timing: 'defer', delay: 100 },
+  { path: 'missing', timing: 'defer', delay: 250, explicitDebounce: false },
+  { path: 'document', timing: 'change', delay: 250, explicitDebounce: false },
+  { path: 'document', timing: 'defer', delay: 100, explicitDebounce: false },
 ] satisfies ModelBinding[])('rejects an incompatible binding %j', (binding) => {
   const value = fixture();
   expect(() => value.fields.bind(value.input, binding)).toThrow(

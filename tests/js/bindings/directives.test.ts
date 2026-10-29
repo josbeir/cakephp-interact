@@ -47,12 +47,15 @@ describe('Alpine directive contracts', () => {
       path: 'form.title',
       timing: 'defer',
       delay: 250,
+      explicitDebounce: false,
     });
     expect(modelBinding('title', ['live', 'debounce'])).toEqual({
       path: 'title',
       timing: 'live',
       delay: 250,
+      explicitDebounce: true,
     });
+    expect(modelBinding('title', ['live']).explicitDebounce).toBe(false);
     expect(modelBinding('title', ['live', 'debounce', '0ms']).delay).toBe(0);
     expect(modelBinding('title', ['live', 'debounce', '60000ms']).delay).toBe(
       60000,

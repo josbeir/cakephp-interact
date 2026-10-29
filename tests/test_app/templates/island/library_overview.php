@@ -18,7 +18,7 @@ $resourceRows = $resources->items();
 $articleRows = $articles->items();
 ?>
 <div class="demo-card">
-    <?= $this->Form->control('notes', ['label' => 'Overview notes', 'value' => $notes, 'x-interact:model' => 'notes']) ?>
+    <?= $this->Form->control('notes', ['label' => 'Overview notes', 'value' => $notes, 'x-interact:model' => '']) ?>
     <section aria-label="Overview resources">
         <?php $this->Paginator->setPaginated($resources); ?>
         <h2>Resources</h2>
@@ -27,7 +27,7 @@ $articleRows = $articles->items();
             'label' => 'Resources per page',
             'options' => [10 => '10', 20 => '20', 50 => '50'],
             'value' => $resourcesPaging->limit,
-            'x-interact:model.change' => 'resourcesPaging.limit',
+            'x-interact:model.live' => 'resourcesPaging.limit',
         ]) ?>
         <?= $this->Paginator->sort('title', 'Sort resources') ?>
         <ul>

@@ -58,6 +58,8 @@ class DocumentationMarkupTest extends TestCase
                             'title' => '',
                             'bio' => '',
                             'country' => '',
+                            'category' => '',
+                            'level' => '',
                             'format' => 'remote',
                             'business' => false,
                             'extras' => [],

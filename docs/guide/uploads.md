@@ -29,7 +29,7 @@ public ?UploadedFileInterface $document = null;
   name="document"
   type="file"
   accept=".pdf,.txt"
-  x-interact:model="document"
+  x-interact:model
 />
 ```
 
@@ -38,7 +38,7 @@ public ?UploadedFileInterface $document = null;
     'type' => 'file',
     'label' => 'Document',
     'accept' => '.pdf,.txt',
-    'x-interact:model' => 'document',
+    'x-interact:model' => '',
 ]) ?>
 ```
 

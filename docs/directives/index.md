@@ -24,6 +24,12 @@ templates. See [Alpine and Interact](/guide/alpine) for the ownership boundary.
 | [`x-interact:poll`](/directives/poll)     | Refreshes an island at a regular interval                   |
 | [`x-interact:ignore`](/directives/ignore) | Preserves an element and its contents during server updates |
 
+Omitted values use native HTML meaning when available: `x-interact:model.live`
+uses the control's `name`, and `x-interact:navigate` uses the link's `href`.
+`x-interact:poll` without an expression synchronizes; `x-interact:ignore` takes
+no expression. Submission and event handlers, stream and persistence keys, and
+asset policies remain explicit. See [model name inference](/directives/model#name-inference).
+
 [`$server`](/reference/server) provides island state, actions, and request
 feedback inside Alpine expressions. In `@click="$server.call('save')"`, Alpine
 handles the event and Interact sends the PHP action request.
