@@ -162,12 +162,17 @@ it('blocks pre-mount actions and directives without sending a request', async ()
   expect(() =>
     client.bindCustomModel(
       input,
-      { path: 'query', timing: 'defer', delay: 250 },
+      { path: 'query', timing: 'defer', delay: 250, explicitDebounce: false },
       { read: () => '', write: () => undefined },
     ),
   ).toThrow('loaded island');
   expect(() =>
-    client.bindModel(input, { path: 'query', timing: 'defer', delay: 150 }),
+    client.bindModel(input, {
+      path: 'query',
+      timing: 'defer',
+      delay: 150,
+      explicitDebounce: false,
+    }),
   ).toThrow('loaded island');
   expect(() =>
     client.bindPoll(input, { interval: 1000, visible: false }, () => undefined),

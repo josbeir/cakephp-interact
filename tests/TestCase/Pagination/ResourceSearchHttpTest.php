@@ -35,7 +35,7 @@ class ResourceSearchHttpTest extends HttpTestCase
             '{"controlPrefix":"ResourceSearch","notes":"","search":"","category":"","level":"","paging":{"page":1,"sort":"title","direction":"asc","limit":20}}',
             (string)$root->getAttribute('data-interact-state'),
         );
-        $options = $xpath->query('//html:select[@*[name()="x-interact:model.change" and .="paging.sort"]]/html:option');
+        $options = $xpath->query('//html:select[@*[name()="x-interact:model.live" and .="paging.sort"]]/html:option');
         $labels = [];
         foreach ($options as $option) {
             $labels[] = $option->textContent;
@@ -43,7 +43,7 @@ class ResourceSearchHttpTest extends HttpTestCase
 
         $this->assertSame(['Title: A–Z', 'Title: Z–A', 'Shortest read first', 'Longest read first'], $labels);
         $selected = $xpath->query(
-            '//html:select[@*[name()="x-interact:model.change" and .="paging.sort"]]/html:option[@selected]',
+            '//html:select[@*[name()="x-interact:model.live" and .="paging.sort"]]/html:option[@selected]',
         );
         $this->assertSame(1, $selected->length);
         $selectedOption = $selected->item(0);

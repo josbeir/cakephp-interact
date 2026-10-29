@@ -344,14 +344,25 @@ export class Controls {
     composing = false,
   ): void {
     if (this.bridge.paused) return;
+    const selection =
+      !this.models.get(element)?.custom &&
+      (element instanceof HTMLSelectElement ||
+        (element instanceof HTMLInputElement &&
+          ['checkbox', 'radio'].includes(element.type)));
+    const immediateSelection =
+      binding.timing === 'live' && selection && !binding.explicitDebounce;
     if (
       (binding.timing === 'blur' && event === 'focusout') ||
-      (binding.timing === 'change' && event === 'change')
+      (binding.timing === 'change' && event === 'change') ||
+      (immediateSelection && event === 'change')
     )
       void this.bridge.sync();
     if (
       binding.timing === 'live' &&
-      (event === 'input' || event === 'compositionstart')
+      !immediateSelection &&
+      (selection
+        ? event === 'change'
+        : event === 'input' || event === 'compositionstart')
     ) {
       clearTimeout(this.timers.get(binding.path)?.timer);
       this.timers.delete(binding.path);

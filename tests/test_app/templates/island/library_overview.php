@@ -27,7 +27,7 @@ $articleRows = $articles->items();
             'label' => 'Resources per page',
             'options' => [10 => '10', 20 => '20', 50 => '50'],
             'value' => $resourcesPaging->limit,
-            'x-interact:model.change' => 'resourcesPaging.limit',
+            'x-interact:model.live' => 'resourcesPaging.limit',
         ]) ?>
         <?= $this->Paginator->sort('title', 'Sort resources') ?>
         <ul>

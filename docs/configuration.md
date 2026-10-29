@@ -202,7 +202,7 @@ Alpine.start();
 
 | Option                  | Default | Accepted values and behavior                                                        |
 | ----------------------- | ------- | ----------------------------------------------------------------------------------- |
-| `defaults.debounce`     | `250`   | Integer milliseconds from 0–60,000 for live model synchronization.                  |
+| `defaults.debounce`     | `250`   | Integer milliseconds from 0–60,000 for debounced live model synchronization.        |
 | `defaults.pollInterval` | `5000`  | Integer milliseconds from 1–2,147,483,647 for polling without an explicit interval. |
 | `defaults.loadingDelay` | `200`   | Integer milliseconds from 0–60,000 for island and navigation loading queries.       |
 
@@ -213,7 +213,9 @@ installation. Zero debounce/loading delay is supported.
 Explicit model modifiers, polling intervals, loading-query delays, and child
 binding delays override installation defaults. The debounce default also applies
 to live custom inputs and live child bindings with an omitted delay. It does not
-change deferred, blur, or change synchronization, nor native upload timing.
+delay native selects, checkboxes, or radios unless their live binding explicitly
+includes `.debounce`. It does not change deferred, blur, or change synchronization,
+nor native upload timing.
 
 Both `Alpine.plugin(interact)` and `Alpine.plugin(createInteract())` retain the
 built-in defaults. Installation captures settings for that Alpine instance;

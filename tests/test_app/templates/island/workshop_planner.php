@@ -24,7 +24,7 @@ use function Cake\Core\h;
                 'label' => 'Workshop format',
                 'options' => ['remote' => 'Online · €45 / person', 'studio' => 'In the studio · €75 / person'],
                 'value' => $format,
-                'x-interact:model.change' => 'format',
+                'x-interact:model.live' => 'format',
             ]) ?>
             <?= $this->Form->control('attendees', [
                 'type' => 'number',
@@ -43,14 +43,14 @@ use function Cake\Core\h;
             ], [
                 'val' => $extras,
                 'label' => ['class' => 'check-option'],
-                'x-interact:model.change' => 'extras',
+                'x-interact:model.live' => 'extras',
             ]) ?>
         </fieldset>
         <?= $this->Form->control('business', [
             'type' => 'checkbox',
             'label' => ['text' => 'Book for a company', 'class' => 'check-option'],
             'checked' => $business,
-            'x-interact:model.change' => 'business',
+            'x-interact:model.live' => 'business',
         ]) ?>
         <?php if ($business): ?>
             <div class="conditional-field">

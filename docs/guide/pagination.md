@@ -217,7 +217,7 @@ Enable `editableLimit: true`, then bind a control to the typed scalar path:
 ::: code-group
 
 ```html [HTML]
-<select aria-label="Per page" x-interact:model.change="paging.limit">
+<select aria-label="Per page" x-interact:model.live="paging.limit">
   <option value="10">10</option>
   <option value="20" selected>20</option>
 </select>
@@ -228,7 +228,7 @@ Enable `editableLimit: true`, then bind a control to the typed scalar path:
     'label' => 'Per page',
     'options' => [10 => '10', 20 => '20'],
     'value' => $paging->limit,
-    'x-interact:model.change' => 'paging.limit',
+    'x-interact:model.live' => 'paging.limit',
 ]) ?>
 ```
 

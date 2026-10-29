@@ -20,7 +20,7 @@ use function Cake\Core\h;
             'label' => 'Country',
             'options' => ['BE' => 'Belgium', 'NL' => 'Netherlands'],
             'value' => $country,
-            'x-interact:model.change' => 'country',
+            'x-interact:model.live' => 'country',
         ]) ?>
         <?= $this->Form->control('cityId', [
             'label' => 'City',

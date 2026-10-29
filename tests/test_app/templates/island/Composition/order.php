@@ -23,7 +23,7 @@ declare(strict_types=1);
                 'label' => 'Resource category',
                 'options' => $categories,
                 'value' => $category,
-                'x-interact:model.change' => 'category',
+                'x-interact:model.live' => 'category',
             ]) ?>
         </div>
         <?= $this->Interact->render(

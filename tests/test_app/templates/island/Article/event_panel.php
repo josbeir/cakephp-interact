@@ -18,7 +18,7 @@ declare(strict_types=1);
             'label' => 'Watched article',
             'options' => $articles,
             'value' => $articleId,
-            'x-interact:model.change' => 'articleId',
+            'x-interact:model.live' => 'articleId',
         ]) ?>
     </div>
     <div class="events-receivers">

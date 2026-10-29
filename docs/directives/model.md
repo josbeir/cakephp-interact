@@ -139,17 +139,53 @@ it does not authorize association IDs, marshal entities, or save records.
 
 ## Update timing
 
-| Binding                | Request timing                           |
-| ---------------------- | ---------------------------------------- |
-| `x-interact:model`     | With the next action or `$server.sync()` |
-| `.live`                | After a typing pause, 250 ms by default  |
-| `.live.debounce.400ms` | After a 400 ms typing pause              |
-| `.blur`                | When the input loses focus               |
-| `.change`              | On its native change event               |
+| Binding                | Request timing                                                                                      |
+| ---------------------- | --------------------------------------------------------------------------------------------------- |
+| `x-interact:model`     | With the next action or `$server.sync()`                                                            |
+| `.live`                | After a typing pause, 250 ms by default; selects, checkboxes, and radios send immediately on change |
+| `.live.debounce.400ms` | After a 400 ms pause, including selection controls                                                  |
+| `.blur`                | When the input loses focus                                                                          |
+| `.change`              | On its native change event                                                                          |
 
 All modes update local browser state immediately. An action captures current
 control values even before blur or an outstanding debounce. Synchronization does
 not save a database record.
+
+Use explicit debounce to group several selection changes into one request:
+
+::: code-group
+
+```html [HTML]
+<select
+  id="category"
+  name="category"
+  x-interact:model.live.debounce.400ms="category"
+>
+  <option value="">All categories</option>
+  <option value="books">Books</option>
+  <option value="courses">Courses</option>
+</select>
+```
+
+```php [FormHelper]
+<?= $this->Form->control('category', [
+    'type' => 'select',
+    'label' => 'Category',
+    'options' => ['books' => 'Books', 'courses' => 'Courses'],
+    'empty' => 'All categories',
+    'value' => $category,
+    'x-interact:model.live.debounce.400ms' => 'category',
+]) ?>
+```
+
+:::
+
+This assumes writable string `category` state initialized to `''`.
+`.live.debounce` without a duration explicitly enables the configured delay for
+selection controls too; `.live.debounce.0ms` removes the debounce wait.
+Form-level `.live` uses each control's timing, while an explicit form-level
+`.debounce` applies to all inherited bindings. Custom `x-modelable` values and
+child-island bindings retain their configured live debounce.
 
 Use one timing mode. `.debounce` is valid only with `.live`, optionally followed
 by `0ms` through `60000ms`. Without a duration it uses the [configured debounce default](/configuration#javascript-configuration), initially 250 ms. Unknown, repeated,
@@ -214,7 +250,7 @@ For a writable string `country` property initialized to `''`:
 
 ```html [HTML]
 <label for="country">Country</label>
-<select id="country" name="country" x-interact:model.change="country">
+<select id="country" name="country" x-interact:model.live="country">
   <option value="">Choose a country</option>
   <option value="BE">Belgium</option>
   <option value="NL">Netherlands</option>
@@ -228,13 +264,13 @@ For a writable string `country` property initialized to `''`:
     'options' => ['BE' => 'Belgium', 'NL' => 'Netherlands'],
     'empty' => 'Choose a country',
     'value' => $country,
-    'x-interact:model.change' => 'country',
+    'x-interact:model.live' => 'country',
 ]) ?>
 ```
 
 :::
 
-`.change` sends the selected value immediately. For dependent choices, see
+`.live` sends the selected value immediately. For dependent choices, see
 [country and city fields](/demo).
 
 ## Radio buttons
@@ -250,7 +286,7 @@ string `format` property initialized to `'remote'`:
     type="radio"
     name="format"
     value="remote"
-    x-interact:model.change="format"
+    x-interact:model.live="format"
   />
   Online
 </label>
@@ -259,7 +295,7 @@ string `format` property initialized to `'remote'`:
     type="radio"
     name="format"
     value="studio"
-    x-interact:model.change="format"
+    x-interact:model.live="format"
   />
   In person
 </label>
@@ -271,7 +307,7 @@ string `format` property initialized to `'remote'`:
     'studio' => 'In person',
 ], [
     'value' => $format,
-    'x-interact:model.change' => 'format',
+    'x-interact:model.live' => 'format',
 ]) ?>
 ```
 
@@ -291,7 +327,7 @@ state initialized to `false`:
 
 ```html [HTML]
 <label>
-  <input type="checkbox" name="business" x-interact:model.change="business" />
+  <input type="checkbox" name="business" x-interact:model.live="business" />
   Book for a company
 </label>
 ```
@@ -301,7 +337,7 @@ state initialized to `false`:
     'type' => 'checkbox',
     'label' => 'Book for a company',
     'checked' => $business,
-    'x-interact:model.change' => 'business',
+    'x-interact:model.live' => 'business',
 ]) ?>
 ```
 
@@ -322,7 +358,7 @@ writable array `extras` state initialized to `[]`:
     type="checkbox"
     name="extras[]"
     value="materials"
-    x-interact:model.change="extras"
+    x-interact:model.live="extras"
   />
   Printed materials
 </label>
@@ -331,7 +367,7 @@ writable array `extras` state initialized to `[]`:
     type="checkbox"
     name="extras[]"
     value="recording"
-    x-interact:model.change="extras"
+    x-interact:model.live="extras"
   />
   Session recording
 </label>
@@ -343,7 +379,7 @@ writable array `extras` state initialized to `[]`:
     'recording' => 'Session recording',
 ], [
     'val' => $extras,
-    'x-interact:model.change' => 'extras',
+    'x-interact:model.live' => 'extras',
 ]) ?>
 ```
 
@@ -360,7 +396,7 @@ The same array property can use a multiple select instead:
 
 ```html [HTML]
 <label for="extras">Optional extras</label>
-<select id="extras" name="extras[]" multiple x-interact:model.change="extras">
+<select id="extras" name="extras[]" multiple x-interact:model.live="extras">
   <option value="materials">Printed materials</option>
   <option value="recording">Session recording</option>
 </select>
@@ -373,7 +409,7 @@ The same array property can use a multiple select instead:
     'multiple' => true,
     'options' => ['materials' => 'Printed materials', 'recording' => 'Session recording'],
     'value' => $extras,
-    'x-interact:model.change' => 'extras',
+    'x-interact:model.live' => 'extras',
 ]) ?>
 ```
 

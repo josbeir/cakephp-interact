@@ -32,6 +32,10 @@ it('normalizes immutable JavaScript defaults and preserves zero without changing
   expect(Object.isFrozen(defaults)).toBe(true);
   expect(defaultTiming.debounce).toBe(250);
   expect(modelBinding('value', ['live'], 400).delay).toBe(400);
+  expect(modelBinding('value', ['live', 'debounce'], 400)).toMatchObject({
+    delay: 400,
+    explicitDebounce: true,
+  });
   expect(modelBinding('value', ['live', 'debounce', '0ms'], 400).delay).toBe(0);
   expect(modelBinding('value', [], 400).delay).toBe(250);
   expect(pollBinding([], 1000).interval).toBe(1000);
