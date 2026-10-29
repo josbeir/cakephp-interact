@@ -66,12 +66,34 @@ export function registerBindings(
             throw new Error(
               'Use one model binding per control; x-model and x-interact:model cannot be combined.',
             );
+          const modelable = element.getAttribute(Alpine.prefixed('modelable'));
+          if (!expression.trim()) {
+            if (
+              modelable !== null ||
+              !(
+                element instanceof HTMLInputElement ||
+                element instanceof HTMLSelectElement ||
+                element instanceof HTMLTextAreaElement
+              )
+            )
+              throw new Error(
+                'Forms and custom models require an explicit state path; shorthand requires a native input, select, or textarea with a name.',
+              );
+            cleanup(
+              client.bindNamedModel(
+                element,
+                modifiers,
+                defaults.debounce,
+                Alpine.prefixed(''),
+              ),
+            );
+            return;
+          }
           const binding = modelBinding(
             expression,
             modifiers,
             defaults.debounce,
           );
-          const modelable = element.getAttribute(Alpine.prefixed('modelable'));
           if (modelable !== null) {
             cleanup(
               client.bindCustomModel(

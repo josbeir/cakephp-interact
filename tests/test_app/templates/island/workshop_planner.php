@@ -24,7 +24,7 @@ use function Cake\Core\h;
                 'label' => 'Workshop format',
                 'options' => ['remote' => 'Online · €45 / person', 'studio' => 'In the studio · €75 / person'],
                 'value' => $format,
-                'x-interact:model.live' => 'format',
+                'x-interact:model.live' => '',
             ]) ?>
             <?= $this->Form->control('attendees', [
                 'type' => 'number',
@@ -32,7 +32,7 @@ use function Cake\Core\h;
                 'min' => 1,
                 'max' => 12,
                 'value' => $attendees,
-                'x-interact:model.change' => 'attendees',
+                'x-interact:model.change' => '',
                 'aria-invalid' => isset($errors['attendees']) ? 'true' : null,
             ]) ?>
         </div>
@@ -43,14 +43,14 @@ use function Cake\Core\h;
             ], [
                 'val' => $extras,
                 'label' => ['class' => 'check-option'],
-                'x-interact:model.live' => 'extras',
+                'x-interact:model.live' => '',
             ]) ?>
         </fieldset>
         <?= $this->Form->control('business', [
             'type' => 'checkbox',
             'label' => ['text' => 'Book for a company', 'class' => 'check-option'],
             'checked' => $business,
-            'x-interact:model.live' => 'business',
+            'x-interact:model.live' => '',
         ]) ?>
         <?php if ($business): ?>
             <div class="conditional-field">
@@ -60,7 +60,7 @@ use function Cake\Core\h;
                     'value' => $company,
                     'maxlength' => 100,
                     'placeholder' => 'Your company',
-                    'x-interact:model' => 'company',
+                    'x-interact:model' => '',
                     'aria-invalid' => isset($errors['company']) ? 'true' : null,
                 ]) ?>
                 <p class="field-hint">Required for a company quote. Hidden when booking personally.</p>

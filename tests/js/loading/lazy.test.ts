@@ -177,6 +177,9 @@ it('blocks pre-mount actions and directives without sending a request', async ()
   expect(() =>
     client.bindPoll(input, { interval: 1000, visible: false }, () => undefined),
   ).toThrow('loaded island');
+  expect(() => client.bindNamedModel(input, [], 250, 'x-')).toThrow(
+    'loaded island',
+  );
 });
 
 it('retries explicitly after a network failure without automatic replay', async () => {

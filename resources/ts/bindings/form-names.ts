@@ -22,7 +22,37 @@ export function formName(
   const relative = source.replace(/\[([a-zA-Z0-9_-]+)\]/g, '.$1');
   const parts = path(relative);
   if (['_csrfToken', '_Token', '_method'].includes(parts[0] ?? '')) return null;
-  const resolved = `${base}.${relative}`;
+  const resolved = base ? `${base}.${relative}` : relative;
   path(resolved);
   return { path: resolved, list };
+}
+
+/**
+ * Observe ownership changes without responding to feedback text or presentation.
+ */
+export function modelNamesChanged(
+  records: MutationRecord[],
+  prefix: string,
+): boolean {
+  return records.some((record) => {
+    if (record.type === 'attributes') {
+      const name = record.attributeName ?? '';
+      return (
+        ['name', 'form', 'id', 'type', 'multiple', 'data-interact-id'].includes(
+          name,
+        ) ||
+        ['model', 'modelable', 'interact:model', 'interact:ignore'].some(
+          (directive) =>
+            name === `${prefix}${directive}` ||
+            name.startsWith(`${prefix}${directive}.`),
+        )
+      );
+    }
+    return [...record.addedNodes, ...record.removedNodes].some(
+      (node) =>
+        node instanceof Element &&
+        (node.matches('input,select,textarea,form') ||
+          node.querySelector('input,select,textarea,form') !== null),
+    );
+  });
 }

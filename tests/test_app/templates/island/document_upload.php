@@ -34,7 +34,7 @@ use function Cake\Core\h;
         <?= $this->Form->control('title', [
             'label' => 'Document title',
             'value' => $title,
-            'x-interact:model' => 'title',
+            'x-interact:model' => '',
         ]) ?>
 
         <?php foreach (['document' => 'Main document', 'attachments' => 'Attachments'] as $field => $label): ?>
@@ -44,7 +44,7 @@ use function Cake\Core\h;
                     'label' => $label,
                     'multiple' => $field === 'attachments',
                     'accept' => '.pdf,.txt',
-                    'x-interact:model' => $field,
+                    'x-interact:model' => '',
                 ]) ?>
                 <progress
                     max="100"

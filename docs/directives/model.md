@@ -21,22 +21,78 @@ public string $title = '';
 
 ```html [HTML]
 <label for="title">Title</label>
-<input id="title" name="title" type="text" x-interact:model="title" />
+<input id="title" name="title" type="text" x-interact:model />
 ```
 
 ```php [FormHelper]
 <?= $this->Form->control('title', [
     'label' => 'Title',
     'value' => $title,
-    'x-interact:model' => 'title',
+    'x-interact:model' => '',
 ]) ?>
 ```
 
 :::
 
-The attribute contains a literal property path, such as `title` or
-`form.address.city`. Props and state without `writable: true` cannot receive
+Omit the expression to use the native control's `name`. An explicit expression
+is a literal property path, such as `title` or `form.address.city`, and takes
+precedence over the name. Props and state without `writable: true` cannot receive
 model edits. See [Properties](/guide/state) for declarations.
+
+## Name inference
+
+Native inputs, selects, textareas, and file inputs can omit the expression.
+Bracket notation uses the same rules as form-level binding: `data[title]` becomes
+`data.title`, and a terminal `[]` identifies a list leaf. All supported model
+timing modifiers work with inferred names; file inputs retain their existing
+upload timing and accept no timing modifiers.
+
+::: code-group
+
+```html [HTML]
+<label for="level">Difficulty</label>
+<select id="level" name="level" x-interact:model.live>
+  <option value="">All levels</option>
+  <option value="beginner">Beginner</option>
+</select>
+```
+
+```php [FormHelper]
+<?= $this->Form->control('level', [
+    'type' => 'select',
+    'label' => 'Difficulty',
+    'options' => ['beginner' => 'Beginner'],
+    'empty' => 'All levels',
+    'value' => $level,
+    'x-interact:model.live' => '',
+]) ?>
+```
+
+:::
+
+This assumes writable string `level` state initialized to `''`. Use an empty
+string for a FormHelper shorthand option so it emits an empty expression.
+
+Within a bound form, omitted expressions resolve names relative to the form's
+state path. A shorthand control's modifiers set its own timing; controls without
+a directive inherit the form's timing. Explicit expressions remain absolute:
+
+```html
+<form x-interact:model="data">
+  <input name="title" x-interact:model.live />
+  <input name="query" x-interact:model.live="search" />
+</form>
+```
+
+The first input binds `data.title`; the second binds `search`. This assumes
+writable array `data` and writable string `search` state. Native `form="id"`
+association also applies to external controls in the same island. Changes to
+names or form association release pending debounce work and restore the new
+field's draft.
+
+Missing names, bookkeeping names such as `_csrfToken`, and ambiguous or unsafe
+paths are errors on shorthand controls. Forms and custom `x-modelable` wrappers
+require explicit state paths.
 
 Alpine's `x-model` binds to local Alpine state; `x-interact:model` binds to a PHP
 draft and manages its synchronization. Choose one per native control. Use local

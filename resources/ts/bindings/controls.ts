@@ -1,6 +1,7 @@
 import { ownsIslandElement } from '../dom/ownership';
 import { FormSubmissions } from './form-submissions';
 import { FormModels } from './form-models';
+import { NamedModels } from './named-models';
 import { captureControl, captureValue, refreshControl } from './control-values';
 import type { Control } from './control-values';
 import type { CustomModel } from './custom-model';
@@ -36,6 +37,7 @@ export class Controls {
     { source: HTMLElement; timer: ReturnType<typeof setTimeout> }
   >();
   private readonly forms = new Map<HTMLFormElement, FormModels>();
+  private names: NamedModels | undefined;
 
   /**
    * Attach owned draft events and route expression failures into island feedback.
@@ -45,6 +47,10 @@ export class Controls {
     private readonly bridge: IslandBridge,
     private readonly writable: () => Writable,
     private readonly onFailure: (cause: unknown) => void,
+    private readonly bindUpload: (
+      control: HTMLInputElement,
+      binding: ModelBinding,
+    ) => () => void,
   ) {
     this.submissions = new FormSubmissions(root, onFailure);
     for (const event of [
@@ -67,7 +73,7 @@ export class Controls {
     binding: ModelBinding,
     list?: boolean,
   ): () => void {
-    if (list === undefined) this.refreshForms();
+    if (list === undefined) this.refreshNames();
     return this.register(control, {
       binding,
       custom: false,
@@ -100,7 +106,7 @@ export class Controls {
       throw new Error('Form models require writable array state.');
     if (this.forms.has(form))
       throw new Error('Use one x-interact:model binding per form.');
-    this.refreshForms();
+    this.refreshNames();
     const models = new FormModels(
       this.root,
       form,
@@ -109,7 +115,7 @@ export class Controls {
       (control, inferred, list) => this.bindModel(control, inferred, list),
       () => {
         try {
-          this.refreshForms();
+          this.refreshNames();
         } catch (cause: unknown) {
           this.onFailure(cause);
         }
@@ -120,6 +126,26 @@ export class Controls {
       models.dispose();
       this.forms.delete(form);
     };
+  }
+
+  /** Infer an explicitly bound native control's path from its current name and form. */
+  bindNamedModel(
+    control: Control,
+    modifiers: string[],
+    debounce: number,
+    prefix: string,
+  ): () => void {
+    this.refreshNames();
+    this.names ??= new NamedModels(
+      this.root,
+      prefix,
+      (element, binding, list) =>
+        element instanceof HTMLInputElement && element.type === 'file'
+          ? this.bindUpload(element, binding)
+          : this.bindModel(element, binding, list),
+      this.onFailure,
+    );
+    return this.names.register(control, modifiers, debounce);
   }
 
   /**
@@ -215,6 +241,7 @@ export class Controls {
    */
   dispose(): void {
     this.lifetime.abort();
+    this.names?.dispose();
     for (const form of this.forms.values()) form.dispose();
     this.forms.clear();
     this.clearPending();
@@ -226,7 +253,7 @@ export class Controls {
    * Apply reconciled state to surviving registered controls after a server render.
    */
   refresh(): void {
-    this.refreshForms();
+    this.refreshNames();
     this.submissions.refresh();
     for (const [, model] of this.controls()) model.refresh();
   }
@@ -242,7 +269,7 @@ export class Controls {
    * Capture native and custom values even before their edit effects have run.
    */
   captureAll(): void {
-    this.refreshForms();
+    this.refreshNames();
     for (const [, model] of this.controls()) model.capture();
   }
 
@@ -275,7 +302,7 @@ export class Controls {
    */
   private handle(event: Event): void {
     try {
-      this.refreshForms();
+      this.refreshNames();
     } catch (cause: unknown) {
       this.onFailure(cause);
       return;
@@ -404,9 +431,10 @@ export class Controls {
   /**
    * Flush discovery synchronously so immediate actions see newly associated controls.
    */
-  private refreshForms(): void {
+  private refreshNames(): void {
     // Release every previous owner before a control can join another bound form.
     for (const form of this.forms.values()) form.refresh(true);
     for (const form of this.forms.values()) form.refresh();
+    this.names?.refresh();
   }
 }

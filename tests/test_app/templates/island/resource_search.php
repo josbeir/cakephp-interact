@@ -36,7 +36,7 @@ $this->Paginator->setTemplates([
                 'value' => $search,
                 'maxlength' => 200,
                 'placeholder' => 'Search 1,200 resources…',
-                'x-interact:model.live.debounce.300ms' => 'search',
+                'x-interact:model.live.debounce.300ms' => '',
                 'aria-describedby' => $controlPrefix . '-hint',
                 'autocomplete' => 'off',
             ]) ?>
@@ -48,14 +48,14 @@ $this->Paginator->setTemplates([
                 'options' => $categories,
                 'empty' => 'All topics',
                 'value' => $category,
-                'x-interact:model.live' => 'category',
+                'x-interact:model.live' => '',
             ]) ?>
             <?= $this->Form->control('level', [
                 'label' => 'Difficulty',
                 'options' => $levels,
                 'empty' => 'All levels',
                 'value' => $level,
-                'x-interact:model.live' => 'level',
+                'x-interact:model.live' => '',
             ]) ?>
             <?= $this->Form->control('sort', [
                 'label' => 'Sort by',
@@ -76,7 +76,7 @@ $this->Paginator->setTemplates([
                 'type' => 'textarea',
                 'label' => 'Reading notes',
                 'value' => $notes,
-                'x-interact:model' => 'notes',
+                'x-interact:model' => '',
             ]) ?>
         </details>
     <?= $this->Form->end() ?>

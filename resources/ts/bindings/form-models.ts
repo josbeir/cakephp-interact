@@ -1,5 +1,5 @@
 import { ownsIslandElement } from '../dom/ownership';
-import { formName } from './form-names';
+import { formName, modelNamesChanged } from './form-names';
 import type { Control } from './control-values';
 import type { ModelBinding } from './model';
 
@@ -32,7 +32,7 @@ export class FormModels {
     onChange: () => void,
   ) {
     this.observer = new MutationObserver((records) => {
-      if (this.changed(records)) {
+      if (modelNamesChanged(records, this.prefix)) {
         this.candidates = undefined;
         onChange();
       }
@@ -54,7 +54,8 @@ export class FormModels {
    * Reconcile names, form associations, explicit overrides, and island boundaries.
    */
   refresh(releaseOnly = false): void {
-    if (this.changed(this.observer.takeRecords())) this.candidates = undefined;
+    if (modelNamesChanged(this.observer.takeRecords(), this.prefix))
+      this.candidates = undefined;
     if (this.candidates === undefined) {
       this.candidates = this.discover();
       this.pending = true;
@@ -130,38 +131,6 @@ export class FormModels {
       registration.release();
     this.registrations.clear();
     this.candidates = undefined;
-  }
-
-  /**
-   * Observe ownership changes without responding to feedback text or presentation.
-   */
-  private changed(records: MutationRecord[]): boolean {
-    return records.some((record) => {
-      if (record.type === 'attributes') {
-        const name = record.attributeName ?? '';
-        return (
-          [
-            'name',
-            'form',
-            'id',
-            'type',
-            'multiple',
-            'data-interact-id',
-          ].includes(name) ||
-          ['model', 'modelable', 'interact:model', 'interact:ignore'].some(
-            (directive) =>
-              name === `${this.prefix}${directive}` ||
-              name.startsWith(`${this.prefix}${directive}.`),
-          )
-        );
-      }
-      return [...record.addedNodes, ...record.removedNodes].some(
-        (node) =>
-          node instanceof Element &&
-          (node.matches('input,select,textarea,form') ||
-            node.querySelector('input,select,textarea,form') !== null),
-      );
-    });
   }
 
   private owns(element: HTMLElement): boolean {

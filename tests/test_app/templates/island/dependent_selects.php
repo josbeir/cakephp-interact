@@ -20,7 +20,7 @@ use function Cake\Core\h;
             'label' => 'Country',
             'options' => ['BE' => 'Belgium', 'NL' => 'Netherlands'],
             'value' => $country,
-            'x-interact:model.live' => 'country',
+            'x-interact:model.live' => '',
         ]) ?>
         <?= $this->Form->control('cityId', [
             'label' => 'City',
@@ -28,7 +28,7 @@ use function Cake\Core\h;
             'options' => $cities->combine('id', 'name')->toArray(),
             'empty' => 'Choose a city',
             'value' => $cityId,
-            'x-interact:model' => 'cityId',
+            'x-interact:model' => '',
             'aria-invalid' => isset($errors['cityId']) ? 'true' : null,
         ]) ?>
         <?= $this->Form->control('notes', [
@@ -37,7 +37,7 @@ use function Cake\Core\h;
             'value' => $notes,
             'rows' => 3,
             'placeholder' => 'Keep a little draft here…',
-            'x-interact:model' => 'notes',
+            'x-interact:model' => '',
         ]) ?>
         <?php foreach ($errors['cityId'] ?? [] as $error): ?>
             <p role="alert" class="field-error"><?= (string)h($error) ?></p>
