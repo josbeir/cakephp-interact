@@ -35,7 +35,10 @@ for (const control of ['select', 'checkbox', 'radio']) {
       await planner.getByLabel('Workshop format').selectOption('studio');
     else if (control === 'checkbox')
       await planner.getByLabel(/^Book for a company/).check();
-    else await planner.getByLabel('Studio radio').check();
+    else {
+      // The response removes this injected radio; verify selection through the rendered field.
+      await planner.getByLabel('Studio radio').click();
+    }
     const accepted = await response;
     expect(accepted.ok()).toBe(true);
     expect(accepted.request().postDataJSON()).toMatchObject({
@@ -47,6 +50,8 @@ for (const control of ['select', 'checkbox', 'radio']) {
       await expect(planner.getByLabel('Company name')).toBeVisible();
     else
       await expect(planner.getByLabel('Workshop format')).toHaveValue('studio');
+    if (control === 'radio')
+      await expect(planner.getByLabel('Studio radio')).toHaveCount(0);
     await page.clock.runFor(1000);
     expect(requests).toBe(1);
     expect(errors).toEqual([]);
