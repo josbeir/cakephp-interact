@@ -81,6 +81,17 @@ state instead.
 For manually constructed islands, use `setRequest($request)` before hooks that
 access the request. `getRequest()` throws `LogicException` when none is assigned.
 
+## Logging
+
+Islands include CakePHP's `LogTrait`. Use `log()` with the application's existing
+log configuration, levels, and scopes:
+
+```php
+$this->log('Article saved.', 'info', ['articleId' => $article->id]);
+```
+
+This helper is server-side only; it is not a browser-callable action.
+
 ## Plugin templates and overrides
 
 Plugin islands use their owning plugin's templates. Applications override them

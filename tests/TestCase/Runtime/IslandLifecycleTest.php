@@ -202,6 +202,7 @@ class IslandLifecycleTest extends TestCase
         yield 'request access' => [[], 'getRequest', []];
         yield 'request replacement' => [[], 'setRequest', [null]];
         yield 'request state' => [['request' => []], null, []];
+        yield 'logging helper' => [[], 'log', ['message']];
     }
 
     /**

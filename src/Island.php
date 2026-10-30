@@ -7,6 +7,7 @@ use Cake\Datasource\Paging\PaginatedInterface;
 use Cake\Datasource\QueryInterface;
 use Cake\Datasource\RepositoryInterface;
 use Cake\Http\ServerRequest;
+use Cake\Log\LogTrait;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Action\ActionEffects;
 use Interact\Action\Outcome;
@@ -30,6 +31,7 @@ use Psr\Http\Message\UriInterface;
 abstract class Island
 {
     use LocatorAwareTrait;
+    use LogTrait;
 
     protected ?ServerRequest $request = null;
 
