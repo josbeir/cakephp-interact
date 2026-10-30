@@ -27,7 +27,7 @@ Use Alpine for local state, events, bindings, and transitions. Interact adds PHP
 state, actions, and HTML updates through Alpine expressions and `x-interact:*`
 directives. CakePHP owns queries, validation, authorization, and saving.
 
-**[Read the documentation →](https://josbeir.github.io/cakephp-interact/)**
+**[Website](https://www.cakeinteract.dev/) · [Read the documentation →](https://josbeir.github.io/cakephp-interact/)**
 
 - [Why Interact?](https://josbeir.github.io/cakephp-interact/why.html)
 - [Install the plugin](https://josbeir.github.io/cakephp-interact/installation.html)
