@@ -11,7 +11,7 @@ to the current instance.
 
 ## Initial render
 
-1. Resolve the island name and construct the island through CakePHP's container.
+1. Resolve the island name, construct the island through CakePHP's container, and assign the current request.
 2. Call `initialize()` for request-local setup.
 3. Assign mount props and decode declared URL-bound state.
 4. Call `authorize(IslandContext $context)`.
@@ -21,7 +21,7 @@ to the current instance.
 ## Update
 
 1. Verify the signed snapshot, session, scope, and expiry.
-2. Construct a fresh island, call `initialize()`, and restore its declared properties.
+2. Construct a fresh island, assign the current request, call `initialize()`, and restore its declared properties.
 3. Verify any parent-input capability, apply declared reactive inputs and browser edits, and validate action argument types.
 4. Call `authorize()`.
 5. Call `updated()` for changed fields, then the requested action.
@@ -37,7 +37,8 @@ actions, and rendering.
 public function initialize(): void
 ```
 
-Configure request-local dependencies, such as Table properties. The runtime calls
+Configure request-local dependencies, such as Table properties. [`getRequest()`](/guide/islands#request-access)
+is available from this hook onward. The runtime calls
 this hook once after construction, including when a subclass defines its own
 constructor. Constructor-injected services are already available; declared props,
 URL values, and snapshot state have not been assigned yet. Declared

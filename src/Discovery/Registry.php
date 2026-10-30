@@ -6,6 +6,7 @@ namespace Interact\Discovery;
 use Cake\Container\ContainerInterface;
 use Cake\Core\App;
 use Cake\Core\Plugin;
+use Cake\Http\ServerRequest;
 use Interact\Island;
 use Interact\Pagination\PaginationProperty;
 use InvalidArgumentException;
@@ -118,9 +119,9 @@ class Registry
     }
 
     /**
-     * Construct and initialize a fresh instance even when its dependency registration is shared.
+     * Construct a fresh instance and assign its current request before initialization.
      */
-    public function create(Definition $definition): Island
+    public function create(Definition $definition, ServerRequest $request): Island
     {
         /** @var mixed $instance */
         $instance = $this->container instanceof ContainerInterface
@@ -129,6 +130,8 @@ class Registry
         if (!$instance instanceof Island) {
             throw new InvalidArgumentException('The container must return an Island instance.');
         }
+
+        $instance->setRequest($request);
 
         $paginations = $definition->paginations();
         array_walk($paginations, static function (PaginationProperty $pagination) use ($instance): void {

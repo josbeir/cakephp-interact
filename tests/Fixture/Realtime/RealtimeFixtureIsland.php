@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Test\Fixture\Realtime;
 
 use Cake\Http\Exception\ForbiddenException;
+use Cake\Http\ServerRequest;
 use Interact\Attribute\Action;
 use Interact\Attribute\Prop;
 use Interact\Attribute\Render;
@@ -24,6 +25,9 @@ class RealtimeFixtureIsland extends Island
     /** @var list<string> Observed application behavior across fresh request instances. */
     public static array $trace = [];
 
+    /** @var list<ServerRequest> Current requests observed before initialization. */
+    public static array $requests = [];
+
     #[Prop]
     public int $recordId;
 
@@ -41,6 +45,7 @@ class RealtimeFixtureIsland extends Island
      */
     public function initialize(): void
     {
+        static::$requests[] = $this->getRequest();
         static::$trace[] = 'initialize';
     }
 

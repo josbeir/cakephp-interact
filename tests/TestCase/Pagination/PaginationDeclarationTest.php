@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\Pagination;
 
+use Cake\Http\ServerRequest;
 use Cake\TestSuite\TestCase;
 use Interact\Attribute\Pagination;
 use Interact\Discovery\Definition;
@@ -30,8 +31,8 @@ class PaginationDeclarationTest extends TestCase
     {
         $definition = new Definition(PageIsland::class);
         $registry = new Registry();
-        $first = $registry->create($definition);
-        $second = $registry->create($definition);
+        $first = $registry->create($definition, new ServerRequest());
+        $second = $registry->create($definition, new ServerRequest());
         $this->assertInstanceOf(PageIsland::class, $first);
         $this->assertInstanceOf(PageIsland::class, $second);
         $this->assertNotSame($first->paging, $second->paging);
@@ -47,7 +48,7 @@ class PaginationDeclarationTest extends TestCase
     public function testSelectionRequiresAnOwnedObjectWhenSeveralListingsAreDeclared(): void
     {
         $definition = new Definition(IndependentResourceQueriesIsland::class);
-        $island = new Registry()->create($definition);
+        $island = new Registry()->create($definition, new ServerRequest());
         $this->assertInstanceOf(IndependentResourceQueriesIsland::class, $island);
         $configuration = new Configuration($definition);
         $this->assertSame('paging', $configuration->select($island, $island->paging)->name);
@@ -60,7 +61,10 @@ class PaginationDeclarationTest extends TestCase
     {
         $definition = new Definition(IndependentResourceQueriesIsland::class);
         $this->expectException(InvalidArgumentException::class);
-        new Configuration($definition)->select(new Registry()->create($definition), new PaginationState());
+        new Configuration($definition)->select(
+            new Registry()->create($definition, new ServerRequest()),
+            new PaginationState(),
+        );
     }
 
     public function testCustomDefaultsAliasesAndSelectiveHistoryUseNestedStatePaths(): void
@@ -170,7 +174,7 @@ class PaginationDeclarationTest extends TestCase
     public function testInvalidPrefixesAreRejectedBeforeAnyUrlValuesAreAssigned(): void
     {
         $definition = new Definition(PageIsland::class);
-        $island = new Registry()->create($definition);
+        $island = new Registry()->create($definition, new ServerRequest());
         $this->expectException(InvalidArgumentException::class);
         new UrlState()->initialize($island, $definition, 'page=2', 'invalid.prefix');
     }
