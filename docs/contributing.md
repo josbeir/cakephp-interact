@@ -138,7 +138,7 @@ validates HTTP envelopes, and DOM modules own morphing and selection.
 ## Keep examples trustworthy
 
 Demo controllers use routing attributes connected through `connectAttributes()`.
-Islands assign Table properties in `initialize()` using `LocatorAwareTrait::fetchTable()`;
+Islands assign Table properties in `initialize()` using the inherited `fetchTable()`;
 domain queries belong in
 named finders. Keep other behavior services injectable.
 

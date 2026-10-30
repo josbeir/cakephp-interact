@@ -196,6 +196,9 @@ class IslandLifecycleTest extends TestCase
         yield 'missing action arguments' => [[], 'accept', []];
         yield 'sync arguments' => [[], null, [1]];
         yield 'setup hook' => [[], 'initialize', []];
+        yield 'table lookup' => [[], 'fetchTable', ['Articles']];
+        yield 'table locator access' => [[], 'getTableLocator', []];
+        yield 'table locator replacement' => [[], 'setTableLocator', [null]];
     }
 
     /**

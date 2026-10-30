@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace TestApp\Island;
 
 use Cake\Http\Exception\ForbiddenException;
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Action;
 use Interact\Attribute\Prop;
 use Interact\Attribute\State;
@@ -18,8 +17,6 @@ use TestApp\Model\Table\ResourcesTable;
  */
 class ResourceReportIsland extends Island
 {
-    use LocatorAwareTrait;
-
     protected ResourcesTable $resources;
 
     #[Prop]

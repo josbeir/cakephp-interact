@@ -21,7 +21,6 @@ declare(strict_types=1);
 
 namespace App\Island;
 
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Pagination;
 use Interact\Island;
 use Interact\Pagination\PaginationState;
@@ -31,8 +30,6 @@ use Interact\Pagination\PaginationState;
  */
 class ResourcesIsland extends Island
 {
-    use LocatorAwareTrait;
-
     #[Pagination(
         settings: [
             'limit' => 20,

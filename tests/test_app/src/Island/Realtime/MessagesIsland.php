@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace TestApp\Island\Realtime;
 
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Prop;
 use Interact\Island;
 use Interact\IslandContext;
@@ -19,8 +18,6 @@ use TestApp\Model\Table\ChatMessagesTable;
  */
 class MessagesIsland extends Island
 {
-    use LocatorAwareTrait;
-
     #[Prop]
     public bool $live = false;
 

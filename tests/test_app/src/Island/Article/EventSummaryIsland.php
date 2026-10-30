@@ -6,7 +6,6 @@ namespace TestApp\Island\Article;
 use Cake\Datasource\EntityInterface;
 use Cake\Datasource\Exception\RecordNotFoundException;
 use Cake\Http\Exception\ForbiddenException;
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Action;
 use Interact\Attribute\Prop;
 use Interact\Attribute\State;
@@ -20,8 +19,6 @@ use TestApp\Model\Table\ArticlesTable;
  */
 class EventSummaryIsland extends Island
 {
-    use LocatorAwareTrait;
-
     #[Prop(reactive: true)]
     public int $articleId;
 

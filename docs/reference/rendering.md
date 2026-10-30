@@ -126,7 +126,7 @@ A custom factory that overrides view selection owns that choice.
 
 Island constructors may receive application services through CakePHP's container.
 Register those dependencies normally and never transport them as state. In the
-demo, Table access uses `LocatorAwareTrait::fetchTable()` and named finders;
+demo, Table access uses the base island's inherited `fetchTable()` and named finders;
 non-Table services can remain constructor dependencies.
 Use [`initialize()`](/guide/lifecycle#initialize) to assign request-local Table
 properties before authorization. The runtime calls it after construction and

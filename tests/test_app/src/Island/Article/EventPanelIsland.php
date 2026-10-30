@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace TestApp\Island\Article;
 
 use Cake\Http\Exception\ForbiddenException;
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\State;
 use Interact\Island;
 use Interact\IslandContext;
@@ -16,8 +15,6 @@ use TestApp\Model\Table\ArticlesTable;
  */
 class EventPanelIsland extends Island
 {
-    use LocatorAwareTrait;
-
     #[State(writable: true)]
     public int $articleId = 1;
 
