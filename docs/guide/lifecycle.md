@@ -48,7 +48,6 @@ defaults, just as ordinary typed properties contain their PHP defaults.
 namespace App\Island;
 
 use App\Model\Table\ArticlesTable;
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Island;
 
 /**
@@ -56,8 +55,6 @@ use Interact\Island;
  */
 class ArticleListIsland extends Island
 {
-    use LocatorAwareTrait;
-
     protected ArticlesTable $articles;
 
     /**
@@ -73,8 +70,9 @@ class ArticleListIsland extends Island
 This example assumes an application `Articles` Table and the conventional
 `templates/island/article_list.php` template. The protected Table is available to
 `authorize()`, `mount()`, actions, and `viewData()` and stays out of snapshots.
-`LocatorAwareTrait` is explicitly added by the application; islands do not load
-Tables automatically. See the complete [search example](/demo#search).
+The base `Island` includes CakePHP's `LocatorAwareTrait`, so `fetchTable()` is
+inherited without adding the trait to each island. See [Table access](/guide/islands#table-access)
+and the complete [search example](/demo#search).
 
 `initialize()` runs before authorization, including on denied requests and
 loading placeholders. Keep it limited to instance configuration. Load protected

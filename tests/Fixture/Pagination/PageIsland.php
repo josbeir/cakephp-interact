@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Interact\Test\Fixture\Pagination;
 
 use Cake\Http\Exception\ForbiddenException;
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Action;
 use Interact\Attribute\Pagination;
 use Interact\Attribute\Prop;
@@ -21,8 +20,6 @@ use Interact\Pagination\PaginationState;
 #[Render(template: 'island/Pagination/resource_listing')]
 class PageIsland extends Island
 {
-    use LocatorAwareTrait;
-
     #[Pagination(
         settings: [
             'limit' => 5,

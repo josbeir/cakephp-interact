@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace TestApp\Island;
 
 use Cake\Datasource\Paging\SortField;
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\ORM\Query\SelectQuery;
 use Interact\Attribute\Action;
 use Interact\Attribute\Pagination;
@@ -24,8 +23,6 @@ use TestApp\Model\Table\ResourcesTable;
  */
 class ResourceSearchIsland extends Island
 {
-    use LocatorAwareTrait;
-
     protected ResourcesTable $resources;
 
     #[Prop]

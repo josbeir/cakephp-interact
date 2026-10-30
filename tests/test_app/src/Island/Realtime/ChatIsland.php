@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace TestApp\Island\Realtime;
 
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Cake\View\View;
 use Exception;
 use Interact\Attribute\Action;
@@ -23,8 +22,6 @@ use TestApp\Model\Table\ChatMessagesTable;
  */
 class ChatIsland extends Island
 {
-    use LocatorAwareTrait;
-
     #[State(writable: true)]
     public string $name = 'Guest';
 

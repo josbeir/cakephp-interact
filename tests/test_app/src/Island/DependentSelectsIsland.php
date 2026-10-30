@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace TestApp\Island;
 
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Action;
 use Interact\Attribute\State;
 use Interact\Island;
@@ -16,8 +15,6 @@ use TestApp\Model\Table\CitiesTable;
  */
 class DependentSelectsIsland extends Island
 {
-    use LocatorAwareTrait;
-
     protected CitiesTable $cities;
 
     #[State(writable: true)]

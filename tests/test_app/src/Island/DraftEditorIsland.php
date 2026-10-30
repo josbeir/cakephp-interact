@@ -5,7 +5,6 @@ namespace TestApp\Island;
 
 use Cake\Datasource\EntityInterface;
 use Cake\Http\Exception\ForbiddenException;
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Action;
 use Interact\Attribute\State;
 use Interact\Island;
@@ -18,8 +17,6 @@ use TestApp\Model\Table\FormArticlesTable;
  */
 class DraftEditorIsland extends Island
 {
-    use LocatorAwareTrait;
-
     protected FormArticlesTable $articles;
 
     /**

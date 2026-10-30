@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace TestApp\Island;
 
 use Cake\Http\Exception\ForbiddenException;
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Pagination;
 use Interact\Attribute\State;
 use Interact\Island;
@@ -18,8 +17,6 @@ use Interact\UpdatedPaths;
  */
 class LibraryOverviewIsland extends Island
 {
-    use LocatorAwareTrait;
-
     #[Pagination(
         settings: ['limit' => 20, 'maxLimit' => 50, 'sortableFields' => ['title' => 'Resources.title']],
         url: [

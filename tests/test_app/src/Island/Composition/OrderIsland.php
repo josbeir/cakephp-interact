@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace TestApp\Island\Composition;
 
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Action;
 use Interact\Attribute\Prop;
 use Interact\Attribute\State;
@@ -16,8 +15,6 @@ use TestApp\Model\Table\ResourcesTable;
  */
 class OrderIsland extends Island
 {
-    use LocatorAwareTrait;
-
     protected ResourcesTable $resources;
 
     #[Prop]

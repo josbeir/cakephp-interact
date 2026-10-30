@@ -41,6 +41,8 @@ PHP contracts are documented with their related features.
 
 ## Hooks and helpers
 
+[Table access: fetchTable(), getTableLocator(), and setTableLocator()](/guide/islands#table-access).
+
 [Lifecycle hooks](/guide/lifecycle), [setErrors()](/guide/forms#seterrors),
 [errors()](/guide/forms#errors), [dispatch()](/guide/events#dispatch), and
 [events()](/guide/events#events), [redirect()](/guide/redirects-and-downloads), and

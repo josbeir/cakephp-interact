@@ -44,6 +44,25 @@ The path follows the class beneath `Island`, preserving namespace folders and
 underscoring the final class name after removing the `Island` suffix.
 See [class and template paths](/guide/conventions#island-classes-and-templates).
 
+## Table access
+
+The base `Island` includes CakePHP's `LocatorAwareTrait`. Use the inherited
+`fetchTable()` to resolve a Table by alias or class name:
+
+```php
+$articles = $this->fetchTable('Articles');
+```
+
+Assign typed Table properties in [`initialize()`](/guide/lifecycle#initialize)
+when several hooks need them. A no-argument `fetchTable()` requires a configured
+protected `$defaultTable` property. Keep domain queries in Table finders and
+authorize protected resource access before querying.
+
+`getTableLocator()` uses the application's native Table locator by default.
+`setTableLocator($locator)` selects a locator for that island instance, including
+in tests. Table and locator references stay on the server; they are excluded
+from transported state and browser-callable actions.
+
 ## Plugin templates and overrides
 
 Plugin islands use their owning plugin's templates. Applications override them

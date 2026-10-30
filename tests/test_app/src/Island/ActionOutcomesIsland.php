@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace TestApp\Island;
 
 use Cake\Datasource\EntityInterface;
-use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Attribute\Action;
 use Interact\Attribute\State;
 use Interact\Island;
@@ -16,8 +15,6 @@ use TestApp\Model\Table\OutcomeArticlesTable;
  */
 class ActionOutcomesIsland extends Island
 {
-    use LocatorAwareTrait;
-
     protected OutcomeArticlesTable $articles;
 
     #[State(writable: true)]

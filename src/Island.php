@@ -6,6 +6,7 @@ namespace Interact;
 use Cake\Datasource\Paging\PaginatedInterface;
 use Cake\Datasource\QueryInterface;
 use Cake\Datasource\RepositoryInterface;
+use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Action\ActionEffects;
 use Interact\Action\Outcome;
 use Interact\Event\BrowserEvent;
@@ -22,10 +23,13 @@ use Psr\Http\Message\UriInterface;
  *
  * The runtime constructs a fresh instance on every request. Override initialize(),
  * authorize(), mount(), updated(), and viewData() at their documented lifecycle points; expose
- * browser actions explicitly. Injected services never become snapshot state.
+ * browser actions explicitly. Injected services and native Table-locator references
+ * never become snapshot state.
  */
 abstract class Island
 {
+    use LocatorAwareTrait;
+
     /**
      * @var array<string, list<string>> Application-owned validation feedback.
      */
