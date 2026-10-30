@@ -199,6 +199,9 @@ class IslandLifecycleTest extends TestCase
         yield 'table lookup' => [[], 'fetchTable', ['Articles']];
         yield 'table locator access' => [[], 'getTableLocator', []];
         yield 'table locator replacement' => [[], 'setTableLocator', [null]];
+        yield 'request access' => [[], 'getRequest', []];
+        yield 'request replacement' => [[], 'setRequest', [null]];
+        yield 'request state' => [['request' => []], null, []];
     }
 
     /**

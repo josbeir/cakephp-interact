@@ -63,6 +63,24 @@ authorize protected resource access before querying.
 in tests. Table and locator references stay on the server; they are excluded
 from transported state and browser-callable actions.
 
+## Request access
+
+`getRequest()` returns the current CakePHP `ServerRequest`, including its session
+and middleware attributes:
+
+```php
+$language = $this->getRequest()->getSession()->read('Config.language', 'en');
+```
+
+The runtime assigns the request before `initialize()` on every fresh instance,
+including loading placeholders and subscription renewals. It stays outside
+transported state. During an update, this is the Interact endpoint's request;
+`getData()` contains the transport envelope. Read bound field values from island
+state instead.
+
+For manually constructed islands, use `setRequest($request)` before hooks that
+access the request. `getRequest()` throws `LogicException` when none is assigned.
+
 ## Plugin templates and overrides
 
 Plugin islands use their owning plugin's templates. Applications override them

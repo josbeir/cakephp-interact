@@ -133,7 +133,8 @@ class TemplateResolutionTest extends TestCase
         $this->assertSame(Editor::class, $editor->class);
         $this->assertSame('Commerce', $editor->plugin);
         $this->assertSame($editor, $registry->definition('Commerce.Article/Editor'));
-        $this->assertNotSame($registry->create($editor), $registry->create($editor));
+        $request = new ServerRequest();
+        $this->assertNotSame($registry->create($editor, $request), $registry->create($editor, $request));
         $this->assertSame(ProductCard::class, $registry->definition('Acme/Catalog.product_card')->class);
         $this->assertSame('Commerce.island/Article/editor', $editor->declaration->template);
     }

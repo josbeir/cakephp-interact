@@ -65,6 +65,7 @@ class RealtimeTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        RealtimeFixtureIsland::$requests = [];
         $this->registry = new Registry();
         $this->registry->register(RealtimeFixtureIsland::class);
 
@@ -170,6 +171,14 @@ class RealtimeTest extends TestCase
             ->willReturn(new Grant('test', ['url' => '/feed'], time() + 300));
         RealtimeFixtureIsland::$trace = [];
         $body = $this->authorize($provider, [$mount->id => $mount->realtime['lease']]);
+        $this->assertCount(2, RealtimeFixtureIsland::$requests);
+        $this->assertSame($this->context->request, RealtimeFixtureIsland::$requests[0]);
+        $this->assertNotSame($this->context->request, RealtimeFixtureIsland::$requests[1]);
+        $this->assertSame('POST', RealtimeFixtureIsland::$requests[1]->getMethod());
+        $this->assertSame(
+            ['version' => 1, 'leases' => [$mount->id => $mount->realtime['lease']]],
+            RealtimeFixtureIsland::$requests[1]->getParsedBody(),
+        );
         $this->assertSame(['initialize', 'authorize', 'subscriptions'], RealtimeFixtureIsland::$trace);
         $this->assertSame('test', Hash::get($body, 'grant.driver'));
         $this->assertSame('records/7', Hash::get($body, 'islands.' . $mount->id . '.subscriptions.0.topic'));

@@ -6,6 +6,7 @@ namespace Interact;
 use Cake\Datasource\Paging\PaginatedInterface;
 use Cake\Datasource\QueryInterface;
 use Cake\Datasource\RepositoryInterface;
+use Cake\Http\ServerRequest;
 use Cake\ORM\Locator\LocatorAwareTrait;
 use Interact\Action\ActionEffects;
 use Interact\Action\Outcome;
@@ -23,12 +24,14 @@ use Psr\Http\Message\UriInterface;
  *
  * The runtime constructs a fresh instance on every request. Override initialize(),
  * authorize(), mount(), updated(), and viewData() at their documented lifecycle points; expose
- * browser actions explicitly. Injected services and native Table-locator references
+ * browser actions explicitly. Injected services, native Table-locator references, and requests
  * never become snapshot state.
  */
 abstract class Island
 {
     use LocatorAwareTrait;
+
+    protected ?ServerRequest $request = null;
 
     /**
      * @var array<string, list<string>> Application-owned validation feedback.
@@ -43,6 +46,28 @@ abstract class Island
     protected ?ActionEffects $actionEffects = null;
 
     protected ?Pagination $pagination = null;
+
+    /**
+     * Read the current HTTP request supplied before initialize(), never transported state.
+     *
+     * @throws LogicException When a manually constructed island has no request assigned.
+     */
+    public function getRequest(): ServerRequest
+    {
+        return $this->request ?? throw new LogicException('Assign a request with setRequest() before accessing it.');
+    }
+
+    /**
+     * Assign the request for this instance, including when preparing an island in tests.
+     *
+     * @return $this
+     */
+    public function setRequest(ServerRequest $request): static
+    {
+        $this->request = $request;
+
+        return $this;
+    }
 
     /**
      * Attach the runtime's request-local pagination capability, never transported to the browser.

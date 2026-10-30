@@ -132,6 +132,9 @@ Use [`initialize()`](/guide/lifecycle#initialize) to assign request-local Table
 properties before authorization. The runtime calls it after construction and
 before assigning props or restoring state.
 
+Custom registry callers pass the current request to
+`Registry::create($definition, $request)`; it is assigned before `initialize()`.
+
 Custom renderers belong at `RendererInterface`, usually assembled by a custom
 factory. Keep signing, authorization, and state validation in the normal runtime
 flow rather than bypassing them in an adapter.

@@ -41,6 +41,14 @@ The initiating island stops polling and drops unsent requests before leaving.
 
 See the complete [save-and-redirect example](/demo#redirects-and-downloads).
 
+Queue a native CakePHP flash message before redirecting when the destination's
+layout renders messages with `FlashHelper`:
+
+```php
+$this->getRequest()->getFlash()->success('Article saved.');
+$this->redirect(['_name' => 'articles:view', 'id' => $article->id]);
+```
+
 ### Browser history
 
 A redirect adds the destination to browser history. Use `replace: true` when
