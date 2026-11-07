@@ -3,7 +3,7 @@ import path from 'node:path';
 import { URL } from 'node:url';
 import { JSDOM } from 'jsdom';
 
-const base = '/cakephp-interact/';
+const base = process.env.INTERACT_DOCS_BASE ?? '/cakephp-interact/2.x/';
 const output = 'docs/.vitepress/dist';
 const pages = new Map();
 const failures = [];

@@ -154,6 +154,29 @@ live in `tests/test_app/` and are linked from [Demo](/demo). HTTP and browser te
 exercise that same application; do not maintain a separate documentation app. Check snippets,
 behavior, links, and desktop/mobile navigation.
 
+## Release branches
+
+`main` targets CakePHP 5.4+ and Interact 1.x. `cake6` targets CakePHP 6 and
+Interact 2.x. Both require PHP 8.5. Package versions begin at `1.0.0-alpha.1`
+and `2.0.0-alpha.1`; the API remains experimental until stable releases.
+Composer aliases expose these branches as `1.x-dev` and `2.x-dev`.
+
+Develop shared fixes on `main`, then merge `main` into `cake6` with an ordinary
+merge commit. Adapt CakePHP 6 differences and run that branch's checks before
+completing the merge. Keep framework-specific changes separate from shared
+behavior changes. Preserve merge ancestry: do not squash or rebase merges
+between the maintained branches.
+
+The initial CakePHP 5 backport is recorded on `cake6` with a one-time
+`git merge --no-ff -s ours <backport-tip>`. That merge preserves the CakePHP 6
+file tree while recording the backport as considered. Never repeat `-s ours`
+for ordinary updates: it would discard incoming fixes. Review dependency
+constraints, lockfiles, package versions, CI, and documentation during forward merges.
+
+The documentation deployment builds both branches together: the existing root
+serves 1.x and `/2.x/` serves 2.x. Each deployment preserves both versions.
+Release tags and npm publication are separate from branch preparation.
+
 ## Documentation and releases
 
 ```sh
@@ -180,7 +203,7 @@ the committed versions, rejecting missing or stale assets. Node is contributor
 tooling; standard Composer consumers do not need it.
 
 Packagist's default GitHub source archives include these committed assets for
-`dev-main` and future tagged releases. Build and commit the assets before tagging
+`dev-cake6` and future tagged releases. Build and commit the assets before tagging
 a release. There is no stable release yet.
 
 `package:composer` creates a reproducible archive under

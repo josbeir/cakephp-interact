@@ -118,4 +118,4 @@ These send no request. Start with [Quickstart](/getting-started), then follow
 [Alpine and Interact](/guide/alpine) to combine local UI state with PHP actions.
 
 Development preview for **PHP 8.5 and CakePHP 6 development builds**. Install
-`dev-main` using the [installation guide](/installation).
+`dev-cake6` using the [installation guide](/installation).

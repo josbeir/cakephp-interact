@@ -2,7 +2,7 @@ name: Documentation
 
 on:
   push:
-    branches: [main]
+    branches: [main, cake6]
     paths:
       - 'docs/**'
       - 'tests/Fixture/Documentation/**'
@@ -37,18 +37,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run docs:build
-      - name: Upload Pages artifact
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: docs/.vitepress/dist
 
   deploy:
-    name: Deploy to GitHub Pages
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    name: Build and deploy both documentation versions
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/cake6')
     needs: build
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
@@ -58,6 +54,33 @@ jobs:
       group: github-pages
       cancel-in-progress: false
     steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/checkout@v7
+        with:
+          ref: cake6
+          path: build/docs-cake6
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run docs:build
+        env:
+          INTERACT_DOCS_BASE: /cakephp-interact/
+      - run: npm ci
+        working-directory: build/docs-cake6
+      - run: npm run docs:build
+        working-directory: build/docs-cake6
+        env:
+          INTERACT_DOCS_BASE: /cakephp-interact/2.x/
+      - name: Combine versioned documentation
+        run: cp -R build/docs-cake6/docs/.vitepress/dist docs/.vitepress/dist/2.x
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/.vitepress/dist
       - uses: actions/configure-pages@v6
       - name: Deploy documentation
         id: deployment

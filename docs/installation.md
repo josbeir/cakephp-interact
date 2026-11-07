@@ -9,7 +9,7 @@ You need **PHP 8.5**, a **CakePHP 6 development application**, and Composer.
 The standard package includes the browser runtime with Alpine; Node and npm are
 not required.
 Interact is available on
-[Packagist](https://packagist.org/packages/josbeir/cakephp-interact) as `dev-main`
+[Packagist](https://packagist.org/packages/josbeir/cakephp-interact) as `dev-cake6`
 only. There is no stable release yet, and the API is experimental.
 
 To explore without integrating an existing application, [run the demo](/demo).
@@ -21,7 +21,7 @@ Run these commands from your CakePHP application's root directory:
 ```sh
 composer config minimum-stability dev
 composer config prefer-stable true
-composer require josbeir/cakephp-interact:dev-main --with-all-dependencies
+composer require josbeir/cakephp-interact:dev-cake6 --with-all-dependencies
 ```
 
 Packagist is Composer's default repository; no custom repository or separate

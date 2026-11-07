@@ -65,5 +65,10 @@
     "allow-plugins": false
   },
   "prefer-stable": true,
-  "minimum-stability": "dev"
+  "minimum-stability": "dev",
+  "extra": {
+    "branch-alias": {
+      "dev-cake6": "2.x-dev"
+    }
+  }
 }

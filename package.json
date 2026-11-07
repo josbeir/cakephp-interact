@@ -1,6 +1,6 @@
 {
   "name": "@josbeir/cakephp-interact",
-  "version": "0.1.0",
+  "version": "2.0.0-alpha.1",
   "description": "Reactive server-rendered PHP islands for CakePHP.",
   "type": "module",
   "license": "MIT",

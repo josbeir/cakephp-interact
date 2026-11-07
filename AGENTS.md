@@ -5,7 +5,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 ## Purpose and architecture
 
 - Build CakePHP Interact: reactive, server-rendered PHP islands, independent of Livewire and htmx.
-- Target PHP 8.5 and CakePHP 6. Declare supported versions and test them in CI.
+- Target PHP 8.5 and CakePHP 6 on `cake6` (Interact 2.x); shared changes originate on `main` (CakePHP 5.4+, Interact 1.x). Declare supported versions and test them in CI.
 - Use `Island`, optional `Render` attributes, and `IslandContext`. Resolve conventional `Island`-suffixed classes on demand using CakePHP-style application/plugin names; keep matching templates under `templates/island/`. CakePHP controller components retain their existing meaning.
 - Separate class resolution, metadata compilation, state transport, authorization, actions, rendering, and browser synchronization.
 - Construct fresh islands per request through CakePHP's container. Cache declarations only.
