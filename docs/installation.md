@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Install the development plugin from Packagist in a CakePHP application and load its helper with the included browser runtime.
+description: Install the plugin from Packagist in a CakePHP application and load its helper with the included browser runtime.
 ---
 
 # Installation
@@ -8,9 +8,19 @@ description: Install the development plugin from Packagist in a CakePHP applicat
 You need **PHP 8.5**, a **CakePHP 5.4+ application**, and Composer.
 The standard package includes the browser runtime with Alpine; Node and npm are
 not required.
-Interact is available on
-[Packagist](https://packagist.org/packages/josbeir/cakephp-interact) as `dev-main`
-only. There is no stable release yet, and the API is experimental.
+Interact 0.2.x is available on
+[Packagist](https://packagist.org/packages/josbeir/cakephp-interact).
+The API remains experimental.
+
+::: warning CakePHP 6 applications
+Version 0.2.0 introduces CakePHP 5.4+ support and targets CakePHP 5 only.
+If you use CakePHP 6 with Interact 0.1.x, switch to the CakePHP 6 development
+branch to retain compatibility:
+
+```sh
+composer require josbeir/cakephp-interact:dev-cake6 --with-all-dependencies
+```
+:::
 
 To explore without integrating an existing application, [run the demo](/demo).
 
@@ -19,15 +29,13 @@ To explore without integrating an existing application, [run the demo](/demo).
 Run these commands from your CakePHP application's root directory:
 
 ```sh
-composer require josbeir/cakephp-interact:dev-main --with-all-dependencies
+composer require josbeir/cakephp-interact:^0.2 --with-all-dependencies
 ```
 
 Packagist is Composer's default repository; no custom repository or separate
-clone is needed. The explicit `dev-main` constraint permits Interact's development
-version without lowering application-wide stability. Interact 1.x targets CakePHP
-5.4+; Interact 2.x on the `cake6` branch targets CakePHP 6. PHP 8.5 is required
-by both release lines. Alpha releases are being prepared; use the branch
-constraint until their tags are published.
+clone is needed. The `^0.2` constraint receives compatible 0.2.x releases.
+The `dev-main` branch provides ongoing CakePHP 5 development; `dev-cake6`
+provides CakePHP 6 development. Both require PHP 8.5.
 
 ## Browser runtime {#build-the-browser-runtime}
 

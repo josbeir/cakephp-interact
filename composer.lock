@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3718c24d7fb55832ae90b73746b5fc1e",
+    "content-hash": "aa10fb3624b51870b1d55fb52ccee662",
     "packages": [
         {
             "name": "cakephp/cakephp",
@@ -1619,7 +1619,8 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-10-27T14:06:26+00:00"
+            "time": "2026-10-27T14:06:26+00:00",
+            "published-time": "2026-10-27T14:06:42+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",

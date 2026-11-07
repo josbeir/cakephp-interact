@@ -65,8 +65,8 @@ properties; entities, queries, and services remain on the server.
 
 ## Status and compatibility
 
-Interact targets **PHP 8.5 and CakePHP 5.4 or later in the 5.x series**. It is available as
-`dev-main`; there is no stable release. The API is experimental.
+Interact targets **PHP 8.5 and CakePHP 5.4 or later in the 5.x series**. Install the tagged `0.2.x` releases. The API is experimental; subsequent
+0.x minor releases may introduce compatibility changes.
 
 Normal links use CakePHP navigation. Opt in to enhanced page visits with
 [`x-interact:navigate`](/directives/navigate). Entities, queries, and services

@@ -19,6 +19,10 @@
 
 **Interactive CakePHP pages with Alpine and server-rendered PHP islands.**
 
+> **Compatibility warning:** `0.2.0` introduces CakePHP 5.4+ support and targets
+> CakePHP 5 only. If you use CakePHP 6 with Interact `0.1.x`, switch to
+> `dev-cake6` to retain CakePHP 6 compatibility.
+
 Build live search, inline editors, and conditional fields with native CakePHP
 templates and explicit PHP actions. Interact updates the owning region while
 preserving local drafts, focus, and independent nested islands.
@@ -42,10 +46,11 @@ directives. CakePHP owns queries, validation, authorization, and saving.
 Available on [Packagist](https://packagist.org/packages/josbeir/cakephp-interact)
 as `josbeir/cakephp-interact`. The API is experimental.
 
-| Branch  | CakePHP compatibility          | Composer development version |
-| ------- | ------------------------------ | ---------------------------- |
-| `main`  | 5.4 or later in the 5.x series | `dev-main`                   |
-| `cake6` | 6 development builds           | `dev-cake6`                  |
+| Release / branch | CakePHP compatibility          | Composer version |
+| ---------------- | ------------------------------ | ---------------- |
+| `0.2.x`          | 5.4 or later in the 5.x series | `^0.2`           |
+| `main`           | 5.4 or later in the 5.x series | `dev-main`       |
+| `cake6`          | 6 development builds           | `dev-cake6`      |
 
 Both branches require PHP 8.5 and modern browsers. See the installation guide for
 setup and compatibility requirements. The standard Composer package includes the
