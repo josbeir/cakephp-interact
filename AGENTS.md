@@ -140,6 +140,7 @@ Required Composer scripts:
 - Supply a Composer-ready browser bundle and an npm integration for application-owned Alpine. Verify both distributions, deduplication, and CSP.
 - Treat release assets as intentional reproducible artifacts. Exclude installed dependencies, temporary output, caches, credentials, and reports from commits.
 - Commit dependency lockfiles. Keep Node tooling separate from PHP runtime dependencies.
+- Publish documentation from `main` only. Keep `cake6` documentation synchronized with shared features and adapted to CakePHP 6, without publishing it until that release.
 - Maintain VitePress docs with a concise README. Document minimum working examples, lifecycle, security limits, and public contracts. Verify examples and links.
 - Run affected checks during development and the full relevant quality workflow before handoff. Review automatic fixes and rerun affected tests.
 - CI runs `composer validate --strict`, `composer check`, and `composer test-coverage` with a coverage driver enabled, plus the JavaScript/browser/documentation gates.

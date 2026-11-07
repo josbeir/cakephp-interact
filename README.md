@@ -52,6 +52,10 @@ as `josbeir/cakephp-interact`. The API is experimental.
 | `main`           | 5.4 or later in the 5.x series | `dev-main`       |
 | `cake6`          | 6 development builds           | `dev-cake6`      |
 
+Published documentation follows the latest `main` release. CakePHP 6-specific
+setup is maintained in the [cake6 branch documentation](https://github.com/josbeir/cakephp-interact/blob/cake6/docs/installation.md)
+until that line is released.
+
 Both branches require PHP 8.5 and modern browsers. See the installation guide for
 setup and compatibility requirements. The standard Composer package includes the
 browser runtime; Node and npm are not required.
