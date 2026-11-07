@@ -11,6 +11,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/docs.yml'
+      - '.github/workflows/docs-deploy.yml'
   pull_request:
     paths:
       - 'docs/**'
@@ -20,6 +21,7 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/docs.yml'
+      - '.github/workflows/docs-deploy.yml'
   workflow_dispatch:
 
 permissions:
@@ -37,51 +39,3 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run docs:build
-
-  deploy:
-    name: Build and deploy both documentation versions
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/cake6')
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    concurrency:
-      group: github-pages
-      cancel-in-progress: false
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: main
-      - uses: actions/checkout@v7
-        with:
-          ref: cake6
-          path: build/docs-cake6
-          persist-credentials: false
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-          cache: npm
-      - run: npm ci
-      - run: npm run docs:build
-        env:
-          INTERACT_DOCS_BASE: /cakephp-interact/
-      - run: npm ci
-        working-directory: build/docs-cake6
-      - run: npm run docs:build
-        working-directory: build/docs-cake6
-        env:
-          INTERACT_DOCS_BASE: /cakephp-interact/2.x/
-      - name: Combine versioned documentation
-        run: cp -R build/docs-cake6/docs/.vitepress/dist docs/.vitepress/dist/2.x
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: docs/.vitepress/dist
-      - uses: actions/configure-pages@v6
-      - name: Deploy documentation
-        id: deployment
-        uses: actions/deploy-pages@v5

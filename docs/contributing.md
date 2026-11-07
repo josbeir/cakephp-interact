@@ -174,7 +174,8 @@ for ordinary updates: it would discard incoming fixes. Review dependency
 constraints, lockfiles, package versions, CI, and documentation during forward merges.
 
 The documentation deployment builds both branches together: the existing root
-serves 1.x and `/2.x/` serves 2.x. Each deployment preserves both versions.
+serves 1.x and `/2.x/` serves 2.x. Each deployment preserves both versions. Publishing runs from `main` after either
+branch builds successfully, preserving the Pages environment’s deployment policy.
 Release tags and npm publication are separate from branch preparation.
 
 ## Documentation and releases
