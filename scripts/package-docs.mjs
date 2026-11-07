@@ -1,6 +1,6 @@
 import { cp, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { URL } from 'node:url';
+import { URL, pathToFileURL } from 'node:url';
 import { JSDOM } from 'jsdom';
 import {
   originRedirect,
@@ -9,6 +9,23 @@ import {
 } from '../docs/.vitepress/publication.ts';
 
 const source = 'docs/.vitepress/dist';
+// Expose the exact index VitePress built, without rebuilding documents or ranking data.
+const chunks = path.join(source, 'assets/chunks');
+const indexes = (await readdir(chunks)).filter((file) =>
+  /^@localSearchIndexroot\.[\w-]+\.js$/.test(file),
+);
+if (indexes.length !== 1)
+  throw new Error('Expected one VitePress root search index.');
+const { default: serializedIndex } = await import(
+  pathToFileURL(path.resolve(chunks, indexes[0])).href
+);
+if (typeof serializedIndex !== 'string')
+  throw new Error('VitePress search index must export serialized JSON.');
+const index = JSON.parse(serializedIndex);
+if (index.serializationVersion !== 2 || !(index.documentCount > 0))
+  throw new Error('Unsupported or empty VitePress search index.');
+await writeFile(path.join(source, 'search-index.json'), serializedIndex);
+
 await rm(pagesOutput, { recursive: true, force: true });
 await mkdir(pagesOutput, { recursive: true });
 await cp(source, path.join(pagesOutput, '_docs'), { recursive: true });
