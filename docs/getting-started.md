@@ -3,6 +3,8 @@ title: Quickstart
 description: Build a working counter with a PHP action, a native CakePHP template, and a mount call in an existing page.
 ---
 
+<!-- #region quickstart -->
+
 <span id="build-an-interactive-region"></span>
 
 <span id="your-first-island"></span>
@@ -163,3 +165,5 @@ register Interact with that instance. Follow the
 An island can own the content of an action template while its normal layout
 stays in place. Follow [whole-page islands](/guide/page-islands) for the
 cooperating island, controller, and template.
+
+<!-- #endregion quickstart -->
