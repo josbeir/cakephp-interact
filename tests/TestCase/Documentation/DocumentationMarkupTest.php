@@ -52,7 +52,7 @@ class DocumentationMarkupTest extends TestCase
                     );
                     foreach ($groups as $group) {
                         $view = new TemplateView();
-                        $view->set([
+                        foreach ([
                             'paging' => new PaginationState(),
                             'search' => '',
                             'title' => '',
@@ -65,7 +65,10 @@ class DocumentationMarkupTest extends TestCase
                             'extras' => [],
                             'attendees' => null,
                             'form' => ['address' => ['city' => '']],
-                        ]);
+                        ] as $name => $value) {
+                            $view->set($name, $value);
+                        }
+
                         file_put_contents($directory . 'element/example.php', $group[2]);
                         $this->assertSame(
                             $controls->collect($group[1]),
