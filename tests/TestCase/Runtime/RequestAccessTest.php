@@ -166,7 +166,7 @@ class RequestAccessTest extends TestCase
     public function testUnconfiguredManualInstanceFailsClearly(): void
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('Assign a request');
+        $this->expectExceptionMessageMatches('/Assign a request/');
         new PlainIsland()->getRequest();
     }
 

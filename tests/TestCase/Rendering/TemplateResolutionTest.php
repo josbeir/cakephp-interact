@@ -110,7 +110,7 @@ class TemplateResolutionTest extends TestCase
     public function testInferenceRequiresAnIslandNamespace(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('explicit template or element');
+        $this->expectExceptionMessageMatches('/explicit template or element/');
         new Definition(UnlocatedIsland::class);
     }
 
@@ -229,18 +229,18 @@ class TemplateResolutionTest extends TestCase
     public static function invalidNames(): iterable
     {
         foreach ([
-            '',
-            '../Counter',
-            '/Counter',
-            'Article/../Editor',
-            Editor::class,
-            'Commerce..Article/Editor',
-            'UnknownPlugin.Counter',
-            'Commerce.Unknown',
-            'Commerce.NotAn',
-            'Commerce.Abstract',
-        ] as $name) {
-            yield $name => [$name];
+            'empty name' => '',
+            'parent path' => '../Counter',
+            'absolute path' => '/Counter',
+            'nested parent path' => 'Article/../Editor',
+            'fully qualified class' => Editor::class,
+            'repeated plugin separator' => 'Commerce..Article/Editor',
+            'unknown plugin' => 'UnknownPlugin.Counter',
+            'unknown island' => 'Commerce.Unknown',
+            'non-island class' => 'Commerce.NotAn',
+            'abstract island' => 'Commerce.Abstract',
+        ] as $scenario => $name) {
+            yield $scenario => [$name];
         }
     }
 

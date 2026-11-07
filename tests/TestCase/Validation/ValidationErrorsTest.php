@@ -160,7 +160,7 @@ class ValidationErrorsTest extends TestCase
         $cyclic = [];
         $cyclic['child'] = &$cyclic;
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('at most 32 levels deep');
+        $this->expectExceptionMessageMatches('/at most 32 levels deep/');
         $island->setErrors(['field' => $cyclic]);
     }
 }

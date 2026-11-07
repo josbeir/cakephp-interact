@@ -101,6 +101,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Preserve Rector's prepared sets and approved skips for CakePHP assertion style, explicit casts, mixed annotations, fluent return contracts, and normalized template paths.
 - `InteractHelper::render()` has an approved, method-local exception to the five-parameter lint limit: its seven named mount options, including child model bindings, keep ordinary template usage readable. Keep the limit unchanged elsewhere.
 - No baselines, coverage-ignore annotations, disabled rules, or suppressions without explicit user authorization.
+- Support PHPUnit 12.5 and 13, use PHPUnit 13 in the committed lockfile, and test both majors in CI.
 - PHPUnit fails on warnings, risky tests, and deprecations.
 - Fix PHP and PHPUnit notices when they appear; do not suppress or ignore them.
 - Require at least 95% unrounded line coverage across all production PHP under `src/`, including unexecuted files. Report branch coverage when available.
@@ -150,7 +151,7 @@ Required Composer scripts:
 
 - Keep `README.md` a concise introduction and entry point to the documentation. Include the purpose, current compatibility/status, a small set of useful documentation links, and the license. Put installation steps, extended examples, demo commands, API contracts, troubleshooting, and contributor workflows in the docs rather than duplicating them in the README.
 - Start feature and API pages with a direct definition of what the feature does, then minimal syntax, behavior, variations, and options. Use concrete API names and headings; avoid motivational introductions, narrative filler, repeated setup, and text that only restates code. Keep one canonical page per topic and link to it from related pages.
-- Keep the homepage short and show cooperating PHP classes, elements, and mount calls in labeled code tabs. Use short role-based tab labels such as Island, Element, Table, and Mount instead of file paths; identify example file paths in PHP docblocks where needed. Identify imports, prerequisites, and application-supplied data.
+- Open the documentation on Quickstart and keep the product overview on https://www.cakeinteract.dev/. Show cooperating PHP classes, elements, and mount calls in labeled code tabs. Use short role-based tab labels such as Island, Element, Table, and Mount instead of file paths; identify example file paths in PHP docblocks where needed. Identify imports, prerequisites, and application-supplied data.
 - Give new users a complete path from installation to a working interaction. Keep development-package and browser-asset requirements visible rather than hiding them in optional details.
 - Use conventional application/plugin island names consistently in rendering examples. Make the ownership of props, writable drafts, computed data, authorization, and persistence explicit where relevant.
 - Prefer VitePress navigation, local search, code groups, callouts, and optional details over custom components. Reserve callouts for actionable caveats; omit line numbers unless useful.

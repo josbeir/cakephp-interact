@@ -70,7 +70,9 @@ Preserve approved Rector skips and CakePHP's Mago preset.
 Coverage needs Xdebug in coverage mode or PCOV. Include unexecuted source and
 require at least 95% unrounded line coverage across production `src/`. Missing
 reports and empty executable-source measurements fail the explicit gate.
-PHPUnit also fails on warnings, risky tests, and deprecations.
+PHPUnit 12.5 and 13 are supported. The committed lockfile uses PHPUnit 13;
+CI also runs both majors with minimum and latest framework dependencies.
+PHPUnit fails on warnings, risky tests, and deprecations.
 
 ::: details Optional branch coverage
 With a compatible Xdebug build, `composer test-coverage-branches` writes method,

@@ -413,7 +413,7 @@ class CompositionTest extends TestCase
             ->method('resolve')
             ->willThrowException(new InvalidArgumentException('Custom binding validation.'));
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Custom binding validation.');
+        $this->expectExceptionMessageMatches('/Custom binding validation\./');
         $bindings->prepare([], null, new Definition(ProbeIsland::class), $this->frame());
     }
 

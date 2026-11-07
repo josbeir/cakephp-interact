@@ -11,6 +11,7 @@ export default defineConfig({
   description:
     'Build interactive CakePHP pages with Alpine, PHP islands, and native templates.',
   lang: 'en-US',
+  appearance: 'dark',
   base,
   srcExclude: ['public/**'],
   head: [
@@ -34,6 +35,39 @@ export default defineConfig({
     ['meta', { name: 'twitter:image', content: socialImage }],
     ['meta', { name: 'twitter:image:alt', content: 'CakePHP Interact logo' }],
   ],
+  markdown: {
+    theme: {
+      light: 'github-light',
+      dark: {
+        name: 'interact-dark',
+        type: 'dark',
+        colors: {
+          'editor.background': '#0e121b',
+          'editor.foreground': '#e6edf6',
+        },
+        tokenColors: [
+          {
+            scope: ['comment', 'punctuation.definition.comment'],
+            settings: { foreground: '#9aa7bb' },
+          },
+          {
+            scope: ['keyword', 'storage'],
+            settings: { foreground: '#a5b4fc' },
+          },
+          { scope: ['string'], settings: { foreground: '#a7d8b6' } },
+          {
+            scope: ['entity.name.function', 'support.function'],
+            settings: { foreground: '#d3b5f4' },
+          },
+          {
+            scope: ['variable', 'entity.name.tag'],
+            settings: { foreground: '#9ed2ed' },
+          },
+          { scope: ['constant'], settings: { foreground: '#edc38b' } },
+        ],
+      },
+    },
+  },
   sitemap: { hostname },
   transformPageData(pageData) {
     const path = pageData.relativePath
@@ -69,8 +103,9 @@ export default defineConfig({
       height: 24,
     },
     nav: [
-      { text: 'Documentation', link: '/why' },
+      { text: 'Documentation', link: '/' },
       { text: 'Demo', link: '/demo' },
+      { text: 'Website', link: 'https://www.cakeinteract.dev/' },
     ],
     sidebar: {
       '/': [
@@ -81,7 +116,7 @@ export default defineConfig({
             { text: 'How it works', link: '/how-it-works' },
             { text: 'Installation', link: '/installation' },
             { text: 'Configuration', link: '/configuration' },
-            { text: 'Quickstart', link: '/getting-started' },
+            { text: 'Quickstart', link: '/' },
             { text: 'Alpine and Interact', link: '/guide/alpine' },
           ],
         },

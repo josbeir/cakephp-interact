@@ -63,7 +63,7 @@ class NumericTransportTest extends TestCase
     public function testUnsafeNestedValuesAreRejected(int|float $value): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('browser precision');
+        $this->expectExceptionMessageMatches('/browser precision/');
         Values::validate(['nested' => ['id' => $value]]);
     }
 

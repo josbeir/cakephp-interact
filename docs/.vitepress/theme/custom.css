@@ -1,0 +1,54 @@
+:root {
+  --vp-c-brand-1: #4f46e5;
+  --vp-c-brand-2: #4338ca;
+  --vp-c-brand-3: #4f46e5;
+  --vp-c-brand-soft: rgb(129 140 248 / 14%);
+}
+
+/* Match the official website's initiative-dark palette. */
+.dark {
+  --vp-c-bg: #090b10;
+  --vp-c-bg-alt: #11151e;
+  --vp-c-bg-elv: #11151e;
+  --vp-c-bg-soft: #11151e;
+
+  --vp-c-border: #3c475a;
+  --vp-c-divider: #29313f;
+  --vp-c-gutter: #29313f;
+
+  --vp-c-text-1: #e9edf4;
+  --vp-c-text-2: #aab5c7;
+  --vp-c-text-3: #8b96aa;
+
+  --vp-c-gray-1: #4b5565;
+  --vp-c-gray-2: #29313f;
+  --vp-c-gray-3: #1a2130;
+  --vp-c-gray-soft: rgb(165 180 252 / 10%);
+
+  --vp-c-brand-1: #a5b4fc;
+  --vp-c-brand-2: #818cf8;
+  --vp-c-brand-3: #818cf8;
+  --vp-c-brand-soft: rgb(129 140 248 / 16%);
+
+  --vp-c-purple-1: #c5a6eb;
+  --vp-c-purple-soft: rgb(197 166 235 / 12%);
+  --vp-c-green-1: #a7d8b6;
+  --vp-c-green-soft: rgb(167 216 182 / 12%);
+  --vp-c-yellow-1: #edc38b;
+  --vp-c-yellow-soft: rgb(237 195 139 / 12%);
+  --vp-c-red-1: #ef8a94;
+  --vp-c-red-soft: rgb(239 138 148 / 12%);
+
+  --vp-c-tip-1: #a0d5c8;
+  --vp-c-tip-soft: rgb(160 213 200 / 12%);
+  --vp-c-note-1: #9ed2ed;
+  --vp-c-note-soft: rgb(158 210 237 / 12%);
+
+  --vp-code-block-bg: #0e121b;
+  --vp-button-brand-text: #11132d;
+  --vp-button-brand-hover-text: #11132d;
+  --vp-button-brand-hover-bg: #a5b4fc;
+  --vp-button-brand-active-text: #11132d;
+
+  color-scheme: dark;
+}
