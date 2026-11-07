@@ -73,14 +73,8 @@ returning its Response avoids automatic template rendering.
 
 ```php [Inside an application controller]
 use Cake\Http\Response;
-use Cake\Routing\Attribute\Post;
 use Interact\Http\UpdateHandler;
 
-#[Post(
-    '/islands/update',
-    name: 'app:interact',
-    defaults: ['interactScope' => 'default'],
-)]
 public function update(UpdateHandler $interact): Response
 {
     return $interact->handle(
@@ -88,6 +82,20 @@ public function update(UpdateHandler $interact): Response
         $this->getResponse(),
     );
 }
+```
+
+Connect the action in the application's existing route scope:
+
+```php [config/routes.php — inside the route scope]
+$routes->post(
+    '/islands/update',
+    [
+        'controller' => 'Islands',
+        'action' => 'update',
+        'interactScope' => 'default',
+    ],
+    'app:interact',
+);
 ```
 
 The `interactScope` route default marks the endpoint early enough for middleware

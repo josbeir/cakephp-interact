@@ -41,7 +41,7 @@ directives. CakePHP owns queries, validation, authorization, and saving.
 
 Available on [Packagist](https://packagist.org/packages/josbeir/cakephp-interact)
 as `dev-main` only, with an experimental API and no stable release yet. Requires
-PHP 8.5, CakePHP 6 development builds, and modern browsers. See the installation
+PHP 8.5, CakePHP 5.4 or later in the 5.x series, and modern browsers. See the installation
 guide for setup and compatibility requirements. The standard Composer package
 includes the browser runtime; Node and npm are not required.
 

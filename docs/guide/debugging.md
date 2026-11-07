@@ -155,8 +155,8 @@ Debugger::log($this->data);
   This feature does not support displaying them as completed diagnostic updates.
   Xdebug breakpoints work independently of the response transport.
 - Capture includes direct `echo`, `print_r()`, and similar buffered output. It
-  cannot distinguish those bytes from dumps. CakePHP 6 no longer masks dump
-  values, and Interact does not redact captured output. Do not dump secrets.
+  cannot distinguish those bytes from dumps. CakePHP 5 masks configured keys in its native dump output; Interact adds no
+  redaction for other captured output. Do not dump secrets.
 - Retention is limited to 256 KiB per request. Excess output is discarded and
   truncation is shown. Invalid UTF-8 is replaced before JSON encoding. Streaming
   diagnostics are split to respect the existing frame-size limit.

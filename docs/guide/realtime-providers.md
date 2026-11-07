@@ -25,10 +25,10 @@ no realtime provider.
 
 ## Mercure
 
-Install the optional CakePHP 6 integration and run a Mercure 1.x hub:
+Install the optional CakePHP 5 integration and run a Mercure 1.x hub:
 
 ```sh
-composer require josbeir/cakephp-mercure:dev-cake6
+composer require josbeir/cakephp-mercure:^0.3.1
 ```
 
 Supply the provider configuration before loading Interact in application bootstrap.
@@ -154,7 +154,7 @@ your environment. Load Interact through its normal plugin lifecycle.
 
 ```php
 use App\Realtime\WebSocketProvider;
-use Cake\Container\ContainerInterface;
+use Cake\Core\ContainerInterface;
 use Cake\Http\Client;
 use Interact\Realtime\BroadcasterInterface;
 use Interact\Realtime\SubscriptionAuthorizerInterface;

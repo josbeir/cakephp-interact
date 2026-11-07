@@ -117,5 +117,5 @@ Use Alpine's `x-data`, `x-show`, and `x-transition` for browser-only interaction
 These send no request. Start with [Quickstart](/getting-started), then follow
 [Alpine and Interact](/guide/alpine) to combine local UI state with PHP actions.
 
-Development preview for **PHP 8.5 and CakePHP 6 development builds**. Install
+Development preview for **PHP 8.5 and CakePHP 5.4 or later in the 5.x series**. Install
 `dev-main` using the [installation guide](/installation).

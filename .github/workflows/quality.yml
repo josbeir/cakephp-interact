@@ -2,7 +2,7 @@ name: Quality
 
 on:
   push:
-    branches: [main]
+    branches: [main, cake6]
   pull_request:
 
 permissions:
@@ -10,6 +10,11 @@ permissions:
 
 jobs:
   php:
+    name: PHP (${{ matrix.dependencies }})
+    strategy:
+      fail-fast: false
+      matrix:
+        dependencies: [locked, lowest, latest]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -23,6 +28,12 @@ jobs:
           coverage: xdebug
           tools: composer:v2
       - run: composer install --no-interaction --prefer-dist
+      - name: Resolve minimum framework dependencies
+        if: matrix.dependencies == 'lowest'
+        run: composer update cakephp/cakephp josbeir/cakephp-mercure --with-dependencies --prefer-lowest --prefer-stable --no-interaction
+      - name: Resolve latest framework dependencies
+        if: matrix.dependencies == 'latest'
+        run: composer update cakephp/cakephp josbeir/cakephp-mercure --with-dependencies --no-interaction
       - run: composer validate --strict
       - run: composer check
       - run: composer test-coverage
@@ -38,7 +49,7 @@ jobs:
           fail_ci_if_error: false
       - uses: actions/upload-artifact@v4
         with:
-          name: php-coverage
+          name: php-coverage-${{ matrix.dependencies }}
           path: build/clover.xml
 
   browser:
