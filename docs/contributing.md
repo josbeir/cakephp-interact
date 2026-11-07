@@ -156,10 +156,13 @@ behavior, links, and desktop/mobile navigation.
 
 ## Release branches
 
-`main` targets CakePHP 5.4+ and Interact 1.x. `cake6` targets CakePHP 6 and
-Interact 2.x. Both require PHP 8.5. Package versions begin at `1.0.0-alpha.1`
-and `2.0.0-alpha.1`; the API remains experimental until stable releases.
-Composer aliases expose these branches as `1.x-dev` and `2.x-dev`.
+`main` targets CakePHP 5.4+ and currently releases Interact 0.2.x, progressing
+toward a stable 1.x API. `cake6` targets CakePHP 6 and the future Interact 2.x
+line. Both require PHP 8.5. Composer aliases expose these branches as `0.2.x-dev`
+and `2.x-dev`; the API remains experimental.
+
+Version 0.2.0 introduces CakePHP 5 support. Applications using CakePHP 6 with
+Interact 0.1.x should switch to `dev-cake6` to retain compatibility.
 
 Develop shared fixes on `main`, then merge `main` into `cake6` with an ordinary
 merge commit. Adapt CakePHP 6 differences and run that branch's checks before
@@ -174,7 +177,7 @@ for ordinary updates: it would discard incoming fixes. Review dependency
 constraints, lockfiles, package versions, CI, and documentation during forward merges.
 
 The documentation deployment builds both branches together: the existing root
-serves 1.x and `/2.x/` serves 2.x. Each deployment preserves both versions. Publishing runs from `main` after either
+serves the CakePHP 5 line and `/2.x/` serves the CakePHP 6 line. Each deployment preserves both versions. Publishing runs from `main` after either
 branch builds successfully, preserving the Pages environment’s deployment policy.
 Release tags and npm publication are separate from branch preparation.
 
@@ -205,7 +208,8 @@ tooling; standard Composer consumers do not need it.
 
 Packagist's default GitHub source archives include these committed assets for
 `dev-cake6` and future tagged releases. Build and commit the assets before tagging
-a release. There is no stable release yet.
+a release. Tagged releases beginning with 0.2.0 target CakePHP 5; older 0.1.x
+tags target CakePHP 6.
 
 `package:composer` creates a reproducible archive under
 `build/releases/` with PHP source, docs, the standalone bundle, and third-party

@@ -75,7 +75,7 @@ export default defineConfig({
         text: 'Versions',
         items: [
           {
-            text: '1.x · CakePHP 5',
+            text: '0.2.x · CakePHP 5',
             link: 'https://josbeir.github.io/cakephp-interact/',
           },
           {
