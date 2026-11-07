@@ -253,7 +253,7 @@ class IslandTestTest extends TestCase
             ->assertRedirect('/done')
             ->assertNotRendered();
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('redirect ended');
+        $this->expectExceptionMessageMatches('/redirect ended/');
         $test->sync();
     }
 
@@ -290,7 +290,7 @@ class IslandTestTest extends TestCase
     public function testApplicationExceptionsAndUndeclaredActionsReachPhpunit(): void
     {
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Application action failed.');
+        $this->expectExceptionMessageMatches('/Application action failed\./');
         $this->testIsland('Testing')->call('explode');
     }
 
@@ -382,7 +382,7 @@ class IslandTestTest extends TestCase
     {
         $this->applicationOverride = $this->createStub(ConsoleApplicationInterface::class);
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('application with a CakePHP container');
+        $this->expectExceptionMessageMatches('/application with a CakePHP container/');
         $this->testIsland('Counter');
     }
 

@@ -56,7 +56,7 @@ class RealtimeConfigurationTest extends TestCase
     public function testMercureRequiresItsPluginPublisherService(): void
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('load the Mercure plugin first');
+        $this->expectExceptionMessageMatches('/load the Mercure plugin first/');
         new RealtimeServices()->register(new Container());
     }
 
@@ -90,7 +90,7 @@ class RealtimeConfigurationTest extends TestCase
         Configure::write('Mercure.public_url');
         new RealtimeServices()->register($container);
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('Configure the public Mercure hub URL');
+        $this->expectExceptionMessageMatches('/Configure the public Mercure hub URL/');
         $container->get(MercureProvider::class);
     }
 
@@ -111,7 +111,7 @@ class RealtimeConfigurationTest extends TestCase
     {
         Configure::write('Mercure.jwt', $options);
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('Invalid Mercure token factory configuration');
+        $this->expectExceptionMessageMatches('/Invalid Mercure token factory configuration/');
         new MercureTokens()->create();
     }
 

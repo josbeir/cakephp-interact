@@ -45,7 +45,7 @@ class SnapshotCodecTest extends TestCase
         $this->assertSame(524_288, strlen($token));
         $this->assertSame(['body' => $body], $codec->open($token, 'session', 'admin'));
         $this->expectException(LengthException::class);
-        $this->expectExceptionMessage('512 KiB');
+        $this->expectExceptionMessageMatches('/512 KiB/');
         $codec->seal(['body' => $body . 'x'], 'session', 'admin');
     }
 

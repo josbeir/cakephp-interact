@@ -143,7 +143,7 @@ class IslandIsolationTest extends TestCase
     {
         $this->bootstrapFailure = new RuntimeException('Application bootstrap failed.');
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Application bootstrap failed.');
+        $this->expectExceptionMessageMatches('/Application bootstrap failed\./');
         try {
             $this->testIsland('Counter');
         } finally {

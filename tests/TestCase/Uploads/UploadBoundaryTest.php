@@ -51,7 +51,7 @@ class UploadBoundaryTest extends UploadStorageTestCase
     {
         [$definition, $snapshot, $context] = $this->selection(['unknown' => []]);
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Unknown signed upload field.');
+        $this->expectExceptionMessageMatches('/Unknown signed upload field\./');
         new UploadRestorer()->restore(new DocumentUpload(), $definition, $snapshot, $context);
     }
 
@@ -83,7 +83,7 @@ class UploadBoundaryTest extends UploadStorageTestCase
         $island = new DocumentUpload();
         $island->document = $storage->put($this->incoming(), $owner);
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The selected file belongs to another upload field.');
+        $this->expectExceptionMessageMatches('/The selected file belongs to another upload field\./');
         new UploadPublisher($storage)->export($island, $definition, $snapshot, $context);
     }
 

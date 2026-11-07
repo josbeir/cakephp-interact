@@ -197,7 +197,7 @@ class RenderlessTest extends UploadStorageTestCase
         $initial = $this->runtime->mount('Renderless', [], 'parent', $this->context);
         RenderlessIsland::$allowed = false;
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Permission revoked.');
+        $this->expectExceptionMessageMatches('/Permission revoked\./');
         $this->runtime->update(['snapshot' => $initial->snapshot, 'action' => 'remember'], $this->context);
     }
 

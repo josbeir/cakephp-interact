@@ -389,7 +389,9 @@ class PaginationTest extends TestCase
     {
         $mount = $this->runtime->mount('StateOnly', [], null, $this->context);
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Island numbers exceed browser precision. Use strings for larger identifiers.');
+        $this->expectExceptionMessageMatches(
+            '/Island numbers exceed browser precision\. Use strings for larger identifiers\./',
+        );
         $this->runtime->update([
             'snapshot' => $mount->snapshot,
             'updates' => ['paging.page' => PHP_INT_MAX],

@@ -139,7 +139,7 @@ class WebSocketProviderExampleTest extends TestCase
             'management-only',
         );
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('invalid subscription token');
+        $this->expectExceptionMessageMatches('/invalid subscription token/');
         $provider->authorize(['articles/1'], time() + 300);
     }
 
@@ -185,7 +185,7 @@ class WebSocketProviderExampleTest extends TestCase
             'management-only',
         );
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('gateway request failed');
+        $this->expectExceptionMessageMatches('/gateway request failed/');
         $provider->publish('reports/1', $message, private: false);
     }
 }

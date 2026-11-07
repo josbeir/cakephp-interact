@@ -155,7 +155,7 @@ class ConfigurationTest extends TestCase
         $container = new Container();
         new UploadServices()->register($container);
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Upload configuration must be an array.');
+        $this->expectExceptionMessageMatches('/Upload configuration must be an array\./');
         $container->get(UploadConfig::class);
     }
 

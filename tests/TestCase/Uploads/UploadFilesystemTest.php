@@ -34,7 +34,7 @@ class UploadFilesystemTest extends TestCase
     {
         $filesystem = new UploadFilesystem(new UploadConfig(['directory' => 'interactuploadfault://mkdir-fail']));
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Cannot create private upload directory.');
+        $this->expectExceptionMessageMatches('/Cannot create private upload directory\./');
         $filesystem->locked(new UploadOwner('session', 'scope', 'island', 'file'), static function (): void {
             static::fail('No operation may run without a private directory.');
         });
