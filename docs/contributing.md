@@ -71,7 +71,9 @@ Coverage needs Xdebug in coverage mode or PCOV. Include unexecuted source and
 require at least 95% unrounded line coverage across production `src/`. Missing
 reports and empty executable-source measurements fail the explicit gate.
 PHPUnit 12.5 and 13 are supported. The committed lockfile uses PHPUnit 13;
-CI also runs both majors with minimum and latest framework dependencies.
+CI resolves the full dependency set with `composer update --prefer-lowest
+--prefer-stable` and `composer update --prefer-stable`, covering PHPUnit 12.5
+and 13 respectively. The browser job installs the committed lockfile.
 PHPUnit fails on warnings, risky tests, and deprecations.
 
 ::: details Optional branch coverage
