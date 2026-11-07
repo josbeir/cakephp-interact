@@ -109,7 +109,12 @@ export default defineConfig({
     nav: [
       { text: 'Documentation', link: '/' },
       { text: 'Demo', link: '/demo' },
-      { text: 'Website', link: 'https://www.cakeinteract.dev/' },
+      {
+        text: 'Website',
+        link: 'https://www.cakeinteract.dev/',
+        target: '_self',
+        noIcon: true,
+      },
     ],
     sidebar: {
       '/': [
