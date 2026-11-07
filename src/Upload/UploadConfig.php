@@ -61,7 +61,7 @@ readonly class UploadConfig
         /** @var mixed $value */
         $value = $options[$name] ?? $default;
         if (is_string($value)) {
-            $value = Text::parseFileSize(trim($value), 0);
+            $value = (int)Text::parseFileSize(trim($value), 0);
         }
 
         return $this->positive([$name => $value], $name, $default);

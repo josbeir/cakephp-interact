@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\Realtime\Providers;
 
-use Cake\Container\Container;
 use Cake\Core\Configure;
+use Cake\Core\Container;
 use Cake\Http\Client;
 use Cake\Http\Client\Response;
 use Interact\Configuration;

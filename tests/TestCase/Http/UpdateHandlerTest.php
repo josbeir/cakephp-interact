@@ -63,7 +63,7 @@ class UpdateHandlerTest extends TestCase
             new Factory(new Registry(), new SnapshotCodec(str_repeat('k', 32))),
             new FailureResponder(),
         );
-        $limit = Text::parseFileSize((string)ini_get('post_max_size'));
+        $limit = (int)Text::parseFileSize((string)ini_get('post_max_size'));
         $request = new ServerRequest(['environment' => ['REQUEST_METHOD' => 'POST']]);
         $response = $handler->handle(
             $request->withHeader('Content-Type', 'multipart/form-data')

@@ -6,8 +6,6 @@ namespace TestApp\Controller;
 use Cake\Core\Configure;
 use Cake\Http\Exception\BadRequestException;
 use Cake\Http\Response;
-use Cake\Routing\Attribute\Get;
-use Cake\Routing\Attribute\Post;
 use Cake\Routing\Router;
 use Interact\Http\UpdateHandler;
 use Interact\Realtime\SubscriptionHandler;
@@ -23,7 +21,6 @@ class RealtimeController extends AppController
     /**
      * Render the chat with optional hub setup instructions.
      */
-    #[Get('/realtime', name: 'demo:realtime')]
     public function index(): void
     {
         $this->set('ready', Configure::read('Interact.realtime.provider') === 'mercure');
@@ -32,7 +29,6 @@ class RealtimeController extends AppController
     /**
      * Exercise application-owned endpoints in a non-default middleware scope.
      */
-    #[Get('/realtime/scoped', name: 'demo:realtime:scoped')]
     public function scoped(): void
     {
         $this->viewBuilder()->addHelper('Interact', [
@@ -48,7 +44,6 @@ class RealtimeController extends AppController
     /**
      * Reuse ordinary update processing inside the application's scoped route.
      */
-    #[Post('/realtime/update', name: 'demo:realtime:update', defaults: ['interactScope' => 'realtime-demo'])]
     public function update(UpdateHandler $handler): Response
     {
         return $handler->handle($this->getRequest(), $this->getResponse());
@@ -57,7 +52,6 @@ class RealtimeController extends AppController
     /**
      * Reauthorize subscription leases under the same current middleware scope.
      */
-    #[Post('/realtime/subscribe', name: 'demo:realtime:subscribe', defaults: ['interactScope' => 'realtime-demo'])]
     public function subscribe(SubscriptionHandler $handler): Response
     {
         return $handler->handle($this->getRequest(), $this->getResponse());
@@ -66,7 +60,6 @@ class RealtimeController extends AppController
     /**
      * Exercise private topics using two deterministic demo identities.
      */
-    #[Post('/demo/realtime-user/{userId}', name: 'demo:realtime-user', pass: ['userId'])]
     public function user(string $userId): Response
     {
         if (!in_array($userId, ['1', '2'], true)) {

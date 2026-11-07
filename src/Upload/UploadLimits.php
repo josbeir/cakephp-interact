@@ -50,6 +50,6 @@ class UploadLimits
     {
         $value = trim((string)ini_get($setting));
 
-        return $value === '-1' ? 0 : Text::parseFileSize($value);
+        return $value === '-1' ? 0 : (int)Text::parseFileSize($value);
     }
 }

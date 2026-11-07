@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\Configuration;
 
-use Cake\Container\Container;
 use Cake\Core\Configure;
+use Cake\Core\Container;
 use Cake\Http\ServerRequest;
 use Cake\Http\Session;
 use Cake\View\View;
@@ -221,7 +221,7 @@ class ConfigurationTest extends TestCase
     {
         $container = new Container();
         new UploadServices()->register($container);
-        $this->assertFalse($container->hasDefinition(UpdateHandler::class));
+        $this->assertFalse($container->has(UpdateHandler::class));
         new InteractPlugin()->services($container);
         $this->assertNotSame($container->get(UpdateHandler::class), $container->get(UpdateHandler::class));
         $custom = new UpdateHandler(

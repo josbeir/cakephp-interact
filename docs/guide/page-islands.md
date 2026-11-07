@@ -43,7 +43,6 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use Cake\Routing\Attribute\Get;
 use Interact\View\IslandView;
 
 /**
@@ -56,7 +55,6 @@ class CountersController extends AppController
     /**
      * Render the counter through its declared page template.
      */
-    #[Get('/counter', name: 'counter:index')]
     public function index(): void
     {
         $this->viewBuilder()
@@ -85,6 +83,12 @@ declare(strict_types=1);
 ```
 
 :::
+
+Connect the action in your application's existing route scope:
+
+```php [config/routes.php — inside the route scope]
+$routes->get('/counter', ['controller' => 'Counters', 'action' => 'index'], 'counter:index');
+```
 
 Open `/counter`. The layout needs to output its `script` block as described in
 [installation](/installation).

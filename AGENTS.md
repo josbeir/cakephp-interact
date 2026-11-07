@@ -5,7 +5,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 ## Purpose and architecture
 
 - Build CakePHP Interact: reactive, server-rendered PHP islands, independent of Livewire and htmx.
-- Target PHP 8.5 and CakePHP 6. Declare supported versions and test them in CI.
+- Target PHP 8.5 and CakePHP 5.4+ on `main` (Interact 1.x); `cake6` targets CakePHP 6 (Interact 2.x). Declare supported versions and test them in CI.
 - Use `Island`, optional `Render` attributes, and `IslandContext`. Resolve conventional `Island`-suffixed classes on demand using CakePHP-style application/plugin names; keep matching templates under `templates/island/`. CakePHP controller components retain their existing meaning.
 - Separate class resolution, metadata compilation, state transport, authorization, actions, rendering, and browser synchronization.
 - Construct fresh islands per request through CakePHP's container. Cache declarations only.
@@ -49,7 +49,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 ## CakePHP and PHP
 
 - Use `declare(strict_types=1);`, PSR-4, explicit types, and CakePHP conventions.
-- Use CakePHP's plugin lifecycle, container, Attribute Resolver, routing, translation, requests, and security facilities.
+- Use CakePHP's plugin lifecycle, container, routing, translation, requests, and security facilities.
 - Prefer cohesive objects and composition. Use interfaces at real extension boundaries.
 - Keep PHP plugin classes extensible by default: consumers may subclass services, helpers, views, context objects, and metadata. Use protected methods and properties instead of private implementation members; retain constructor injection for behavior services.
 - Do not use final classes or methods merely because a class is small, immutable, or a utility. Readonly classes can remain inheritable. Use late static binding in overridable static workflows so recursive calls honor subclass behavior.
@@ -72,7 +72,7 @@ These instructions apply to the plugin, TypeScript runtime, demo application, te
 - Use typed finder parameters and `SelectQuery` return types with meaningful generic annotations.
 - Finders return composable queries; callers choose execution/pagination.
 - Controllers and islands orchestrate finders; templates never query the database.
-- Declare demo controller routes with CakePHP routing attributes and connect them through `connectAttributes()`.
+- Declare demo controller routes explicitly through CakePHP’s RouteBuilder.
 - In the demo app, use CakePHP’s `LocatorAwareTrait::fetchTable()` for Table access rather than constructor-injecting Tables. Keep constructor injection for plugin behavior services and non-Table application dependencies.
 - Ordinary primary-key `get()` calls do not need ceremonial finder wrappers.
 - Allowlist client-selectable ordering and validate query inputs.

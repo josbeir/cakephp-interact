@@ -18,7 +18,7 @@ class PlaygroundHttpTest extends HttpTestCase
         $this->mounted(url: '/playground');
         $this->assertResponseContains('Playground');
         $this->assertResponseContains('href="/demo.css"');
-        $xpath = new XPath(HTMLDocument::createFromString((string)$this->response?->getBody()));
+        $xpath = new XPath(HTMLDocument::createFromString((string)$this->_response?->getBody()));
         $xpath->registerNamespace('html', 'http://www.w3.org/1999/xhtml');
         $this->assertSame(
             1,

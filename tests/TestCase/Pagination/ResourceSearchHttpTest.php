@@ -19,7 +19,7 @@ class ResourceSearchHttpTest extends HttpTestCase
         $this->mounted(url: '/search');
         $this->assertResponseContains('1,200 sample resources');
         $this->assertResponseContains('Showing 1–20 of');
-        $document = HTMLDocument::createFromString((string)$this->response?->getBody());
+        $document = HTMLDocument::createFromString((string)$this->_response?->getBody());
         $xpath = new XPath($document);
         $xpath->registerNamespace('html', 'http://www.w3.org/1999/xhtml');
         $this->assertSame(

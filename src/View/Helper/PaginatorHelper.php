@@ -26,14 +26,14 @@ class PaginatorHelper extends CakePaginatorHelper
     {
         $previous = [
             $this->paginated,
-            $this->config,
-            $this->templater instanceof StringTemplate ? clone $this->templater : null,
+            $this->_config,
+            $this->_templater instanceof StringTemplate ? clone $this->_templater : null,
         ];
         $this->paginated = $result;
         $this->setConfig('options.url', [], false);
 
         return function () use ($previous): void {
-            [$this->paginated, $this->config, $this->templater] = $previous;
+            [$this->paginated, $this->_config, $this->_templater] = $previous;
         };
     }
 
@@ -56,8 +56,8 @@ class PaginatorHelper extends CakePaginatorHelper
         if (
             !$result instanceof Paginated
             || $url !== []
-            || !empty($this->config['options']['url'])
-            || !empty($this->config['options']['routePlaceholders'])
+            || !empty($this->_config['options']['url'])
+            || !empty($this->_config['options']['routePlaceholders'])
         ) {
             if ($result instanceof Paginated) {
                 $result->links->assertUrlBound($result->fields, $result->property);

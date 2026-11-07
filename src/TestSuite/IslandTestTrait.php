@@ -13,6 +13,7 @@ use Cake\Http\ServerRequest;
 use Cake\Routing\RouteCollection;
 use Cake\Routing\Router;
 use Cake\Routing\RoutingApplicationInterface;
+use Interact\Container\Services;
 use Interact\IslandContext;
 use Interact\Runtime\Factory;
 use LogicException;
@@ -99,7 +100,7 @@ trait IslandTestTrait
             $app->pluginRoutes($routes);
         }
 
-        return $this->islandTestFactory = $app->getContainer()->get(Factory::class);
+        return $this->islandTestFactory = Services::get($app->getContainer(), Factory::class);
     }
 
     /**

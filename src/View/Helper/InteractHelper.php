@@ -27,7 +27,7 @@ class InteractHelper extends Helper
     /**
      * @var array<string, mixed> Explicit integration overrides; npm users disable autoScript.
      */
-    protected array $defaultConfig = [
+    protected array $_defaultConfig = [
         'autoScript' => true,
         'scope' => 'default',
         'endpoint' => null,

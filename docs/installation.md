@@ -5,7 +5,7 @@ description: Install the development plugin from Packagist in a CakePHP applicat
 
 # Installation
 
-You need **PHP 8.5**, a **CakePHP 6 development application**, and Composer.
+You need **PHP 8.5**, a **CakePHP 5.4+ application**, and Composer.
 The standard package includes the browser runtime with Alpine; Node and npm are
 not required.
 Interact is available on
@@ -19,15 +19,15 @@ To explore without integrating an existing application, [run the demo](/demo).
 Run these commands from your CakePHP application's root directory:
 
 ```sh
-composer config minimum-stability dev
-composer config prefer-stable true
 composer require josbeir/cakephp-interact:dev-main --with-all-dependencies
 ```
 
 Packagist is Composer's default repository; no custom repository or separate
-clone is needed. The stability settings permit CakePHP's development dependencies
-while preferring stable versions where possible. Interact targets CakePHP 6;
-these steps do not make an existing CakePHP 5 application compatible.
+clone is needed. The explicit `dev-main` constraint permits Interact's development
+version without lowering application-wide stability. Interact 1.x targets CakePHP
+5.4+; Interact 2.x on the `cake6` branch targets CakePHP 6. PHP 8.5 is required
+by both release lines. Alpha releases are being prepared; use the branch
+constraint until their tags are published.
 
 ## Browser runtime {#build-the-browser-runtime}
 

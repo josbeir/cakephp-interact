@@ -64,18 +64,18 @@ abstract class HttpTestCase extends TestCase
     {
         $this->get($url);
         $this->assertResponseOk();
-        $document = HTMLDocument::createFromString((string)$this->response?->getBody());
+        $document = HTMLDocument::createFromString((string)$this->_response?->getBody());
         $node = new XPath($document)->query('//*[@data-interact-id]')
             ->item($index);
         $this->assertInstanceOf(Element::class, $node);
 
         $this->csrf = (string)$node->getAttribute('data-interact-csrf');
-        $this->assertInstanceOf(Response::class, $this->response);
-        $cookies = $this->response->getCookieCollection();
+        $this->assertInstanceOf(Response::class, $this->_response);
+        $cookies = $this->_response->getCookieCollection();
         /** @var mixed $cookie */
         $cookie = $cookies->has(Application::CSRF_COOKIE)
             ? $cookies->get(Application::CSRF_COOKIE)->getValue()
-            : $this->cookie[Application::CSRF_COOKIE] ?? null;
+            : $this->_cookie[Application::CSRF_COOKIE] ?? null;
         $this->assertIsString($cookie);
         $this->cookie(Application::CSRF_COOKIE, $cookie);
 
@@ -103,7 +103,7 @@ abstract class HttpTestCase extends TestCase
     protected function nextSnapshot(): string
     {
         /** @var mixed $payload */
-        $payload = json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR);
+        $payload = json_decode((string)$this->_response?->getBody(), true, flags: JSON_THROW_ON_ERROR);
         $this->assertIsArray($payload);
         /** @var mixed $snapshot */
         $snapshot = $payload['snapshot'] ?? null;

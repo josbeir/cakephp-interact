@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace Interact\Upload;
 
-use Cake\Container\ContainerInterface;
 use Cake\Core\Configure;
+use Cake\Core\ContainerInterface;
+use Interact\Command\CleanupUploadsCommand;
+use Interact\Container\Services;
 use InvalidArgumentException;
 
 /**
@@ -17,7 +19,7 @@ class UploadServices
      */
     public function register(ContainerInterface $container): void
     {
-        if (!$container->hasDefinition(UploadConfig::class)) {
+        if (!Services::has($container, UploadConfig::class)) {
             $container->addShared(UploadConfig::class, static function (): UploadConfig {
                 /** @var mixed $options */
                 $options = Configure::read('Interact.uploads', []);
@@ -29,14 +31,18 @@ class UploadServices
             });
         }
 
-        if (!$container->hasDefinition(UploadStorageInterface::class)) {
+        if (!Services::has($container, UploadStorageInterface::class)) {
             $container->addShared(UploadStorageInterface::class, LocalUploadStorage::class)
                 ->addArgument(UploadConfig::class);
         }
 
-        if (!$container->hasDefinition(UploadManager::class)) {
+        if (!Services::has($container, UploadManager::class)) {
             $container->addShared(UploadManager::class)
                 ->addArguments([UploadStorageInterface::class, UploadConfig::class]);
+        }
+
+        if (!Services::has($container, CleanupUploadsCommand::class)) {
+            $container->add(CleanupUploadsCommand::class)->addArgument(UploadStorageInterface::class);
         }
     }
 }

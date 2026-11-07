@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 namespace Interact\Discovery;
 
-use Cake\Container\ContainerInterface;
 use Cake\Core\App;
+use Cake\Core\ContainerInterface;
 use Cake\Core\Plugin;
 use Cake\Http\ServerRequest;
+use Interact\Container\Services;
 use Interact\Island;
 use Interact\Pagination\PaginationProperty;
 use InvalidArgumentException;
@@ -125,7 +126,7 @@ class Registry
     {
         /** @var mixed $instance */
         $instance = $this->container instanceof ContainerInterface
-            ? $this->container->getNew($definition->class)
+            ? Services::fresh($this->container, $definition->class)
             : new ReflectionClass($definition->class)->newInstance();
         if (!$instance instanceof Island) {
             throw new InvalidArgumentException('The container must return an Island instance.');

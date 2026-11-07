@@ -80,10 +80,10 @@ class Application extends BaseApplication
     }
 
     /**
-     * Discover demo controller routes from CakePHP attributes; the plugin owns its update endpoint.
+     * Connect explicit demo routes; the plugin owns its update endpoint.
      */
     public function routes(RouteBuilder $routes): void
     {
-        $routes->connectAttributes('interactDemoRoutes');
+        require $this->configDir . 'routes.php';
     }
 }

@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace TestApp\Controller;
 
 use Cake\Http\Response;
-use Cake\Routing\Attribute\Get;
-use Cake\Routing\Attribute\Post;
 use Cake\Routing\Router;
 use Interact\Http\UpdateHandler;
 
@@ -33,13 +31,11 @@ class UploadsController extends AppController
     /**
      * Render the public document-upload demonstration through a normal action template.
      */
-    #[Get('/uploads', name: 'demo:uploads')]
     public function index(): void {}
 
     /**
      * Delegate JSON and multipart handling through CakePHP's action dependency injection.
      */
-    #[Post('/uploads/update', name: 'demo:uploads:update', defaults: ['interactScope' => 'uploads-demo'])]
     public function update(UpdateHandler $interact): Response
     {
         return $interact->handle($this->getRequest(), $this->getResponse());

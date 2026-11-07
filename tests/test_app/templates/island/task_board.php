@@ -40,7 +40,7 @@ use function Cake\Core\h;
         <?php foreach ($errors['draft'] ?? [] as $error): ?>
             <p role="alert" class="field-error"><?= (string)h($error) ?></p>
         <?php endforeach; ?>
-        <div class="form-footer"><?= $this->Form->button('Add task <span aria-hidden="true">+</span>', ['class' => 'button-primary', 'escape' => false]) ?><span class="quiet">Up to 12 tasks · Resets on reload</span></div>
+        <div class="form-footer"><?= $this->Form->button('Add task <span aria-hidden="true">+</span>', ['class' => 'button-primary', 'escapeTitle' => false]) ?><span class="quiet">Up to 12 tasks · Resets on reload</span></div>
     <?= $this->Form->end() ?>
     <p class="request-error" role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 </section>

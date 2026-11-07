@@ -136,7 +136,7 @@ class DebuggingHttpTest extends HttpTestCase
         $output = Values::map($this->payload()['diagnostics']);
         $this->assertIsString($output['output']);
         $this->assertStringContainsString('updated', $output['output']);
-        $this->assertStringContainsString('debug.txt', (string)$this->response?->getBody());
+        $this->assertStringContainsString('debug.txt', (string)$this->_response?->getBody());
     }
 
     public function testStreamingDiagnosticsPrecedeTheirProgressAndTerminalFrames(): void
@@ -162,7 +162,7 @@ class DebuggingHttpTest extends HttpTestCase
                     'action' => 'inspectStream',
                     'args' => [$mode],
                 ], JSON_THROW_ON_ERROR));
-                $body .= (string)$this->response?->getBody();
+                $body .= (string)$this->_response?->getBody();
             } finally {
                 ob_end_flush();
             }
@@ -231,6 +231,6 @@ class DebuggingHttpTest extends HttpTestCase
      */
     protected function payload(): array
     {
-        return Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
+        return Values::map(json_decode((string)$this->_response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
     }
 }

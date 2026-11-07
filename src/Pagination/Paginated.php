@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Pagination;
 
+use ArrayIterator;
 use Cake\Datasource\Paging\PaginatedInterface;
 use Cake\Datasource\Paging\PaginatedResultSet;
 
@@ -29,6 +30,10 @@ class Paginated extends PaginatedResultSet
         array $parameters = [],
         public readonly string $property = '',
     ) {
-        parent::__construct($result->items(), $parameters + $result->pagingParams());
+        $items = $result->items();
+        parent::__construct(
+            is_array($items) ? new ArrayIterator($items) : $items,
+            $parameters + $result->pagingParams(),
+        );
     }
 }

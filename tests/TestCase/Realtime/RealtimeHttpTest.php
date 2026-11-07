@@ -71,7 +71,7 @@ class RealtimeHttpTest extends HttpTestCase
         $this->assertResponseOk();
         $this->assertHeader('Interact', 'true');
         $this->assertHeader('Cache-Control', 'no-store');
-        $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
+        $payload = Values::map(json_decode((string)$this->_response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
         /** @var mixed $token */
         $token = Hash::get($payload, 'grant.data.token');
         $this->assertIsString($token);
@@ -105,7 +105,7 @@ class RealtimeHttpTest extends HttpTestCase
                 'subscriptionEndpoint' => '/forged/subscribe',
             ], JSON_THROW_ON_ERROR));
             $this->assertResponseOk();
-            $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
+            $payload = Values::map(json_decode((string)$this->_response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
             $this->assertSame('/realtime/subscribe', Hash::get($payload, 'realtime.endpoint'));
             if ($action === 'reply') {
                 $this->assertNull($payload['html']);
@@ -208,7 +208,7 @@ class RealtimeHttpTest extends HttpTestCase
             'updates' => ['name' => '  ', 'message' => '   '],
         ]);
         $this->assertResponseCode(422);
-        $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
+        $payload = Values::map(json_decode((string)$this->_response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
         $this->assertSame(['Choose a display name.'], Hash::get($payload, 'errors.name'));
         $this->assertSame(['Write a message first.'], Hash::get($payload, 'errors.message'));
         $this->assertIsString($payload['html']);
@@ -219,7 +219,7 @@ class RealtimeHttpTest extends HttpTestCase
             'updates' => ['name' => '<b>Ada</b>', 'message' => '  Hello <script>bad()</script>  '],
         ]);
         $this->assertResponseOk();
-        $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
+        $payload = Values::map(json_decode((string)$this->_response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
         $this->assertSame('', Hash::get($payload, 'state.message'));
         $this->assertSame([], $payload['errors']);
         $this->assertIsString($payload['html'], 'The first valid send clears previously rendered errors.');
@@ -260,7 +260,7 @@ class RealtimeHttpTest extends HttpTestCase
             'updates' => ['message' => 'Saved during an outage.'],
         ]);
         $this->assertResponseOk();
-        $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
+        $payload = Values::map(json_decode((string)$this->_response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
         $this->assertSame('', Hash::get($payload, 'state.message'));
         $this->assertTrue(Hash::get($payload, 'state.deliveryIssue'));
         $this->assertSame('chat-sent', Hash::get($payload, 'events.0.name'));
@@ -276,7 +276,7 @@ class RealtimeHttpTest extends HttpTestCase
      */
     protected function metadata(): array
     {
-        $node = new XPath(HTMLDocument::createFromString((string)$this->response?->getBody()))->query(
+        $node = new XPath(HTMLDocument::createFromString((string)$this->_response?->getBody()))->query(
             '//*[@data-interact-realtime]',
         )
             ->item(0);

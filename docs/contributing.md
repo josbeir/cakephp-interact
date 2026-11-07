@@ -6,7 +6,7 @@ description: Set up the repository, run its PHP and browser quality gates, maint
 # Contributing
 
 Read the root [contributor guidelines](https://github.com/josbeir/cakephp-interact/blob/main/AGENTS.md)
-before changing code. Use PHP 8.5, CakePHP 6 development builds, and Node 24.11+ or Node 26+.
+before changing code. Use PHP 8.5, CakePHP 5.4 or later in the 5.x series, and Node 24.11+ or Node 26+.
 For installation and fixture setup, start with [the demo](/demo).
 
 For testing islands in an application, see [Testing islands](/guide/testing).
@@ -137,7 +137,7 @@ validates HTTP envelopes, and DOM modules own morphing and selection.
 
 ## Keep examples trustworthy
 
-Demo controllers use routing attributes connected through `connectAttributes()`.
+Demo controller routes are connected explicitly in `tests/test_app/config/routes.php`.
 Islands assign Table properties in `initialize()` using the inherited `fetchTable()`;
 domain queries belong in
 named finders. Keep other behavior services injectable.
@@ -153,6 +153,29 @@ FormHelper alternative. Keep short examples within the relevant feature or API p
 live in `tests/test_app/` and are linked from [Demo](/demo). HTTP and browser tests
 exercise that same application; do not maintain a separate documentation app. Check snippets,
 behavior, links, and desktop/mobile navigation.
+
+## Release branches
+
+`main` targets CakePHP 5.4+ and Interact 1.x. `cake6` targets CakePHP 6 and
+Interact 2.x. Both require PHP 8.5. Package versions begin at `1.0.0-alpha.1`
+and `2.0.0-alpha.1`; the API remains experimental until stable releases.
+Composer aliases expose these branches as `1.x-dev` and `2.x-dev`.
+
+Develop shared fixes on `main`, then merge `main` into `cake6` with an ordinary
+merge commit. Adapt CakePHP 6 differences and run that branch's checks before
+completing the merge. Keep framework-specific changes separate from shared
+behavior changes. Preserve merge ancestry: do not squash or rebase merges
+between the maintained branches.
+
+The initial CakePHP 5 backport is recorded on `cake6` with a one-time
+`git merge --no-ff -s ours <backport-tip>`. That merge preserves the CakePHP 6
+file tree while recording the backport as considered. Never repeat `-s ours`
+for ordinary updates: it would discard incoming fixes. Review dependency
+constraints, lockfiles, package versions, CI, and documentation during forward merges.
+
+The documentation deployment builds both branches together: the existing root
+serves 1.x and `/2.x/` serves 2.x. Each deployment preserves both versions.
+Release tags and npm publication are separate from branch preparation.
 
 ## Documentation and releases
 

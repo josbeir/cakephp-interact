@@ -50,7 +50,7 @@ class ArticleEditingHttpTest extends HttpTestCase
         $this->update(['snapshot' => $mount['snapshot'], 'updates' => ['search' => 'CakePHP']]);
         $this->assertResponseOk();
         $this->assertContentType('application/json');
-        $body = (string)$this->response?->getBody();
+        $body = (string)$this->_response?->getBody();
         $this->assertStringContainsString('data-interact-preserve', $body);
         $this->assertStringContainsString('CakePHP', $body);
         $this->assertStringNotContainsString('<!doctype', $body);
@@ -72,7 +72,7 @@ class ArticleEditingHttpTest extends HttpTestCase
         $this->assertHeader('Interact', 'true');
         $this->assertResponseContains('A title is required.');
         /** @var mixed $payload */
-        $payload = json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR);
+        $payload = json_decode((string)$this->_response?->getBody(), true, flags: JSON_THROW_ON_ERROR);
         $this->assertIsArray($payload);
         $this->assertSame(['title' => ['A title is required.']], $payload['errors']);
         $this->assertSame([], $payload['events']);
@@ -91,7 +91,7 @@ class ArticleEditingHttpTest extends HttpTestCase
         $this->update(['snapshot' => $this->nextSnapshot(), 'updates' => ['title' => $title], 'action' => 'save']);
         $this->assertResponseCode(422);
         /** @var mixed $payload */
-        $payload = json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR);
+        $payload = json_decode((string)$this->_response?->getBody(), true, flags: JSON_THROW_ON_ERROR);
         $this->assertIsArray($payload);
         $this->assertIsArray($payload['state']);
         $this->assertSame(['articleId' => 1, 'title' => $title, 'saved' => false], $payload['state']);

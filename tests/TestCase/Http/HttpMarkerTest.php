@@ -33,7 +33,7 @@ class HttpMarkerTest extends HttpTestCase
     {
         $this->configRequest(['headers' => ['Interact' => 'true']]);
         $mount = $this->mounted();
-        $this->assertFalse($this->response?->hasHeader('Interact'));
+        $this->assertFalse($this->_response?->hasHeader('Interact'));
         $this->update(['snapshot' => $mount['snapshot']]);
         $this->assertResponseOk();
         $this->assertHeader('Interact', 'true');
