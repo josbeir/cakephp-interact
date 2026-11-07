@@ -142,6 +142,7 @@ Required Composer scripts:
 - Treat release assets as intentional reproducible artifacts. Exclude installed dependencies, temporary output, caches, credentials, and reports from commits.
 - Commit dependency lockfiles. Keep Node tooling separate from PHP runtime dependencies.
 - Publish documentation from `main` only. Keep `cake6` documentation synchronized with shared features and adapted to CakePHP 6, without publishing it until that release.
+- Serve public docs at https://www.cakeinteract.dev/docs/ with VitePress base `/docs/`. GitHub Pages hosts the origin under `/cakephp-interact/_docs/` and redirects legacy URLs; keep the website's Caddy proxy and Pages artifact layout synchronized.
 - Maintain VitePress docs with a concise README. Document minimum working examples, lifecycle, security limits, and public contracts. Verify examples and links.
 - Run affected checks during development and the full relevant quality workflow before handoff. Review automatic fixes and rerun affected tests.
 - CI runs `composer validate --strict`, `composer check`, and `composer test-coverage` with a coverage driver enabled, plus the JavaScript/browser/documentation gates.

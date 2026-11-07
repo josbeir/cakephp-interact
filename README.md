@@ -31,17 +31,17 @@ Use Alpine for local state, events, bindings, and transitions. Interact adds PHP
 state, actions, and HTML updates through Alpine expressions and `x-interact:*`
 directives. CakePHP owns queries, validation, authorization, and saving.
 
-**[Website](https://www.cakeinteract.dev/) · [Read the documentation →](https://josbeir.github.io/cakephp-interact/)**
+**[Website](https://www.cakeinteract.dev/) · [Read the documentation →](https://www.cakeinteract.dev/docs/)**
 
-- [Why Interact?](https://josbeir.github.io/cakephp-interact/why.html)
-- [Install the plugin](https://josbeir.github.io/cakephp-interact/installation.html)
-- [Configuration](https://josbeir.github.io/cakephp-interact/configuration.html)
-- [Build your first island](https://josbeir.github.io/cakephp-interact/getting-started.html)
-- [Use Alpine with Interact](https://josbeir.github.io/cakephp-interact/guide/alpine.html)
-- [Island conventions](https://josbeir.github.io/cakephp-interact/guide/conventions.html)
-- [Explore the demo](https://josbeir.github.io/cakephp-interact/demo.html)
-- [Look up the PHP API](https://josbeir.github.io/cakephp-interact/api.html)
-- [Look up browser bindings and actions](https://josbeir.github.io/cakephp-interact/reference/browser.html)
+- [Why Interact?](https://www.cakeinteract.dev/docs/why.html)
+- [Install the plugin](https://www.cakeinteract.dev/docs/installation.html)
+- [Configuration](https://www.cakeinteract.dev/docs/configuration.html)
+- [Build your first island](https://www.cakeinteract.dev/docs/getting-started.html)
+- [Use Alpine with Interact](https://www.cakeinteract.dev/docs/guide/alpine.html)
+- [Island conventions](https://www.cakeinteract.dev/docs/guide/conventions.html)
+- [Explore the demo](https://www.cakeinteract.dev/docs/demo.html)
+- [Look up the PHP API](https://www.cakeinteract.dev/docs/api.html)
+- [Look up browser bindings and actions](https://www.cakeinteract.dev/docs/reference/browser.html)
 
 Available on [Packagist](https://packagist.org/packages/josbeir/cakephp-interact)
 as `josbeir/cakephp-interact`. The API is experimental.
@@ -61,6 +61,6 @@ setup and compatibility requirements. The standard Composer package includes the
 browser runtime; Node and npm are not required.
 
 Contributor commands, quality gates, and documentation-site setup are in the
-[contributing guide](https://josbeir.github.io/cakephp-interact/contributing.html).
+[contributing guide](https://www.cakeinteract.dev/docs/contributing.html).
 
 [MIT License](LICENSE)

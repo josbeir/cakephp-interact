@@ -1,8 +1,11 @@
 import { defineConfig } from 'vitepress';
+import {
+  originRedirect,
+  publicBase as base,
+  publicUrl as hostname,
+} from './publication';
 
 const repository = 'https://github.com/josbeir/cakephp-interact';
-const base = '/cakephp-interact/';
-const hostname = `https://josbeir.github.io${base}`;
 const socialImage = new URL('branding/interact-mark.png', hostname).href;
 
 export default defineConfig({
@@ -15,6 +18,7 @@ export default defineConfig({
   base,
   srcExclude: ['public/**'],
   head: [
+    ['script', {}, originRedirect],
     [
       'link',
       {

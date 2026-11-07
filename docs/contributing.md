@@ -195,10 +195,16 @@ npm pack --dry-run
 ```
 
 For local reading, run `npm run docs:dev` and use the URL it prints, including
-the `/cakephp-interact/` base path.
+the `/docs/` base path.
 
-The [published documentation](https://josbeir.github.io/cakephp-interact/) uses
-GitHub Pages. The Documentation workflow builds documentation changes on pull
+The [published documentation](https://www.cakeinteract.dev/docs/) is served
+through the website's Caddy proxy. GitHub Pages hosts the origin build
+under `/cakephp-interact/_docs/`; `build/docs-pages` contains that build plus
+redirects for the old public URLs. The VitePress public base remains `/docs/`,
+including during local development. Direct origin visits redirect to the
+canonical website URL; the origin itself remains publicly accessible.
+
+The Documentation workflow builds documentation changes on pull
 requests and pushes to `main` and `cake6`. Only `main` deploys to the `github-pages`
 environment; pull requests build without deployment permissions. Manual workflow
 runs can publish `main`. Pages settings must use **GitHub Actions** as the source.

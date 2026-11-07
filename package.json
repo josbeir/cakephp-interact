@@ -49,7 +49,7 @@
     "test:browser": "playwright test",
     "build": "vp pack",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs && node scripts/check-docs.mjs",
+    "docs:build": "vitepress build docs && node scripts/package-docs.mjs && node scripts/check-docs.mjs",
     "check": "vp check && npm test",
     "package:composer": "npm run build && node scripts/package-composer.mjs"
   },
