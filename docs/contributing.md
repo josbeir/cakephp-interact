@@ -202,7 +202,10 @@ through the website's Caddy proxy. GitHub Pages hosts the origin build
 under `/cakephp-interact/_docs/`; `build/docs-pages` contains that build plus
 redirects for the old public URLs. The VitePress public base remains `/docs/`,
 including during local development. Direct origin visits redirect to the
-canonical website URL; the origin itself remains publicly accessible.
+canonical website URL; the origin itself remains publicly accessible. The build
+also exposes the unchanged native MiniSearch index at `/docs/search-index.json`
+for the website’s PHP documentation search. Its serialized format is checked
+during packaging; it is the same index used by VitePress’s local search.
 
 The Documentation workflow builds documentation changes on pull
 requests and pushes to `main` and `cake6`. Only `main` deploys to the `github-pages`

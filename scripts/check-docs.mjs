@@ -1,6 +1,6 @@
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { URL } from 'node:url';
+import { URL, pathToFileURL } from 'node:url';
 import { runInNewContext } from 'node:vm';
 import { JSDOM } from 'jsdom';
 import {
@@ -154,6 +154,34 @@ const sitemap = await readFile(
 );
 if (sitemap.includes('josbeir.github.io') || !sitemap.includes(publicUrl))
   failures.push('The documentation sitemap must use the public website URL.');
+const chunks = path.join(output, 'assets/chunks');
+const module = (await readdir(chunks)).find((file) =>
+  file.startsWith('@localSearchIndexroot.'),
+);
+if (!module) throw new Error('Missing native VitePress search module.');
+const native = await import(pathToFileURL(path.resolve(chunks, module)).href);
+const exported = await readFile(
+  path.join(pagesOutput, '_docs/search-index.json'),
+  'utf8',
+);
+if (exported !== native.default)
+  failures.push(
+    'The exported search index must equal the native VitePress index.',
+  );
+const { documentIds } = JSON.parse(exported);
+for (const id of Object.values(documentIds)) {
+  const [page, anchor] = id.slice(1).split('#');
+  const document = pages.get(
+    !page || page.endsWith('/') ? `${page}index.html` : page,
+  );
+  if (
+    !document ||
+    (anchor && !document.getElementById(decodeURIComponent(anchor)))
+  )
+    failures.push(
+      `Search index has an invalid published route or anchor: ${id}`,
+    );
+}
 if (failures.length)
   throw new Error(`Documentation checks failed:\n${failures.join('\n')}`);
 console.log(
