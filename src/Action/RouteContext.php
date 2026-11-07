@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\Action;
 
 use Cake\Http\ServerRequest;
+use Interact\Runtime\Values;
 use InvalidArgumentException;
 
 /**
@@ -52,7 +53,7 @@ readonly class RouteContext
     public static function fromRequest(ServerRequest $request): static
     {
         $defaults = array_intersect_key(
-            $request->getAttribute('params', []),
+            Values::map($request->getAttribute('params', [])),
             array_flip([
                 'controller',
                 'action',

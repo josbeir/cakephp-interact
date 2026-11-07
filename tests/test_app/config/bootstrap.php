@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 
-use Cake\AttributeResolver\AttributeResolver;
 use Cake\Cache\Cache;
 use Cake\Cache\Engine\ArrayEngine;
 use Cake\Core\BasePlugin;
@@ -109,13 +108,5 @@ if ($connection->execute('SELECT COUNT(*) FROM cities')->fetchColumn(0) === 0) {
 }
 
 require __DIR__ . '/seed_resources.php';
-
-AttributeResolver::setConfig('interactDemoRoutes', [
-    'paths' => ['src/Controller/*.php'],
-    'basePath' => APP,
-    'cache' => false,
-]);
-// Discover the embedded demo as an application before the enclosing plugin is registered.
-AttributeResolver::collection('interactDemoRoutes');
 
 Router::reload();

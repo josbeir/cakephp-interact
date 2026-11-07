@@ -81,7 +81,7 @@ class RenderlessHttpTest extends HttpTestCase
      */
     protected function payload(): array
     {
-        $payload = Values::map(json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
+        $payload = Values::map(json_decode((string)$this->_response?->getBody(), true, flags: JSON_THROW_ON_ERROR));
 
         return ['html' => $payload['html'], 'state' => Values::map($payload['state']), 'events' => $payload['events']];
     }

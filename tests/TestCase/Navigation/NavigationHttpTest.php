@@ -27,7 +27,7 @@ class NavigationHttpTest extends HttpTestCase
         $before = $this->metadata();
         $this->assertResponseContains('x-interact:navigate.hover');
         $this->assertResponseContains('x-interact:persist="notebook"');
-        $document = HTMLDocument::createFromString((string)$this->response?->getBody());
+        $document = HTMLDocument::createFromString((string)$this->_response?->getBody());
         $mount = new XPath($document)->query('//*[@data-interact-mount]')
             ->item(0);
         $this->assertInstanceOf(Element::class, $mount);
@@ -118,13 +118,13 @@ class NavigationHttpTest extends HttpTestCase
     {
         $this->mounted(url: '/navigation/nonces');
         $first = $this->metadata();
-        $before = (string)$this->response?->getBody();
-        $header = $this->response?->getHeaderLine('Content-Security-Policy');
+        $before = (string)$this->_response?->getBody();
+        $header = $this->_response?->getHeaderLine('Content-Security-Policy');
         $this->mounted(url: '/navigation/nonces/details');
         $this->assertSame($first, $this->metadata());
-        $this->assertNotSame($header, $this->response?->getHeaderLine('Content-Security-Policy'));
-        $this->assertNotSame($before, (string)$this->response?->getBody());
-        $document = HTMLDocument::createFromString((string)$this->response?->getBody());
+        $this->assertNotSame($header, $this->_response?->getHeaderLine('Content-Security-Policy'));
+        $this->assertNotSame($before, (string)$this->_response?->getBody());
+        $document = HTMLDocument::createFromString((string)$this->_response?->getBody());
         $markers = new XPath($document)->query('//*[@name="interact-navigation-nonce"]');
         $this->assertSame(2, $markers->length);
         foreach ($markers as $index => $marker) {
@@ -134,7 +134,7 @@ class NavigationHttpTest extends HttpTestCase
             $this->assertSame((string)$index, $marker->getAttribute('content'));
             $this->assertStringContainsString(
                 "'nonce-" . (string)$nonce . "'",
-                (string)$this->response?->getHeaderLine('Content-Security-Policy'),
+                (string)$this->_response?->getHeaderLine('Content-Security-Policy'),
             );
             $this->assertStringNotContainsString((string)$nonce, json_encode($first, JSON_THROW_ON_ERROR));
         }
@@ -147,7 +147,7 @@ class NavigationHttpTest extends HttpTestCase
      */
     protected function metadata(): array
     {
-        $document = HTMLDocument::createFromString((string)$this->response?->getBody());
+        $document = HTMLDocument::createFromString((string)$this->_response?->getBody());
         $nodes = new XPath($document)->query('//*[@name="interact-navigation"]');
         static::assertSame(1, $nodes->length);
         $node = $nodes->item(0);

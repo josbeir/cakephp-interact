@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\Pagination;
 
+use ArrayIterator;
 use Cake\Core\Configure;
 use Cake\Datasource\Paging\PaginatedResultSet;
 use Cake\Http\ServerRequest;
@@ -53,7 +54,7 @@ class PaginatorHelperTest extends TestCase
         string $path = '/catalog/7',
         array $names = ['page', 'sort', 'direction'],
     ): Paginated {
-        $native = new PaginatedResultSet([], [
+        $native = new PaginatedResultSet(new ArrayIterator(), [
             'count' => 0,
             'totalCount' => 30,
             'currentPage' => 2,
@@ -168,7 +169,7 @@ class PaginatorHelperTest extends TestCase
     public function testNativeResultsAndExplicitDestinationOverridesRemainNative(): void
     {
         Router::createRouteBuilder('/')->connect('/alternate', ['controller' => 'Resources', 'action' => 'index']);
-        $native = new PaginatedResultSet([], ['currentPage' => 1]);
+        $native = new PaginatedResultSet(new ArrayIterator(), ['currentPage' => 1]);
         $this->helper->setPaginated($native);
         $this->assertStringContainsString('/alternate', $this->helper->generateUrl(['page' => 2], [
             'controller' => 'Resources',

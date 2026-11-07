@@ -27,9 +27,11 @@ class DocumentForm extends Form
     /**
      * Supply FormHelper's normal schema without involving a database table.
      */
-    protected function buildSchema(Schema $schema): Schema
+    public function getSchema(): Schema
     {
-        return $schema->addField('title', 'string')->addField('document', 'file')->addField('attachments', 'array');
+        return $this->_schema ??= new Schema()->addField('title', 'string')
+            ->addField('document', 'file')
+            ->addField('attachments', 'array');
     }
 
     /**

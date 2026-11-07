@@ -53,13 +53,13 @@ class TemplateView extends View
             $this->templatePath,
             $this->subDir,
             $this->plugin,
-            $this->current,
-            $this->currentType,
+            $this->_current,
+            $this->_currentType,
         ];
         [$this->plugin] = $this->pluginSplit($target, false);
         $this->templatePath = '';
         $this->subDir = '';
-        $this->currentType = static::TYPE_TEMPLATE;
+        $this->_currentType = static::TYPE_TEMPLATE;
         $this->viewVars = $data;
         $results = [];
         /** @var mixed $value */
@@ -84,12 +84,12 @@ class TemplateView extends View
             }
 
             return (
-                $this->renderFile($this->getTemplateFileName($declaration->template), $data)
+                $this->_render($this->_getTemplateFileName($declaration->template), $data)
                     . implode('', array_map(static fn(Paginated $result): string => $result->links->markup(), $results))
             );
         } finally {
             $restore();
-            [$this->viewVars, $this->templatePath, $this->subDir, $this->plugin, $this->current, $this->currentType] =
+            [$this->viewVars, $this->templatePath, $this->subDir, $this->plugin, $this->_current, $this->_currentType] =
                 $previous;
         }
     }

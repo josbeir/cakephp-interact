@@ -83,7 +83,7 @@ class UploadHttpTest extends HttpTestCase
         $this->assertSame('a plain text document', file_get_contents($saved[0]->getPathname()));
         $this->assertMatchesRegularExpression(
             '/"document":\{"multiple":false,"maxSize":\d+,"maxFiles":1,"files":\[\]\}/',
-            (string)$this->response?->getBody(),
+            (string)$this->_response?->getBody(),
         );
     }
 
@@ -161,7 +161,7 @@ class UploadHttpTest extends HttpTestCase
         $this->stage($this->nextSnapshot(), 'attachments', 'second.txt');
         $this->assertResponseOk();
         /** @var mixed $payload */
-        $payload = json_decode((string)$this->response?->getBody(), true, flags: JSON_THROW_ON_ERROR);
+        $payload = json_decode((string)$this->_response?->getBody(), true, flags: JSON_THROW_ON_ERROR);
         $this->assertIsArray($payload);
         /** @var mixed $metadata */
         $metadata = $payload['uploads'];

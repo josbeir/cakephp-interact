@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Interact\Test\TestCase\Uploads;
 
 use Cake\Console\CommandRunner;
-use Cake\Console\ConsoleIoInterface;
+use Cake\Console\ConsoleIo;
 use Cake\TestSuite\TestCase;
 use Interact\Test\TestSuite\Uploads\UploadFixture;
 use TestApp\Application;
@@ -19,7 +19,7 @@ class UploadCommandTest extends TestCase
         $fixture = new UploadFixture();
         $fixture->configure();
         try {
-            $io = $this->createMock(ConsoleIoInterface::class);
+            $io = $this->createMock(ConsoleIo::class);
             $io->expects($this->once())->method('out')->with($this->stringContains('expired uploads.'));
             $this->assertSame(0, new CommandRunner(new Application(CONFIG), 'cake')->run(
                 ['cake', 'interact.cleanup_uploads'],

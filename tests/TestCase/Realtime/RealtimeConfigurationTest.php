@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\Realtime;
 
-use Cake\Container\Container;
 use Cake\Core\Configure;
+use Cake\Core\Container;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Interact\Realtime\BroadcasterInterface;

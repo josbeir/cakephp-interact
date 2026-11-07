@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\Runtime;
 
-use Cake\Container\Container;
+use Cake\Core\Container;
 use Cake\Http\Exception\ForbiddenException;
 use Cake\Http\ServerRequest;
 use Cake\Http\Session;

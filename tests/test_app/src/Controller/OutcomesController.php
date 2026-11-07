@@ -5,7 +5,6 @@ namespace TestApp\Controller;
 
 use Cake\Http\Exception\ForbiddenException;
 use Cake\Http\Response;
-use Cake\Routing\Attribute\Get;
 
 /**
  * Hosts action outcomes while serving saved records and downloads through ordinary CakePHP routes.
@@ -16,13 +15,11 @@ class OutcomesController extends AppController
     /**
      * Render the form and invoice controls inside an ordinary application page.
      */
-    #[Get('/outcomes', name: 'demo:outcomes')]
     public function index(): void {}
 
     /**
      * Read the saved article using its normal primary-key lookup.
      */
-    #[Get('/outcomes/saved', name: 'demo:outcomes:saved')]
     public function saved(): void
     {
         $id = (int)$this->getRequest()->getQuery('id');
@@ -32,7 +29,6 @@ class OutcomesController extends AppController
     /**
      * Return a small deterministic attachment after checking current application permissions.
      */
-    #[Get('/outcomes/invoice', name: 'demo:outcomes:invoice')]
     public function invoice(): Response
     {
         /** @var mixed $identity */

@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\TestSuite;
 
-use Cake\Container\Container;
 use Cake\Core\BasePlugin;
 use Cake\Core\ConsoleApplicationInterface;
+use Cake\Core\Container;
 use Cake\Core\ContainerApplicationInterface;
 use Cake\Core\HttpApplicationInterface;
 use Cake\Core\Plugin;

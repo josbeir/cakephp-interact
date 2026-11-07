@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Interact\Test\Fixture\TestSuite;
 
-use Cake\Container\ContainerInterface;
 use Cake\Core\BasePlugin;
+use Cake\Core\ContainerInterface;
 use Interact\Discovery\Registry;
 use Interact\Runtime\Factory;
 use Interact\Security\SnapshotCodec;

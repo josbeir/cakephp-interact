@@ -32,7 +32,7 @@ final readonly class Upload
         public ?int $maxFiles = null,
     ) {
         if (is_string($maxFileSize)) {
-            $maxFileSize = Text::parseFileSize(trim($maxFileSize), 0);
+            $maxFileSize = (int)Text::parseFileSize(trim($maxFileSize), 0);
         }
 
         if (($maxFileSize !== null && $maxFileSize < 1) || ($maxFiles !== null && $maxFiles < 1)) {

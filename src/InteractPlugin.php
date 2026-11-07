@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace Interact;
 
-use Cake\Container\ContainerInterface;
 use Cake\Controller\Controller;
 use Cake\Core\BasePlugin;
 use Cake\Core\Configure;
 use Cake\Core\ContainerApplicationInterface;
+use Cake\Core\ContainerInterface;
 use Cake\Core\PluginApplicationInterface;
 use Cake\Error\ExceptionTrap;
 use Cake\Event\EventInterface;
@@ -15,6 +15,7 @@ use Cake\Event\EventManagerInterface;
 use Cake\Http\MiddlewareQueue;
 use Cake\Http\ServerRequest;
 use Cake\Routing\RouteBuilder;
+use Interact\Container\Services;
 use Interact\Debugging\Diagnostics;
 use Interact\Discovery\Registry;
 use Interact\Http\FailureResponder;
@@ -51,7 +52,7 @@ class InteractPlugin extends BasePlugin
         ServerRequest::addDetector('interact', ['header' => ['Interact' => 'true']]);
 
         if ($this->isEnabled('events') && $app instanceof ContainerApplicationInterface) {
-            $factory = $app->getContainer()->get(Factory::class);
+            $factory = Services::get($app->getContainer(), Factory::class);
             assert($factory instanceof Factory, 'The configured collaborator must satisfy its declared contract.');
             $this->factory = $factory;
         }
@@ -72,26 +73,26 @@ class InteractPlugin extends BasePlugin
      */
     public function services(ContainerInterface $container): void
     {
-        if (!$container->hasDefinition(Configuration::class)) {
+        if (!Services::has($container, Configuration::class)) {
             $container->addShared(Configuration::class, Configuration::read(...));
         }
 
-        if (!$container->hasDefinition(FailureResponder::class)) {
+        if (!Services::has($container, FailureResponder::class)) {
             $container->addShared(FailureResponder::class);
         }
 
-        if (!$container->hasDefinition(Diagnostics::class)) {
+        if (!Services::has($container, Diagnostics::class)) {
             $container->addShared(Diagnostics::class)->addArgument(Configuration::class);
         }
 
-        if (!$container->hasDefinition(SseResponse::class)) {
+        if (!Services::has($container, SseResponse::class)) {
             $container->addShared(SseResponse::class, static fn(): SseResponse => new SseResponse(
-                $container->get(FailureResponder::class),
+                Services::get($container, FailureResponder::class),
                 new ExceptionTrap(Values::map(Configure::read('Error', []))),
             ));
         }
 
-        if (!$container->hasDefinition(UpdateHandler::class)) {
+        if (!Services::has($container, UpdateHandler::class)) {
             $container->add(UpdateHandler::class)->addArguments([
                 Factory::class,
                 FailureResponder::class,
@@ -100,25 +101,25 @@ class InteractPlugin extends BasePlugin
             ]);
         }
 
-        if (!$container->hasDefinition(UpdateErrorListener::class)) {
+        if (!Services::has($container, UpdateErrorListener::class)) {
             $container->addShared(UpdateErrorListener::class)
                 ->addArguments([FailureResponder::class, Diagnostics::class]);
         }
 
-        if (!$container->hasDefinition(Registry::class)) {
+        if (!Services::has($container, Registry::class)) {
             $container->addShared(Registry::class, static fn(): Registry => new Registry($container));
         }
 
-        if (!$container->hasDefinition(SnapshotCodec::class)) {
+        if (!Services::has($container, SnapshotCodec::class)) {
             $container->addShared(
                 SnapshotCodec::class,
-                static fn(): SnapshotCodec => $container->get(Configuration::class)->snapshots(),
+                static fn(): SnapshotCodec => Services::get($container, Configuration::class)->snapshots(),
             );
         }
 
         new UploadServices()->register($container);
         new RealtimeServices()->register($container);
-        if (!$container->hasDefinition(Factory::class)) {
+        if (!Services::has($container, Factory::class)) {
             $container->addShared(Factory::class)
                 ->addArguments([
                     Registry::class,

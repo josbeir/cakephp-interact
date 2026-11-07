@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Interact\Command;
 
 use Cake\Command\Command;
+use Cake\Console\Arguments;
+use Cake\Console\ConsoleIo;
 use Interact\Upload\UploadStorageInterface;
 
 /**
@@ -25,9 +27,9 @@ class CleanupUploadsCommand extends Command
     /**
      * Remove expired files and report the count to the application's scheduler.
      */
-    public function execute(): ?int
+    public function execute(Arguments $args, ConsoleIo $io): ?int
     {
-        $this->io->out(sprintf('Removed %d expired uploads.', $this->storage->cleanup()));
+        $io->out(sprintf('Removed %d expired uploads.', $this->storage->cleanup()));
 
         return static::CODE_SUCCESS;
     }
