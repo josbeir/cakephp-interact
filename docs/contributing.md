@@ -176,9 +176,11 @@ file tree while recording the backport as considered. Never repeat `-s ours`
 for ordinary updates: it would discard incoming fixes. Review dependency
 constraints, lockfiles, package versions, CI, and documentation during forward merges.
 
-The documentation deployment builds both branches together: the existing root
-serves the CakePHP 5 line and `/2.x/` serves the CakePHP 6 line. Each deployment preserves both versions. Publishing runs from `main` after either
-branch builds successfully, preserving the Pages environment’s deployment policy.
+The published documentation follows the latest `main` branch and its current
+release line. Keep shared feature documentation synchronized through ordinary
+forward merges into `cake6`, adapting examples and setup for CakePHP 6 there.
+The `cake6` documentation is built and checked on pushes and pull requests, but
+is not published until its release. Only `main` deploys to GitHub Pages.
 Release tags and npm publication are separate from branch preparation.
 
 ## Documentation and releases
@@ -195,7 +197,7 @@ the `/cakephp-interact/` base path.
 
 The [published documentation](https://josbeir.github.io/cakephp-interact/) uses
 GitHub Pages. The Documentation workflow builds documentation changes on pull
-requests and pushes to `main`. Only `main` deploys to the `github-pages`
+requests and pushes to `main` and `cake6`. Only `main` deploys to the `github-pages`
 environment; pull requests build without deployment permissions. Manual workflow
 runs can publish `main`. Pages settings must use **GitHub Actions** as the source.
 

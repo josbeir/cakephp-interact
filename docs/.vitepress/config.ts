@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitepress';
 
 const repository = 'https://github.com/josbeir/cakephp-interact';
-const base = process.env.INTERACT_DOCS_BASE ?? '/cakephp-interact/2.x/';
+const base = '/cakephp-interact/';
 const hostname = `https://josbeir.github.io${base}`;
 const socialImage = new URL('branding/interact-mark.png', hostname).href;
 
@@ -71,19 +71,6 @@ export default defineConfig({
     nav: [
       { text: 'Documentation', link: '/why' },
       { text: 'Demo', link: '/demo' },
-      {
-        text: 'Versions',
-        items: [
-          {
-            text: '0.2.x · CakePHP 5',
-            link: 'https://josbeir.github.io/cakephp-interact/',
-          },
-          {
-            text: '2.x · CakePHP 6',
-            link: 'https://josbeir.github.io/cakephp-interact/2.x/',
-          },
-        ],
-      },
     ],
     sidebar: {
       '/': [
