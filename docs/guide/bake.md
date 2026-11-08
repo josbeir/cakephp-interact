@@ -10,7 +10,7 @@ Complete [installation](/installation), then install CakePHP's optional Bake plu
 as a development dependency if your application does not already have it:
 
 ```sh
-composer require --dev cakephp/bake:^3.0
+composer require --dev cakephp/bake:^3.8
 ```
 
 Load Bake for console development alongside Interact. For example, add the import
@@ -102,4 +102,3 @@ generator. Applications can override its templates at:
 templates/plugin/Interact/bake/Island/island.twig
 templates/plugin/Interact/bake/Island/template.twig
 ```
-

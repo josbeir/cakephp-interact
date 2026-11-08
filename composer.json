@@ -8,7 +8,7 @@
     "cakephp/cakephp": "^5.4"
   },
   "require-dev": {
-    "cakephp/bake": "^3.0",
+    "cakephp/bake": "^3.8",
     "cakephp/mago-rules": "dev-main",
     "carthage-software/mago": "^1.59",
     "josbeir/cakephp-mercure": "^0.3.1",
