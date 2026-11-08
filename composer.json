@@ -8,6 +8,7 @@
     "cakephp/cakephp": "^5.4"
   },
   "require-dev": {
+    "cakephp/bake": "^3.0",
     "cakephp/mago-rules": "dev-main",
     "carthage-software/mago": "^1.59",
     "josbeir/cakephp-mercure": "^0.3.1",
@@ -16,6 +17,7 @@
     "symfony/process": "^8.0"
   },
   "suggest": {
+    "cakephp/bake": "Generate island classes and matching templates with bin/cake bake island. Install as a development dependency.",
     "josbeir/cakephp-mercure": "Mercure 1.x publishing and subscription authorization with the CakePHP 5 compatible package."
   },
   "autoload": {
