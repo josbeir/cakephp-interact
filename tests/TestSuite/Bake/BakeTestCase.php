@@ -11,6 +11,7 @@ use Cake\Console\TestSuite\StubConsoleOutput;
 use Cake\Core\BasePlugin;
 use Cake\Core\Configure;
 use Cake\Core\Plugin;
+use Cake\Core\PluginCollection;
 use Cake\TestSuite\TestCase;
 use Cake\TwigView\TwigViewPlugin;
 use Cake\Utility\Filesystem;
@@ -32,12 +33,15 @@ abstract class BakeTestCase extends TestCase
 
     protected ClassLoader $loader;
 
+    protected PluginCollection $plugins;
+
     /**
      * Load optional development plugins and isolate every generated file.
      */
     protected function setUp(): void
     {
         parent::setUp();
+        $this->plugins = clone Plugin::getCollection();
         $this->storage = sys_get_temp_dir() . '/interact-bake-' . bin2hex(random_bytes(8)) . '/';
         new Filesystem()->mkdir($this->storage . 'templates/');
         Configure::write('App.namespace', 'BakedApp');
@@ -59,6 +63,7 @@ abstract class BakeTestCase extends TestCase
     {
         $this->loader->unregister();
         new Filesystem()->deleteDir($this->storage);
+        Plugin::setCollection($this->plugins);
         parent::tearDown();
     }
 

@@ -26,7 +26,8 @@ class IslandCommand extends BakeCommand
     public function execute(Arguments $args, ConsoleIo $io): ?int
     {
         try {
-            $this->extractCommonProperties($args);
+            // Older Bake releases require a connection default even for generators without database work.
+            $this->extractCommonProperties(new Arguments([], ['connection' => 'default'] + $args->getOptions(), []));
             $name = $this->islandName($args, $io);
             if (!$name instanceof IslandName) {
                 return static::CODE_ERROR;
