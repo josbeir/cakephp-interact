@@ -20,6 +20,14 @@ export default defineConfig({
   head: [
     ['script', {}, originRedirect],
     [
+      'script',
+      {
+        'data-collect-dnt': 'true',
+        async: '',
+        src: 'https://scripts.simpleanalyticscdn.com/latest.js',
+      },
+    ],
+    [
       'link',
       {
         rel: 'icon',
