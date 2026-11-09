@@ -1,0 +1,25 @@
+<?php
+declare(strict_types=1);
+
+namespace {{ namespace }};
+
+{% if pagination %}
+use Interact\Attribute\Pagination;
+{% endif %}
+use Interact\Island;
+{% if pagination %}
+use Interact\Pagination\PaginationState;
+{% endif %}
+
+/**
+ * Owns the application behavior for this interactive region.
+ */
+{% if pagination %}
+class {{ className }} extends Island
+{
+    #[Pagination]
+    public PaginationState $paging;
+}
+{% else %}
+class {{ className }} extends Island {}
+{% endif %}

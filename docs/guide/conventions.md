@@ -49,6 +49,11 @@ A slash selects a nested namespace; a dot separates a plugin name from its islan
 Traversal segments and arbitrary filesystem paths are rejected.
 Moving or renaming a class changes its conventional render name and inferred template.
 
+## Generate an island with Bake
+
+Use [Bake](/guide/bake) to create an empty island class and its matching template,
+including namespace groups and optional pagination declarations.
+
 ## Class references
 
 Mount calls also accept class references for IDE completion, navigation, and rename
