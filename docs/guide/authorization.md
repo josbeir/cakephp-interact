@@ -6,7 +6,7 @@ description: Use CakePHP Authorization policies and scopes inside an island with
 # Authorization
 
 `AuthorizationTrait` gives islands a typed `$this->Authorization` object for
-[CakePHP Authorization](https://book.cakephp.org/authorization/2/en/index.html)
+[CakePHP Authorization](https://book.cakephp.org/authorization/)
 policy checks and scopes. The existing `authorize(IslandContext $context)` hook
 still controls access on initial mounts and subsequent requests.
 
@@ -17,7 +17,7 @@ $this->Authorization->authorize($article, 'update');
 ## Prerequisites
 
 Configure CakePHP Authorization in your application following its
-[documentation](https://book.cakephp.org/authorization/2/en/index.html).
+[documentation](https://book.cakephp.org/authorization/).
 Interact uses the current service and identity supplied by that middleware on
 both hosting pages and island update requests.
 
