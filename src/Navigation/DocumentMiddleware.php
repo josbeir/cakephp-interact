@@ -86,6 +86,6 @@ class DocumentMiddleware implements MiddlewareInterface
     {
         $bundle = dirname(__DIR__, 2) . '/webroot/js/runtime.js';
 
-        return '1:' . (is_file($bundle) ? (string)hash_file('sha256', $bundle) : 'source');
+        return '1:' . (string)hash_file('sha256', $bundle);
     }
 }
