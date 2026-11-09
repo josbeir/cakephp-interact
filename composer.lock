@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f2c77edf3c9b3b05cacfa34de0401f5e",
+    "content-hash": "750d431e0ef3cade5f00838a9ae3baea",
     "packages": [
         {
             "name": "brick/varexporter",
@@ -923,6 +923,72 @@
         }
     ],
     "packages-dev": [
+        {
+            "name": "cakephp/authorization",
+            "version": "4.x-dev",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/cakephp/authorization.git",
+                "reference": "e3d5dcd55c63e800d00ac35f779395ac4c7a7ce2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/cakephp/authorization/zipball/e3d5dcd55c63e800d00ac35f779395ac4c7a7ce2",
+                "reference": "e3d5dcd55c63e800d00ac35f779395ac4c7a7ce2",
+                "shasum": ""
+            },
+            "require": {
+                "cakephp/http": "^6.0",
+                "php": ">=8.4",
+                "psr/http-client": "^1.0",
+                "psr/http-message": "^1.1 || ^2.0",
+                "psr/http-server-handler": "^1.0",
+                "psr/http-server-middleware": "^1.0"
+            },
+            "require-dev": {
+                "cakephp/authentication": "^5.0",
+                "cakephp/bake": "^4.0",
+                "cakephp/cakephp": "^6.0",
+                "cakephp/cakephp-codesniffer": "^6.0",
+                "phpunit/phpunit": "^13.0"
+            },
+            "suggest": {
+                "cakephp/http": "To use \"RequestPolicyInterface\" (Not needed separately if using full CakePHP framework).",
+                "cakephp/orm": "To use \"OrmResolver\" (Not needed separately if using full CakePHP framework)."
+            },
+            "type": "cakephp-plugin",
+            "autoload": {
+                "psr-4": {
+                    "Authorization\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "CakePHP Community",
+                    "homepage": "https://github.com/cakephp/authorization/graphs/contributors"
+                }
+            ],
+            "description": "Authorization abstraction layer plugin for CakePHP",
+            "keywords": [
+                "access",
+                "auth",
+                "authorization",
+                "cakephp"
+            ],
+            "support": {
+                "docs": "https://cakephp.org/authorization/2/en/",
+                "forum": "https://stackoverflow.com/tags/cakephp",
+                "irc": "irc://irc.freenode.org/cakephp",
+                "issues": "https://github.com/cakephp/authorization/issues",
+                "source": "https://github.com/cakephp/authorization"
+            },
+            "time": "2026-10-06T13:22:07+00:00",
+            "published-time": "2026-10-06T13:22:12+00:00"
+        },
         {
             "name": "cakephp/bake",
             "version": "4.x-dev",
@@ -3832,6 +3898,7 @@
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {
+        "cakephp/authorization": 20,
         "cakephp/bake": 20,
         "cakephp/cakephp": 20,
         "cakephp/mago-rules": 20,

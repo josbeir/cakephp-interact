@@ -146,6 +146,7 @@ export default defineConfig({
             { text: 'Properties', link: '/guide/state' },
             { text: 'Actions', link: '/guide/actions' },
             { text: 'Lifecycle', link: '/guide/lifecycle' },
+            { text: 'Authorization', link: '/guide/authorization' },
             { text: 'Nested islands', link: '/guide/nesting' },
             { text: 'Events', link: '/guide/events' },
             { text: 'Page islands', link: '/guide/page-islands' },

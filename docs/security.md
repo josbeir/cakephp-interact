@@ -41,6 +41,10 @@ Configure that view's Interact helper with `scope: 'admin'` and the URL generate
 
 Override `authorize(IslandContext $context)` to check current resource access on every request. Treat action arguments as untrusted resource identifiers and authorize their use. Signing a record ID does not permanently authorize it.
 
+Applications using CakePHP Authorization can enable the optional
+[`AuthorizationTrait`](/guide/authorization) for policy checks and scopes using
+their existing middleware service and identity.
+
 ## Request identification
 
 The browser sends `Interact: true` on island update requests, including deferred
