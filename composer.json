@@ -8,6 +8,7 @@
     "cakephp/cakephp": "^5.4"
   },
   "require-dev": {
+    "cakephp/authorization": "^3.0",
     "cakephp/bake": "^3.8",
     "cakephp/mago-rules": "dev-main",
     "carthage-software/mago": "^1.59",
@@ -17,6 +18,7 @@
     "symfony/process": "^8.0"
   },
   "suggest": {
+    "cakephp/authorization": "Use AuthorizationTrait for optional policy checks and scopes in islands. Install ^3.0 for CakePHP 5.",
     "cakephp/bake": "Generate island classes and matching templates with bin/cake bake island. Install as a development dependency.",
     "josbeir/cakephp-mercure": "Mercure 1.x publishing and subscription authorization with the CakePHP 5 compatible package."
   },
