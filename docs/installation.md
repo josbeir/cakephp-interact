@@ -171,6 +171,10 @@ Alpine.start();
 Load this entry using your application's bundler. Use one Alpine instance per
 page; omit the standalone Interact script for this integration. If you use
 standard `alpinejs` instead, its expression evaluator has different CSP needs.
+For enhanced navigation, mark the versioned entry with
+[x-interact:asset="reload"](/directives/asset#reload-on-asset-changes) or set
+[`Interact.navigationVersion`](/configuration#navigation-compatibility) for each
+incompatible build.
 Use [`createInteract()`](/configuration#javascript-configuration) to override shared
 browser timing defaults. Repeat the module build and refresh your application's dependency after Composer
 updates the plugin.

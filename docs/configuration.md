@@ -136,7 +136,12 @@ Output it in the layout, using its configured name:
 Set a string build identifier when application-owned assets change incompatibly.
 Different identifiers require a native page visit. Alternatively, mark versioned
 head bundles with [x-interact:asset="reload"](/directives/asset#reload-on-asset-changes).
-The built-in runtime fingerprint is tracked automatically. See [navigation](/directives/navigate#head-elements-and-scripts).
+The packaged runtime fingerprint is tracked automatically when the helper includes
+`Interact.runtime`. Custom `assets.script` URLs, `assets.script: false`, and the
+helper's `autoScript: false` use application-owned assets instead. Track those
+bundles with versioned head assets or `navigationVersion`; their compatibility
+does not depend on the unused packaged runtime.
+See [navigation](/directives/navigate#head-elements-and-scripts).
 
 ### Temporary uploads
 
