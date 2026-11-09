@@ -30,7 +30,7 @@ Mark versioned application scripts or stylesheets with `reload`:
 
 Interact compares the ordered declarations before loading destination assets. Adding, removing, reordering, or changing a tracked declaration requires a native visit. Comparison includes normalized full URLs, hashed filenames, query strings, and attributes such as integrity, media, crossorigin, and type. Attribute order does not matter. Compatible CSP nonce rotation does not cause a reload.
 
-Declare shared tracked assets consistently in the layout. The built-in runtime fingerprint is automatic; application-owned bundles can use this directive or [`Interact.navigationVersion`](/configuration#navigation-compatibility).
+Declare shared tracked assets consistently in the layout. The packaged runtime fingerprint is automatic when the helper includes it; application-owned bundles use this directive or [`Interact.navigationVersion`](/configuration#navigation-compatibility).
 
 ## Persist shared styles
 
