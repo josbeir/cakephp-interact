@@ -4,14 +4,14 @@ declare(strict_types=1);
 namespace Interact\Test\TestCase\TestSuite;
 
 use Cake\Core\Configure;
+use Cake\Http\Stream;
+use Cake\Http\UploadedFile;
 use Cake\I18n\DateTime;
 use Cake\TestSuite\TestCase;
 use Interact\Test\TestSuite\Uploads\UploadFixture;
 use Interact\Upload\LocalUploadStorage;
 use Interact\Upload\UploadConfig;
 use Interact\Upload\UploadOwner;
-use Laminas\Diactoros\Stream;
-use Laminas\Diactoros\UploadedFile;
 use RuntimeException;
 
 /**

@@ -7,6 +7,7 @@ use Cake\ORM\Entity;
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use function Cake\Database\Expression\like;
 
 /**
  * Owns article query scopes and validation so demo controllers/islands never assemble domain SQL.
@@ -44,7 +45,7 @@ class ArticlesTable extends Table
     public function findListing(SelectQuery $query, int $ownerId, string $search = ''): SelectQuery
     {
         return $query->find('ownedBy', ownerId: $ownerId)
-            ->where(['Articles.title LIKE' => '%' . $search . '%'])
+            ->where(['Articles.title' => like('%' . $search . '%')])
             ->orderByAsc('Articles.id');
     }
 

@@ -5,6 +5,7 @@ namespace Interact\Test\TestCase\Uploads;
 
 use Cake\Http\ServerRequest;
 use Cake\Http\Session;
+use Cake\Http\UploadedFile;
 use Cake\I18n\DateTime;
 use Interact\Discovery\Definition;
 use Interact\IslandContext;
@@ -17,7 +18,6 @@ use Interact\Upload\UploadPublisher;
 use Interact\Upload\UploadRejected;
 use Interact\Upload\UploadRestorer;
 use InvalidArgumentException;
-use Laminas\Diactoros\UploadedFile;
 use TestApp\Island\DocumentUploadIsland as DocumentUpload;
 
 /**

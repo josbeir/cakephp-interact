@@ -5,6 +5,7 @@ namespace Interact\Test\TestCase\Http;
 
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
+use Cake\Http\Stream;
 use Cake\Utility\Text;
 use Interact\Discovery\Registry;
 use Interact\Http\FailureResponder;
@@ -13,7 +14,6 @@ use Interact\IslandContext;
 use Interact\Runtime\Factory;
 use Interact\Security\SnapshotCodec;
 use Interact\View\TemplateView;
-use Laminas\Diactoros\Stream;
 use PHPUnit\Framework\TestCase;
 
 /**

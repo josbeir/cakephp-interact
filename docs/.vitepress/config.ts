@@ -20,6 +20,14 @@ export default defineConfig({
   head: [
     ['script', {}, originRedirect],
     [
+      'script',
+      {
+        'data-collect-dnt': 'true',
+        async: '',
+        src: 'https://scripts.simpleanalyticscdn.com/latest.js',
+      },
+    ],
+    [
       'link',
       {
         rel: 'icon',
@@ -134,6 +142,7 @@ export default defineConfig({
           items: [
             { text: 'Islands', link: '/guide/islands' },
             { text: 'Conventions', link: '/guide/conventions' },
+            { text: 'Bake', link: '/guide/bake' },
             { text: 'Properties', link: '/guide/state' },
             { text: 'Actions', link: '/guide/actions' },
             { text: 'Lifecycle', link: '/guide/lifecycle' },

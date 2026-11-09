@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Interact\TestSuite;
 
 use Cake\Http\ServerRequest;
+use Cake\Http\Uri;
 use Interact\IslandContext;
 use Interact\Runtime\Factory;
 use Interact\Runtime\RedirectResult;
@@ -11,7 +12,6 @@ use Interact\Runtime\RenderlessResult;
 use Interact\Runtime\Result;
 use Interact\Runtime\Values;
 use Interact\View\TemplateView;
-use Laminas\Diactoros\Uri;
 use LogicException;
 use PHPUnit\Framework\Assert;
 use function Cake\Core\h;

@@ -8,14 +8,16 @@
     "cakephp/cakephp": "^6.0@dev"
   },
   "require-dev": {
+    "cakephp/bake": "^4.0@dev",
     "cakephp/mago-rules": "dev-main",
-    "carthage-software/mago": "^1.47",
+    "carthage-software/mago": "^1.59",
     "josbeir/cakephp-mercure": "dev-cake6",
     "phpunit/phpunit": "^12.5 || ^13.0",
-    "rector/rector": "^2.7",
+    "rector/rector": "^2.8.1",
     "symfony/process": "^8.0"
   },
   "suggest": {
+    "cakephp/bake": "Generate island classes and matching templates with bin/cake bake island. Install as a development dependency.",
     "josbeir/cakephp-mercure": "Mercure 1.x publishing and subscription authorization with the CakePHP 6 compatible package."
   },
   "autoload": {

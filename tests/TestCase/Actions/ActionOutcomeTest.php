@@ -172,7 +172,7 @@ class ActionOutcomeTest extends TestCase
     {
         $effects = new ActionEffects();
         try {
-            $effects->capture(static fn() => throw new LogicException('Application failure.'));
+            $effects->capture(static fn(): never => throw new LogicException('Application failure.'));
         } catch (LogicException $logicException) {
             $this->assertSame('Application failure.', $logicException->getMessage());
         }

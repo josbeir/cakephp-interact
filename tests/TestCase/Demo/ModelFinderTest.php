@@ -12,6 +12,7 @@ use TestApp\Model\Table\ArticlesTable;
 use TestApp\Model\Table\ChatMessagesTable;
 use TestApp\Model\Table\CitiesTable;
 use TestApp\Model\Table\ResourcesTable;
+use function Cake\Database\Expression\like;
 
 /**
  * Verifies the demo's domain finders against SQLite, including access scopes and dependent
@@ -90,7 +91,9 @@ class ModelFinderTest extends TestCase
         );
         $this->assertSame(
             0,
-            $messages->find('visibleTo', recipient: 'my-tabs')->where(['message LIKE' => 'Hidden%'])->count(),
+            $messages->find('visibleTo', recipient: 'my-tabs')
+                ->where(['message' => like('Hidden%')])
+                ->count(),
         );
         $invalid = $messages->newEntity(['name' => str_repeat('n', 41), 'message' => str_repeat('m', 501)]);
         $this->assertArrayHasKey('name', $invalid->getErrors());

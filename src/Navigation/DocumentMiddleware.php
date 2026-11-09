@@ -5,8 +5,8 @@ namespace Interact\Navigation;
 
 use Cake\Core\Configure;
 use Cake\Http\ServerRequest;
+use Cake\Http\Stream;
 use Cake\Utility\Security;
-use Laminas\Diactoros\Stream;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;

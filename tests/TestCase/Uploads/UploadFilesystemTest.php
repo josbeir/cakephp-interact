@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\Uploads;
 
+use Cake\Http\Stream;
+use Cake\Http\UploadedFile;
 use Interact\Test\Fixture\Uploads\UploadFailureStream;
 use Interact\Upload\UploadConfig;
 use Interact\Upload\UploadFilesystem;
 use Interact\Upload\UploadOwner;
 use Interact\Upload\UploadWriter;
-use Laminas\Diactoros\Stream;
-use Laminas\Diactoros\UploadedFile;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 

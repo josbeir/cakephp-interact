@@ -40,6 +40,7 @@ await execute('tar', [
     .map((path) => `docs/${path}`),
   'docs/public',
   'src',
+  'templates',
   'webroot',
 ]);
 const { stdout: entries } = await execute('tar', ['-tzf', archive], {
@@ -47,6 +48,8 @@ const { stdout: entries } = await execute('tar', ['-tzf', archive], {
 });
 if (
   !entries.includes('webroot/js/runtime.js\n') ||
+  !entries.includes('templates/bake/Island/island.twig\n') ||
+  !entries.includes('templates/bake/Island/template.twig\n') ||
   !entries.includes('docs/public/branding/interact-mark.svg\n') ||
   !entries.includes('docs/public/branding/interact-mark.png\n') ||
   /(?:^|\/)(?:vendor|node_modules|tests|\.git)\//m.test(entries)

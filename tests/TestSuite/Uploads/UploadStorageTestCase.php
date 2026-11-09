@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestSuite\Uploads;
 
-use Laminas\Diactoros\Stream;
-use Laminas\Diactoros\UploadedFile;
+use Cake\Http\Stream;
+use Cake\Http\UploadedFile;
 use PHPUnit\Framework\TestCase;
 
 /**

@@ -8,10 +8,10 @@ use Cake\Error\Debug\HtmlFormatter;
 use Cake\Error\Debugger;
 use Cake\Error\Renderer\WebExceptionRenderer;
 use Cake\Event\EventManager;
+use Cake\Http\Stream;
+use Cake\Http\UploadedFile;
 use Interact\Runtime\Values;
 use Interact\Test\TestSuite\Http\HttpTestCase;
-use Laminas\Diactoros\Stream;
-use Laminas\Diactoros\UploadedFile;
 
 /**
  * Exercises native dumps through real CSRF-protected requests and CakePHP error handling.

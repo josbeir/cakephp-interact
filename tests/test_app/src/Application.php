@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace TestApp;
 
+use Bake\BakePlugin;
 use Cake\Console\CommandCollection;
 use Cake\Core\Configure;
 use Cake\Error\Middleware\ErrorHandlerMiddleware;
@@ -51,6 +52,10 @@ class Application extends BaseApplication
 
         if (!$this->getPlugins()->has('Interact')) {
             $this->addPlugin(InteractPlugin::class);
+        }
+
+        if (PHP_SAPI === 'cli' && class_exists(BakePlugin::class) && !$this->getPlugins()->has('Bake')) {
+            $this->addPlugin(BakePlugin::class);
         }
     }
 

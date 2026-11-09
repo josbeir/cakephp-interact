@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\Uploads;
 
+use Cake\Http\UploadedFile;
 use Cake\I18n\DateTime;
 use Cake\Utility\Fs\Finder;
 use Cake\Utility\Fs\Path;
@@ -13,7 +14,6 @@ use Interact\Upload\UploadConfig;
 use Interact\Upload\UploadOwner;
 use Interact\Upload\UploadRejected;
 use InvalidArgumentException;
-use Laminas\Diactoros\UploadedFile;
 use RuntimeException;
 
 /**

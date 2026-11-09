@@ -5,6 +5,8 @@ namespace Interact\Test\TestCase\Renderless;
 
 use Cake\Http\ServerRequest;
 use Cake\Http\Session;
+use Cake\Http\Stream;
+use Cake\Http\UploadedFile;
 use Interact\Action\ActionEffects;
 use Interact\Discovery\Registry;
 use Interact\IslandContext;
@@ -17,8 +19,6 @@ use Interact\Test\Fixture\Runtime\CounterIsland;
 use Interact\Test\Fixture\Runtime\RuntimeReference;
 use Interact\Test\TestSuite\Uploads\UploadStorageTestCase;
 use InvalidArgumentException;
-use Laminas\Diactoros\Stream;
-use Laminas\Diactoros\UploadedFile;
 use LogicException;
 use RuntimeException;
 

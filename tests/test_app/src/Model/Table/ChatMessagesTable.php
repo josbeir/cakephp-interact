@@ -7,6 +7,8 @@ use Cake\ORM\Entity;
 use Cake\ORM\Query\SelectQuery;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
+use function Cake\Database\Expression\in;
+use function Cake\Database\Expression\isNull;
 
 /**
  * Stores the demo's shared conversation and bounds the history shown to visitors.
@@ -36,7 +38,7 @@ class ChatMessagesTable extends Table
     {
         $latest = $this->find('visibleTo', recipient: $recipient)->select(['id'])->orderByDesc('id')->limit(50);
 
-        return $query->where(['ChatMessages.id IN' => $latest])->orderByAsc('ChatMessages.id');
+        return $query->where(['ChatMessages.id' => in($latest)])->orderByAsc('ChatMessages.id');
     }
 
     /**
@@ -48,7 +50,12 @@ class ChatMessagesTable extends Table
      */
     public function findVisibleTo(SelectQuery $query, string $recipient): SelectQuery
     {
-        return $query->where(['OR' => ['ChatMessages.recipient IS' => null, 'ChatMessages.recipient' => $recipient]]);
+        return $query->where([
+            'OR' => [
+                ['ChatMessages.recipient' => isNull()],
+                ['ChatMessages.recipient' => $recipient],
+            ],
+        ]);
     }
 
     /**

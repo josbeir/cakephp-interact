@@ -6,6 +6,8 @@ namespace Interact\Test\TestCase\Uploads;
 use Cake\Http\Exception\ForbiddenException;
 use Cake\Http\ServerRequest;
 use Cake\Http\Session;
+use Cake\Http\Stream;
+use Cake\Http\UploadedFile;
 use Interact\Discovery\Registry;
 use Interact\IslandContext;
 use Interact\Runtime\Runtime;
@@ -13,8 +15,6 @@ use Interact\Security\SnapshotCodec;
 use Interact\Test\Fixture\Rendering\CallbackRenderer;
 use Interact\Test\Fixture\Uploads\ProtectedUploadIsland;
 use Interact\Test\TestSuite\Uploads\UploadStorageTestCase;
-use Laminas\Diactoros\Stream;
-use Laminas\Diactoros\UploadedFile;
 
 /**
  * Checks upload authorization before storing bytes and before invoking application actions.

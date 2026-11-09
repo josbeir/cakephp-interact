@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\Uploads;
 
+use Cake\Http\Stream;
+use Cake\Http\UploadedFile;
 use Cake\I18n\DateTime;
 use Cake\Utility\Fs\Finder;
 use Interact\Test\TestSuite\Http\HttpTestCase;
-use Laminas\Diactoros\Stream;
-use Laminas\Diactoros\UploadedFile;
 
 /**
  * Verifies staged files and normal updates through an application-owned CakePHP endpoint.
