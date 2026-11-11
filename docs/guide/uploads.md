@@ -174,7 +174,7 @@ directory, limits, retention, accepted size strings, and their defaults.
 Keep staging outside the webroot. Configure PHP's `upload_max_filesize`,
 `post_max_size`, and your web server's body limits to accommodate a file plus its
 multipart envelope. Those limits can reject a request before application file
-validation. The existing 1 MiB JSON-envelope limit remains separate from bytes.
+validation. The 1 MiB JSON-envelope limit applies separately from file bytes.
 
 Staging checks at most 100 entries in the uploading session's directory and
 removes at most 10 expired records or abandoned fragments while holding that

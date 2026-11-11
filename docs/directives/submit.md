@@ -76,7 +76,7 @@ remain independent. Stable unique form IDs allow locks to follow replacements.
 ## Synchronization without saving
 
 Use `x-interact:submit="$server.sync()"` for a preview that only sends current
-state and rerenders. No application action or automatic save is introduced.
+state and rerenders. It invokes no application action and does not save automatically.
 
 <span id="pass-action-arguments"></span>
 

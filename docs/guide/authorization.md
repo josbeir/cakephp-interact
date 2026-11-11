@@ -7,8 +7,8 @@ description: Use CakePHP Authorization policies and scopes inside an island with
 
 `AuthorizationTrait` gives islands a typed `$this->Authorization` object for
 [CakePHP Authorization](https://book.cakephp.org/authorization/)
-policy checks and scopes. The existing `authorize(IslandContext $context)` hook
-still controls access on initial mounts and subsequent requests.
+policy checks and scopes. The `authorize(IslandContext $context)` hook
+controls access on initial mounts and subsequent requests.
 
 ```php
 $this->Authorization->authorize($article, 'update');
@@ -219,8 +219,8 @@ grant access to protected child islands or bypass their hooks. A successful chec
 in one island also satisfies the middleware's request-level tracking; each
 protected island must still implement its own resource checks.
 
-The trait never skips automatically. Existing islands without the trait retain
-their current behavior, including any application middleware requirements.
+The trait never skips automatically. Application middleware requirements apply
+to islands with or without the trait.
 
 ## Custom request attributes
 
@@ -246,9 +246,9 @@ No global Interact configuration is required.
 
 ## Failures and testing
 
-Denied updates retain Interact's safe 403 response and preserve the browser draft.
+Denied updates return Interact's safe 403 response and preserve the browser draft.
 Streaming failures after emission use terminal failure frames, and denied
-subscription renewals retain their existing member-error response. Application
+subscription renewals use member-error responses. Application
 policy details are not copied into those browser errors.
 
 Missing packages, missing middleware services, and invalid service or identity

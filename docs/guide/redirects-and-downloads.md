@@ -184,4 +184,4 @@ Pass `navigate: true` explicitly from an action to use [enhanced navigation](/di
 $this->redirect(['action' => 'index'], navigate: true);
 ```
 
-Existing redirects remain native by default. `replace: true` replaces the history entry. Canceling the page visit leaves a retained island usable; the action itself has already run and is never replayed. External destinations and incompatible pages use native navigation.
+Redirects use native navigation by default. `replace: true` replaces the history entry. Canceling the page visit leaves a retained island usable; the action itself has already run and is never replayed. External destinations and incompatible pages use native navigation.

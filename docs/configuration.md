@@ -110,7 +110,7 @@ the standalone runtime globally:
 ],
 ```
 
-The existing helper `autoScript: false` also prevents automatic inclusion.
+The helper's `autoScript: false` option also prevents automatic inclusion.
 Neither switch disables document metadata used by enhanced navigation.
 
 Use `scriptOptions` for an alternative block, integrity/crossorigin attributes,
@@ -166,7 +166,7 @@ and zero-byte files count toward file limits. PHP and web-server body limits
 apply independently. See [private staging and cleanup](/guide/uploads#private-staging-and-cleanup)
 for deployment and the cleanup command.
 
-## Existing helper options
+## Helper options {#existing-helper-options}
 
 Register Interact through the application's normal view/helper setup. These
 options apply to that helper instance; they are not additional `Interact` keys.

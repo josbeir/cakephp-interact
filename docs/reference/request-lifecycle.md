@@ -81,7 +81,7 @@ Finished details add:
 | `timings` | Frozen queue, preparation, response, application, and total durations.    |
 
 Diagnostics describe task handling; [`call()` and `sync()`](/reference/server#request-results)
-retain their existing result contract. `ignored` identifies a response suppressed
+return `Promise<RequestResult>`. `ignored` identifies a response suppressed
 by a newer page visit or a cancelled enhanced redirect. Applied work remains
 applied if an observer subsequently removes the island.
 

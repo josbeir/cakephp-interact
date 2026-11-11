@@ -127,7 +127,6 @@ for application-specific helpers.
 
 Whole-page rendering does not add client-side routing. Links navigate through
 CakePHP normally; the update route handles island interactions. [URL-bound state](/guide/url-state) supports query parameters and browser history.
-Enhanced navigation remains deferred.
 
 ## Enhanced page visits
 
