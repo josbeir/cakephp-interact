@@ -69,6 +69,9 @@ and [actions](/guide/actions).
 
 ## Application integration
 
+[Authentication and authorization traits](/guide/authorization) expose the native
+authentication service and policy helpers without transporting identity objects.
+
 [Rendering and container services](/reference/rendering) and
 [custom update endpoints](/security#custom-endpoints).
 

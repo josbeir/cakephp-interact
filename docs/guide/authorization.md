@@ -1,31 +1,45 @@
 ---
-title: Authorization
-description: Use CakePHP Authorization policies and scopes inside an island with an optional trait.
+title: Authentication and authorization
+description: Access the native CakePHP authentication service and authorization policies through optional island traits.
 ---
 
-# Authorization
+# Authentication and authorization {#authorization}
 
-`AuthorizationTrait` gives islands a typed `$this->Authorization` object for
-[CakePHP Authorization](https://book.cakephp.org/authorization/)
-policy checks and scopes. The `authorize(IslandContext $context)` hook
-controls access on initial mounts and subsequent requests.
+`AuthenticationTrait` exposes the application's native CakePHP authentication
+service as `$this->Authentication`. `AuthorizationTrait` provides policy checks
+and scopes through `$this->Authorization`. Each trait is optional and independent.
 
 ```php
+$identity = $this->Authentication->getIdentity();
+$userId = $identity?->getIdentifier();
 $this->Authorization->authorize($article, 'update');
 ```
 
+The `authorize(IslandContext $context)` hook controls island access on initial
+mounts and subsequent requests. Reading an identity does not authorize a resource.
+
 ## Prerequisites
 
-Configure CakePHP Authorization in your application following its
-[documentation](https://book.cakephp.org/authorization/).
-Interact uses the current service and identity supplied by that middleware on
-both hosting pages and island update requests.
+Install the packages for the integrations you use:
 
-This integration supports CakePHP Authorization 3.x on CakePHP 5.4+.
+```sh
+composer require cakephp/authentication:^3.0
+composer require cakephp/authorization:^3.0
+```
 
-## Enable policy helpers
+Configure [CakePHP Authentication](https://book.cakephp.org/authentication/3/en/)
+and [CakePHP Authorization](https://book.cakephp.org/authorization/) in the
+application as needed. Run the relevant middleware on both hosting pages and
+island update routes. When using both, Authentication runs before Authorization.
 
-Add the trait once to a shared application island base class:
+These integrations support Authentication 3.x and Authorization 3.x on CakePHP
+5.4+. Applications using neither trait need neither package.
+
+## Enable island helpers {#enable-policy-helpers}
+
+Add the traits you need to a shared application island base class. This example
+enables both integrations; omit the import and trait for any integration you do
+not use:
 
 ```php
 <?php
@@ -33,22 +47,66 @@ declare(strict_types=1);
 
 namespace App\Island;
 
+use Interact\Authentication\AuthenticationTrait;
 use Interact\Authorization\AuthorizationTrait;
 use Interact\Island;
 
 /**
- * Supplies the application's islands with the existing middleware policy service.
+ * Supplies the application's islands with request-local authentication and policy helpers.
  * File: src/Island/AppIsland.php
  */
 abstract class AppIsland extends Island
 {
+    use AuthenticationTrait;
     use AuthorizationTrait;
 }
 ```
 
-Individual islands can also use the trait directly. No constructor changes or
-`initialize()` override are needed. `$this->Authorization` is read-only and
-request-local; it is not a prop or transported state.
+Individual islands can also use either trait directly. No constructor changes or
+`initialize()` override are needed. Both properties are get-only and request-local;
+neither is a prop or transported state.
+
+## Authentication service
+
+`$this->Authentication` returns the exact `AuthenticationServiceInterface` instance
+provided by the current request's `authentication` attribute. Interact does not
+wrap the service, cache it, construct authenticators, or repeat authentication.
+Replacing the island's request changes the service returned on the next access.
+
+```php
+$identity = $this->Authentication->getIdentity();
+$userId = $identity?->getIdentifier();
+$result = $this->Authentication->getResult();
+$authenticated = $result?->isValid() ?? false;
+```
+
+`getIdentity()` returns an `Authentication\IdentityInterface` or `null` for a
+guest. `getResult()` returns the native authentication result or `null` when no
+result is available. The trait does not require an identity or automatically
+reject guests; application middleware and the island's `authorize()` hook own
+access requirements.
+
+These are native service methods, not `AuthenticationComponent` methods.
+Use `$identity?->getIdentifier()` for the user ID. Refer to CakePHP's
+[authentication service interface](https://api.cakephp.org/authentication/3.x/interface-Authentication.AuthenticationServiceInterface.html)
+for its full contract.
+
+### Service and request identities
+
+`$this->Authentication->getIdentity()` reads the authentication service's identity.
+`$this->getRequest()->getAttribute('identity')` reads the request identity, which
+Authorization middleware can decorate with policy methods. The two need not be
+the same object. `$this->Authorization` uses the request identity for policy checks.
+Use the application's configured identity attribute name when reading it directly.
+
+### Authentication changes
+
+The trait adds service access, not login, logout, or impersonation helpers.
+Native persistence operations such as `persistIdentity()` and `clearIdentity()`
+return replacement request and response objects. Interact does not apply those
+objects automatically, propagate their cookies, or coordinate session changes
+across mounted islands. Keep login/logout workflows in normal application
+controllers; reading authentication data in an island needs no response changes.
 
 ## Protect a resource
 
@@ -224,6 +282,31 @@ to islands with or without the trait.
 
 ## Custom request attributes
 
+### Authentication service attribute
+
+Override the lookup method in `AppIsland` for middleware that supplies the service
+under a different attribute name:
+
+```php
+use Authentication\AuthenticationServiceInterface;
+use LogicException;
+
+protected function getAuthenticationService(): AuthenticationServiceInterface
+{
+    $service = $this->getRequest()->getAttribute('memberAuthentication');
+    if (!$service instanceof AuthenticationServiceInterface) {
+        throw new LogicException('The memberAuthentication service is missing.');
+    }
+
+    return $service;
+}
+```
+
+The default service attribute is `authentication`. Identity attribute names and
+identity construction remain the authentication service's responsibility.
+
+### Authorization attributes
+
 Override the factory in `AppIsland` if your application uses different attribute
 names or needs a bridge subclass:
 
@@ -253,9 +336,11 @@ policy details are not copied into those browser errors.
 
 Missing packages, missing middleware services, and invalid service or identity
 attributes produce configuration exceptions. They never silently allow access.
+The optional packages are only required when their respective property is accessed.
 
 The [island test helpers](/guide/testing#requests-and-authorization) accept a
-request containing your real authorization service and decorated identity.
+request containing your native authentication service, authorization service,
+and decorated identity.
 Middleware tracking and authentication integration should also be tested through
 native CakePHP HTTP integration tests. See [Security](/security) and
 [Lifecycle](/guide/lifecycle#authorize).
