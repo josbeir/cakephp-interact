@@ -230,8 +230,8 @@ changes signed state or saves records.
 
 `#[Action(stream: true, render: false)]` keeps the streamed DOM and accepts the
 usual signed state and response effects. Validation errors still render, including
-the normal subsequent render that clears errors. Redirects and downloads retain
-their existing contracts.
+the normal subsequent render that clears errors. Actions can also
+[redirect or request a download](/guide/redirects-and-downloads).
 
 `busy`, `pending()`, `loading()`, submit protection, and the action promise remain
 active through completion. Other actions stay queued. Newer local drafts survive
@@ -251,7 +251,7 @@ delivery. A long streaming action occupies a PHP worker until it finishes.
 
 ::: details Response lifecycle and protocol limits
 
-The existing CSRF-protected POST endpoint negotiates JSON or `text/event-stream`.
+The CSRF-protected POST endpoint negotiates JSON or `text/event-stream`.
 Only server-declared streaming actions select SSE. The browser uses native fetch
 and reads standard UTF-8 SSE frames from that POST response. Ordinary actions and
 synchronizations retain JSON responses. A JSON-only client receives the final

@@ -111,7 +111,7 @@ markup. Subsequent successful renderless actions skip rendering again.
 Renderless actions use the same authorization, writable-state checks, signed
 snapshots, queue, URL bindings, uploads, pending/loading feedback, and form
 submission protection as other actions. Newer edits, focus, and selection survive
-the response. Calls still return the existing `Promise<RequestResult>` contract;
+the response. Calls return `Promise<RequestResult>`;
 there is no extra browser method or modifier.
 
 The request still waits for PHP to finish. Renderless actions do not run in the

@@ -99,7 +99,7 @@ class IslandTemplateView extends TemplateView
 ],
 ```
 
-Island templates can now use `$this->Presentation`. Keep CakePHP's native view
+Island templates can use `$this->Presentation`. Keep CakePHP's native view
 constructor signature. The configured class must extend `TemplateView`; helper
 configuration on an ordinary hosting `AppView` is not copied into island content.
 For page islands, keep selecting `IslandView` on the controller; the configured
@@ -107,7 +107,7 @@ class controls island content while the page view retains the outer layout.
 
 ### Custom factories
 
-Applications needing different runtime assembly can still subclass
+Applications needing different runtime assembly can subclass
 `Interact\Runtime\Factory`, override `createView(View $host): TemplateView`,
 and register it under `Factory::class` in `Application::services()`. Existing
 application factory definitions take precedence over the default registration.

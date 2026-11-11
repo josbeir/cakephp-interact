@@ -134,8 +134,8 @@ when several reports bind the same query names.
 
 Failures leave the placeholder in place, publish `$server.error`, and stop
 automatic loading. An explicit `sync()` can retry a retryable failure; expired or
-changed-session tickets require a reload. Authentication and authorization failures
-retain their existing recovery categories. See [error handling](/guide/failures).
+changed-session tickets require a reload. See [error handling](/guide/failures)
+for authentication and authorization recovery categories.
 
 Removing the island disconnects observers and aborts browser transport. A late
 response cannot restore removed content. Aborting fetch does not cancel PHP execution.

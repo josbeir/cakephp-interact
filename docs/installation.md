@@ -13,9 +13,7 @@ Interact 0.2.x is available on
 The API remains experimental.
 
 ::: warning CakePHP 6 applications
-Version 0.2.0 introduces CakePHP 5.4+ support and targets CakePHP 5 only.
-If you use CakePHP 6 with Interact 0.1.x, switch to the CakePHP 6 development
-branch to retain compatibility:
+For CakePHP 6, use the CakePHP 6 development branch:
 
 ```sh
 composer require josbeir/cakephp-interact:dev-cake6 --with-all-dependencies
@@ -156,7 +154,7 @@ application configuration so the standalone runtime is not included:
 ],
 ```
 
-Existing helper registrations using `autoScript: false` remain supported.
+The helper's `autoScript: false` option also disables automatic runtime inclusion.
 
 Register the plugin before your application's existing `Alpine.start()`:
 
@@ -204,6 +202,6 @@ Build assets in that checkout. For application-owned Alpine, use
 
 ## Enhanced navigation setup
 
-The existing Interact installer also installs its internal navigation integration. No additional JavaScript dependency or stylesheet is needed. Keep rendering the [configured script block](/configuration#browser-assets) even with `assets.script: false`: the helper supplies document compatibility metadata for the npm integration too.
+The Interact installer includes its internal navigation integration. No additional JavaScript dependency or stylesheet is needed. Keep rendering the [configured script block](/configuration#browser-assets) even with `assets.script: false`: the helper supplies document compatibility metadata for the npm integration too.
 
 Use [x-interact:navigate](/directives/navigate) to opt individual links in. The default plugin middleware marks complete HTML responses after application middleware. Missing metadata, unsupported pages, and incompatible document policies use native navigation.

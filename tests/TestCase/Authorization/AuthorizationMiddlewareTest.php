@@ -3,7 +3,9 @@ declare(strict_types=1);
 
 namespace Interact\Test\TestCase\Authorization;
 
+use Authorization\AuthorizationServiceInterface;
 use Authorization\Exception\AuthorizationRequiredException;
+use Authorization\IdentityDecorator;
 use Authorization\Middleware\AuthorizationMiddleware;
 use Cake\Core\Configure;
 use Cake\Error\ExceptionTrap;
@@ -54,12 +56,20 @@ class AuthorizationMiddlewareTest extends TestCase
     }
 
     /**
+     * Keep array identities independent of whether the Authentication package is installed.
+     */
+    protected function middleware(AuthorizationServiceInterface $service): AuthorizationMiddleware
+    {
+        return new AuthorizationMiddleware($service, ['identityDecorator' => IdentityDecorator::class]);
+    }
+
+    /**
      * Mount through native middleware and preserve the signed baseline for an independent update.
      */
     protected function snapshot(): string
     {
         $snapshot = '';
-        new AuthorizationMiddleware(PolicyFixture::service())->process($this->request, new CallbackHandler(
+        $this->middleware(PolicyFixture::service())->process($this->request, new CallbackHandler(
             function (ServerRequest $request) use (&$snapshot): Response {
                 $context = new IslandContext($request, 'default', '/_interact/update');
                 $runtime = $this->factory->create(new TemplateView($request), $context);
@@ -75,7 +85,7 @@ class AuthorizationMiddlewareTest extends TestCase
     public function testUsingTheTraitDoesNotImplicitlySkipTheMiddlewareCheck(): void
     {
         $this->expectException(AuthorizationRequiredException::class);
-        new AuthorizationMiddleware(PolicyFixture::service())->process($this->request, new CallbackHandler(
+        $this->middleware(PolicyFixture::service())->process($this->request, new CallbackHandler(
             static function (ServerRequest $request): Response {
                 new BridgeIsland()->setRequest($request);
 
@@ -87,7 +97,7 @@ class AuthorizationMiddlewareTest extends TestCase
     public function testPublicIslandsCanExplicitlyAcknowledgeTheRequest(): void
     {
         $service = PolicyFixture::service();
-        $response = new AuthorizationMiddleware($service)->process($this->request, new CallbackHandler(
+        $response = $this->middleware($service)->process($this->request, new CallbackHandler(
             static function (ServerRequest $request): Response {
                 $island = new PublicParentIsland()->setRequest($request);
                 $island->authorize(new IslandContext($request, 'default', '/update'));
@@ -106,7 +116,7 @@ class AuthorizationMiddlewareTest extends TestCase
             ->withMethod('POST')
             ->withAttribute('identity', ['allowed' => false])
             ->withParsedBody(['version' => 1, 'snapshot' => $snapshot, 'action' => 'increment']);
-        $response = new AuthorizationMiddleware(PolicyFixture::service())->process($request, new CallbackHandler(
+        $response = $this->middleware(PolicyFixture::service())->process($request, new CallbackHandler(
             fn(ServerRequest $request): Response => new UpdateHandler($this->factory, new FailureResponder())->handle(
                 $request,
                 new Response(),
@@ -130,7 +140,7 @@ class AuthorizationMiddlewareTest extends TestCase
             ->withAttribute('streamAllowed', false)
             ->withHeader('Accept', 'text/event-stream')
             ->withParsedBody(['version' => 1, 'snapshot' => $snapshot, 'action' => 'generate']);
-        $response = new AuthorizationMiddleware($service)->process($request, new CallbackHandler(
+        $response = $this->middleware($service)->process($request, new CallbackHandler(
             fn(ServerRequest $request): Response => new UpdateHandler(
                 $this->factory,
                 new FailureResponder(),

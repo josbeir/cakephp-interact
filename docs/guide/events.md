@@ -39,7 +39,7 @@ $this->dispatch('article-saved', ...$detail);
 Names start with a lowercase letter and contain lowercase letters, digits,
 `:`, or `-`. Details must be JSON-compatible values, including nested arrays.
 Objects, resources, nonfinite numbers, unsafe keys, and positional payload values
-are rejected. The former positional detail-array syntax is no longer supported.
+are rejected.
 The browser receives the same object, accessible as `$event.detail.id`.
 
 ## Action listeners
@@ -127,7 +127,7 @@ types. Repeated or multiple placeholders are supported. State properties, nested
 object/array paths, method calls, and wildcards are not supported. Values must be
 initialized, nonnull strings or integers and produce a valid concrete event name;
 strings are not escaped or evaluated as further placeholders. Colons and hyphens
-are supported separators; dots retain their existing exclusion from event names.
+are supported separators; dots are not allowed in event names.
 
 Concrete names come from accepted server props. Unsent drafts do not change
 listeners. A reactive parent prop update replaces the child's old names after

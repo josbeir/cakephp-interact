@@ -44,7 +44,7 @@ model edits. See [Properties](/guide/state) for declarations.
 Native inputs, selects, textareas, and file inputs can omit the expression.
 Bracket notation uses the same rules as form-level binding: `data[title]` becomes
 `data.title`, and a terminal `[]` identifies a list leaf. All supported model
-timing modifiers work with inferred names; file inputs retain their existing
+timing modifiers work with inferred names; file inputs use
 upload timing and accept no timing modifiers.
 
 ::: code-group
@@ -188,7 +188,7 @@ subtree, and `_method` remain native bookkeeping and are excluded.
 
 [`x-interact:submit`](/directives/submit) separately invokes the action and
 protects native submissions. It does not collect unbound controls on its own.
-Form binding uses the existing JSON update protocol and writable-state checks;
+Form binding uses the JSON update protocol and writable-state checks;
 it does not authorize association IDs, marshal entities, or save records.
 
 <span id="choose-when-to-send-edits"></span>

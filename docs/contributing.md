@@ -160,13 +160,9 @@ behavior, links, and desktop/mobile navigation.
 
 ## Release branches
 
-`main` targets CakePHP 5.4+ and currently releases Interact 0.2.x, progressing
-toward a stable 1.x API. `cake6` targets CakePHP 6 and the future Interact 2.x
-line. Both require PHP 8.5. Composer aliases expose these branches as `0.2.x-dev`
-and `2.x-dev`; the API remains experimental.
-
-Version 0.2.0 introduces CakePHP 5 support. Applications using CakePHP 6 with
-Interact 0.1.x should switch to `dev-cake6` to retain compatibility.
+`main` targets CakePHP 5.4+ for Interact 0.2.x. `cake6` targets CakePHP 6 for
+Interact 2.x development. Both require PHP 8.5. Composer aliases expose these
+branches as `0.2.x-dev` and `2.x-dev`; the API is experimental.
 
 Develop shared fixes on `main`, then merge `main` into `cake6` with an ordinary
 merge commit. Adapt CakePHP 6 differences and run that branch's checks before
@@ -174,11 +170,9 @@ completing the merge. Keep framework-specific changes separate from shared
 behavior changes. Preserve merge ancestry: do not squash or rebase merges
 between the maintained branches.
 
-The initial CakePHP 5 backport is recorded on `cake6` with a one-time
-`git merge --no-ff -s ours <backport-tip>`. That merge preserves the CakePHP 6
-file tree while recording the backport as considered. Never repeat `-s ours`
-for ordinary updates: it would discard incoming fixes. Review dependency
-constraints, lockfiles, package versions, CI, and documentation during forward merges.
+Do not use `-s ours` for updates between branches: it discards incoming fixes.
+Review dependency constraints, lockfiles, package versions, CI, and documentation
+during forward merges.
 
 The published documentation follows the latest `main` branch and its current
 release line. Keep shared feature documentation synchronized through ordinary
@@ -221,10 +215,8 @@ dependencies change. The Quality workflow rebuilds and checks both files against
 the committed versions, rejecting missing or stale assets. Node is contributor
 tooling; standard Composer consumers do not need it.
 
-Packagist's default GitHub source archives include these committed assets for
-`dev-main` and future tagged releases. Build and commit the assets before tagging
-a release. Tagged releases beginning with 0.2.0 target CakePHP 5; older 0.1.x
-tags target CakePHP 6.
+Packagist's default GitHub source archives include these committed assets.
+Build and commit the assets before tagging a release.
 
 `package:composer` creates a reproducible archive under
 `build/releases/` with PHP source, docs, the standalone bundle, and third-party
@@ -244,7 +236,7 @@ and credentials out of commits.
 
 ## Navigation integration
 
-Navigation lives in focused `resources/ts/navigation` modules installed by Interact's existing Alpine installer. Keep page visits separate from island request queues, and coordinate page history with URL-bound state. Persist only explicitly marked, compatible layout regions; incoming mounts and later updates must still authorize.
+Navigation lives in focused `resources/ts/navigation` modules installed by Interact's Alpine installer. Keep page visits separate from island request queues, and coordinate page history with URL-bound state. Persist only explicitly marked, compatible layout regions; incoming mounts and later updates must still authorize.
 
 The page-level `interactNavigation` Alpine store reuses request feedback timing. Applications own indicators and styles, and choose delays in Alpine expressions. Keep document policy/version checks, external asset loading, cancellation, stale responses, scroll, and focus covered by real browser tests. Use the `/navigation` demo for both page-owned and retained island behavior.
 
