@@ -53,7 +53,7 @@ class UploadMutator
                 throw new UploadRejected(__d('interact', 'Remove an attachment before adding another file.'));
             }
 
-            $previous = $files === [] ? null : $files[0];
+            $previous = array_first($files);
             $file = $this->storage->put(
                 $incoming,
                 UploadOwner::fromContext($context, $snapshot, $name),

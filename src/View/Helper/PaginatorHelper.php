@@ -10,6 +10,7 @@ use Closure;
 use Interact\Pagination\LinkParameters;
 use Interact\Pagination\Paginated;
 use InvalidArgumentException;
+use Override;
 
 /**
  * Preserves CakePHP's paginator markup while adapting island-owned link destinations.
@@ -46,6 +47,7 @@ class PaginatorHelper extends CakePaginatorHelper
      * @param array $url Native route overrides.
      * @param array<string, mixed> $urlOptions Escaping and full-base options.
      */
+    #[Override]
     public function generateUrl(array $options = [], array $url = [], array $urlOptions = []): string
     {
         $urlOptions = [

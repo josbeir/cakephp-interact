@@ -71,7 +71,7 @@ class DebuggingStreamTest extends TestCase
         }
 
         $this->assertSame('preparation', $diagnostics[0]['output']);
-        $this->assertTrue($diagnostics[array_key_last($diagnostics)]['truncated']);
+        $this->assertTrue(array_last($diagnostics)['truncated']);
         foreach ($diagnostics as $diagnostic) {
             $this->assertIsString($diagnostic['output']);
             $this->assertTrue(mb_check_encoding($diagnostic['output'], 'UTF-8'));

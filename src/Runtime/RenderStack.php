@@ -38,7 +38,7 @@ class RenderStack
      */
     public function parent(): ?RenderFrame
     {
-        return $this->frames === [] ? null : $this->frames[array_key_last($this->frames)];
+        return array_last($this->frames);
     }
 
     /**

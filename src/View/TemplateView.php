@@ -8,6 +8,7 @@ use Interact\Discovery\Declaration;
 use Interact\Pagination\Paginated;
 use Interact\View\Helper\PaginatorHelper;
 use LogicException;
+use Override;
 
 /**
  * Renders native templates and elements within an explicit island variable scope.
@@ -25,6 +26,7 @@ class TemplateView extends View
     /**
      * Keep native form constraints without FormHelper's inline JavaScript validation handlers.
      */
+    #[Override]
     public function initialize(): void
     {
         parent::initialize();
