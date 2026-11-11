@@ -33,14 +33,14 @@ async function holdDeferredReport(page: Page): Promise<() => void> {
   return release;
 }
 
-async function scrolledPlayground(page: Page): Promise<void> {
+async function scrolledPlayground(page: Page, scrollY = 1200): Promise<void> {
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.goto('/playground');
-  await page.evaluate(() => {
+  await page.evaluate((position) => {
     window.Alpine?.store('loadingNavigationProof', { source: true });
-    window.scrollTo(0, 1200);
-  });
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(1200);
+    window.scrollTo(0, position);
+  }, scrollY);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(scrollY);
 }
 
 test('a scrolled enhanced visit keeps below-fold and closed-panel lazy islands pending', async ({
@@ -96,10 +96,14 @@ test('a scrolled enhanced visit keeps below-fold and closed-panel lazy islands p
 });
 
 for (const mode of ['fragment', 'preserved scroll'] as const) {
-  test(`lazy islands load in the final viewport after enhanced ${mode} positioning`, async ({
+  test(`lazy loading respects the final viewport after enhanced ${mode} positioning`, async ({
     page,
   }) => {
-    await scrolledPlayground(page);
+    await scrolledPlayground(page, mode === 'preserved scroll' ? 300 : 1200);
+    const requests: Request[] = [];
+    page.on('request', (request) => {
+      if (request.method() === 'POST') requests.push(request);
+    });
     const release = await holdDeferredReport(page);
     try {
       const link = page
@@ -121,8 +125,25 @@ for (const mode of ['fragment', 'preserved scroll'] as const) {
         element.replaceWith(replacement);
       }, mode);
       await link.click();
+      await expect(page).toHaveURL(
+        mode === 'fragment' ? '/loading#visible-report' : '/loading',
+      );
+      await expect(page.locator('html')).not.toHaveAttribute('aria-busy');
       const lazy = report(page, 'Lazy report');
+      const lazyId = await identity(lazy);
+      if (mode === 'preserved scroll') {
+        await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(300);
+        await expect(lazy).not.toBeInViewport();
+        await expect(lazy).toHaveAttribute('data-interact-loading', 'lazy');
+        expect(
+          requests.filter((request) => targetsIsland(request, lazyId)),
+        ).toHaveLength(0);
+        await lazy.scrollIntoViewIfNeeded();
+      }
       await expect(lazy).not.toHaveAttribute('data-interact-loading');
+      expect(
+        requests.filter((request) => targetsIsland(request, lazyId)),
+      ).toHaveLength(1);
       await expect(
         page.getByRole('region', {
           name: 'Visible resource report',
@@ -134,9 +155,6 @@ for (const mode of ['fragment', 'preserved scroll'] as const) {
           window.Alpine?.store('loadingNavigationProof'),
         ),
       ).toEqual({ source: true });
-      if (mode === 'preserved scroll')
-        await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(1200);
-      else await expect(page).toHaveURL('/loading#visible-report');
       await expect(report(page, 'Hidden report')).toHaveAttribute(
         'data-interact-loading',
         'lazy',
