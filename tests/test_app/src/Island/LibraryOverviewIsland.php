@@ -10,6 +10,8 @@ use Interact\Island;
 use Interact\IslandContext;
 use Interact\Pagination\PaginationState;
 use Interact\UpdatedPaths;
+use TestApp\Model\Table\ArticlesTable;
+use TestApp\Model\Table\ResourcesTable;
 
 /**
  * Shows independently configured resource and article listings inside one island.
@@ -75,11 +77,11 @@ class LibraryOverviewIsland extends Island
     {
         return [
             'resources' => $this->paginate(
-                $this->fetchTable('Resources')->find('listing'),
+                $this->fetchTable(ResourcesTable::class)->find('listing'),
                 paging: $this->resourcesPaging,
             ),
             'articles' => $this->paginate(
-                $this->fetchTable('Articles')->find('listing', ownerId: $this->ownerId),
+                $this->fetchTable(ArticlesTable::class)->find('listing', ownerId: $this->ownerId),
                 paging: $this->articlesPaging,
             ),
         ];

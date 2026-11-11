@@ -47,10 +47,12 @@ See [class and template paths](/guide/conventions#island-classes-and-templates).
 ## Table access
 
 The base `Island` includes CakePHP's `LocatorAwareTrait`. Use the inherited
-`fetchTable()` to resolve a Table by alias or class name:
+`fetchTable()` with the application's Table class:
 
 ```php
-$articles = $this->fetchTable('Articles');
+use App\Model\Table\ArticlesTable;
+
+$articles = $this->fetchTable(ArticlesTable::class);
 ```
 
 Assign typed Table properties in [`initialize()`](/guide/lifecycle#initialize)

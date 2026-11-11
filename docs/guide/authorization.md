@@ -124,6 +124,7 @@ declare(strict_types=1);
 namespace App\Island;
 
 use App\Model\Entity\Article;
+use App\Model\Table\ArticlesTable;
 use Interact\Attribute\Prop;
 use Interact\Attribute\State;
 use Interact\IslandContext;
@@ -144,7 +145,7 @@ class ArticleEditorIsland extends AppIsland
 
     public function authorize(IslandContext $context): void
     {
-        $this->article = $this->fetchTable('Articles')->get($this->articleId);
+        $this->article = $this->fetchTable(ArticlesTable::class)->get($this->articleId);
         $this->Authorization->authorize($this->article, 'update');
     }
 
@@ -204,12 +205,13 @@ An allowed island does not grant access to other records named in action
 arguments. Load and authorize those resources in the action before using them:
 
 ```php
+use App\Model\Table\ArticlesTable;
 use Interact\Attribute\Action;
 
 #[Action]
 public function inspect(int $otherArticleId): void
 {
-    $other = $this->fetchTable('Articles')->get($otherArticleId);
+    $other = $this->fetchTable(ArticlesTable::class)->get($otherArticleId);
     $this->Authorization->authorize($other, 'view');
     // Application behavior using this authorized resource follows here.
 }
@@ -250,7 +252,9 @@ non-null identity that does not implement the Authorization plugin's
 Apply query scopes before executing or paginating a query:
 
 ```php
-$query = $this->fetchTable('Articles')->find('published');
+use App\Model\Table\ArticlesTable;
+
+$query = $this->fetchTable(ArticlesTable::class)->find('published');
 $query = $this->Authorization->applyScope($query, 'index');
 $articles = $this->paginate($query);
 ```
