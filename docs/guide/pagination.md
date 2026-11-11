@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace App\Island;
 
+use App\Model\Table\ResourcesTable;
 use Interact\Attribute\Pagination;
 use Interact\Island;
 use Interact\Pagination\PaginationState;
@@ -45,7 +46,7 @@ class ResourcesIsland extends Island
      */
     public function viewData(): array
     {
-        $query = $this->fetchTable('Resources')->find();
+        $query = $this->fetchTable(ResourcesTable::class)->find();
 
         return [
             'resources' => $this->paginate($query),

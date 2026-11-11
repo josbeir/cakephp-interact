@@ -5,6 +5,7 @@ namespace TestApp\Controller;
 
 use Cake\Http\Exception\ForbiddenException;
 use Cake\Http\Response;
+use TestApp\Model\Table\OutcomeArticlesTable;
 
 /**
  * Hosts action outcomes while serving saved records and downloads through ordinary CakePHP routes.
@@ -23,7 +24,7 @@ class OutcomesController extends AppController
     public function saved(): void
     {
         $id = (int)$this->getRequest()->getQuery('id');
-        $this->set('article', $this->fetchTable('OutcomeArticles')->get($id));
+        $this->set('article', $this->fetchTable(OutcomeArticlesTable::class)->get($id));
     }
 
     /**
