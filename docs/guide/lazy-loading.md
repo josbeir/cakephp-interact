@@ -34,6 +34,11 @@ Automatic loading waits while the browser tab is hidden. Without
 Loading options apply when an instance is first created. They do not remount
 retained keyed children.
 
+During [enhanced navigation](/directives/navigate), lazy islands wait until Alpine
+has initialized and the destination's scroll position is applied, then observe
+that viewport. Fragment targets, preserved scroll, and history restoration use
+their destination position to determine which lazy islands load.
+
 Use Alpine's `x-data` and `x-show` for an optional panel containing a lazy
 island. Opening the panel is local UI behavior; Interact initializes the island
 when its placeholder becomes visible. Add `x-transition` to animate the panel's

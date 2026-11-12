@@ -49,6 +49,8 @@ export class NavigationController implements NavigationService {
   protected pending: AbortController | undefined;
   protected targetEntry: PageEntry | undefined;
   protected disposed = false;
+  protected layoutOwner: symbol | undefined;
+  protected readonly layoutListeners = new Set<(ready: boolean) => void>();
   protected readonly hide = (event: PageTransitionEvent) => {
     if (!event.persisted) this.dispose();
   };
@@ -98,6 +100,13 @@ export class NavigationController implements NavigationService {
     return this.generation;
   }
 
+  /** Observe only settled page layouts, including when subscribing during a visit. */
+  observeLayout(listener: (ready: boolean) => void): () => void {
+    if (!this.disposed) this.layoutListeners.add(listener);
+    listener(!this.disposed && this.layoutOwner === undefined);
+    return () => this.layoutListeners.delete(listener);
+  }
+
   invalidate(): void {
     this.pages.clear();
   }
@@ -142,6 +151,7 @@ export class NavigationController implements NavigationService {
     this.activity.start();
     document.documentElement.setAttribute('aria-busy', 'true');
     const scroll = { x: window.scrollX, y: window.scrollY };
+    const releaseLayout = this.holdLayout();
     try {
       const response = await this.pages.take(
         next.href,
@@ -225,6 +235,7 @@ export class NavigationController implements NavigationService {
       this.native(next.href, options.replace ?? false);
       return 'native';
     } finally {
+      releaseLayout();
       if (this.pending === request) {
         this.pending = undefined;
         query.resume(false);
@@ -236,6 +247,9 @@ export class NavigationController implements NavigationService {
 
   dispose(): void {
     this.disposed = true;
+    this.layoutOwner = undefined;
+    for (const listener of this.layoutListeners) listener(false);
+    this.layoutListeners.clear();
     this.pending?.abort();
     this.pending = undefined;
     this.activity.finish();
@@ -244,6 +258,19 @@ export class NavigationController implements NavigationService {
     this.unregister();
     window.removeEventListener('pagehide', this.hide);
     document.documentElement.removeAttribute('aria-busy');
+  }
+
+  /** Let only the latest visit release viewport work after its positioning scope. */
+  protected holdLayout(): () => void {
+    const ready = this.layoutOwner === undefined;
+    const hold = Symbol();
+    this.layoutOwner = hold;
+    if (ready) for (const listener of this.layoutListeners) listener(false);
+    return () => {
+      if (this.layoutOwner !== hold) return;
+      this.layoutOwner = undefined;
+      for (const listener of this.layoutListeners) listener(true);
+    };
   }
 
   protected current(request: AbortController, generation: number): void {

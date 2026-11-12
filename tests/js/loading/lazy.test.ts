@@ -5,6 +5,34 @@ import type { Fetcher, IslandResponse } from '../../../resources/ts/types';
 import { readMetadata } from '../../../resources/ts/transport/metadata';
 import type { UrlFields } from '../../../resources/ts/url/types';
 import { LoadTrigger } from '../../../resources/ts/loading/trigger';
+import { registerNavigation } from '../../../resources/ts/navigation/registry';
+
+const navigationDisposers: (() => void)[] = [];
+
+/** Control the navigation boundary without substituting viewport observation. */
+function layout(ready: boolean) {
+  let changed: ((ready: boolean) => void) | undefined;
+  const release = vi.fn();
+  const observeLayout = vi.fn((listener: (ready: boolean) => void) => {
+    changed = listener;
+    listener(ready);
+    return release;
+  });
+  navigationDisposers.push(
+    registerNavigation(window, {
+      epoch: () => 0,
+      visit: async () => 'enhanced',
+      invalidate: () => {},
+      query: () => {},
+      observeLayout,
+    }),
+  );
+  return {
+    change: (settled: boolean) => changed?.(settled),
+    observeLayout,
+    release,
+  };
+}
 
 const loadObservers: LoadObserver[] = [];
 /**
@@ -109,6 +137,7 @@ afterEach(() => {
     client.dispose();
   }
   document.body.innerHTML = '';
+  navigationDisposers.splice(0).forEach((dispose) => dispose());
   history.replaceState(null, '', '/');
   vi.restoreAllMocks();
   loadObservers.splice(0);
@@ -346,6 +375,78 @@ it('does not load a detached placeholder or revive a disposed observer', async (
   loadObservers[0]?.emit(element, true);
   expect(load).not.toHaveBeenCalled();
 });
+
+it('waits for navigation positioning before observing an incoming lazy island', async () => {
+  vi.stubGlobal('IntersectionObserver', LoadObserver);
+  const navigation = layout(false);
+  const element = root('lazy');
+  const load = vi.fn(async () => undefined);
+  const trigger = new LoadTrigger(element, 'lazy', load);
+  await Promise.resolve();
+  expect(loadObservers).toHaveLength(0);
+  expect(load).not.toHaveBeenCalled();
+
+  navigation.change(true);
+  const observer = loadObservers[0];
+  expect(observer?.observe).toHaveBeenCalledWith(element);
+  expect(load).not.toHaveBeenCalled();
+  observer?.emit(element, false);
+  expect(load).not.toHaveBeenCalled();
+  observer?.emit(element, true);
+  expect(load).toHaveBeenCalledOnce();
+  expect(navigation.release).toHaveBeenCalledOnce();
+  trigger.dispose();
+});
+
+it('discards stale intersections from a retained lazy island across navigation', () => {
+  vi.stubGlobal('IntersectionObserver', LoadObserver);
+  const navigation = layout(true);
+  const element = root('lazy');
+  const load = vi.fn(async () => undefined);
+  const trigger = new LoadTrigger(element, 'lazy', load);
+  const previous = loadObservers[0];
+  navigation.change(false);
+  expect(previous?.disconnect).toHaveBeenCalledOnce();
+  previous?.emit(element, true);
+  expect(load).not.toHaveBeenCalled();
+
+  navigation.change(true);
+  previous?.emit(element, true);
+  expect(load).not.toHaveBeenCalled();
+  const fresh = loadObservers[1];
+  expect(fresh).not.toBe(previous);
+  fresh?.emit(element, false);
+  expect(load).not.toHaveBeenCalled();
+  fresh?.emit(element, true);
+  expect(load).toHaveBeenCalledOnce();
+  trigger.dispose();
+});
+
+it('unsubscribes a disposed pending island and never revives its observer', () => {
+  vi.stubGlobal('IntersectionObserver', LoadObserver);
+  const navigation = layout(false);
+  const load = vi.fn(async () => undefined);
+  const trigger = new LoadTrigger(root('lazy'), 'lazy', load);
+  trigger.dispose();
+  expect(navigation.release).toHaveBeenCalledOnce();
+  navigation.change(true);
+  expect(loadObservers).toHaveLength(0);
+  expect(load).not.toHaveBeenCalled();
+});
+
+it.each(['defer', 'lazy'] as const)(
+  'keeps %s startup loading independent of navigation without viewport observation',
+  async (mode) => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    const navigation = layout(false);
+    const load = vi.fn(async () => undefined);
+    const trigger = new LoadTrigger(root(mode), mode, load);
+    await Promise.resolve();
+    expect(load).toHaveBeenCalledOnce();
+    expect(navigation.observeLayout).not.toHaveBeenCalled();
+    trigger.dispose();
+  },
+);
 
 it('leaves initialization available after an invalid render response', async () => {
   const { client, fetch } = setup();
