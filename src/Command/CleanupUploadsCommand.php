@@ -7,6 +7,7 @@ use Cake\Command\Command;
 use Cake\Console\Arguments;
 use Cake\Console\ConsoleIo;
 use Interact\Upload\UploadStorageInterface;
+use Override;
 
 /**
  * Releases abandoned staged files through the same storage backend as HTTP uploads.
@@ -27,6 +28,7 @@ class CleanupUploadsCommand extends Command
     /**
      * Remove expired files and report the count to the application's scheduler.
      */
+    #[Override]
     public function execute(Arguments $args, ConsoleIo $io): ?int
     {
         $io->out(sprintf('Removed %d expired uploads.', $this->storage->cleanup()));

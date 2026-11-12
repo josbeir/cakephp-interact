@@ -5,6 +5,7 @@ namespace Interact\Streaming;
 
 use Cake\Http\ServerRequest;
 use Interact\IslandContext;
+use Override;
 
 /**
  * Captures the session identity before a streamed response releases the session lock.
@@ -28,6 +29,7 @@ readonly class RequestContext extends IslandContext
     /**
      * Reuse the verified browser binding throughout response emission.
      */
+    #[Override]
     public function binding(): string
     {
         return $this->sessionBinding->read();

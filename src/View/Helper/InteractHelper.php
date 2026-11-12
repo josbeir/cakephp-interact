@@ -14,6 +14,7 @@ use Interact\Loading\Options;
 use Interact\Navigation\DocumentMiddleware;
 use Interact\Runtime\Factory;
 use Interact\Runtime\Runtime;
+use Override;
 
 /**
  * Mounts named islands inside normal CakePHP views and manages their browser bootstrap.
@@ -45,6 +46,7 @@ class InteractHelper extends Helper
      *
      * @param array<string, mixed> $config Services remain view configuration, never template variables.
      */
+    #[Override]
     public function initialize(array $config): void
     {
         parent::initialize($config);
