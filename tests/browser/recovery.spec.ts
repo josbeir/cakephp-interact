@@ -297,6 +297,7 @@ test('invalid copied drafts keep the current text and expose accessible errors',
 test('actual middleware CSRF rejection retains the draft and blocks resubmission', async ({
   page,
 }) => {
+  await page.clock.pauseAt(new Date('2026-10-20T12:00:01Z'));
   const region = await recovery(page);
   const id = await islandId(region);
   await page.route('**/_interact/update', async (route) => {
@@ -314,6 +315,7 @@ test('actual middleware CSRF rejection retains the draft and blocks resubmission
   );
   await region.getByRole('button', { name: 'Accept draft' }).click();
   const rejected = await response;
+  await page.clock.resume();
   expect(rejected.status()).toBe(403);
   expect(await rejected.json()).toMatchObject({
     version: 1,
@@ -332,6 +334,7 @@ for (const [name, status, body] of [
   test(`${name} failure has safe feedback and preserves drafts`, async ({
     page,
   }) => {
+    await page.clock.pauseAt(new Date('2026-10-20T12:00:01Z'));
     const region = await recovery(page);
     const id = await islandId(region);
     let requests = 0;
@@ -361,6 +364,7 @@ for (const [name, status, body] of [
       .getByLabel('Recovery draft', { exact: true })
       .fill('preserved text');
     await region.getByRole('button', { name: 'Accept draft' }).click();
+    await page.clock.resume();
     await expect(region.getByRole('alert')).toBeVisible();
     await expect(region.getByRole('alert')).not.toContainText('Private');
     if (status === 302)
