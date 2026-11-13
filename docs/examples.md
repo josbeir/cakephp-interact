@@ -1,6 +1,6 @@
 ---
 title: 'Demo'
-description: This example is now covered by the demo and feature documentation.
+description: Find this example in the demo and feature documentation.
 search: false
 ---
 
@@ -18,5 +18,5 @@ search: false
 <span id="find-the-cooperating-files"></span>
 <span id="reset-or-troubleshoot"></span>
 
-This example page has moved. See the [demo and source](/demo) and the
+See the [demo and source](/demo) and the
 [feature documentation](/why).

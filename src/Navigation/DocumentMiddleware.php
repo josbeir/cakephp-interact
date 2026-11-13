@@ -22,6 +22,8 @@ class DocumentMiddleware implements MiddlewareInterface
 {
     public const string PLACEHOLDER = '<!--interact:navigation-->';
 
+    public const string APPLICATION_PLACEHOLDER = '<!--interact:navigation:application-->';
+
     /**
      * Replace only the helper's document marker; fragments and streamed responses stay untouched.
      */
@@ -41,7 +43,8 @@ class DocumentMiddleware implements MiddlewareInterface
         }
 
         $html = (string)$response->getBody();
-        if (!str_contains($html, static::PLACEHOLDER)) {
+        $bundled = str_contains($html, static::PLACEHOLDER);
+        if (!$bundled && !str_contains($html, static::APPLICATION_PLACEHOLDER)) {
             return $response;
         }
 
@@ -50,9 +53,8 @@ class DocumentMiddleware implements MiddlewareInterface
 
         $policy = DocumentPolicy::fromResponse($response);
 
-        $bundle = dirname(__DIR__, 2) . '/webroot/js/runtime.js';
         $metadata = [
-            'version' => '1:' . (is_file($bundle) ? (string)hash_file('sha256', $bundle) : 'source'),
+            'version' => $bundled ? $this->bundledVersion() : '1:application',
             'application' => (string)Configure::read('Interact.navigationVersion', ''),
             'session' => hash_hmac('sha256', $session->id(), Security::getSalt()),
             'policy' => $policy->fingerprint,
@@ -72,8 +74,18 @@ class DocumentMiddleware implements MiddlewareInterface
         }
 
         $body = new Stream('php://temp', 'wb+');
-        $body->write(str_replace(static::PLACEHOLDER, $marker, $html));
+        $body->write(str_replace([static::PLACEHOLDER, static::APPLICATION_PLACEHOLDER], $marker, $html));
 
         return $response->withBody($body)->withoutHeader('Content-Length')->withoutHeader('ETag');
+    }
+
+    /**
+     * Fingerprint the packaged runtime only when the document helper includes that asset.
+     */
+    protected function bundledVersion(): string
+    {
+        $bundle = dirname(__DIR__, 2) . '/webroot/js/runtime.js';
+
+        return '1:' . (string)hash_file('sha256', $bundle);
     }
 }

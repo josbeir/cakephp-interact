@@ -29,6 +29,7 @@ use Interact\Security\SnapshotCodec;
 use Interact\Streaming\SseResponse;
 use Interact\Upload\UploadManager;
 use Interact\Upload\UploadServices;
+use Override;
 
 /**
  * Connects island class resolution, dependency construction, routing, and view integration.
@@ -46,6 +47,7 @@ class InteractPlugin extends BasePlugin
     /**
      * Register request identification and attach rendering services without scanning island classes.
      */
+    #[Override]
     public function bootstrap(PluginApplicationInterface $app): void
     {
         ServerRequest::addDetector('interact', ['header' => ['Interact' => 'true']]);
@@ -62,6 +64,7 @@ class InteractPlugin extends BasePlugin
     /**
      * Observe final document policies outside the application's request middleware.
      */
+    #[Override]
     public function middleware(MiddlewareQueue $middlewareQueue): MiddlewareQueue
     {
         return $middlewareQueue->prepend(new DocumentMiddleware());
@@ -70,6 +73,7 @@ class InteractPlugin extends BasePlugin
     /**
      * Register replaceable services at the explicit construction boundary only.
      */
+    #[Override]
     public function services(ContainerInterface $container): void
     {
         if (!$container->hasDefinition(Configuration::class)) {
@@ -135,6 +139,7 @@ class InteractPlugin extends BasePlugin
      *
      * @return list<class-string<\Cake\Event\EventListenerInterface>>
      */
+    #[Override]
     public function eventListeners(): array
     {
         return [UpdateErrorListener::class];
@@ -143,6 +148,7 @@ class InteractPlugin extends BasePlugin
     /**
      * Applications may disable default routes and connect the same action under protected route scopes.
      */
+    #[Override]
     public function routes(RouteBuilder $routes): void
     {
         $routes->post(
@@ -171,6 +177,7 @@ class InteractPlugin extends BasePlugin
     /**
      * Supply the factory through view options rather than leaking services into view variables.
      */
+    #[Override]
     public function events(EventManagerInterface $eventManager): EventManagerInterface
     {
         $factory = $this->factory;

@@ -1,3 +1,5 @@
+import { navigation } from '../navigation/registry';
+
 export type LoadingMode = 'lazy' | 'defer' | 'manual';
 
 /**
@@ -8,7 +10,8 @@ export type LoadingMode = 'lazy' | 'defer' | 'manual';
  */
 export class LoadTrigger {
   protected readonly lifetime = new AbortController();
-  protected readonly observer: IntersectionObserver | undefined;
+  protected observer: IntersectionObserver | undefined;
+  protected readonly releaseLayout: (() => void) | undefined;
   protected visible: boolean;
   protected disposed = false;
 
@@ -22,13 +25,13 @@ export class LoadTrigger {
       mode === 'defer' || typeof IntersectionObserver === 'undefined';
     if (mode === 'manual') return;
     if (mode === 'lazy' && typeof IntersectionObserver !== 'undefined') {
-      this.observer = new IntersectionObserver((entries) => {
-        for (const entry of entries) {
-          if (entry.target === root) this.visible = entry.isIntersecting;
-        }
-        this.schedule();
-      });
-      this.observer.observe(root);
+      const host = root.ownerDocument.defaultView;
+      const service = host ? navigation(host) : undefined;
+      if (service?.observeLayout)
+        this.releaseLayout = service.observeLayout((ready) =>
+          this.observe(ready),
+        );
+      else this.observe(true);
     }
     root.ownerDocument.addEventListener(
       'visibilitychange',
@@ -44,7 +47,24 @@ export class LoadTrigger {
   dispose(): void {
     this.disposed = true;
     this.lifetime.abort();
+    this.releaseLayout?.();
     this.observer?.disconnect();
+  }
+
+  /** Discard old viewport records and observe again only after navigation positions the page. */
+  protected observe(ready: boolean): void {
+    this.observer?.disconnect();
+    this.observer = undefined;
+    this.visible = false;
+    if (!ready || this.disposed) return;
+    this.observer = new IntersectionObserver((entries, observer) => {
+      if (this.observer !== observer || this.disposed) return;
+      for (const entry of entries) {
+        if (entry.target === this.root) this.visible = entry.isIntersecting;
+      }
+      this.schedule();
+    });
+    this.observer.observe(this.root);
   }
 
   /** Start once while connected and visible; the request owner handles all failures. */

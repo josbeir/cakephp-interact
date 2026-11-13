@@ -8,6 +8,7 @@ use Cake\Core\BasePlugin;
 use Interact\Discovery\Registry;
 use Interact\Runtime\Factory;
 use Interact\Security\SnapshotCodec;
+use Interact\Test\Fixture\Uploads\ProtectedUploadIsland;
 use Interact\Upload\UploadManager;
 use TestApp\Application as DemoApplication;
 
@@ -38,6 +39,7 @@ class Application extends DemoApplication
         $container->addShared(Registry::class, static function () use ($container): Registry {
             $registry = new Registry($container);
             $registry->register(ProbeIsland::class, 'Testing');
+            $registry->register(ProtectedUploadIsland::class);
 
             return $registry;
         });

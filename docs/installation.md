@@ -12,12 +12,6 @@ For CakePHP 6, install the `dev-cake6` branch from
 [Packagist](https://packagist.org/packages/josbeir/cakephp-interact).
 This development line has an experimental API.
 
-::: warning Compatibility change in 0.2.0
-Version 0.2.0 introduces CakePHP 5.4+ support and targets CakePHP 5 only.
-Applications using CakePHP 6 with Interact 0.1.x should switch to `dev-cake6`
-to retain CakePHP 6 compatibility. The installation command below selects that branch.
-:::
-
 To explore without integrating an existing application, [run the demo](/demo).
 
 ## Install in your application
@@ -154,7 +148,7 @@ application configuration so the standalone runtime is not included:
 ],
 ```
 
-Existing helper registrations using `autoScript: false` remain supported.
+The helper's `autoScript: false` option also disables automatic runtime inclusion.
 
 Register the plugin before your application's existing `Alpine.start()`:
 
@@ -169,6 +163,10 @@ Alpine.start();
 Load this entry using your application's bundler. Use one Alpine instance per
 page; omit the standalone Interact script for this integration. If you use
 standard `alpinejs` instead, its expression evaluator has different CSP needs.
+For enhanced navigation, mark the versioned entry with
+[x-interact:asset="reload"](/directives/asset#reload-on-asset-changes) or set
+[`Interact.navigationVersion`](/configuration#navigation-compatibility) for each
+incompatible build.
 Use [`createInteract()`](/configuration#javascript-configuration) to override shared
 browser timing defaults. Repeat the module build and refresh your application's dependency after Composer
 updates the plugin.
@@ -198,6 +196,6 @@ Build assets in that checkout. For application-owned Alpine, use
 
 ## Enhanced navigation setup
 
-The existing Interact installer also installs its internal navigation integration. No additional JavaScript dependency or stylesheet is needed. Keep rendering the [configured script block](/configuration#browser-assets) even with `assets.script: false`: the helper supplies document compatibility metadata for the npm integration too.
+The Interact installer includes its internal navigation integration. No additional JavaScript dependency or stylesheet is needed. Keep rendering the [configured script block](/configuration#browser-assets) even with `assets.script: false`: the helper supplies document compatibility metadata for the npm integration too.
 
 Use [x-interact:navigate](/directives/navigate) to opt individual links in. The default plugin middleware marks complete HTML responses after application middleware. Missing metadata, unsupported pages, and incompatible document policies use native navigation.

@@ -7,12 +7,14 @@ use Cake\Routing\Router;
 use Cake\View\Helper;
 use Cake\View\Helper\HtmlHelper;
 use Interact\Configuration;
+use Interact\Configuration\AssetSettings;
 use Interact\Discovery\Registry;
 use Interact\IslandContext;
 use Interact\Loading\Options;
 use Interact\Navigation\DocumentMiddleware;
 use Interact\Runtime\Factory;
 use Interact\Runtime\Runtime;
+use Override;
 
 /**
  * Mounts named islands inside normal CakePHP views and manages their browser bootstrap.
@@ -44,19 +46,26 @@ class InteractHelper extends Helper
      *
      * @param array<string, mixed> $config Services remain view configuration, never template variables.
      */
+    #[Override]
     public function initialize(array $config): void
     {
         parent::initialize($config);
         $settings = Configuration::read();
         $view = $this->getView();
+        $script = $this->getConfig('autoScript') === true ? $settings->script : false;
         if ($this->getConfig('document') === true) {
-            $view->append($settings->scriptBlock, DocumentMiddleware::PLACEHOLDER);
+            $view->append(
+                $settings->scriptBlock,
+                in_array($script, [AssetSettings::BUNDLED_SCRIPT, AssetSettings::BUNDLED_SCRIPT . '.js'], true)
+                    ? DocumentMiddleware::PLACEHOLDER
+                    : DocumentMiddleware::APPLICATION_PLACEHOLDER,
+            );
         }
 
-        if ($this->getConfig('autoScript') === true && $settings->script !== false) {
+        if ($script !== false) {
             $html = $this->getView()->loadHelper('Html');
             assert($html instanceof HtmlHelper, 'The configured collaborator must satisfy its declared contract.');
-            $html->script($settings->script, $settings->scriptOptions);
+            $html->script($script, $settings->scriptOptions);
         }
     }
 

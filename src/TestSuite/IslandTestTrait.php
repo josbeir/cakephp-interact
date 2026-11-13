@@ -14,6 +14,7 @@ use Cake\Routing\RouteCollection;
 use Cake\Routing\Router;
 use Cake\Routing\RoutingApplicationInterface;
 use Interact\IslandContext;
+use Interact\Loading\Options;
 use Interact\Runtime\Factory;
 use LogicException;
 use PHPUnit\Framework\Attributes\After;
@@ -46,13 +47,19 @@ trait IslandTestTrait
      * @param string $island Application/plugin selector or island class reference.
      * @param array<string, mixed> $props Declared mount props, never arbitrary state assignment.
      * @param \Cake\Http\ServerRequest|null $request Request attributes carry the application's normal identity.
+     * @param string|Options $loading Mount immediately or retain a signed placeholder until sync().
      */
-    protected function testIsland(string $island, array $props = [], ?ServerRequest $request = null): IslandTest
-    {
+    protected function testIsland(
+        string $island,
+        array $props = [],
+        ?ServerRequest $request = null,
+        string|Options $loading = 'eager',
+    ): IslandTest {
         $factory = $this->getIslandTestFactory();
-        $request ??= new ServerRequest(['url' => 'http://localhost/', 'environment' => ['REQUEST_METHOD' => 'GET']]);
+        $request ??= new ServerRequest(['url' => '/', 'environment' => ['REQUEST_METHOD' => 'GET']]);
+        Router::setRequest($request);
 
-        return new IslandTest($factory, $this->islandTestContext($request), $island, $props);
+        return new IslandTest($factory, $this->islandTestContext($request), $island, $props, $loading);
     }
 
     /**

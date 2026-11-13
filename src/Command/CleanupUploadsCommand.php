@@ -5,6 +5,7 @@ namespace Interact\Command;
 
 use Cake\Command\Command;
 use Interact\Upload\UploadStorageInterface;
+use Override;
 
 /**
  * Releases abandoned staged files through the same storage backend as HTTP uploads.
@@ -25,6 +26,7 @@ class CleanupUploadsCommand extends Command
     /**
      * Remove expired files and report the count to the application's scheduler.
      */
+    #[Override]
     public function execute(): ?int
     {
         $this->io->out(sprintf('Removed %d expired uploads.', $this->storage->cleanup()));

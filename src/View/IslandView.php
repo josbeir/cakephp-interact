@@ -6,6 +6,7 @@ namespace Interact\View;
 use Interact\Runtime\Values;
 use Interact\View\Helper\InteractHelper;
 use InvalidArgumentException;
+use Override;
 
 /**
  * Uses an existing controller-action template as a whole-page island.
@@ -18,6 +19,7 @@ class IslandView extends TemplateView
     /**
      * Select the island name and props using the ViewBuilder's interact option.
      */
+    #[Override]
     public function render(?string $template = null, string|false|null $layout = null): string
     {
         /** @var mixed $alias */

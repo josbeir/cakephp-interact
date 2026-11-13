@@ -40,7 +40,7 @@ readonly class Property
      */
     public static function propDeclaration(array $attributes): ?Prop
     {
-        return $attributes === [] ? null : $attributes[0]->newInstance();
+        return array_first($attributes)?->newInstance();
     }
 
     /**

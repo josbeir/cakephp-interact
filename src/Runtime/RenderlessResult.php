@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Interact\Runtime;
 
+use Override;
+
 /**
  * Carries accepted state and effects without requesting a DOM replacement.
  *
@@ -16,6 +18,7 @@ readonly class RenderlessResult extends Result
      *
      * @return array<string, mixed> State response with an explicit null HTML member.
      */
+    #[Override]
     public function payload(): array
     {
         $payload = parent::payload();

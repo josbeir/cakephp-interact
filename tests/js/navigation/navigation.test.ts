@@ -762,6 +762,116 @@ describe('navigation feedback and links', () => {
 });
 
 describe('document visit controller', () => {
+  it('resumes viewport observation only after Alpine settles and the page is positioned', async () => {
+    let settle = () => {};
+    const tick = new Promise<void>((resolve) => {
+      settle = resolve;
+    });
+    const nextTick = vi.spyOn(Alpine, 'nextTick').mockReturnValueOnce(tick);
+    const { controller } = setup();
+    const changed = vi.fn();
+    const unsubscribe = controller.observeLayout(changed);
+    expect(changed).toHaveBeenLastCalledWith(true);
+    changed.mockClear();
+
+    const visit = controller.visit('/second');
+    await vi.waitFor(() => expect(nextTick).toHaveBeenCalled());
+    expect(changed.mock.calls).toEqual([[false]]);
+    expect(window.scrollTo).not.toHaveBeenCalled();
+    const incoming = vi.fn();
+    const removeIncoming = controller.observeLayout(incoming);
+    expect(incoming).toHaveBeenLastCalledWith(false);
+    settle();
+    await expect(visit).resolves.toBe('enhanced');
+    expect(window.scrollTo).toHaveBeenLastCalledWith(0, 0);
+    expect(changed.mock.calls).toEqual([[false], [true]]);
+    expect(incoming.mock.calls).toEqual([[false], [true]]);
+
+    unsubscribe();
+    removeIncoming();
+    await controller.visit('/third');
+    expect(changed.mock.calls).toEqual([[false], [true]]);
+  });
+
+  it('lets the winning visit resume observation even while an obsolete response is unresolved', async () => {
+    let first = (_response: Response) => {};
+    let second = (_response: Response) => {};
+    const fetcher = vi
+      .fn<Fetcher>()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            first = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            second = resolve;
+          }),
+      );
+    const { controller } = setup(fetcher);
+    const changed = vi.fn();
+    controller.observeLayout(changed);
+    changed.mockClear();
+    const obsolete = controller.visit('/obsolete');
+    const winning = controller.visit('/winning');
+    expect(changed.mock.calls).toEqual([[false]]);
+    second(pageResponse());
+    await expect(winning).resolves.toBe('enhanced');
+    expect(changed.mock.calls).toEqual([[false], [true]]);
+    first(pageResponse());
+    await expect(obsolete).resolves.toBe('cancelled');
+    expect(changed.mock.calls).toEqual([[false], [true]]);
+  });
+
+  it('keeps observation paused when an obsolete visit settles before the winning visit', async () => {
+    let first = (_response: Response) => {};
+    let second = (_response: Response) => {};
+    const fetcher = vi
+      .fn<Fetcher>()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            first = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            second = resolve;
+          }),
+      );
+    const { controller } = setup(fetcher);
+    const changed = vi.fn();
+    controller.observeLayout(changed);
+    changed.mockClear();
+    const obsolete = controller.visit('/obsolete');
+    const winning = controller.visit('/winning');
+    first(pageResponse());
+    await expect(obsolete).resolves.toBe('cancelled');
+    expect(changed.mock.calls).toEqual([[false]]);
+    second(pageResponse());
+    await expect(winning).resolves.toBe('enhanced');
+    expect(changed.mock.calls).toEqual([[false], [true]]);
+  });
+
+  it('releases retained viewport observation after a failed visit and stops it on disposal', async () => {
+    const { controller } = setup(async () => {
+      throw new Error('Offline');
+    });
+    const changed = vi.fn();
+    controller.observeLayout(changed);
+    changed.mockClear();
+    await expect(controller.visit('/failed')).resolves.toBe('native');
+    expect(changed.mock.calls).toEqual([[false], [true]]);
+    controller.dispose();
+    expect(changed.mock.calls).toEqual([[false], [true], [false]]);
+    const late = vi.fn();
+    controller.observeLayout(late);
+    expect(late).toHaveBeenCalledExactlyOnceWith(false);
+  });
+
   it('commits fresh content, metadata and attributes while preserving application history state', async () => {
     const { controller, native } = setup();
     const events: string[] = [];

@@ -110,7 +110,7 @@ the standalone runtime globally:
 ],
 ```
 
-The existing helper `autoScript: false` also prevents automatic inclusion.
+The helper's `autoScript: false` option also prevents automatic inclusion.
 Neither switch disables document metadata used by enhanced navigation.
 
 Use `scriptOptions` for an alternative block, integrity/crossorigin attributes,
@@ -136,7 +136,12 @@ Output it in the layout, using its configured name:
 Set a string build identifier when application-owned assets change incompatibly.
 Different identifiers require a native page visit. Alternatively, mark versioned
 head bundles with [x-interact:asset="reload"](/directives/asset#reload-on-asset-changes).
-The built-in runtime fingerprint is tracked automatically. See [navigation](/directives/navigate#head-elements-and-scripts).
+The packaged runtime fingerprint is tracked automatically when the helper includes
+`Interact.runtime`. Custom `assets.script` URLs, `assets.script: false`, and the
+helper's `autoScript: false` use application-owned assets instead. Track those
+bundles with versioned head assets or `navigationVersion`; their compatibility
+does not depend on the unused packaged runtime.
+See [navigation](/directives/navigate#head-elements-and-scripts).
 
 ### Temporary uploads
 
@@ -161,7 +166,7 @@ and zero-byte files count toward file limits. PHP and web-server body limits
 apply independently. See [private staging and cleanup](/guide/uploads#private-staging-and-cleanup)
 for deployment and the cleanup command.
 
-## Existing helper options
+## Helper options {#existing-helper-options}
 
 Register Interact through the application's normal view/helper setup. These
 options apply to that helper instance; they are not additional `Interact` keys.

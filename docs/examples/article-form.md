@@ -1,6 +1,6 @@
 ---
 title: 'Article form'
-description: This example is now covered by the demo and feature documentation.
+description: Find this example in the demo and feature documentation.
 search: false
 ---
 
@@ -9,5 +9,5 @@ search: false
 <span id="behavior"></span>
 <span id="existing-records-and-association-ids"></span>
 
-This example page has moved. See the [demo and source](/demo#forms) and the
+See the [demo and source](/demo#forms) and the
 [feature documentation](/why).

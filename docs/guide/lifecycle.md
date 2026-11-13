@@ -94,6 +94,10 @@ Throw the application's appropriate HTTP exception when access is denied.
 Public islands can use the default implementation. Action arguments referring
 to other resources need authorization in the action too.
 
+For applications using CakePHP Authorization, the optional
+[`AuthorizationTrait`](/guide/authorization) provides policy checks and scopes
+inside this hook and declared actions.
+
 ## mount()
 
 ```php

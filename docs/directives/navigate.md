@@ -219,7 +219,7 @@ Changes to policy directives, sources, nonce relationships, session identity, or
 
 Interact's document middleware records compatibility after application middleware has produced the response. Keep it outside middleware that changes document security headers. Headers added by later plugin or infrastructure middleware are not covered by its fingerprint; place the document middleware outside that middleware too, or use native navigation for those pages. Nonce markers must agree with the fetched response's actual CSP headers.
 
-Set [`Interact.navigationVersion`](/configuration#navigation-compatibility) when application-owned assets change incompatibly without changing a tracked head asset. The built-in runtime fingerprint is tracked automatically. See [redirects](/guide/redirects-and-downloads).
+Set [`Interact.navigationVersion`](/configuration#navigation-compatibility) when application-owned assets change incompatibly without changing a tracked head asset. The packaged runtime fingerprint is tracked automatically only when the helper includes that runtime. See [redirects](/guide/redirects-and-downloads).
 
 ## Options
 

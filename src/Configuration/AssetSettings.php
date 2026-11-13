@@ -12,6 +12,11 @@ use InvalidArgumentException;
  */
 readonly class AssetSettings
 {
+    /**
+     * CakePHP asset name for the standalone runtime shipped with the Composer package.
+     */
+    public const string BUNDLED_SCRIPT = 'Interact.runtime';
+
     public string|false $script;
 
     public string $block;
@@ -30,7 +35,7 @@ readonly class AssetSettings
     public function __construct(array $options = [])
     {
         /** @var mixed $script */
-        $script = array_key_exists('script', $options) ? $options['script'] : 'Interact.runtime';
+        $script = array_key_exists('script', $options) ? $options['script'] : static::BUNDLED_SCRIPT;
         if ($script !== false && (!is_string($script) || $script === '')) {
             throw new InvalidArgumentException('Interact assets.script must be a nonempty string or false.');
         }

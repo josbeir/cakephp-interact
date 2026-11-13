@@ -19,10 +19,6 @@
 
 **Interactive CakePHP pages with Alpine and server-rendered PHP islands.**
 
-> **Compatibility warning:** `0.2.0` introduces CakePHP 5.4+ support and targets
-> CakePHP 5 only. If you use CakePHP 6 with Interact `0.1.x`, switch to
-> `dev-cake6` to retain CakePHP 6 compatibility.
-
 Build live search, inline editors, and conditional fields with native CakePHP
 templates and explicit PHP actions. Interact updates the owning region while
 preserving local drafts, focus, and independent nested islands.

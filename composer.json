@@ -8,6 +8,8 @@
     "cakephp/cakephp": "^6.0@dev"
   },
   "require-dev": {
+    "cakephp/authentication": "^5.0@dev",
+    "cakephp/authorization": "^4.0@dev",
     "cakephp/bake": "^4.0@dev",
     "cakephp/mago-rules": "dev-main",
     "carthage-software/mago": "^1.59",
@@ -17,6 +19,8 @@
     "symfony/process": "^8.0"
   },
   "suggest": {
+    "cakephp/authentication": "Use AuthenticationTrait for direct access to the application's authentication service. Install ^5.0@dev for CakePHP 6.",
+    "cakephp/authorization": "Use AuthorizationTrait for optional policy checks and scopes in islands. Install ^4.0@dev for CakePHP 6.",
     "cakephp/bake": "Generate island classes and matching templates with bin/cake bake island. Install as a development dependency.",
     "josbeir/cakephp-mercure": "Mercure 1.x publishing and subscription authorization with the CakePHP 6 compatible package."
   },

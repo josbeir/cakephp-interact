@@ -54,7 +54,7 @@ class Configuration
     {
         $properties = $this->definition->paginations();
         if (!$paging instanceof PaginationState && count($properties) === 1) {
-            return array_values($properties)[0];
+            return array_first($properties);
         }
 
         foreach ($properties as $property) {

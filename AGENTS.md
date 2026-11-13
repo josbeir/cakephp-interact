@@ -150,6 +150,8 @@ Required Composer scripts:
 
 ## Documentation style
 
+- Use imported Table class references such as `ArticlesTable::class` in every `fetchTable()` example, including linked demo source.
+- Describe the current API and behavior directly. Add version-history notes, introduction dates, migration comparisons, or descriptions of former behavior only when the user explicitly requests them. Keep supported-version requirements and compatibility information focused on current setup.
 - Keep `README.md` a concise introduction and entry point to the documentation. Include the purpose, current compatibility/status, a small set of useful documentation links, and the license. Put installation steps, extended examples, demo commands, API contracts, troubleshooting, and contributor workflows in the docs rather than duplicating them in the README.
 - Start feature and API pages with a direct definition of what the feature does, then minimal syntax, behavior, variations, and options. Use concrete API names and headings; avoid motivational introductions, narrative filler, repeated setup, and text that only restates code. Keep one canonical page per topic and link to it from related pages.
 - Open the documentation on Quickstart and keep the product overview on https://www.cakeinteract.dev/. Show cooperating PHP classes, elements, and mount calls in labeled code tabs. Use short role-based tab labels such as Island, Element, Table, and Mount instead of file paths; identify example file paths in PHP docblocks where needed. Identify imports, prerequisites, and application-supplied data.

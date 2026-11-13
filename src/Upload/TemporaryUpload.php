@@ -5,6 +5,7 @@ namespace Interact\Upload;
 
 use Cake\Http\Stream;
 use Cake\Http\UploadedFile;
+use Override;
 
 /**
  * Presents a staged file through the ordinary PSR uploaded-file contract.
@@ -34,6 +35,7 @@ class TemporaryUpload extends UploadedFile
     /**
      * Move into application-owned storage and invalidate the temporary reference only on success.
      */
+    #[Override]
     public function moveTo(string $targetPath): void
     {
         parent::moveTo($targetPath);

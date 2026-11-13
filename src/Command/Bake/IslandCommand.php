@@ -7,6 +7,7 @@ use Bake\Command\BakeCommand;
 use Cake\Console\ConsoleOptionParser;
 use Interact\Bake\IslandName;
 use InvalidArgumentException;
+use Override;
 
 /**
  * Scaffolds an application-owned island and its conventional PHP template through Bake.
@@ -21,6 +22,7 @@ class IslandCommand extends BakeCommand
     /**
      * Collect a conventional name and generate both files using native Bake facilities.
      */
+    #[Override]
     public function execute(): ?int
     {
         try {
@@ -48,6 +50,7 @@ class IslandCommand extends BakeCommand
     /**
      * Offer the same small scaffold interactively or through explicit command arguments.
      */
+    #[Override]
     protected function buildOptionParser(ConsoleOptionParser $parser): ConsoleOptionParser
     {
         return $this->setCommonOptions($parser)

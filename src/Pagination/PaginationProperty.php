@@ -8,6 +8,7 @@ use Interact\Discovery\Property;
 use Interact\Island;
 use Interact\Url\Binding;
 use InvalidArgumentException;
+use Override;
 use ReflectionNamedType;
 use ReflectionProperty;
 
@@ -34,6 +35,7 @@ readonly class PaginationProperty extends Property
     /**
      * Restrict object transport to the one explicitly supported built-in paging type.
      */
+    #[Override]
     protected function transportType(ReflectionNamedType $type): string
     {
         if ($type->getName() !== PaginationState::class || $type->allowsNull()) {
@@ -78,6 +80,7 @@ readonly class PaginationProperty extends Property
      *
      * @return array<string, int|string>
      */
+    #[Override]
     public function read(Island $island): array
     {
         $state = $this->state($island);
@@ -95,6 +98,7 @@ readonly class PaginationProperty extends Property
     /**
      * Restore a validated scalar selection while retaining the owned object identity.
      */
+    #[Override]
     public function assign(Island $island, mixed $value): void
     {
         $values = $this->selection->decode($value);
@@ -108,6 +112,7 @@ readonly class PaginationProperty extends Property
     /**
      * Reject missing, extra, mistyped, and browser-unsafe fields before application behavior.
      */
+    #[Override]
     public function validate(mixed $value): void
     {
         $this->selection->decode($value);
@@ -118,6 +123,7 @@ readonly class PaginationProperty extends Property
      *
      * @return array<string, array{type: string, nullable: bool}>
      */
+    #[Override]
     public function writableFields(): array
     {
         $fields = [];
@@ -133,6 +139,7 @@ readonly class PaginationProperty extends Property
      *
      * @return array<string, Binding>
      */
+    #[Override]
     public function bindings(): array
     {
         return new PaginationBindings($this->declaration)->compile($this->name, $this->fields());

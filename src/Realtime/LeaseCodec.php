@@ -5,6 +5,7 @@ namespace Interact\Realtime;
 
 use Closure;
 use Interact\Security\SnapshotCodec;
+use Override;
 
 /**
  * Signs subscription-only leases in a separate cryptographic domain from snapshots.
@@ -35,6 +36,7 @@ class LeaseCodec extends SnapshotCodec
     /**
      * Keep subscription proofs unusable as action, upload, or child capabilities.
      */
+    #[Override]
     protected function signature(string $payload): string
     {
         return hash_hmac('sha256', $payload, hash_hmac('sha256', 'interact.realtime.v1', $this->key, true));

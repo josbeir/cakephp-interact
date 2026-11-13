@@ -9,9 +9,11 @@ use Cake\Http\Exception\UnauthorizedException;
 use Interact\Attribute\Action;
 use Interact\Attribute\State;
 use Interact\Island;
+use Interact\IslandContext;
 use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotFailureReason;
 use InvalidArgumentException;
+use JsonException;
 use RuntimeException;
 
 /**
@@ -29,12 +31,56 @@ class RecoveryIsland extends Island
     public int $saves = 0;
 
     /**
+     * Require the current demo sign-in independently of the browser's signed state.
+     */
+    public function authorize(IslandContext $context): void
+    {
+        if ($context->request->getSession()->read('demo.recoveryAuthenticated') === false) {
+            throw new UnauthorizedException('The demo sign-in expired.');
+        }
+    }
+
+    /**
      * Accept a draft to demonstrate an explicit successful attempt after a transient failure.
      */
     #[Action]
     public function save(): void
     {
         $this->saves++;
+    }
+
+    /**
+     * Restore only this application's message draft for review, without accepting or saving it.
+     */
+    #[Action]
+    public function restoreDraft(string $draft): void
+    {
+        try {
+            /** @var mixed $values */
+            $values = json_decode($draft, true, 4, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            $values = null;
+        }
+
+        if (!is_array($values) || array_keys($values) !== ['message'] || !is_string($values['message'])) {
+            $this->setErrors(['_form' => ['Paste a draft exported from this recovery example.']]);
+
+            return;
+        }
+
+        $this->message = $values['message'];
+        $this->dispatch('draft-restored');
+    }
+
+    /**
+     * Expire the demo's sign-in so the next authorized request also rejects the old page.
+     */
+    #[Action]
+    public function expireSignIn(): void
+    {
+        $this->getRequest()->getSession()->write('demo.recoveryAuthenticated', false);
+
+        throw new UnauthorizedException('The demo sign-in expired.');
     }
 
     /**

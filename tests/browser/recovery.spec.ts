@@ -67,6 +67,7 @@ test('a real server exception pauses typing and a new explicit sync preserves th
 test('expired signed snapshots require a fresh mount without clearing local edits', async ({
   page,
 }) => {
+  await page.clock.pauseAt(new Date('2026-10-20T12:00:01Z'));
   const region = await recovery(page);
   const id = await islandId(region);
   await page.route('**/_interact/update', async (route) => {
@@ -104,7 +105,12 @@ test('expired signed snapshots require a fresh mount without clearing local edit
   await region
     .getByLabel('Recovery draft', { exact: true })
     .fill('keep my text');
+  const failure = page.waitForResponse((reply) =>
+    targetsIsland(reply.request(), id),
+  );
   await region.getByRole('button', { name: 'Accept draft' }).click();
+  expect((await failure).status()).toBe(409);
+  await page.clock.resume();
   await expect(region.getByRole('alert')).toContainText(
     'This page has expired',
   );
@@ -112,7 +118,9 @@ test('expired signed snapshots require a fresh mount without clearing local edit
   await region
     .getByLabel('Recovery draft', { exact: true })
     .fill('still editable');
-  await region.getByRole('button', { name: 'Accept draft' }).click();
+  await expect(
+    region.getByRole('button', { name: 'Accept draft' }),
+  ).toBeDisabled();
   await page.clock.runFor(1000);
   expect(requests).toBe(sent);
   await expect(region.getByLabel('Draft export')).toHaveValue(/still editable/);
@@ -135,9 +143,161 @@ test('a changed session is distinguished from expiry', async ({
   );
 });
 
+test('an exported draft can be restored after reload without accepting it', async ({
+  page,
+}) => {
+  await page.clock.pauseAt(new Date('2026-10-20T12:00:01Z'));
+  const region = await recovery(page);
+  const originalId = await islandId(region);
+  const message = 'Keep <this draft> & review it after reload';
+  await region.getByLabel('Recovery draft', { exact: true }).fill(message);
+  await region
+    .getByRole('button', { name: 'Simulate expiry', exact: true })
+    .click();
+  await page.clock.resume();
+  await expect(region.getByRole('alert')).toContainText(
+    'This page has expired',
+  );
+  const exported = await region.getByLabel('Draft export').inputValue();
+  expect(JSON.parse(exported)).toEqual({ message });
+  await expect(
+    region.getByRole('button', { name: 'Synchronize latest draft' }),
+  ).toBeHidden();
+  await region.getByRole('link', { name: 'Reload page' }).click();
+  await expect(
+    region.getByLabel('Recovery draft', { exact: true }),
+  ).toHaveValue('');
+  expect(await islandId(region)).not.toBe(originalId);
+  await region.getByText('Restore a copied draft', { exact: true }).click();
+  await region.getByLabel('Copied draft JSON').fill(exported);
+  await region
+    .getByRole('button', { name: 'Restore draft for review' })
+    .click();
+  await expect(
+    region.getByLabel('Recovery draft', { exact: true }),
+  ).toHaveValue(message);
+  await expect(
+    region.getByText(
+      'Draft restored for review. Nothing has been accepted yet.',
+    ),
+  ).toBeVisible();
+  await page.clock.runFor(1000);
+  await expect(region.getByRole('status')).toHaveText('Accepted 0 times.');
+  await region.getByRole('button', { name: 'Accept draft' }).click();
+  await expect(region.getByRole('status')).toHaveText('Accepted 1 times.');
+});
+
+test('sign-in renews the session and requires explicit draft restoration on a fresh mount', async ({
+  page,
+  context,
+}) => {
+  await page.clock.pauseAt(new Date('2026-10-20T12:00:01Z'));
+  const region = await recovery(page);
+  const originalId = await islandId(region);
+  const originalSession = (await context.cookies()).find(
+    (cookie) => cookie.name === 'PHPSESSID',
+  )?.value;
+  expect(originalSession).toBeDefined();
+  await region
+    .getByLabel('Recovery draft', { exact: true })
+    .fill('Signed-out draft');
+  await region.getByRole('button', { name: 'Expire demo sign-in' }).click();
+  await page.clock.resume();
+  await expect(region.getByRole('alert')).toContainText('Sign in again');
+  const exported = await region.getByLabel('Draft export').inputValue();
+  await expect(
+    region.getByRole('button', { name: 'Synchronize latest draft' }),
+  ).toBeHidden();
+  await expect(
+    region.getByRole('button', { name: 'Accept draft' }),
+  ).toBeDisabled();
+  await expect(
+    region.getByRole('link', { name: 'Sign in again', exact: true }),
+  ).toHaveAttribute('href', '/recovery/sign-in');
+  await page.reload();
+  await expect(page).toHaveURL(/\/recovery\/sign-in$/);
+  await expect(
+    page.getByRole('heading', { name: 'Demo sign-in', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Continue demo sign-in' }).click();
+  await expect(page).toHaveURL(/\/playground$/);
+  const newSession = (await context.cookies()).find(
+    (cookie) => cookie.name === 'PHPSESSID',
+  )?.value;
+  expect(newSession).toBeDefined();
+  expect(newSession).not.toBe(originalSession);
+  expect(await islandId(region)).not.toBe(originalId);
+  await expect(
+    region.getByLabel('Recovery draft', { exact: true }),
+  ).toHaveValue('');
+  await expect(region.getByRole('status')).toHaveText('Accepted 0 times.');
+  await region.getByText('Restore a copied draft', { exact: true }).click();
+  await region.getByLabel('Copied draft JSON').fill(exported);
+  await region
+    .getByRole('button', { name: 'Restore draft for review' })
+    .click();
+  await expect(
+    region.getByLabel('Recovery draft', { exact: true }),
+  ).toHaveValue('Signed-out draft');
+  await expect(region.getByRole('status')).toHaveText('Accepted 0 times.');
+});
+
+test('the explicit sign-in link opens a native form without carrying the draft in its URL', async ({
+  page,
+}) => {
+  const region = await recovery(page);
+  await region.getByRole('button', { name: 'Expire demo sign-in' }).click();
+  await expect(region.getByRole('alert')).toContainText('Sign in again');
+  await region
+    .getByRole('link', { name: 'Sign in again', exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/recovery\/sign-in$/);
+  await expect(
+    page.getByRole('heading', { name: 'Demo sign-in', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Continue demo sign-in' }).click();
+  await expect(page).toHaveURL(/\/playground$/);
+  await expect(
+    region.getByLabel('Recovery draft', { exact: true }),
+  ).toHaveValue('');
+  await expect(region.getByRole('status')).toHaveText('Accepted 0 times.');
+});
+
+test('invalid copied drafts keep the current text and expose accessible errors', async ({
+  page,
+}) => {
+  const region = await recovery(page);
+  await region
+    .getByLabel('Recovery draft', { exact: true })
+    .fill('Keep the current text');
+  await region.getByText('Restore a copied draft', { exact: true }).click();
+  const copied = region.getByLabel('Copied draft JSON');
+  await copied.fill('{"message":"replace it","saves":42}');
+  await region
+    .getByRole('button', { name: 'Restore draft for review' })
+    .click();
+  await expect(region.getByRole('alert')).toContainText(
+    'Paste a draft exported from this recovery example.',
+  );
+  await expect(
+    region.getByLabel('Recovery draft', { exact: true }),
+  ).toHaveValue('Keep the current text');
+  await expect(copied).toHaveValue('{"message":"replace it","saves":42}');
+  await expect(region.getByRole('status')).toHaveText('Accepted 0 times.');
+  await copied.fill('{"message":"Corrected draft"}');
+  await region
+    .getByRole('button', { name: 'Restore draft for review' })
+    .click();
+  await expect(region.getByRole('alert')).toHaveCount(0);
+  await expect(
+    region.getByLabel('Recovery draft', { exact: true }),
+  ).toHaveValue('Corrected draft');
+});
+
 test('actual middleware CSRF rejection retains the draft and blocks resubmission', async ({
   page,
 }) => {
+  await page.clock.pauseAt(new Date('2026-10-20T12:00:01Z'));
   const region = await recovery(page);
   const id = await islandId(region);
   await page.route('**/_interact/update', async (route) => {
@@ -155,6 +315,7 @@ test('actual middleware CSRF rejection retains the draft and blocks resubmission
   );
   await region.getByRole('button', { name: 'Accept draft' }).click();
   const rejected = await response;
+  await page.clock.resume();
   expect(rejected.status()).toBe(403);
   expect(await rejected.json()).toMatchObject({
     version: 1,
@@ -173,6 +334,7 @@ for (const [name, status, body] of [
   test(`${name} failure has safe feedback and preserves drafts`, async ({
     page,
   }) => {
+    await page.clock.pauseAt(new Date('2026-10-20T12:00:01Z'));
     const region = await recovery(page);
     const id = await islandId(region);
     let requests = 0;
@@ -202,6 +364,7 @@ for (const [name, status, body] of [
       .getByLabel('Recovery draft', { exact: true })
       .fill('preserved text');
     await region.getByRole('button', { name: 'Accept draft' }).click();
+    await page.clock.resume();
     await expect(region.getByRole('alert')).toBeVisible();
     await expect(region.getByRole('alert')).not.toContainText('Private');
     if (status === 302)

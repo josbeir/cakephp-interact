@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Interact\Runtime;
 
+use Override;
+
 /**
  * Carries terminal navigation without rendering or exposing another snapshot.
  * The HTTP update remains JSON so middleware redirects stay distinguishable from action outcomes.
@@ -26,6 +28,7 @@ readonly class RedirectResult extends Result
      *
      * @return array<string, mixed> Validated browser navigation request.
      */
+    #[Override]
     public function payload(): array
     {
         return [
