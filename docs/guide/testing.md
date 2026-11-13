@@ -52,7 +52,7 @@ Run it with your application's PHPUnit command:
 vendor/bin/phpunit tests/TestCase/Island/CounterTest.php
 ```
 
-`testIsland($island, props: [], request: null)` accepts the same conventional
+`testIsland($island, props: [], request: null, loading: 'eager')` accepts the same conventional
 names and class references as the mount helper, including loaded plugin names
 such as `Commerce.Article/Editor`. Only declared props can be supplied at mount.
 An ordinary eager mount runs immediately and produces the initial assertions'
@@ -102,6 +102,8 @@ Assertions return the same fluent test object and inspect the latest result:
 | `assertRedirect($url)` / `assertNoRedirect()` | Check the resolved navigation instruction.                                    |
 | `assertDownload($url)` / `assertNoDownload()` | Check the requested native download URL.                                      |
 | `assertRendered()` / `assertNotRendered()`    | Check whether the latest interaction produced fresh markup.                   |
+| `assertUploaded($field, $filenames)`          | Match accepted filenames in selection order; `[]` requires an empty field.    |
+| `assertPending()` / `assertInitialized()`     | Check whether a signed mount ticket still awaits initialization.              |
 
 `assertSet()` distinguishes absent paths from `null`, `false`, zero, and empty
 strings. Event detail `null` accepts any detail; `[]` requires empty detail.
@@ -206,9 +208,92 @@ controller. Keep CSRF, authentication middleware, cookies, and endpoint status
 assertions in CakePHP integration tests. Use Playwright for DOM morphing, focus,
 client scheduling, navigation, and upload transfer behavior.
 
-Dedicated upload, deferred-initialization, and browser-history drivers are not
-part of this API. Existing integration and browser tests remain appropriate for
-those flows. The helper does not create browser assets or require JavaScript.
+Use the upload and pending-mount helpers below for server lifecycle assertions.
+Browser-history driving, viewport triggers, debounce timing, upload progress, and
+cancellation still require browser tests. The helper does not create browser
+assets or require JavaScript.
+
+## Upload files
+
+`upload($field, $file)` stages one `UploadedFileInterface` through the normal
+authorized transfer lifecycle. Repeated calls append to multiple-file fields or
+replace a single-file selection. They do not invoke a save action.
+
+For the [document upload demo](/demo#uploads), create a text fixture at
+`tests/Fixture/report.txt`. From a test in `tests/TestCase/Island/`:
+
+```php
+use Laminas\Diactoros\UploadedFile;
+
+$file = new UploadedFile(
+    dirname(__DIR__, 2) . '/Fixture/report.txt',
+    null,
+    UPLOAD_ERR_OK,
+    'report.txt',
+    'text/plain',
+);
+
+$this->testIsland('DocumentUpload')
+    ->upload('document', $file)
+    ->assertUploaded('document', ['report.txt'])
+    ->call('save')
+    ->assertHasErrors(['title'])
+    ->assertUploaded('document', ['report.txt'])
+    ->set('title', 'Quarterly report')
+    ->call('save')
+    ->assertHasNoErrors()
+    ->assertSet('savedFiles', ['report.txt']);
+```
+
+The application still owns required-file rules, MIME validation, and permanent
+storage. Staging limits return ordinary field errors, including a rejected
+replacement that retains the previous accepted file. Authorization exceptions
+propagate to PHPUnit and leave the last successful result available.
+
+`removeUpload($field)` clears a selection. To remove one attachment, pass an
+opaque ID from `$island->result()->uploads[$field]['files']` as the second
+argument. Unknown fields and unselected IDs use normal runtime validation.
+`assertUploaded()` checks the latest server metadata, including after a
+renderless action; it does not inspect a browser file chooser or fetch files.
+
+Transfers use the application's configured staging backend. Configure an isolated
+`Interact.uploads.directory` in test setup before the first island is created,
+and remove that test-owned directory during teardown. Isolate permanent storage
+too when testing application saving. File objects are attached only to the
+staging interaction; subsequent steps restore their owned signed references.
+
+## Test lazy and deferred mounts
+
+Pass `loading: 'lazy'`, `'defer'`, or `'manual'` to authorize and render a pending
+placeholder. PHP tests do not run viewport observers or page-load scheduling;
+`sync()` explicitly sends the signed initialization request for every mode:
+
+```php
+$this->testIsland('Counter', props: ['initial' => 3], loading: 'lazy')
+    ->assertPending()
+    ->sync()
+    ->assertInitialized()
+    ->assertSet('count', 3)
+    ->call('adjust', 2)
+    ->sync()
+    ->assertSet('count', 5);
+```
+
+Pending mounts run construction, `initialize()`, prop assignment, and authorization,
+but defer `mount()` and `viewData()`. Initialization rechecks current access and
+uses a fresh island. Subsequent `sync()` calls refresh without repeating `mount()`.
+Use `withRequest()` before initialization to test changed permissions or sessions.
+If initialization throws, the helper retains its pending ticket and last result.
+
+Pending islands reject edits, actions, uploads, and upload removal until `sync()`.
+Their placeholder HTML can be checked with `assertSee()`; transported state and
+upload metadata become available after initialization. An eager mount is already
+initialized when `testIsland()` returns.
+
+For a custom placeholder, import `Interact\Loading\Options` and pass
+`loading: new Options('manual', 'Loading/report')`. This uses the same native
+element and declared-prop contract as the mount helper. Explicit `IslandTest`
+construction accepts the loading mode or `Options` as its fifth argument.
 
 ## Streaming assertions
 
