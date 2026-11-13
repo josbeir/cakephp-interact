@@ -159,12 +159,19 @@ test('handwritten forms retain native validation and unlock after failure for an
     exact: true,
   });
   ownerId = await islandId(region);
-  await region.locator('form').evaluate((form) => {
-    form.outerHTML =
-      '<form x-interact:submit="$server.call(\'save\')"><label>Plain draft<input required name="message" x-interact:model="message"></label><button>Plain save</button><button disabled>Unavailable</button></form>';
-  });
+  await region
+    .locator('form')
+    .filter({
+      has: page.getByLabel('Recovery draft', { exact: true }),
+    })
+    .evaluate((form) => {
+      form.outerHTML =
+        '<form x-interact:submit="$server.call(\'save\')"><label>Plain draft<input required name="message" x-interact:model="message"></label><button>Plain save</button><button disabled>Unavailable</button></form>';
+    });
   const input = region.getByLabel('Plain draft', { exact: true });
-  const form = region.locator('form');
+  const form = region.locator('form').filter({
+    has: page.getByLabel('Plain draft', { exact: true }),
+  });
   await form.evaluate((element) => {
     if (!(element instanceof HTMLFormElement))
       throw new Error('Missing native form.');

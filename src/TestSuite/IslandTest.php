@@ -5,6 +5,7 @@ namespace Interact\TestSuite;
 
 use Cake\Http\ServerRequest;
 use Interact\IslandContext;
+use Interact\Loading\Options;
 use Interact\Runtime\Factory;
 use Interact\Runtime\RedirectResult;
 use Interact\Runtime\RenderlessResult;
@@ -14,6 +15,7 @@ use Interact\View\TemplateView;
 use Laminas\Diactoros\Uri;
 use LogicException;
 use PHPUnit\Framework\Assert;
+use Psr\Http\Message\UploadedFileInterface;
 use function Cake\Core\h;
 
 /**
@@ -27,25 +29,31 @@ class IslandTest
 {
     protected Result $lastResult;
 
+    protected bool $pending;
+
     /**
      * @var list<array<string, mixed>> Incremental messages from the latest interaction.
      */
     protected array $streamed = [];
 
     /**
-     * Mount immediately using the application's existing services and declared props.
+     * Mount or authorize a pending placeholder using application services and declared props.
      *
      * @param string $island Conventional application/plugin name or island class reference.
      * @param array<string, mixed> $props Server-owned declared mount parameters.
+     * @param string|Options $loading Normal mount mode or native placeholder options; sync() initializes pending mounts.
      */
     public function __construct(
         protected readonly Factory $factory,
         protected IslandContext $context,
         string $island,
         array $props = [],
+        string|Options $loading = 'eager',
     ) {
+        $options = $loading instanceof Options ? $loading : new Options($loading);
+        $this->pending = $options->mode !== 'eager';
         $this->lastResult = $factory->create(new TemplateView($context->request), $context)
-            ->mount($island, $props, null, $context);
+            ->mount($island, $props, null, $context, $options);
     }
 
     /**
@@ -75,11 +83,63 @@ class IslandTest
     }
 
     /**
-     * Refresh server data and native markup without invoking an action.
+     * Initialize a pending mount or refresh native markup without invoking an action.
      */
     public function sync(): static
     {
-        return $this->update([]);
+        return $this->update($this->pending ? ['initialize' => true] : []);
+    }
+
+    /**
+     * Stage one real uploaded file through the authorized transfer lifecycle.
+     *
+     * Repeated calls append to multiple-file fields or replace a single-file selection.
+     * Staging never invokes an application action or saves a record.
+     */
+    public function upload(string $field, UploadedFileInterface $file): static
+    {
+        return $this->update(['upload' => ['kind' => 'stage', 'field' => $field]], ['file' => $file]);
+    }
+
+    /**
+     * Remove one selected opaque reference, or clear the field when no ID is supplied.
+     */
+    public function removeUpload(string $field, ?string $id = null): static
+    {
+        return $this->update(['upload' => ['kind' => 'remove', 'field' => $field, 'id' => $id]]);
+    }
+
+    /**
+     * Assert the exact accepted filenames in selection order; an empty list requires no selection.
+     *
+     * @param list<string> $filenames Expected server-accepted names, not browser transfer progress.
+     */
+    public function assertUploaded(string $field, array $filenames): static
+    {
+        Assert::assertArrayHasKey($field, $this->lastResult->uploads, sprintf('Unknown upload field "%s".', $field));
+        Assert::assertSame($filenames, array_column($this->lastResult->uploads[$field]['files'], 'name'));
+
+        return $this;
+    }
+
+    /**
+     * Assert mount and view work are still deferred behind a signed initialization ticket.
+     */
+    public function assertPending(): static
+    {
+        Assert::assertTrue($this->pending, 'Expected an island awaiting initialization.');
+
+        return $this;
+    }
+
+    /**
+     * Assert the island completed an eager mount or an explicit initialization.
+     */
+    public function assertInitialized(): static
+    {
+        Assert::assertFalse($this->pending, 'Initialize the pending island with sync() first.');
+
+        return $this;
     }
 
     /**
@@ -308,12 +368,17 @@ class IslandTest
      * Submit the latest signed identity through a fresh runtime and native view.
      *
      * @param array<string, mixed> $input State edits or an explicit action invocation.
-     * @throws \LogicException When a prior redirect terminated the interaction chain.
+     * @param array<string, UploadedFileInterface> $files Request-local transfer files.
+     * @throws \LogicException When a redirect ended the chain or a pending mount requires initialization first.
      */
-    protected function update(array $input): static
+    protected function update(array $input, array $files = []): static
     {
         if ($this->lastResult instanceof RedirectResult) {
             throw new LogicException('A redirect ended this island interaction. Mount a new island to continue.');
+        }
+
+        if ($this->pending && ($input['initialize'] ?? false) !== true) {
+            throw new LogicException('Initialize the pending island with sync() before editing, actions, or uploads.');
         }
 
         $pageQuery = $this->context->request->getUri()->getQuery();
@@ -328,16 +393,18 @@ class IslandTest
             ->request
             ->withMethod('POST')
             ->withUri($this->context->request->getUri()->withPath($target->getPath())->withQuery($target->getQuery()))
-            ->withHeader('Content-Type', 'application/json')
+            ->withHeader('Content-Type', $files === [] ? 'application/json' : 'multipart/form-data')
             ->withHeader('Interact', 'true')
             ->withHeader('Accept', 'application/json')
-            ->withParsedBody($payload);
+            ->withParsedBody($payload)
+            ->withUploadedFiles($files);
         $context = new IslandContext($request, $this->context->scope, $this->context->endpoint);
         $this->streamed = [];
         $update = $this->factory->create(new TemplateView($request), $context)->prepare($payload, $context);
         $this->lastResult = $update->run(function (array $message): void {
             $this->streamed[] = $message;
         });
+        $this->pending = false;
 
         return $this;
     }

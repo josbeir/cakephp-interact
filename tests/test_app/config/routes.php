@@ -55,6 +55,16 @@ $routes->connect(
     ['_method' => 'GET', '_name' => 'demo:debugging'],
 );
 $routes->connect(
+    '/recovery/sign-in',
+    ['controller' => 'Recovery', 'action' => 'signIn', '_method' => 'GET'],
+    ['_name' => 'demo:recovery-sign-in'],
+);
+$routes->connect(
+    '/recovery/sign-in',
+    ['controller' => 'Recovery', 'action' => 'completeSignIn', '_method' => 'POST'],
+    ['_name' => 'demo:recovery-sign-in-complete'],
+);
+$routes->connect(
     '/debugging',
     ['controller' => 'Debugging', 'action' => 'index'],
     ['_method' => 'GET', '_name' => 'demo:debugging-example'],

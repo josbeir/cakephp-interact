@@ -100,6 +100,35 @@ Tested source:
 [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/Article/event_panel.php).
 See [dynamic event names](/guide/events#dynamic-event-names) for syntax and supported props.
 
+## Recovery
+
+Open **Playground** in the demo navigation (`/playground`) and scroll to
+**Request recovery**, below the counters, workshop planner, and task board.
+Enter a draft and try:
+
+- **Simulate server failure**: edit again while requests are paused, then choose
+  **Synchronize latest draft**. The newest text remains and the acceptance count
+  stays unchanged until **Accept draft**.
+- **Simulate expiry**: copy **Draft export**, follow **Reload page**, then open
+  **Restore a copied draft** and paste the JSON. Restore it for review before
+  accepting. Reloading alone does not restore it.
+- **Expire demo sign-in**: copy the export and follow **Sign in again**.
+  **Continue demo sign-in** renews the fixture session through a native
+  CSRF-protected POST and returns to a fresh playground. Restore the copy there.
+
+If you revisit or reload Playground while the demo sign-in is expired, it redirects
+to the demo sign-in page. Continue there to return to the examples.
+
+The sign-in page has no credentials and is not an authentication implementation.
+The example keeps drafts out of browser storage and URLs. Invalid copied JSON or
+unexpected fields produce validation feedback without changing the current draft.
+
+Tested source:
+[island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RecoveryIsland.php),
+[template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/recovery.php),
+[sign-in controller](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Controller/RecoveryController.php).
+See [Error handling](/guide/failures#recovery) for recovery categories and application responsibilities.
+
 ## Debugging
 
 Open `/debugging` from the demo navigation. Edit the message and try **Dump draft**,

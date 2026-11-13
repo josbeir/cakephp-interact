@@ -27,9 +27,16 @@ class ArticlesController extends AppController
     public function events(): void {}
 
     /**
-     * Mount independent examples of typed actions, conditional inputs, and dynamic collections.
+     * Require demo sign-in before mounting the recovery example alongside other interactions.
      */
-    public function playground(): void {}
+    public function playground(): ?Response
+    {
+        if ($this->getRequest()->getSession()->read('demo.recoveryAuthenticated') === false) {
+            return $this->redirect(['_name' => 'demo:recovery-sign-in']);
+        }
+
+        return null;
+    }
 
     /**
      * Render the documented nested FormHelper example inside the demo layout.
