@@ -75,6 +75,110 @@ a persistent operation. Offer a normal application reload/sign-in link where
 appropriate. [`exportDraft()`](/reference/server#exportdraft) supports an
 intentional copy step; there is no automatic browser storage or restoration.
 
+### Resume after a connection or server failure
+
+For `retry` failures, keep the draft editable and offer **Synchronize draft** as
+shown above. `sync()` sends the latest writable values without an action. Once
+accepted, automatic model updates resume and failure feedback clears.
+
+Resynchronizing does not prove that the failed action was rolled back. For a
+save, payment, or job submission, check its application-owned result before
+offering another submission. The [demo recovery example](/demo#recovery) shows
+explicit synchronization separately from **Accept draft**.
+
+### Reload after expiry or a session change
+
+`snapshot_expired`, `session_changed`, and `csrf_failed` need a fresh page.
+Calling `sync()` on the blocked client does not obtain a replacement snapshot.
+
+1. Keep local controls editable and display the failure.
+2. Let the user select and copy [`exportDraft()`](/reference/server#exportdraft)
+   before leaving. It exports all current writable values, including already
+   synchronized values; uploads and locked state are excluded.
+3. Follow a normal reload link to obtain fresh authorization, state, and signing.
+4. Let the user explicitly restore the copied values into the fresh island and
+   review them before saving.
+
+The [demo](/demo#recovery) has a readonly **Draft export** field and a normal
+**Reload page** link. No draft is put in the URL or browser storage. Reloading
+without copying discards the local draft.
+
+### Return after signing in
+
+For `unauthenticated` with recovery `authenticate`, show a normal link to the
+application's sign-in page. Keep the export field available before navigation.
+Do not send the failed action or its arguments through the sign-in flow.
+
+This example assumes your application serves sign-in at `/users/login`:
+
+::: code-group
+
+```html [HTML]
+<a
+  href="/users/login"
+  x-show="$server.error && $server.error.recovery === 'authenticate'"
+>
+  Sign in again
+</a>
+```
+
+```php [FormHelper]
+<?= $this->Html->link('Sign in again', '/users/login', [
+    'x-show' => '$server.error && $server.error.recovery === "authenticate"',
+]) ?>
+```
+
+:::
+
+Use your normal authentication, session renewal, and authorized return destination.
+Return to a fresh GET page after sign-in: the old island remains blocked and its
+snapshot may belong to the previous session. Offer explicit draft restoration
+and review there. Signing in never replays an action.
+
+**Expire demo sign-in** in the recovery example writes a fixture session flag
+and returns a real 401. **Sign in again** opens a native, CSRF-protected form;
+continuing renews that demonstration session and returns to `/playground`.
+This fixture has no credentials. Applications supply their own authentication.
+
+### Restore a copied draft
+
+Draft restoration belongs to the application because it knows the record,
+allowed fields, and current permissions. Interact has no generic snapshot-import
+or automatic draft-restoration method.
+
+The demo's **Restore a copied draft** form calls a declared `restoreDraft()`
+action on the fresh island. Its paste field uses local Alpine `x-model`, while
+the action receives the copied JSON as an explicit string argument. The action
+accepts only `{"message": "..."}` with a string value. Invalid JSON, other fields,
+locked state, and old snapshots produce validation feedback without replacing
+the current draft. A successful restore updates `message` and emits
+`draft-restored`; it does not call `save()` or increment the acceptance count.
+
+For an editor, restore only allowlisted draft fields into the currently authorized
+record. Recheck association IDs and choices using normal application rules.
+Never restore an identity, permission, action invocation, or signed snapshot from
+the copied document. Reselect uploads after a fresh mount.
+
+The complete [island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RecoveryIsland.php)
+and [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/recovery.php)
+are tested together. An application test can assert the distinction between
+restoration and acceptance using the [testing helper](/guide/testing):
+
+```php
+$this->testIsland('Recovery')
+    ->call('restoreDraft', '{"message":"Recovered draft"}')
+    ->assertSet('message', 'Recovered draft')
+    ->assertSet('saves', 0)
+    ->assertDispatched('draft-restored')
+    ->call('save')
+    ->assertSet('saves', 1);
+```
+
+HTTP tests should cover authentication and CSRF. Browser tests should verify
+draft retention, a fresh identity after reload or sign-in, explicit restoration,
+and no automatic action replay, including when persistence succeeded before a
+response was lost.
+
 ## Validation errors
 
 A renderable HTTP 422 supplies [`$server.errors`](/guide/forms) and does not pause
