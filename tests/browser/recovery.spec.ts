@@ -67,6 +67,7 @@ test('a real server exception pauses typing and a new explicit sync preserves th
 test('expired signed snapshots require a fresh mount without clearing local edits', async ({
   page,
 }) => {
+  await page.clock.pauseAt(new Date('2026-10-20T12:00:01Z'));
   const region = await recovery(page);
   const id = await islandId(region);
   await page.route('**/_interact/update', async (route) => {
@@ -104,7 +105,12 @@ test('expired signed snapshots require a fresh mount without clearing local edit
   await region
     .getByLabel('Recovery draft', { exact: true })
     .fill('keep my text');
+  const failure = page.waitForResponse((reply) =>
+    targetsIsland(reply.request(), id),
+  );
   await region.getByRole('button', { name: 'Accept draft' }).click();
+  expect((await failure).status()).toBe(409);
+  await page.clock.resume();
   await expect(region.getByRole('alert')).toContainText(
     'This page has expired',
   );
