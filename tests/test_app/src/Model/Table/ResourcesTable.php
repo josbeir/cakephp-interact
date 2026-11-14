@@ -79,7 +79,7 @@ class ResourcesTable extends Table
             foreach (['Resources.title', 'Resources.summary', 'Resources.category'] as $field) {
                 $lower = new FunctionExpression('LOWER', [$field => 'identifier']);
                 $position = new FunctionExpression('INSTR', [$lower, $term]);
-                $matches->gt($position, 0, 'integer');
+                $matches->greaterThan($position, 0, 'integer');
             }
 
             $query->where($matches);
