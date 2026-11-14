@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace Interact\Realtime;
 
 use Closure;
+use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotCodec;
+use Interact\Security\SnapshotEnvelope;
 use Override;
 
 /**
@@ -30,7 +32,22 @@ class LeaseCodec extends SnapshotCodec
      */
     public function expires(): int
     {
-        return ($this->clock)() + $this->ttl;
+        /** @var int $ttl The constructor requires a finite positive lifetime. */
+        $ttl = $this->ttl;
+
+        return $this->deadline($ttl);
+    }
+
+    /**
+     * Require a finite lease even when a signed envelope otherwise has valid claims.
+     */
+    #[Override]
+    protected function verifyEnvelope(SnapshotEnvelope $envelope, string $binding, string $scope): void
+    {
+        parent::verifyEnvelope($envelope, $binding, $scope);
+        if ($envelope->expires === null) {
+            throw new InvalidSnapshotException('Subscription leases require a finite expiry.');
+        }
     }
 
     /**

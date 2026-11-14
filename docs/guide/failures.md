@@ -62,6 +62,9 @@ Synchronization does not undo or repeat the failed action.
 
 ### Reload or sign in
 
+Snapshots have no fixed expiry unless a [lifetime is configured](/configuration#snapshots).
+Session and CSRF failures can still require a reload or sign-in.
+
 For `reload`, return to a fresh GET page after preserving important input.
 Calling `sync()` on a blocked client cannot replace an expired snapshot.
 [Expiry failures offer a reload prompt by default](#customize-the-expiry-prompt).

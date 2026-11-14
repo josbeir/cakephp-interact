@@ -85,9 +85,11 @@ to select your view and helpers on both initial renders and update requests.
 For identifying the failure and preserving local edits, see
 [failures and recovery](/guide/failures).
 
-Snapshots expire after 30 minutes by default and are bound to their issuing
-session and middleware scope. Logging out, changing the session, rotating the
-signing secret, or using another scope can invalidate them too.
+Snapshots have no fixed expiry by default. An optional
+[`snapshots.ttl`](/configuration#snapshots) sets a lifetime when each token is
+issued. Tokens are also bound to their issuing session and middleware scope.
+Logging out, changing the session, rotating the signing secret, or using another
+scope can invalidate them regardless of age.
 
 Reload for a fresh mount. Preserve any important unsaved text first. Never
 automatically replay a sensitive action after an expiry or connection failure.

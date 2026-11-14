@@ -152,6 +152,7 @@ class CompositionTest extends TestCase
             'updates' => ['scope' => 'changed', 'data.value' => 'from parent'],
         ], $this->context);
         $ticket = static::metadataValue($parent, 'data-interact-parent-inputs');
+        $this->time += 86_400;
         $next = $this->runtime->update([
             'snapshot' => $child->snapshot,
             'parentInputs' => $ticket,
@@ -256,6 +257,7 @@ class CompositionTest extends TestCase
             'updates' => ['scope' => 'denied'],
         ], $this->context);
         $ticket = static::metadataValue($parent, 'data-interact-parent-inputs');
+        $this->time += 86_400;
         $this->expectException(ForbiddenException::class);
         $this->runtime->update([
             'snapshot' => $snapshots[1][1],
@@ -338,6 +340,11 @@ class CompositionTest extends TestCase
             'updates' => ['scope' => 'new'],
         ], $this->context);
         $ticket = static::metadataValue($parent, 'data-interact-parent-inputs');
+        $ticket = new SnapshotCodec(str_repeat('p', 32), 1800, fn(): int => $this->time)->seal(
+            $this->open($ticket),
+            $this->context->binding(),
+            $this->context->scope,
+        );
         $this->time = 2000;
         $child = $this->runtime->update(['snapshot' => $snapshots[1][1]], $this->context);
         $this->time = 3000;

@@ -23,7 +23,7 @@ use ReflectionClass;
  */
 readonly class Configuration
 {
-    public int $snapshotTtl;
+    public ?int $snapshotTtl;
 
     protected SnapshotSettings $signing;
 
