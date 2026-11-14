@@ -49,6 +49,122 @@ no readable response was available. Recovery values are `retry`, `reload`,
 | `invalid_response`    | Invalid JSON, content type, envelope, identity, or root markup | Reload / check application logs                    |
 | `client_error`        | The browser could not prepare or apply the update              | Reload / check browser diagnostics                 |
 
+## Default expiry prompt
+
+`snapshot_expired`, `session_changed`, and `csrf_failed` display a native browser
+confirmation after publishing the failure:
+
+```text
+This page has expired.
+Reload this page? Unsaved changes will be lost.
+Choose Cancel to keep this page open and copy your work.
+```
+
+**OK** reloads the current page. **Cancel** keeps the page open with editable
+drafts and paused updates. Copy important input before reloading; Interact does
+not automatically store drafts or replay the failed action.
+
+All islands share one default prompt per page visit, including after dismissal.
+A successful enhanced page visit resets that allowance. Cancelled visits,
+fragment changes, and island URL-state changes do not reset it. Other failures,
+including sign-in requirements and invalid snapshots, retain their normal error
+feedback without opening this prompt.
+
+### Handle errors locally
+
+Wrap an island mount in an Alpine component and listen without `.window` to
+handle failures only from islands inside that wrapper. This example uses the
+`Counter` from [Quickstart](/getting-started) and suppresses the default prompt
+while showing local feedback:
+
+```php
+<div
+  x-data="{ failure: null }"
+  @interact:error.prevent="failure = $event.detail"
+>
+  <?= $this->Interact->render('Counter') ?>
+  <p
+    role="alert"
+    x-show="failure"
+    x-text="failure ? failure.message : ''"
+  ></p>
+</div>
+```
+
+Remove `.prevent` to observe failures while keeping the default
+expiry prompt. The wrapper must contain the island root because errors bubble
+from that root; it does not receive failures from sibling islands.
+
+### Replace or suppress the prompt
+
+The bubbling `interact:error` event is cancelable. Call `preventDefault()`
+synchronously to suppress the native confirmation, then display application UI
+if desired. Cancellation affects presentation only: `$server.error`, paused
+updates, cancelled queued work, and request results remain unchanged.
+
+This Alpine component replaces the native prompt with an application-owned
+`<dialog>`. Put the markup in the layout outside islands. Alpine manages the
+window listener and removes it when the component leaves the page.
+
+```html
+<div x-data="expiryRecovery" @interact:error.window="handle($event)">
+  <dialog
+    x-ref="dialog"
+    aria-labelledby="expiry-recovery-title"
+    @close="closed()"
+  >
+    <h2 id="expiry-recovery-title">This page has expired</h2>
+    <p>
+      Reloading discards unsaved changes. Keep this page open to copy your work.
+    </p>
+    <form method="dialog">
+      <button type="submit" value="cancel">Keep this page open</button>
+      <button type="submit" value="reload">Reload page</button>
+    </form>
+  </dialog>
+</div>
+```
+
+Register the factory once in an external script loaded before the Interact runtime,
+as described in [custom JavaScript](/guide/alpine#custom-javascript):
+
+```js
+document.addEventListener('alpine:init', () => {
+  window.Alpine.data('expiryRecovery', () => ({
+    handle(event) {
+      if (
+        !['snapshot_expired', 'session_changed', 'csrf_failed'].includes(
+          event.detail.code,
+        )
+      )
+        return;
+
+      event.preventDefault();
+      const dialog = this.$refs.dialog;
+      if (!dialog.open) {
+        dialog.returnValue = 'cancel';
+        dialog.showModal();
+      }
+    },
+    closed() {
+      if (this.$refs.dialog.returnValue === 'reload') {
+        window.location.reload();
+      }
+    },
+  }));
+});
+```
+
+For the npm integration, register the same factory before `Alpine.start()`.
+Keep one recovery component in the layout; the `open` check combines failures
+arriving while its dialog is already visible.
+
+Registering a listener that only calls `preventDefault()` suppresses the prompt
+without replacing it. Applications own custom-dialog deduplication; suppressed
+events do not consume the default prompt allowance. For asynchronous UI, cancel
+the event before awaiting any work. Request lifecycle diagnostic events remain
+non-cancelable.
+
 <span id="keep-the-draft-and-offer-a-choice"></span>
 <span id="complete-demo-implementation"></span>
 
