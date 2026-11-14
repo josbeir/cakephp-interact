@@ -15,7 +15,7 @@ readonly class SnapshotEnvelope
      */
     public array $data;
 
-    public int $expires;
+    public ?int $expires;
 
     public string $binding;
 
@@ -26,13 +26,19 @@ readonly class SnapshotEnvelope
      */
     public function __construct(mixed $payload)
     {
+        if (!is_array($payload)) {
+            throw new InvalidSnapshotException('Invalid snapshot envelope.');
+        }
+
+        // Missing claims receive invalid defaults; only an explicit null expiry is unlimited.
+        $payload += ['version' => null, 'expires' => false, 'binding' => null, 'scope' => null, 'data' => null];
         if (
-            !is_array($payload)
-            || ($payload['version'] ?? null) !== 1
-            || !is_int($payload['expires'] ?? null)
-            || !is_string($payload['binding'] ?? null)
-            || !is_string($payload['scope'] ?? null)
-            || !is_array($payload['data'] ?? null)
+            $payload['version'] !== 1
+            || $payload['expires'] !== null
+            && !is_int($payload['expires'])
+            || !is_string($payload['binding'])
+            || !is_string($payload['scope'])
+            || !is_array($payload['data'])
         ) {
             throw new InvalidSnapshotException('Invalid snapshot envelope.');
         }
@@ -59,7 +65,7 @@ readonly class SnapshotEnvelope
             );
         }
 
-        if ($this->expires <= $now) {
+        if ($this->expires !== null && $this->expires <= $now) {
             throw new InvalidSnapshotException('Snapshot expired.', reason: SnapshotFailureReason::Expired);
         }
     }

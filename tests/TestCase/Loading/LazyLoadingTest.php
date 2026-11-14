@@ -65,7 +65,10 @@ class LazyLoadingTest extends TestCase
 
     public function testDeferredMountHasNoStateOrRenderingUntilAuthorizedInitialization(): void
     {
-        $runtime = $this->runtime();
+        $time = 100;
+        $runtime = $this->runtime(new SnapshotCodec(str_repeat('l', 32), clock: static function () use (&$time): int {
+            return $time;
+        }));
         $context = $this->context();
         $initial = $runtime->mount('Lazy', ['recordId' => 4], 'report', $context, new Options('manual'));
         $this->assertSame(['authorize:'], LazyIsland::$trace);
@@ -76,6 +79,7 @@ class LazyLoadingTest extends TestCase
         $codec = new SnapshotCodec(str_repeat('l', 32));
         $pending = new PendingMount($codec->open($initial->snapshot, $context->binding(), $context->scope));
         $this->assertSame(['recordId' => 4, 'label' => 'Report'], $pending->props);
+        $time += 86_400;
         $loaded = $runtime->update([
             'snapshot' => $initial->snapshot,
             'initialize' => true,
@@ -86,6 +90,7 @@ class LazyLoadingTest extends TestCase
         $this->assertSame('latest', $loaded->state['query']);
         $this->assertSame(4, $loaded->state['count']);
         $this->assertStringNotContainsString('data-interact-loading', $loaded->html);
+        $time += 86_400;
         $updated = $runtime->update(['snapshot' => $loaded->snapshot, 'action' => 'increment'], $context);
         $this->assertSame(5, $updated->state['count']);
         $this->assertSame(
@@ -127,9 +132,13 @@ class LazyLoadingTest extends TestCase
 
     public function testPermissionIsRecheckedBeforeDeferredHooks(): void
     {
-        $runtime = $this->runtime();
+        $time = 100;
+        $runtime = $this->runtime(new SnapshotCodec(str_repeat('l', 32), clock: static function () use (&$time): int {
+            return $time;
+        }));
         $context = $this->context();
         $pending = $runtime->mount('Lazy', ['recordId' => 1], 'report', $context, new Options('lazy'));
+        $time += 86_400;
         try {
             $runtime->update(
                 ['snapshot' => $pending->snapshot, 'initialize' => true],

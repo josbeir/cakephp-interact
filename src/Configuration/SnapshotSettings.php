@@ -14,12 +14,12 @@ use InvalidArgumentException;
  */
 readonly class SnapshotSettings
 {
-    public int $ttl;
+    public ?int $ttl;
 
     protected ?string $key;
 
     /**
-     * Require a positive lifetime and an optional dedicated secret of sufficient length.
+     * Accept an unlimited or positive lifetime and an optional dedicated signing secret.
      *
      * @param array<string, mixed> $options Snapshot settings from application configuration.
      * @throws \InvalidArgumentException When the lifetime or dedicated key is invalid.
@@ -27,10 +27,21 @@ readonly class SnapshotSettings
     public function __construct(array $options = [])
     {
         /** @var mixed $ttl */
-        $ttl = array_key_exists('ttl', $options) ? $options['ttl'] : 1800;
+        $ttl = $options['ttl'] ?? null;
         /** @var mixed $key */
         $key = $options['key'] ?? null;
-        if (!is_int($ttl) || $ttl < 1 || $key !== null && (!is_string($key) || strlen($key) < 32)) {
+        if (
+            $ttl !== null
+            && (
+                !is_int($ttl)
+                || $ttl < 1
+            )
+            || $key !== null
+            && (
+                !is_string($key)
+                || strlen($key) < 32
+            )
+        ) {
             throw new InvalidArgumentException('Invalid Interact snapshot lifetime or signing key.');
         }
 

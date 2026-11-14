@@ -112,7 +112,10 @@ runtime, and emits declarations with the native TypeScript 7 generator. There ar
 TypeScript compatibility aliases or second compiler installations.
 
 Playwright exercises the real CakePHP application in Chromium, Firefox, and
-WebKit with three parallel workers. Import `test` and `expect` from
+WebKit with three parallel workers locally. CI uses one worker so container
+startup and teardown cannot interrupt another worker's Chromium requests through
+host network changes. CI stops after the first failed test; local runs report all
+failures. Import `test` and `expect` from
 `tests/browser/fixtures.ts`; its worker-scoped fixture starts a FrankenPHP container
 with bundled Mercure on a free loopback port. Each worker has separate SQLite,
 session, cache, and upload storage. Teardown removes the container and temporary

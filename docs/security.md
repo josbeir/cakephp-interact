@@ -124,14 +124,16 @@ you only use application-owned endpoints; the service remains available.
 
 ## Snapshots
 
-Snapshots are signed, session-bound, scope-bound JSON with a 30-minute default lifetime. The default signing service uses CakePHP's security salt with domain separation. Configure the [snapshot lifetime and signing key](/configuration#snapshots) through application settings. Use a strong secret and keep it out of source control. Application container replacements remain available for custom signing behavior.
+Snapshots are signed, session-bound, scope-bound JSON with no fixed expiry by default. The default signing service uses CakePHP's security salt with domain separation. Configure the [snapshot lifetime and signing key](/configuration#snapshots) through application settings. Use a strong secret and keep it out of source control. Application container replacements remain available for custom signing behavior.
 
 Snapshots are visible to the browser. More transported props and state mean larger
 requests; computed `viewData()` does not add its results to the snapshot. Keep
 large lists and entities on the server. Snapshots provide integrity rather than
-encryption or single-use guarantees. Replaying a valid snapshot is possible until
-expiry. An application requiring idempotent payments or other durable operations
-must implement that guarantee in its business layer.
+encryption or single-use guarantees. A token can be replayed while its session
+and scope binding remain valid and any configured deadline has not passed.
+Always reload protected resources and check current permissions in `authorize()`;
+signed state does not establish that stored data or permissions are still current.
+Applications own idempotency and business deadlines for durable operations.
 
 Signed tokens, including subscription leases and parent-input tickets, are limited
 to 512 KiB after encoding and signing. Issuing a larger token throws

@@ -109,10 +109,11 @@ calls `initialize()`, assigns the signed props, initializes current URL input, a
 then runs `mount()` and rendering. Put expensive initialization in `mount()` or
 `viewData()`, rather than constructors or `initialize()`.
 
-Pending tickets use the same session, scope, and expiry protections as snapshots.
-They allow initialization only; they cannot execute actions, state edits, or
-uploads. Mount hooks must not rely on exactly-once execution: tickets can be
-replayed until expiry, and a failed connection can follow completed PHP work.
+Pending tickets use the same session and scope binding and optional
+[lifetime](/configuration#snapshots) as snapshots. They have no fixed expiry by
+default. They allow initialization only; they cannot execute actions, state edits,
+or uploads. Mount hooks must not rely on exactly-once execution: valid tickets
+can be replayed, and a failed connection can follow completed PHP work.
 
 Before loading, `$server.state`, `errors`, and `uploads` are empty. Request feedback
 and `sync()` are available; actions, model bindings, and polling require loaded

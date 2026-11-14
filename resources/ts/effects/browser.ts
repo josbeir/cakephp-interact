@@ -55,6 +55,25 @@ export function redirect(value: unknown): value is Redirect {
  * Native downloads remain independently authorized requests with browser-owned completion.
  */
 export class BrowserEffects {
+  /**
+   * Offer recovery without discarding drafts until the user accepts a native reload.
+   */
+  confirmReload(): void {
+    if (
+      window.confirm(
+        'This page has expired.\nReload this page? Unsaved changes will be lost.\nChoose Cancel to keep this page open and copy your work.',
+      )
+    )
+      this.reload();
+  }
+
+  /**
+   * Reload the current document without replaying an island action.
+   */
+  reload(): void {
+    window.location.reload();
+  }
+
   navigate(target: Redirect): void {
     const current = new URL(window.location.href);
     const next = new URL(target.url, current);

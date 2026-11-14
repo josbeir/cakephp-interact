@@ -14,7 +14,8 @@ use SensitiveParameter;
  *
  * The token provides integrity rather than secrecy or permanent resource authorization.
  * Application authorization still runs for every accepted update, and tokens may be
- * replayed until expiry unless the application adds its own operation guarantees.
+ * replayed while their binding and optional expiry remain valid unless the application
+ * adds its own operation guarantees.
  */
 class SnapshotCodec
 {
@@ -27,18 +28,18 @@ class SnapshotCodec
     protected readonly Closure $clock;
 
     /**
-     * Configure a signing secret, snapshot lifetime, and optional deterministic clock.
+     * Configure a signing secret, optional snapshot lifetime, and deterministic clock.
      *
      * @param (\Closure(): int)|null $clock Injectable clock for deterministic expiry checks.
      */
     public function __construct(
         protected readonly string $key,
-        protected readonly int $ttl = 1800,
+        protected readonly ?int $ttl = null,
         ?Closure $clock = null,
     ) {
-        if (strlen($key) < 32 || $ttl < 1) {
+        if (strlen($key) < 32 || $ttl !== null && $ttl < 1) {
             throw new InvalidArgumentException(
-                'Use a signing key of at least 32 bytes and a positive snapshot lifetime.',
+                'Use a signing key of at least 32 bytes and a null or positive snapshot lifetime.',
             );
         }
 
@@ -55,7 +56,7 @@ class SnapshotCodec
     {
         $json = json_encode([
             'version' => 1,
-            'expires' => ($this->clock)() + $this->ttl,
+            'expires' => $this->ttl === null ? null : $this->deadline($this->ttl),
             'binding' => hash_hmac('sha256', $binding, $this->key),
             'scope' => $scope,
             'data' => $data,
@@ -106,9 +107,32 @@ class SnapshotCodec
         }
 
         $envelope = new SnapshotEnvelope($payload);
-        $envelope->verify(($this->clock)(), hash_hmac('sha256', $binding, $this->key), $scope);
+        $this->verifyEnvelope($envelope, $binding, $scope);
 
         return $envelope->data;
+    }
+
+    /**
+     * Compute a finite deadline without issuing an unrepresentable timestamp.
+     *
+     * @throws InvalidArgumentException When the timestamp exceeds the integer range.
+     */
+    protected function deadline(int $ttl): int
+    {
+        $now = ($this->clock)();
+        if ($now > PHP_INT_MAX - $ttl) {
+            throw new InvalidArgumentException('Snapshot lifetime exceeds the supported timestamp range.');
+        }
+
+        return $now + $ttl;
+    }
+
+    /**
+     * Verify signed claims before specialized codecs apply additional capability limits.
+     */
+    protected function verifyEnvelope(SnapshotEnvelope $envelope, string $binding, string $scope): void
+    {
+        $envelope->verify(($this->clock)(), hash_hmac('sha256', $binding, $this->key), $scope);
     }
 
     /**

@@ -72,12 +72,15 @@ class ConfigurationTest extends TestCase
     public function testDefaultsAndExplicitSigningSettings(): void
     {
         $defaults = Configuration::read();
-        $this->assertSame(1800, $defaults->snapshotTtl);
+        $this->assertNull($defaults->snapshotTtl);
         $this->assertSame(TemplateView::class, $defaults->viewClass);
         $this->assertSame('Interact.runtime', $defaults->script);
         $this->assertSame(['block' => 'script', 'defer' => true], $defaults->scriptOptions);
         $defaultToken = $defaults->snapshots()->seal(['count' => 1], 'session', 'default');
         $this->assertSame(['count' => 1], $defaults->snapshots()->open($defaultToken, 'session', 'default'));
+
+        Configure::write('Interact.snapshots', ['ttl' => null]);
+        $this->assertNull(Configuration::read()->snapshotTtl);
 
         Configure::write('Interact.snapshots', ['ttl' => 1, 'key' => str_repeat('k', 32)]);
         $settings = Configuration::read();
@@ -100,7 +103,10 @@ class ConfigurationTest extends TestCase
             'snapshots record' => ['snapshots' => null],
             'unknown snapshot' => ['snapshots' => ['lifetime' => 10]],
             'zero ttl' => ['snapshots' => ['ttl' => 0]],
-            'null ttl' => ['snapshots' => ['ttl' => null]],
+            'negative ttl' => ['snapshots' => ['ttl' => -1]],
+            'boolean ttl' => ['snapshots' => ['ttl' => false]],
+            'float ttl' => ['snapshots' => ['ttl' => 30.5]],
+            'array ttl' => ['snapshots' => ['ttl' => []]],
             'string ttl' => ['snapshots' => ['ttl' => '30']],
             'short key' => ['snapshots' => ['key' => 'short']],
             'non-string key' => ['snapshots' => ['key' => false]],
