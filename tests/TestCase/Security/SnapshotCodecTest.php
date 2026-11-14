@@ -6,6 +6,7 @@ namespace Interact\Test\TestCase\Security;
 use Interact\Realtime\LeaseCodec;
 use Interact\Security\InvalidSnapshotException;
 use Interact\Security\SnapshotCodec;
+use Interact\Security\SnapshotEnvelope;
 use InvalidArgumentException;
 use LengthException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -63,6 +64,123 @@ class SnapshotCodecTest extends TestCase
         $time = 110;
         $this->expectException(InvalidSnapshotException::class);
         $codec->open($token, 'session', 'admin');
+    }
+
+    /**
+     * Keep an unlimited snapshot usable after long idle periods and configuration changes.
+     */
+    public function testUnlimitedSnapshotRetainsItsLifetimeWhenTheReaderConfiguresExpiry(): void
+    {
+        $time = 100;
+        $clock = static function () use (&$time): int {
+            return $time;
+        };
+        $token = new SnapshotCodec(str_repeat('s', 32), clock: $clock)->seal(['draft' => 'keep'], 'session', 'admin');
+        $time += 30 * 86_400;
+        $this->assertSame(
+            ['draft' => 'keep'],
+            new SnapshotCodec(str_repeat('s', 32), 1, $clock)->open($token, 'session', 'admin'),
+        );
+    }
+
+    /**
+     * Preserve issued deadlines while applying a changed lifetime only to new tokens.
+     */
+    public function testFiniteDeadlinesBelongToTokensRatherThanTheCurrentConfiguration(): void
+    {
+        $time = 100;
+        $clock = static function () use (&$time): int {
+            return $time;
+        };
+        $token = new SnapshotCodec(str_repeat('s', 32), 10, $clock)->seal(['draft' => 'keep'], 'session', 'admin');
+        $reader = new SnapshotCodec(str_repeat('s', 32), clock: $clock);
+        $time = 109;
+        $data = $reader->open($token, 'session', 'admin');
+        $unlimited = $reader->seal($data, 'session', 'admin');
+        $time = 110;
+        $this->assertSame($data, $reader->open($unlimited, 'session', 'admin'));
+        $this->expectException(InvalidSnapshotException::class);
+        $reader->open($token, 'session', 'admin');
+    }
+
+    /**
+     * Preserve the finite deadline and renew it only when another token is issued.
+     */
+    public function testIssuingANewSnapshotRenewsAFiniteLifetime(): void
+    {
+        $time = 100;
+        $codec = new SnapshotCodec(str_repeat('s', 32), 10, static function () use (&$time): int {
+            return $time;
+        });
+        $original = $codec->seal(['count' => 0], 'session', 'admin');
+        $time = 109;
+        $updated = $codec->seal($codec->open($original, 'session', 'admin'), 'session', 'admin');
+        $time = 110;
+        $this->assertSame(['count' => 0], $codec->open($updated, 'session', 'admin'));
+        $time = 119;
+        $this->expectException(InvalidSnapshotException::class);
+        $codec->open($updated, 'session', 'admin');
+    }
+
+    /**
+     * Reject unsupported expiry claims rather than treating missing values as unlimited.
+     *
+     * @return iterable<string, array{array<string, mixed>}>
+     */
+    public static function invalidExpiryClaims(): iterable
+    {
+        yield 'missing' => [[]];
+        yield 'string' => [['expires' => '100']];
+        yield 'boolean' => [['expires' => false]];
+        yield 'float' => [['expires' => 100.5]];
+        yield 'array' => [['expires' => []]];
+    }
+
+    /**
+     * Require explicit null or an integer deadline in every envelope.
+     *
+     * @param array<string, mixed> $claims Malformed expiry claim.
+     */
+    #[DataProvider('invalidExpiryClaims')]
+    public function testRejectsMalformedExpiryClaims(array $claims): void
+    {
+        $this->expectException(InvalidSnapshotException::class);
+        new SnapshotEnvelope($claims + ['version' => 1, 'binding' => 'session', 'scope' => 'admin', 'data' => []]);
+    }
+
+    /**
+     * Keep subscription proofs finite even if an otherwise authentic envelope omits a deadline.
+     */
+    public function testSubscriptionLeasesRejectSignedUnlimitedExpiry(): void
+    {
+        $key = str_repeat('s', 32);
+        $payload = rtrim(
+            strtr(
+                base64_encode(json_encode([
+                    'version' => 1,
+                    'expires' => null,
+                    'binding' => hash_hmac('sha256', 'session', $key),
+                    'scope' => 'admin',
+                    'data' => [],
+                ], JSON_THROW_ON_ERROR)),
+                '+/',
+                '-_',
+            ),
+            '=',
+        );
+        $signature = hash_hmac('sha256', $payload, hash_hmac('sha256', 'interact.realtime.v1', $key, true));
+        $this->expectException(InvalidSnapshotException::class);
+        $this->expectExceptionMessageMatches('/Subscription leases require a finite expiry\./');
+        new LeaseCodec($key)->open($payload . '.' . $signature, 'session', 'admin');
+    }
+
+    /**
+     * Fail issuance before an overflowing lifetime becomes an invalid numeric claim.
+     */
+    public function testRejectsUnrepresentableDeadlines(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        new SnapshotCodec(str_repeat('s', 32), PHP_INT_MAX, static fn(): int => 100)->seal([], 'session', 'admin');
     }
 
     /**

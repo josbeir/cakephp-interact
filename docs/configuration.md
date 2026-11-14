@@ -18,7 +18,7 @@ are constructed.
 ```php [config/app.php — configuration excerpt]
 'Interact' => [
     'snapshots' => [
-        'ttl' => 1800,
+        'ttl' => null,
         'key' => null,
     ],
     'view' => [
@@ -59,13 +59,22 @@ require booleans. See [debugging](/guide/debugging) for JSON, SSE, and DebugKit 
 
 ### Snapshots
 
-| Setting         | Default | Behavior                                                                                   |
-| --------------- | ------- | ------------------------------------------------------------------------------------------ |
-| `snapshots.ttl` | `1800`  | Positive integer lifetime in seconds for each issued snapshot.                             |
-| `snapshots.key` | `null`  | Null uses CakePHP's security salt; an explicit signing key must contain at least 32 bytes. |
+| Setting         | Default | Behavior                                                                                        |
+| --------------- | ------- | ----------------------------------------------------------------------------------------------- |
+| `snapshots.ttl` | `null`  | Null means no fixed expiry; a positive integer sets each issued snapshot's lifetime in seconds. |
+| `snapshots.key` | `null`  | Null uses CakePHP's security salt; an explicit signing key must contain at least 32 bytes.      |
 
-Each accepted update issues a new snapshot with a fresh lifetime. An expired
-snapshot requires a fresh mount. Upload retention does not extend this lifetime.
+The default has no fixed snapshot expiry. Set `snapshots.ttl` to a positive
+number of seconds, such as `1800` for 30 minutes, to limit snapshot lifetime.
+Each accepted update issues a new snapshot with a fresh deadline, including
+polling, validation responses, and renderless actions. Failed requests do not
+renew it. An expired snapshot requires a fresh mount.
+
+This setting also applies to deferred-mount and parent-input tickets.
+Configuration changes affect newly issued tokens; existing tokens keep their
+signed deadlines, including an unlimited lifetime. Session and scope binding,
+CSRF protection, and current authorization still apply. Subscription leases and
+temporary upload retention have independent finite lifetimes.
 
 Keep dedicated keys in environment-specific secret configuration. Changing the
 key invalidates snapshots signed with the previous key; key rotation with

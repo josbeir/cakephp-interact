@@ -185,8 +185,9 @@ for a complete sweep, including when the application is idle:
 bin/cake interact.cleanup_uploads
 ```
 
-The default retention is 24 hours. Signed snapshots still have their own shorter
-lifetime; uploads do not restore a form after reload or extend page expiry.
+The default upload retention is 24 hours, independently of the optional
+[snapshot lifetime](/configuration#snapshots). Uploads do not restore a form after
+reload or extend snapshot expiry.
 Missing or expired files block the requested action and ask for reselection,
 while preserving ordinary drafts and other available files. Draft export does
 not contain file contents or restore chooser selections.

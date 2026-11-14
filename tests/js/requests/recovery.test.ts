@@ -1,4 +1,12 @@
-import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vite-plus/test';
+import { BrowserEffects } from '../../../resources/ts/effects/browser';
 import {
   mountClient,
   destroyBindings,
@@ -12,6 +20,11 @@ import type {
 } from '../../../resources/ts/types';
 
 const clients: IslandClient[] = [];
+
+beforeEach(() => {
+  vi.spyOn(window, 'confirm').mockReturnValue(false);
+  document.dispatchEvent(new Event('interact:navigated'));
+});
 
 /**
  * Read a captured request body only after checking the transport sent JSON text.
@@ -93,6 +106,155 @@ afterEach(() => {
 });
 
 describe('explicit failure recovery', () => {
+  it.each([
+    [409, 'snapshot_expired'],
+    [409, 'session_changed'],
+    [403, 'csrf_failed'],
+  ])(
+    'offers reload after %s %s without replaying queued actions',
+    async (status, code) => {
+      const element = root();
+      const reload = vi
+        .spyOn(BrowserEffects.prototype, 'reload')
+        .mockImplementation(() => {});
+      vi.mocked(window.confirm).mockReturnValue(true);
+      const fetcher = vi
+        .fn<Fetcher>()
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ version: 1, error: { code, message: 'Expired' } }),
+            { status, headers: { 'Content-Type': 'application/json' } },
+          ),
+        );
+      const value = client(element, fetcher);
+      edit(element, 'keep my work');
+      const results = await Promise.all([
+        value.bridge.call('save'),
+        value.bridge.call('save'),
+      ]);
+      expect(results).toEqual([
+        expect.objectContaining({
+          ok: false,
+          error: expect.objectContaining({ code }),
+        }),
+        expect.objectContaining({
+          ok: false,
+          error: expect.objectContaining({ code }),
+        }),
+      ]);
+      expect(fetcher).toHaveBeenCalledOnce();
+      expect(window.confirm).toHaveBeenCalledOnce();
+      expect(reload).toHaveBeenCalledOnce();
+      expect(value.bridge.paused).toBe(true);
+      expect(JSON.parse(value.bridge.exportDraft())).toMatchObject({
+        title: 'keep my work',
+      });
+    },
+  );
+
+  it.each(['root', 'wrapper', 'document', 'window'])(
+    'allows %s listeners to replace the prompt without changing failure handling',
+    async (target) => {
+      const element = root();
+      const wrapper = document.createElement('section');
+      element.before(wrapper);
+      wrapper.append(element);
+      const fetcher = vi.fn<Fetcher>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            version: 1,
+            error: { code: 'snapshot_expired', message: 'Expired' },
+          }),
+          { status: 409, headers: { 'Content-Type': 'application/json' } },
+        ),
+      );
+      const value = client(element, fetcher);
+      const listener = vi.fn((event: Event) => {
+        expect(value.bridge.paused).toBe(true);
+        expect(value.bridge.error?.code).toBe('snapshot_expired');
+        expect(event.cancelable).toBe(true);
+        event.preventDefault();
+      });
+      const destination =
+        target === 'root'
+          ? element
+          : target === 'wrapper'
+            ? wrapper
+            : target === 'document'
+              ? document
+              : window;
+      destination.addEventListener('interact:error', listener, { once: true });
+      const result = await value.bridge.call('save');
+      expect(result).toMatchObject({
+        ok: false,
+        error: { code: 'snapshot_expired' },
+      });
+      expect(listener).toHaveBeenCalledOnce();
+      expect(window.confirm).not.toHaveBeenCalled();
+      const other = client(
+        root(),
+        vi.fn<Fetcher>().mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              version: 1,
+              error: { code: 'csrf_failed', message: 'Expired' },
+            }),
+            { status: 403, headers: { 'Content-Type': 'application/json' } },
+          ),
+        ),
+      );
+      await other.bridge.sync();
+      expect(window.confirm).toHaveBeenCalledOnce();
+    },
+  );
+
+  it('uses the original failure when a listener mutates its event detail', async () => {
+    const element = root();
+    const value = client(
+      element,
+      vi.fn<Fetcher>().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            version: 1,
+            error: { code: 'snapshot_expired', message: 'Expired' },
+          }),
+          { status: 409, headers: { 'Content-Type': 'application/json' } },
+        ),
+      ),
+    );
+    element.addEventListener('interact:error', (event) => {
+      if (event instanceof CustomEvent) event.detail.code = 'network_error';
+    });
+    await value.bridge.sync();
+    expect(window.confirm).toHaveBeenCalledOnce();
+    expect(value.bridge.error?.code).toBe('snapshot_expired');
+  });
+
+  it.each(['remove', 'dispose'])(
+    'does not prompt after an error listener chooses to %s the island',
+    async (operation) => {
+      const element = root();
+      const value = client(
+        element,
+        vi.fn<Fetcher>().mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              version: 1,
+              error: { code: 'snapshot_expired', message: 'Expired' },
+            }),
+            { status: 409, headers: { 'Content-Type': 'application/json' } },
+          ),
+        ),
+      );
+      element.addEventListener('interact:error', () => {
+        if (operation === 'remove') element.remove();
+        else value.dispose();
+      });
+      await value.bridge.sync();
+      expect(window.confirm).not.toHaveBeenCalled();
+    },
+  );
+
   it('cancels pending timers and actions, retains later drafts, and resumes on explicit submit', async () => {
     vi.useFakeTimers();
     const element = root();

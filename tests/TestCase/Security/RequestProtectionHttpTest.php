@@ -6,6 +6,7 @@ namespace Interact\Test\TestCase\Security;
 use Cake\Core\Configure;
 use Cake\Error\Renderer\WebExceptionRenderer;
 use Interact\Test\TestSuite\Http\HttpTestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Verifies CSRF, snapshot integrity, action allowlists, and current permission checks.
@@ -13,6 +14,53 @@ use Interact\Test\TestSuite\Http\HttpTestCase;
  */
 class RequestProtectionHttpTest extends HttpTestCase
 {
+    /**
+     * Exercise both application defaults and explicitly bounded snapshot issuance.
+     *
+     * @return iterable<string, array{?int}>
+     */
+    public static function snapshotLifetimes(): iterable
+    {
+        yield 'unlimited' => [null];
+        yield 'finite' => [60];
+    }
+
+    /**
+     * Apply signing configuration to real page mounts and their CSRF-protected updates.
+     */
+    #[DataProvider('snapshotLifetimes')]
+    public function testSnapshotLifetimeConfigurationReachesTheHttpRuntime(?int $ttl): void
+    {
+        /** @var mixed $previous */
+        $previous = Configure::read('Interact.snapshots');
+        Configure::write('Interact.snapshots', ['ttl' => $ttl]);
+        try {
+            $before = time();
+            $mount = $this->mounted(url: '/playground');
+            $decoded = base64_decode(strtr(explode('.', $mount['snapshot'])[0], '-_', '+/'), true);
+            $this->assertIsString($decoded);
+            /** @var array<string, mixed> $envelope */
+            $envelope = json_decode($decoded, true, flags: JSON_THROW_ON_ERROR);
+            $this->assertArrayHasKey('expires', $envelope);
+            if ($ttl === null) {
+                $this->assertNull($envelope['expires']);
+            } else {
+                $this->assertGreaterThanOrEqual($before + $ttl, $envelope['expires']);
+                $this->assertLessThanOrEqual(time() + $ttl, $envelope['expires']);
+            }
+
+            $this->update(['snapshot' => $mount['snapshot'], 'action' => 'adjust', 'args' => [5]]);
+            $this->assertResponseOk();
+            $this->assertResponseContains('"count":5');
+        } finally {
+            if ($previous === null) {
+                Configure::delete('Interact.snapshots');
+            } else {
+                Configure::write('Interact.snapshots', $previous);
+            }
+        }
+    }
+
     public function testDemoIgnoresCsrfCookiesFromOtherLocalApplications(): void
     {
         $foreignCookie = base64_encode(str_repeat('x', 56));

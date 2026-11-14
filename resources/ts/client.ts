@@ -7,6 +7,7 @@ import { paginationLinks } from './pagination/links';
 import { navigation, enhancedRedirect } from './navigation/registry';
 import { LoadTrigger } from './loading/trigger';
 import { BrowserEffects } from './effects/browser';
+import { presentExpiry } from './effects/expiry';
 import { sameFields } from './url/codec';
 import { pageUrl } from './url/coordinator';
 import type { UrlRegistration } from './url/coordinator';
@@ -892,12 +893,16 @@ export class IslandClient {
         ? error.failure
         : requestError('client_error', null, error).failure;
     this.bridge.error = failure;
-    this.root.dispatchEvent(
+    if (this.disposed || !this.root.isConnected) return;
+    const unhandled = this.root.dispatchEvent(
       new CustomEvent('interact:error', {
         detail: { ...failure },
         bubbles: true,
+        cancelable: true,
       }),
     );
+    if (unhandled && !this.disposed)
+      presentExpiry(this.root, failure, this.effects);
   }
 }
 import { defaultTiming } from './configuration';

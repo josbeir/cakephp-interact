@@ -84,7 +84,9 @@ public function updated(UpdatedPaths $paths): void
 
 Unrelated child drafts and local Alpine state survive. An executing child action
 finishes once; pending parent inputs apply before subsequent work. Parent and
-child requests remain independently authorized.
+child requests remain independently authorized. Parent-input tickets share the
+[configured snapshot lifetime](/configuration#snapshots), with no fixed expiry by
+default; they do not grant access to application resources.
 
 ## Modelable child inputs
 
