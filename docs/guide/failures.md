@@ -70,30 +70,21 @@ fragment changes, and island URL-state changes do not reset it. Other failures,
 including sign-in requirements and invalid snapshots, retain their normal error
 feedback without opening this prompt.
 
-### Handle errors locally
+### Suppress the default prompt
 
-Wrap an island mount in an Alpine component and listen without `.window` to
-handle failures only from islands inside that wrapper. This example uses the
-`Counter` from [Quickstart](/getting-started) and suppresses the default prompt
-while showing local feedback:
+Attach a native listener to an existing element containing the island:
 
-```php
-<div
-  x-data="{ failure: null }"
-  @interact:error.prevent="failure = $event.detail"
->
-  <?= $this->Interact->render('Counter') ?>
-  <p
-    role="alert"
-    x-show="failure"
-    x-text="failure ? failure.message : ''"
-  ></p>
-</div>
+```js
+const region = document.getElementById('editor-region');
+
+region?.addEventListener('interact:error', (event) => {
+  event.preventDefault();
+});
 ```
 
-Remove `.prevent` to observe failures while keeping the default
-expiry prompt. The wrapper must contain the island root because errors bubble
-from that root; it does not receive failures from sibling islands.
+This suppresses the default prompt for islands inside that region. Error feedback,
+paused updates, and cancelled queued work remain unchanged. Listen on `document`
+instead of the region to suppress the prompt across the page.
 
 ### Replace or suppress the prompt
 
