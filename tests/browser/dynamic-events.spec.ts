@@ -9,8 +9,14 @@ async function restoreTitle(editor: Locator, title: string): Promise<void> {
     .page()
     .waitForResponse((response) => targetsIsland(response.request(), id));
   await editor.getByLabel('Article title').fill(title);
-  await editor.getByRole('button', { name: 'Save article' }).click();
-  await restored;
+  // Cleanup exercises native submission without depending on another pointer click.
+  await editor.locator('form').evaluate((form) => {
+    if (!(form instanceof HTMLFormElement))
+      throw new Error('Missing article form.');
+    form.requestSubmit();
+  });
+  expect((await restored).ok()).toBe(true);
+  await expect(editor.getByRole('status')).toHaveText('Saved.');
 }
 
 for (const distribution of ['Composer', 'Application Alpine']) {
