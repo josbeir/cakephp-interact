@@ -89,7 +89,9 @@ test('a custom dialog suppresses only default expiry presentation', async ({
     new URL('../../docs/guide/failures.md', import.meta.url),
     'utf8',
   );
-  const example = guide.split('### Replace or suppress the prompt')[1];
+  const example = guide.split(
+    '<span id="replace-or-suppress-the-prompt"></span>',
+  )[1];
   const markup = example?.match(/```html\n([\s\S]*?)```/)?.[1];
   const script = example?.match(/```js\n([\s\S]*?)```/)?.[1];
   if (!markup || !script)

@@ -1,78 +1,132 @@
 ---
 title: 'Error handling'
-description: Display request failures, inspect recovery categories, and preserve drafts.
+description: Display request failures, choose a recovery action, and customize expiry feedback.
 ---
 
 <span id="failures-and-recovery"></span>
 
-<span id="update-existing-error-bindings"></span>
-
 # Error handling
 
-Interact reports failed requests through `$server.error` and pauses automatic
-updates. Local edits remain available.
+Interact exposes failed requests through `$server.error`. A failure preserves
+local edits, pauses automatic updates, and cancels queued actions and pending
+debounce timers. Actions are never automatically replayed.
+
+<span id="validation-errors"></span>
+
+Validation errors are available through `$server.errors`. A renderable HTTP 422
+response does not pause updates; see [form validation](/guide/forms).
+
+<span id="update-existing-error-bindings"></span>
+
+## Display an error
 
 ```html
 <p role="alert" x-text="$server.error ? $server.error.message : ''"></p>
 ```
 
-Alpine's `x-text` displays Interact's error value. Use local Alpine state and
-bindings for dismissible details or other presentation; see
-[Alpine and Interact](/guide/alpine#events-and-request-feedback).
+The error is `null` until a request fails. Ordinary actions need no `.catch()`
+callback. Use Alpine for any additional presentation, such as dismissing an alert.
 
-Ordinary actions need no `.catch()` callback. The persistent alert can announce
-changed messages. Put padding or a background on a wrapper shown only while an
-error exists if the empty alert should take no visual space.
+<span id="keep-the-draft-and-offer-a-choice"></span>
+<span id="recovery"></span>
 
-<span id="understand-the-failure"></span>
+## Recover from a failure
 
-## Failure fields
+Use `$server.error.recovery` to choose what the user can do next:
 
-`error` is `null` or `{ code, message, status, recovery }`. A null `status` means
-no readable response was available. Recovery values are `retry`, `reload`,
-`authenticate`, or `none`; none performs an automatic action.
+| Recovery       | Application response                                                                 |
+| -------------- | ------------------------------------------------------------------------------------ |
+| `retry`        | Correct the input or connection, then offer explicit synchronization or submission.  |
+| `reload`       | Let the user preserve important input, then reload for a fresh island.               |
+| `authenticate` | Offer the application's sign-in flow, followed by a fresh page.                      |
+| `none`         | Handle the failure according to application rules, such as explaining denied access. |
 
-| Code                  | Meaning                                                        | Recovery                                           |
-| --------------------- | -------------------------------------------------------------- | -------------------------------------------------- |
-| `snapshot_expired`    | The signed snapshot passed its lifetime                        | Reload                                             |
-| `session_changed`     | The snapshot belongs to a different session                    | Reload                                             |
-| `invalid_snapshot`    | Malformed, tampered, or wrong-scope snapshot                   | Reload                                             |
-| `unauthenticated`     | Authentication is required (401)                               | Application sign-in flow                           |
-| `csrf_failed`         | CakePHP rejected the security token (403)                      | Reload                                             |
-| `forbidden`           | Current access is denied (403)                                 | Application decision                               |
-| `upload_too_large`    | Server rejected an oversized upload (413)                      | Choose a smaller file, then submit explicitly      |
-| `invalid_request`     | Update input was rejected (400)                                | Correct input, then explicitly try again           |
-| `server_error`        | Server returned a 5xx response                                 | Verify the outcome before another explicit attempt |
-| `http_error`          | Another HTTP error status                                      | Application decision                               |
-| `network_error`       | Fetch failed without a response                                | Verify the outcome before another explicit attempt |
-| `unexpected_redirect` | The update redirected instead of returning its protocol        | Reload / check application authentication handling |
-| `invalid_response`    | Invalid JSON, content type, envelope, identity, or root markup | Reload / check application logs                    |
-| `client_error`        | The browser could not prepare or apply the update              | Reload / check browser diagnostics                 |
+A failed response does not prove that saving failed. Verify the outcome before
+repeating a persistent operation. Copy important drafts before reloading or
+signing in; Interact does not automatically store or restore them.
 
-## Default expiry prompt
+<span id="resume-after-a-connection-or-server-failure"></span>
 
-`snapshot_expired`, `session_changed`, and `csrf_failed` display a native browser
-confirmation after publishing the failure:
+### Synchronize the draft
 
-```text
-This page has expired.
-Reload this page? Unsaved changes will be lost.
-Choose Cancel to keep this page open and copy your work.
+For `retry` failures, `sync()` sends the latest writable values without invoking
+an action. An accepted response clears the failure and resumes automatic updates.
+Synchronization does not undo or repeat the failed action.
+
+```html
+<button
+  type="button"
+  x-show="$server.error && $server.error.recovery === 'retry'"
+  @click="$server.sync()"
+  :disabled="$server.busy"
+>
+  Synchronize draft
+</button>
 ```
 
-**OK** reloads the current page. **Cancel** keeps the page open with editable
-drafts and paused updates. Copy important input before reloading; Interact does
-not automatically store drafts or replay the failed action.
+<span id="reload-after-expiry-or-a-session-change"></span>
 
-All islands share one default prompt per page visit, including after dismissal.
-A successful enhanced page visit resets that allowance. Cancelled visits,
-fragment changes, and island URL-state changes do not reset it. Other failures,
-including sign-in requirements and invalid snapshots, retain their normal error
-feedback without opening this prompt.
+### Reload or sign in
+
+For `reload`, return to a fresh GET page after preserving important input.
+Calling `sync()` on a blocked client cannot replace an expired snapshot.
+[Expiry failures offer a reload prompt by default](#customize-the-expiry-prompt).
+
+<span id="return-after-signing-in"></span>
+
+For `authenticate`, use the application's normal sign-in flow and return to a
+fresh GET page. The old island remains blocked. This example assumes sign-in is
+served at `/users/login`:
+
+::: code-group
+
+```html [HTML]
+<a
+  href="/users/login"
+  x-show="$server.error && $server.error.recovery === 'authenticate'"
+>
+  Sign in again
+</a>
+```
+
+```php [FormHelper]
+<?= $this->Html->link('Sign in again', '/users/login', [
+    'x-show' => '$server.error && $server.error.recovery === "authenticate"',
+]) ?>
+```
+
+:::
+
+<span id="restore-a-copied-draft"></span>
+
+### Preserve a draft
+
+[`exportDraft()`](/reference/server#exportdraft) returns JSON containing current
+writable values, including already synchronized values. Offer it for the user
+to select and copy before leaving. Uploads and locked state are excluded.
+
+Restoration belongs to the application: validate allowed fields against the
+currently authorized record, let the user review them before saving, and reselect
+uploads. Never import an identity, permissions, action, or signed snapshot.
+
+<span id="complete-demo-implementation"></span>
+
+The [tested recovery example](/demo#recovery) demonstrates copying, reloading or
+signing in, and explicitly restoring a draft for review.
+
+<span id="default-expiry-prompt"></span>
+
+## Customize the expiry prompt
+
+`snapshot_expired`, `session_changed`, and `csrf_failed` show a native browser
+confirmation asking whether to reload and warning that unsaved changes will be
+lost. **OK** reloads; **Cancel** keeps the page open with editable drafts and
+paused updates. Other failures do not open this prompt.
+
+All islands share one prompt per page visit. A successful enhanced page visit
+resets it; cancelled visits, fragment changes, and island URL-state changes do not.
 
 ### Suppress the default prompt
-
-Listen on `document` to suppress the default prompt for every island on the page:
 
 ```js
 document.addEventListener('interact:error', (event) => {
@@ -80,15 +134,14 @@ document.addEventListener('interact:error', (event) => {
 });
 ```
 
-Errors bubble from each island to `document`. Error feedback, paused updates,
-and cancelled queued work remain unchanged.
+The event bubbles from each island to `document`. Call `preventDefault()`
+synchronously to suppress the prompt across the page. It affects presentation
+only: error feedback, paused updates, cancelled queued work, and request results
+remain unchanged.
 
-### Replace or suppress the prompt
+<span id="replace-or-suppress-the-prompt"></span>
 
-The bubbling `interact:error` event is cancelable. Call `preventDefault()`
-synchronously to suppress the native confirmation, then display application UI
-if desired. Cancellation affects presentation only: `$server.error`, paused
-updates, cancelled queued work, and request results remain unchanged.
+::: details Custom dialog example
 
 This Alpine component replaces the native prompt with an application-owned
 `<dialog>`. Put the markup in the layout outside islands. Alpine manages the
@@ -147,174 +200,76 @@ For the npm integration, register the same factory before `Alpine.start()`.
 Keep one recovery component in the layout; the `open` check combines failures
 arriving while its dialog is already visible.
 
-Registering a listener that only calls `preventDefault()` suppresses the prompt
-without replacing it. Applications own custom-dialog deduplication; suppressed
-events do not consume the default prompt allowance. For asynchronous UI, cancel
-the event before awaiting any work. Request lifecycle diagnostic events remain
-non-cancelable.
-
-<span id="keep-the-draft-and-offer-a-choice"></span>
-<span id="complete-demo-implementation"></span>
-
-## Recovery
-
-After a failure, queued actions and pending debounce timers are cancelled.
-For a `retry` failure, an explicit action, submit, or sync sends a fresh request
-with the current draft. It does not replay failed work. Other categories require
-an application decision, fresh mount, or sign-in flow.
-
-```html
-<button
-  type="button"
-  x-show="$server.error && $server.error.recovery === 'retry'"
-  @click="$server.sync()"
-  :disabled="$server.busy"
->
-  Synchronize draft
-</button>
-```
-
-A failure may occur after a save completed. Verify the outcome before repeating
-a persistent operation. Offer a normal application reload/sign-in link where
-appropriate. [`exportDraft()`](/reference/server#exportdraft) supports an
-intentional copy step; there is no automatic browser storage or restoration.
-
-### Resume after a connection or server failure
-
-For `retry` failures, keep the draft editable and offer **Synchronize draft** as
-shown above. `sync()` sends the latest writable values without an action. Once
-accepted, automatic model updates resume and failure feedback clears.
-
-Resynchronizing does not prove that the failed action was rolled back. For a
-save, payment, or job submission, check its application-owned result before
-offering another submission. The [demo recovery example](/demo#recovery) shows
-explicit synchronization separately from **Accept draft**.
-
-### Reload after expiry or a session change
-
-`snapshot_expired`, `session_changed`, and `csrf_failed` need a fresh page.
-Calling `sync()` on the blocked client does not obtain a replacement snapshot.
-
-1. Keep local controls editable and display the failure.
-2. Let the user select and copy [`exportDraft()`](/reference/server#exportdraft)
-   before leaving. It exports all current writable values, including already
-   synchronized values; uploads and locked state are excluded.
-3. Follow a normal reload link to obtain fresh authorization, state, and signing.
-4. Let the user explicitly restore the copied values into the fresh island and
-   review them before saving.
-
-The [demo](/demo#recovery) has a readonly **Draft export** field and a normal
-**Reload page** link. No draft is put in the URL or browser storage. Reloading
-without copying discards the local draft.
-
-### Return after signing in
-
-For `unauthenticated` with recovery `authenticate`, show a normal link to the
-application's sign-in page. Keep the export field available before navigation.
-Do not send the failed action or its arguments through the sign-in flow.
-
-This example assumes your application serves sign-in at `/users/login`:
-
-::: code-group
-
-```html [HTML]
-<a
-  href="/users/login"
-  x-show="$server.error && $server.error.recovery === 'authenticate'"
->
-  Sign in again
-</a>
-```
-
-```php [FormHelper]
-<?= $this->Html->link('Sign in again', '/users/login', [
-    'x-show' => '$server.error && $server.error.recovery === "authenticate"',
-]) ?>
-```
+Applications own custom-dialog deduplication. Suppressed events do not consume
+the default prompt allowance. Cancel the event before awaiting asynchronous work.
 
 :::
 
-Use your normal authentication, session renewal, and authorized return destination.
-Return to a fresh GET page after sign-in: the old island remains blocked and its
-snapshot may belong to the previous session. Offer explicit draft restoration
-and review there. Signing in never replays an action.
+<span id="understand-the-failure"></span>
+<span id="failure-fields"></span>
 
-**Expire demo sign-in** in the recovery example writes a fixture session flag
-and returns a real 401. **Sign in again** opens a native, CSRF-protected form;
-continuing renews that demonstration session and returns to `/playground`.
-This fixture has no credentials. Applications supply their own authentication.
+## Failure reference
 
-### Restore a copied draft
+`$server.error` is `null` or an object with these fields:
 
-Draft restoration belongs to the application because it knows the record,
-allowed fields, and current permissions. Interact has no generic snapshot-import
-or automatic draft-restoration method.
+| Field      | Meaning                                                                              |
+| ---------- | ------------------------------------------------------------------------------------ |
+| `code`     | Stable identifier for the failure.                                                   |
+| `message`  | User-facing failure message.                                                         |
+| `status`   | HTTP status, or `null` when no readable response was available.                      |
+| `recovery` | `retry`, `reload`, `authenticate`, or `none`; no recovery action runs automatically. |
 
-The demo's **Restore a copied draft** form calls a declared `restoreDraft()`
-action on the fresh island. Its paste field uses local Alpine `x-model`, while
-the action receives the copied JSON as an explicit string argument. The action
-accepts only `{"message": "..."}` with a string value. Invalid JSON, other fields,
-locked state, and old snapshots produce validation feedback without replacing
-the current draft. A successful restore updates `message` and emits
-`draft-restored`; it does not call `save()` or increment the acceptance count.
+::: details Failure codes
 
-For an editor, restore only allowlisted draft fields into the currently authorized
-record. Recheck association IDs and choices using normal application rules.
-Never restore an identity, permission, action invocation, or signed snapshot from
-the copied document. Reselect uploads after a fresh mount.
+| Code                  | Meaning                                                        | Recovery                                           |
+| --------------------- | -------------------------------------------------------------- | -------------------------------------------------- |
+| `snapshot_expired`    | The signed snapshot passed its lifetime                        | Reload                                             |
+| `session_changed`     | The snapshot belongs to a different session                    | Reload                                             |
+| `invalid_snapshot`    | Malformed, tampered, or wrong-scope snapshot                   | Reload                                             |
+| `unauthenticated`     | Authentication is required (401)                               | Application sign-in flow                           |
+| `csrf_failed`         | CakePHP rejected the security token (403)                      | Reload                                             |
+| `forbidden`           | Current access is denied (403)                                 | Application decision                               |
+| `upload_too_large`    | Server rejected an oversized upload (413)                      | Choose a smaller file, then submit explicitly      |
+| `invalid_request`     | Update input was rejected (400)                                | Correct input, then explicitly try again           |
+| `server_error`        | Server returned a 5xx response                                 | Verify the outcome before another explicit attempt |
+| `http_error`          | Another HTTP error status                                      | Application decision                               |
+| `network_error`       | Fetch failed without a response                                | Verify the outcome before another explicit attempt |
+| `unexpected_redirect` | The update redirected instead of returning its protocol        | Reload / check application authentication handling |
+| `invalid_response`    | Invalid JSON, content type, envelope, identity, or root markup | Reload / check application logs                    |
+| `client_error`        | The browser could not prepare or apply the update              | Reload / check browser diagnostics                 |
 
-The complete [island](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/src/Island/RecoveryIsland.php)
-and [template](https://github.com/josbeir/cakephp-interact/blob/main/tests/test_app/templates/island/recovery.php)
-are tested together. An application test can assert the distinction between
-restoration and acceptance using the [testing helper](/guide/testing):
-
-```php
-$this->testIsland('Recovery')
-    ->call('restoreDraft', '{"message":"Recovered draft"}')
-    ->assertSet('message', 'Recovered draft')
-    ->assertSet('saves', 0)
-    ->assertDispatched('draft-restored')
-    ->call('save')
-    ->assertSet('saves', 1);
-```
-
-HTTP tests should cover authentication and CSRF. Browser tests should verify
-draft retention, a fresh identity after reload or sign-in, explicit restoration,
-and no automatic action replay, including when persistence succeeded before a
-response was lost.
-
-## Validation errors
-
-A renderable HTTP 422 supplies [`$server.errors`](/guide/forms) and does not pause
-updates. It is an accepted render rather than a request failure.
+:::
 
 <span id="inspect-an-outcome-in-javascript"></span>
+<span id="javascript-and-events"></span>
 
-## JavaScript and events
+### JavaScript events and results
 
-Inspect the [`RequestResult`](/reference/server#request-results) returned by
-`call()` or `sync()` when needed. The bubbling `interact:error` event contains
-the same failure fields and fires once per failed request, not for each blocked
-attempt. Removed islands do not emit new failure UI.
+The bubbling `interact:error` event contains the same failure fields and fires
+once per failed request, not for each blocked attempt. Removed islands do not
+emit new failure UI. Inspect the [request result](/reference/server#request-results)
+returned by `call()` or `sync()` when the caller needs to handle an outcome.
 
-[Request lifecycle diagnostics](/reference/request-lifecycle) provide request
-identities, execution stages, timings, and safe outcomes, including queued work
-cancelled before sending.
+[Request lifecycle events](/reference/request-lifecycle) provide timings and safe
+outcomes. Those diagnostic events are non-cancelable and cannot intercept requests.
 
-## Server integration
+<span id="server-integration"></span>
+
+::: details Server integration
+
+The plugin uses CakePHP's `Exception.beforeRender` event to return safe versioned
+JSON for update exceptions after normal logging. Application-handled responses
+retain their handling; custom error documents receive status-based feedback.
+Exception messages are not parsed to classify failures, and raw error pages and
+traces are not inserted into island HTML.
 
 Updates and deferred initialization require the mounting page path in signed
-identity. Snapshots missing that path return `invalid_snapshot` (409) before
-application hooks or actions run. Preserve local drafts, then reload the page to
-obtain a fresh snapshot and correct page links.
+identity. A snapshot missing that path returns `invalid_snapshot` (409) before
+application hooks or actions run and requires a fresh mount.
 
-The plugin subscribes to CakePHP's `Exception.beforeRender` event and returns
-safe versioned JSON for update exceptions after normal logging. Other routes and
-application-handled responses retain their handling. Custom error documents get
-status-based feedback; exception messages are not parsed to classify failures.
-Raw error pages and traces are not inserted into island HTML. See
-[custom endpoints](/security#custom-endpoints) for route scope requirements.
+Generated errors include `Interact: true`. The request marker is informational;
+adding it to another route does not enable Interact exception handling. See
+[custom endpoints](/security#custom-endpoints) and
+[request identification](/security#request-identification).
 
-Generated Interact errors include `Interact: true`. The
-[request marker](/security#request-identification) is informational; supplying it
-on another route does not opt that route into Interact exception handling.
+:::
