@@ -11,8 +11,6 @@ Interact exposes failed requests through `$server.error`. A failure preserves
 local edits, pauses automatic updates, and cancels queued actions and pending
 debounce timers. Actions are never automatically replayed.
 
-<span id="validation-errors"></span>
-
 Validation errors are available through `$server.errors`. A renderable HTTP 422
 response does not pause updates; see [form validation](/guide/forms).
 
@@ -45,8 +43,6 @@ A failed response does not prove that saving failed. Verify the outcome before
 repeating a persistent operation. Copy important drafts before reloading or
 signing in; Interact does not automatically store or restore them.
 
-<span id="resume-after-a-connection-or-server-failure"></span>
-
 ### Synchronize the draft
 
 For `retry` failures, `sync()` sends the latest writable values without invoking
@@ -64,15 +60,11 @@ Synchronization does not undo or repeat the failed action.
 </button>
 ```
 
-<span id="reload-after-expiry-or-a-session-change"></span>
-
 ### Reload or sign in
 
 For `reload`, return to a fresh GET page after preserving important input.
 Calling `sync()` on a blocked client cannot replace an expired snapshot.
 [Expiry failures offer a reload prompt by default](#customize-the-expiry-prompt).
-
-<span id="return-after-signing-in"></span>
 
 For `authenticate`, use the application's normal sign-in flow and return to a
 fresh GET page. The old island remains blocked. This example assumes sign-in is
@@ -97,8 +89,6 @@ served at `/users/login`:
 
 :::
 
-<span id="restore-a-copied-draft"></span>
-
 ### Preserve a draft
 
 [`exportDraft()`](/reference/server#exportdraft) returns JSON containing current
@@ -113,8 +103,6 @@ uploads. Never import an identity, permissions, action, or signed snapshot.
 
 The [tested recovery example](/demo#recovery) demonstrates copying, reloading or
 signing in, and explicitly restoring a draft for review.
-
-<span id="default-expiry-prompt"></span>
 
 ## Customize the expiry prompt
 
@@ -138,8 +126,6 @@ The event bubbles from each island to `document`. Call `preventDefault()`
 synchronously to suppress the prompt across the page. It affects presentation
 only: error feedback, paused updates, cancelled queued work, and request results
 remain unchanged.
-
-<span id="replace-or-suppress-the-prompt"></span>
 
 ::: details Custom dialog example
 
@@ -206,7 +192,6 @@ the default prompt allowance. Cancel the event before awaiting asynchronous work
 :::
 
 <span id="understand-the-failure"></span>
-<span id="failure-fields"></span>
 
 ## Failure reference
 
@@ -241,7 +226,6 @@ the default prompt allowance. Cancel the event before awaiting asynchronous work
 :::
 
 <span id="inspect-an-outcome-in-javascript"></span>
-<span id="javascript-and-events"></span>
 
 ### JavaScript events and results
 
