@@ -72,19 +72,16 @@ feedback without opening this prompt.
 
 ### Suppress the default prompt
 
-Attach a native listener to an existing element containing the island:
+Listen on `document` to suppress the default prompt for every island on the page:
 
 ```js
-const region = document.getElementById('editor-region');
-
-region?.addEventListener('interact:error', (event) => {
+document.addEventListener('interact:error', (event) => {
   event.preventDefault();
 });
 ```
 
-This suppresses the default prompt for islands inside that region. Error feedback,
-paused updates, and cancelled queued work remain unchanged. Listen on `document`
-instead of the region to suppress the prompt across the page.
+Errors bubble from each island to `document`. Error feedback, paused updates,
+and cancelled queued work remain unchanged.
 
 ### Replace or suppress the prompt
 
