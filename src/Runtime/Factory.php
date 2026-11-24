@@ -67,14 +67,18 @@ class Factory
      */
     protected function createView(View $host): TemplateView
     {
-        return (
-            $host instanceof $this->configuration->viewClass
-                ? $host
-                : new ReflectionClass($this->configuration->viewClass)->newInstance(
-                    $host->getRequest(),
-                    $host->getResponse(),
-                    viewOptions: ['theme' => $host->getTheme()],
-                )
-        );
+        $viewClass = $this->configuration->viewClass;
+        if ($host instanceof $viewClass) {
+            return $host;
+        }
+
+        $view = new ReflectionClass($viewClass)->newInstanceArgs([
+            $host->getRequest(),
+            $host->getResponse(),
+            'viewOptions' => ['theme' => $host->getTheme()],
+        ]);
+        assert($view !== null, 'The configured view class must be instantiable.');
+
+        return $view;
     }
 }

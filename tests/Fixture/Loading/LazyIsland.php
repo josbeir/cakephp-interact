@@ -21,7 +21,7 @@ class LazyIsland extends Island
     /**
      * @var list<string> Request lifecycle observations, never signed as state.
      */
-    public static array $trace = [];
+    protected static array $trace = [];
 
     #[Prop]
     public int $recordId;
@@ -34,6 +34,24 @@ class LazyIsland extends Island
 
     #[State(writable: true, url: 'q')]
     public string $query = '';
+
+    /**
+     * Clear observations before exercising a lifecycle.
+     */
+    public static function resetTrace(): void
+    {
+        static::$trace = [];
+    }
+
+    /**
+     * Return the recorded lifecycle steps in execution order.
+     *
+     * @return list<string>
+     */
+    public static function trace(): array
+    {
+        return static::$trace;
+    }
 
     /**
      * Check current access before any deferred work.

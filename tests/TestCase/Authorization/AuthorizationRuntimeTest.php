@@ -40,7 +40,7 @@ class AuthorizationRuntimeTest extends UploadStorageTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        PolicyIsland::$trace = [];
+        PolicyIsland::resetTrace();
         $this->registry = new Registry();
         $this->registry->register(PolicyIsland::class);
 
@@ -65,7 +65,7 @@ class AuthorizationRuntimeTest extends UploadStorageTestCase
      */
     protected function tearDown(): void
     {
-        PolicyIsland::$trace = [];
+        PolicyIsland::resetTrace();
         parent::tearDown();
     }
 
@@ -85,21 +85,21 @@ class AuthorizationRuntimeTest extends UploadStorageTestCase
     public function testMountSyncAndActionsKeepTheExistingLifecycleAndSnapshotOwnership(): void
     {
         $mounted = $this->runtime->mount('Policy', [], 'policy', $this->context);
-        $this->assertSame(['authorize', 'mount', 'view'], PolicyIsland::$trace);
+        $this->assertSame(['authorize', 'mount', 'view'], PolicyIsland::trace());
         $this->assertSame(['subscribe' => false, 'draft' => '', 'count' => 0], $mounted->state);
         $this->assertArrayNotHasKey('Authorization', $mounted->state);
 
-        PolicyIsland::$trace = [];
+        PolicyIsland::resetTrace();
         $synced = $this->runtime->update([
             'snapshot' => $mounted->snapshot,
             'updates' => ['draft' => 'edited'],
         ], $this->context);
-        $this->assertSame(['authorize', 'updated', 'view'], PolicyIsland::$trace);
+        $this->assertSame(['authorize', 'updated', 'view'], PolicyIsland::trace());
         $this->assertSame('edited', $synced->state['draft']);
-        PolicyIsland::$trace = [];
+        PolicyIsland::resetTrace();
         $result = $this->runtime->update(['snapshot' => $synced->snapshot, 'action' => 'retain'], $this->context);
         $this->assertInstanceOf(RenderlessResult::class, $result);
-        $this->assertSame(['authorize', 'action'], PolicyIsland::$trace);
+        $this->assertSame(['authorize', 'action'], PolicyIsland::trace());
         $this->assertSame(1, $result->state['count']);
     }
 
@@ -107,7 +107,7 @@ class AuthorizationRuntimeTest extends UploadStorageTestCase
     {
         $mounted = $this->runtime->mount('Policy', [], null, $this->context);
         foreach ([null, 'increment', 'retain', 'generate'] as $action) {
-            PolicyIsland::$trace = [];
+            PolicyIsland::resetTrace();
             try {
                 $this->runtime->update([
                     'snapshot' => $mounted->snapshot,
@@ -116,7 +116,7 @@ class AuthorizationRuntimeTest extends UploadStorageTestCase
                 ], $this->denied());
                 $this->fail('Changed permissions must stop the request.');
             } catch (ForbiddenException) {
-                $this->assertSame(['authorize'], PolicyIsland::$trace);
+                $this->assertSame(['authorize'], PolicyIsland::trace());
             }
         }
     }
@@ -127,31 +127,31 @@ class AuthorizationRuntimeTest extends UploadStorageTestCase
             $this->runtime->mount('Policy', [], null, $this->denied());
             $this->fail('A denied mount must not render.');
         } catch (ForbiddenException) {
-            $this->assertSame(['authorize'], PolicyIsland::$trace);
+            $this->assertSame(['authorize'], PolicyIsland::trace());
         }
     }
 
     public function testDeferredInitializationRechecksPermissionBeforeMounting(): void
     {
         $pending = $this->runtime->mount('Policy', [], null, $this->context, new Options('manual'));
-        $this->assertSame(['authorize'], PolicyIsland::$trace);
-        PolicyIsland::$trace = [];
+        $this->assertSame(['authorize'], PolicyIsland::trace());
+        PolicyIsland::resetTrace();
         try {
             $this->runtime->update(['snapshot' => $pending->snapshot, 'initialize' => true], $this->denied());
             $this->fail('A pending ticket is not continuing authorization.');
         } catch (ForbiddenException) {
-            $this->assertSame(['authorize'], PolicyIsland::$trace);
+            $this->assertSame(['authorize'], PolicyIsland::trace());
         }
 
-        PolicyIsland::$trace = [];
+        PolicyIsland::resetTrace();
         $this->runtime->update(['snapshot' => $pending->snapshot, 'initialize' => true], $this->context);
-        $this->assertSame(['authorize', 'mount', 'view'], PolicyIsland::$trace);
+        $this->assertSame(['authorize', 'mount', 'view'], PolicyIsland::trace());
     }
 
     public function testActionArgumentsRequireTheirOwnResourceCheck(): void
     {
         $mounted = $this->runtime->mount('Policy', [], null, $this->context);
-        PolicyIsland::$trace = [];
+        PolicyIsland::resetTrace();
         try {
             $this->runtime->update([
                 'snapshot' => $mounted->snapshot,
@@ -160,7 +160,7 @@ class AuthorizationRuntimeTest extends UploadStorageTestCase
             ], $this->context);
             $this->fail('An allowed island must not grant access to an action argument.');
         } catch (ForbiddenException) {
-            $this->assertSame(['authorize'], PolicyIsland::$trace);
+            $this->assertSame(['authorize'], PolicyIsland::trace());
         }
     }
 
@@ -209,7 +209,7 @@ class AuthorizationRuntimeTest extends UploadStorageTestCase
         $this->runtime->attachSubscriptions($subscriptions);
         $mounted = $this->runtime->mount('Policy', ['subscribe' => true], null, $this->context);
         $this->assertNotNull($mounted->realtime);
-        PolicyIsland::$trace = [];
+        PolicyIsland::resetTrace();
         $provider = $this->createMock(SubscriptionAuthorizerInterface::class);
         $provider->expects($this->never())->method('authorize');
         $request = $this->denied()
@@ -223,7 +223,7 @@ class AuthorizationRuntimeTest extends UploadStorageTestCase
             $request,
             new Response(),
         );
-        $this->assertSame(['authorize'], PolicyIsland::$trace);
+        $this->assertSame(['authorize'], PolicyIsland::trace());
         $this->assertStringContainsString('Subscription authorization failed.', (string)$response->getBody());
         $this->assertStringNotContainsString('private-policy-reason', (string)$response->getBody());
     }

@@ -23,7 +23,7 @@ use Interact\UpdatedPaths;
 class RealtimeFixtureIsland extends Island
 {
     /** @var list<string> Observed application behavior across fresh request instances. */
-    public static array $trace = [];
+    protected static array $trace = [];
 
     /** @var list<ServerRequest> Current requests observed before initialization. */
     public static array $requests = [];
@@ -39,6 +39,24 @@ class RealtimeFixtureIsland extends Island
 
     #[State]
     public bool $subscribed = true;
+
+    /**
+     * Clear observations before exercising a lifecycle.
+     */
+    public static function resetTrace(): void
+    {
+        static::$trace = [];
+    }
+
+    /**
+     * Return the recorded lifecycle steps in execution order.
+     *
+     * @return list<string>
+     */
+    public static function trace(): array
+    {
+        return static::$trace;
+    }
 
     /**
      * Record construction setup before any transported assignment.

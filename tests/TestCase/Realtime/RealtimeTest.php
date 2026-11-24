@@ -84,7 +84,7 @@ class RealtimeTest extends TestCase
         );
         $this->runtime->attachSubscriptions($this->subscriptions);
 
-        RealtimeFixtureIsland::$trace = [];
+        RealtimeFixtureIsland::resetTrace();
     }
 
     public function testDeclarationsAndMessagesPreserveTheExistingDisplayVocabulary(): void
@@ -149,7 +149,7 @@ class RealtimeTest extends TestCase
         $this->assertNotNull($mount->realtime);
         $this->assertSame(
             ['initialize', 'authorize', 'mount', 'viewData', 'subscriptions'],
-            RealtimeFixtureIsland::$trace,
+            RealtimeFixtureIsland::trace(),
         );
         $this->assertStringContainsString('data-interact-realtime=', $mount->html);
         $this->assertSame('/subscribe', $mount->realtime['endpoint']);
@@ -169,7 +169,7 @@ class RealtimeTest extends TestCase
             ->method('authorize')
             ->with(['records/7'], $this->callback(static fn(int $expires): bool => $expires > time()))
             ->willReturn(new Grant('test', ['url' => '/feed'], time() + 300));
-        RealtimeFixtureIsland::$trace = [];
+        RealtimeFixtureIsland::resetTrace();
         $body = $this->authorize($provider, [$mount->id => $mount->realtime['lease']]);
         $this->assertCount(2, RealtimeFixtureIsland::$requests);
         $this->assertSame($this->context->request, RealtimeFixtureIsland::$requests[0]);
@@ -179,7 +179,7 @@ class RealtimeTest extends TestCase
             ['version' => 1, 'leases' => [$mount->id => $mount->realtime['lease']]],
             RealtimeFixtureIsland::$requests[1]->getParsedBody(),
         );
-        $this->assertSame(['initialize', 'authorize', 'subscriptions'], RealtimeFixtureIsland::$trace);
+        $this->assertSame(['initialize', 'authorize', 'subscriptions'], RealtimeFixtureIsland::trace());
         $this->assertSame('test', Hash::get($body, 'grant.driver'));
         $this->assertSame('records/7', Hash::get($body, 'islands.' . $mount->id . '.subscriptions.0.topic'));
         $this->assertArrayNotHasKey('snapshot', Values::map(Hash::get($body, 'islands.' . $mount->id)));

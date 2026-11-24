@@ -60,7 +60,7 @@ class LazyLoadingTest extends TestCase
 
     protected function setUp(): void
     {
-        LazyIsland::$trace = [];
+        LazyIsland::resetTrace();
     }
 
     public function testDeferredMountHasNoStateOrRenderingUntilAuthorizedInitialization(): void
@@ -71,7 +71,7 @@ class LazyLoadingTest extends TestCase
         }));
         $context = $this->context();
         $initial = $runtime->mount('Lazy', ['recordId' => 4], 'report', $context, new Options('manual'));
-        $this->assertSame(['authorize:'], LazyIsland::$trace);
+        $this->assertSame(['authorize:'], LazyIsland::trace());
         $this->assertSame([], $initial->state);
         $this->assertSame([], $initial->writable);
         $this->assertStringContainsString('data-interact-loading="manual"', $initial->html);
@@ -85,7 +85,7 @@ class LazyLoadingTest extends TestCase
             'initialize' => true,
             'pageQuery' => '?q=latest',
         ], $context);
-        $this->assertSame(['authorize:', 'authorize:latest', 'mount', 'view'], LazyIsland::$trace);
+        $this->assertSame(['authorize:', 'authorize:latest', 'mount', 'view'], LazyIsland::trace());
         $this->assertSame($initial->id, $loaded->id);
         $this->assertSame('latest', $loaded->state['query']);
         $this->assertSame(4, $loaded->state['count']);
@@ -95,7 +95,7 @@ class LazyLoadingTest extends TestCase
         $this->assertSame(5, $updated->state['count']);
         $this->assertSame(
             1,
-            count(array_filter(LazyIsland::$trace, static fn(string $item): bool => $item === 'mount')),
+            count(array_filter(LazyIsland::trace(), static fn(string $item): bool => $item === 'mount')),
         );
     }
 
@@ -146,7 +146,7 @@ class LazyLoadingTest extends TestCase
             );
             $this->fail('Permission changes must reject initialization.');
         } catch (ForbiddenException) {
-            $this->assertSame(['authorize:', 'authorize:'], LazyIsland::$trace);
+            $this->assertSame(['authorize:', 'authorize:'], LazyIsland::trace());
         }
     }
 
@@ -250,7 +250,7 @@ class LazyLoadingTest extends TestCase
             $runtime->update(['snapshot' => $pending->snapshot] + $input, $context);
             $this->fail('Pending ticket misuse must be rejected.');
         } catch (InvalidArgumentException) {
-            $this->assertSame(['authorize:'], LazyIsland::$trace);
+            $this->assertSame(['authorize:'], LazyIsland::trace());
         }
     }
 
@@ -324,7 +324,7 @@ class LazyLoadingTest extends TestCase
             );
             $this->fail('Initialization must reject files.');
         } catch (InvalidArgumentException) {
-            $this->assertSame(['authorize:'], LazyIsland::$trace);
+            $this->assertSame(['authorize:'], LazyIsland::trace());
         }
 
         $codec = new SnapshotCodec(str_repeat('l', 32));

@@ -28,12 +28,13 @@ class SnapshotChildren
                 throw new InvalidArgumentException('Invalid signed child identity.');
             }
 
+            $relation = Relation::read($child['relation'] ?? null);
             $children[$key] = [
                 'id' => $child['id'],
                 'alias' => $child['alias'],
                 'props' => Values::map($child['props'] ?? null),
                 ...(isset($child['urlPrefix']) ? ['urlPrefix' => Names::require($child['urlPrefix'])] : []),
-                ...(isset($child['relation']) ? ['relation' => Relation::read($child['relation'])?->data()] : []),
+                ...($relation instanceof Relation ? ['relation' => $relation->data()] : []),
                 ...(isset($child['values']) ? ['values' => Values::map($child['values'])] : []),
             ];
         }

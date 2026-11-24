@@ -41,6 +41,11 @@ class SseResponse
         ?OutputCapture $capture = null,
     ): Response {
         $body = new CallbackStream(function () use ($update, $context, $capture): void {
+            /**
+             * Write one protocol frame outside the output capture.
+             *
+             * @param array<string, mixed> $message
+             */
             $write = function (array $message) use ($update, $capture): void {
                 $emit = fn() => $this->write(['version' => 1, 'id' => $update->id, ...$message]);
                 if (!$capture instanceof OutputCapture) {
@@ -49,6 +54,11 @@ class SseResponse
                     $capture->pass($emit);
                 }
             };
+            /**
+             * Drain diagnostic output before forwarding an application frame.
+             *
+             * @param array<string, mixed> $message
+             */
             $send = function (array $message) use ($write, $capture): void {
                 $this->diagnostics($capture, $write);
                 $write($message);

@@ -22,7 +22,7 @@ use Psr\Http\Message\UploadedFileInterface;
 class PolicyIsland extends BridgeIsland
 {
     /** @var list<string> Application lifecycle observations. */
-    public static array $trace = [];
+    protected static array $trace = [];
 
     #[Prop]
     public bool $subscribe = false;
@@ -32,6 +32,24 @@ class PolicyIsland extends BridgeIsland
 
     #[Upload]
     public ?UploadedFileInterface $file = null;
+
+    /**
+     * Clear observations before exercising a lifecycle.
+     */
+    public static function resetTrace(): void
+    {
+        static::$trace = [];
+    }
+
+    /**
+     * Return the recorded lifecycle steps in execution order.
+     *
+     * @return list<string>
+     */
+    public static function trace(): array
+    {
+        return static::$trace;
+    }
 
     /**
      * Check current access before hooks, uploads, actions, or view work.
