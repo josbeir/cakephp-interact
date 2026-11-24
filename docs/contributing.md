@@ -51,8 +51,7 @@ Run a feature in isolation:
 ```sh
 vendor/bin/phpunit tests/TestCase/Pagination
 npm test -- tests/js/pagination
-npm run test:browser -- tests/browser/pagination-state.spec.ts \
-  --project=chromium
+npm run test:browser -- tests/browser/pagination-state.spec.ts
 ```
 
 ## PHP checks
@@ -91,7 +90,7 @@ until that toolchain issue is resolved.
 ```sh
 npm run check
 npm run test:coverage
-npx playwright install --with-deps chromium firefox webkit
+npx playwright install firefox
 npm run test:browser
 ```
 
@@ -111,21 +110,23 @@ TypeScript is a normal version 7 dependency. Vite+ uses its native type checker;
 runtime, and emits declarations with the native TypeScript 7 generator. There are no
 TypeScript compatibility aliases or second compiler installations.
 
-Playwright exercises the real CakePHP application in Chromium, Firefox, and
-WebKit with three parallel workers locally. CI uses one worker so container
-startup and teardown cannot interrupt another worker's Chromium requests through
-host network changes. CI stops after the first failed test; local runs report all
-failures. Import `test` and `expect` from
+Local Playwright runs default to Firefox with three parallel workers and report
+all failures. CI runs Chromium, Firefox, and WebKit with one worker and stops
+after the first failure. A single worker keeps container startup and teardown from
+interrupting another worker's Chromium requests through host network changes.
+Import `test` and `expect` from
 `tests/browser/fixtures.ts`; its worker-scoped fixture starts a FrankenPHP container
 with bundled Mercure on a free loopback port. Each worker has separate SQLite,
 session, cache, and upload storage. Teardown removes the container and temporary
 storage; combined app/hub diagnostics remain in `test-results/worker-*.log`.
 Docker is required. Browser tests create their own app instances.
 
-Use Playwright's native filters and worker override for focused runs:
+Use `--project` to select an installed browser locally. Quote `'*'` to select all
+three projects.
 
 ```sh
 npm run test:browser -- tests/browser/form-models.spec.ts --project=chromium
+npm run test:browser -- --project='*'
 npm run test:browser -- --workers=1
 ```
 
