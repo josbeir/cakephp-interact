@@ -3,10 +3,10 @@ declare(strict_types=1);
 
 namespace Interact\Http;
 
-use Authorization\AuthorizationServiceInterface;
 use Cake\Http\Exception\HttpException;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
+use Interact\Authorization\RejectedRequest;
 use Interact\Debugging\Diagnostics;
 use Interact\Debugging\OutputCapture;
 use Interact\Runtime\Factory;
@@ -93,15 +93,8 @@ class UpdateHandler
 
             $failure = $this->failures->fromException($exception);
             $status = $failure->getStatusCode();
-            /** @var mixed $authorization */
-            $authorization = $request->getAttribute('authorization');
-            // Preserve protocol rejections for requests that never finished preparation.
-            if (
-                !$update instanceof PreparedUpdate
-                && in_array($status, [400, 405, 409, 413], true)
-                && $authorization instanceof AuthorizationServiceInterface
-            ) {
-                $authorization->skipAuthorization();
+            if (!$update instanceof PreparedUpdate && in_array($status, [400, 405, 409, 413], true)) {
+                RejectedRequest::acknowledge($request);
             }
 
             foreach ($failure->getHeaders() as $name => $values) {

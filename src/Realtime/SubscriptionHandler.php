@@ -6,6 +6,7 @@ namespace Interact\Realtime;
 use Cake\Http\Exception\HttpException;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
+use Interact\Authorization\RejectedRequest;
 use Interact\Discovery\Registry;
 use Interact\Http\UpdatePayload;
 use Interact\IslandContext;
@@ -47,8 +48,10 @@ class SubscriptionHandler
             throw new InvalidArgumentException('Invalid subscription request.');
         }
 
+        $context = new IslandContext($request, $scope, '');
         $results = [];
         $topics = [];
+        $allRejectedBeforeRenewal = true;
         /** @var mixed $token */
         foreach ($tokens as $id => $token) {
             try {
@@ -56,11 +59,14 @@ class SubscriptionHandler
                     throw new InvalidArgumentException('Invalid subscription lease.');
                 }
 
-                $result = $this->renew($token, new IslandContext($request, $scope, ''));
-                if ($result['id'] !== $id) {
+                $data = $this->leases->open($token, $context->binding(), $context->scope);
+                $identity = new LeaseIdentity($data);
+                if ($identity->id !== $id) {
                     throw new InvalidArgumentException('Subscription lease identity mismatch.');
                 }
 
+                $allRejectedBeforeRenewal = false;
+                $result = $this->renew($data, $identity, $context);
                 $results[$id] = $result;
                 foreach ($result['subscriptions'] as $subscription) {
                     $topics[$subscription['topic']] = $subscription['topic'];
@@ -72,6 +78,10 @@ class SubscriptionHandler
 
                 $results[$id] = ['error' => 'Subscription authorization failed.'];
             }
+        }
+
+        if ($allRejectedBeforeRenewal) {
+            RejectedRequest::acknowledge($request);
         }
 
         $grant = $topics === [] ? null : $this->authorizer->authorize(array_values($topics), $this->leases->expires());
@@ -89,12 +99,11 @@ class SubscriptionHandler
     /**
      * Restore accepted state and check current identity without invoking actions or hooks.
      *
+     * @param array<string, mixed> $data Verified lease data to reissue after authorization.
      * @return array{id: string, lease: string, subscriptions: list<array{topic: string, mode: string, event: string|null, private: bool}>}
      */
-    protected function renew(#[SensitiveParameter] string $token, IslandContext $context): array
+    protected function renew(#[SensitiveParameter] array $data, LeaseIdentity $identity, IslandContext $context): array
     {
-        $data = $this->leases->open($token, $context->binding(), $context->scope);
-        $identity = new LeaseIdentity($data);
         $definition = $this->registry->definition($identity->alias);
         $island = $this->registry->create($definition, $context->request);
         new Hydrator()->restore($island, $definition, $identity->state);

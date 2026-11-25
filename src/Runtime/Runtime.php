@@ -178,13 +178,7 @@ class Runtime
         $verified += ['pagePath' => null];
         PagePath::required($verified['pagePath']);
         if ($input->initialize) {
-            $pending = new PendingMount($verified);
-
-            return new PreparedUpdate(false, $pending->identity->id, fn(): Result => $this->initialize(
-                $pending,
-                $input,
-                $context,
-            ));
+            return $this->prepareInitialization(new PendingMount($verified), $input, $context);
         }
 
         $data = new SnapshotData($verified);
@@ -239,10 +233,13 @@ class Runtime
     }
 
     /**
-     * Initialize a verified pending identity without allowing edits or application actions.
+     * Verify and authorize pending initialization before mount hooks and rendering can run.
      */
-    protected function initialize(PendingMount $pending, UpdateRequest $input, IslandContext $context): Result
-    {
+    protected function prepareInitialization(
+        PendingMount $pending,
+        UpdateRequest $input,
+        IslandContext $context,
+    ): PreparedUpdate {
         Initialization::assertNoFiles($context->request);
 
         $data = $pending->identity;
@@ -255,18 +252,18 @@ class Runtime
         $this->state->initializeUrl($island, $definition, $input->pageQuery, $data->urlPrefix);
         $island->authorize($context);
 
-        return $this->inContext($data, $input, $this->parentValues, function () use (
-            $island,
-            $definition,
-            $data,
-            $context,
-            $input,
-        ): Result {
+        $render = function () use ($island, $definition, $data, $context, $input): Result {
             $island->attachPagination(new Pagination($definition, $data, $context, $input->pageQuery));
             $island->mount();
 
             return $this->html->render($island, $definition, $data, $context);
-        });
+        };
+
+        return new PreparedUpdate(
+            false,
+            $data->id,
+            fn(): Result => $this->inContext($data, $input, $this->parentValues, $render),
+        );
     }
 
     /**
