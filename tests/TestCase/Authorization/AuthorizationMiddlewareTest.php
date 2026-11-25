@@ -34,6 +34,8 @@ class AuthorizationMiddlewareTest extends TestCase
 {
     protected Factory $factory;
 
+    protected SnapshotCodec $snapshots;
+
     protected ServerRequest $request;
 
     /**
@@ -48,7 +50,8 @@ class AuthorizationMiddlewareTest extends TestCase
             $registry->register($class);
         }
 
-        $this->factory = new Factory($registry, new SnapshotCodec(str_repeat('m', 32)));
+        $this->snapshots = new SnapshotCodec(str_repeat('m', 32));
+        $this->factory = new Factory($registry, $this->snapshots);
         $this->request = new ServerRequest([
             'url' => '/_interact/update',
             'session' => new Session(['defaults' => 'php', 'ini' => ['session.use_cookies' => 0]]),
@@ -107,6 +110,60 @@ class AuthorizationMiddlewareTest extends TestCase
         ));
         $this->assertSame(200, $response->getStatusCode());
         $this->assertTrue($service->authorizationChecked());
+    }
+
+    public function testRejectedUpdatesKeepTheirFailureResponsesWithRequiredAuthorization(): void
+    {
+        $snapshot = $this->snapshot();
+        $session = $this->request->getSession()->id();
+        $state = $this->snapshots->open($snapshot, $session, 'default');
+        $otherSession = $this->snapshots->seal($state, 'another-session', 'default');
+        unset($state['pagePath']);
+        $olderSnapshot = $this->snapshots->seal($state, $session, 'default');
+        $action = ['version' => 1, 'action' => 'increment'];
+        $cases = [
+            [409, 'invalid_snapshot', $action + ['snapshot' => $olderSnapshot]],
+            [409, 'session_changed', $action + ['snapshot' => $otherSession]],
+            [400, 'invalid_request', ['version' => 2]],
+        ];
+        $handler = new UpdateHandler($this->factory, new FailureResponder());
+
+        foreach ($cases as [$status, $code, $body]) {
+            PolicyIsland::resetTrace();
+            $request = $this->request->withMethod('POST')->withParsedBody($body);
+            $response = $this->middleware(PolicyFixture::service())->process($request, new CallbackHandler(
+                static fn(ServerRequest $request): Response => $handler->handle($request, new Response()),
+            ));
+
+            $this->assertSame($status, $response->getStatusCode());
+            $this->assertSame('application/json', $response->getHeaderLine('Content-Type'));
+            $this->assertStringContainsString('"code":"' . $code . '"', (string)$response->getBody());
+            $this->assertSame([], PolicyIsland::trace());
+        }
+    }
+
+    public function testActionErrorsDoNotSatisfyTheRequiredAuthorizationCheck(): void
+    {
+        Configure::write('App.paths.templates', [dirname(__DIR__, 2) . '/test_app/templates/']);
+        $context = new IslandContext($this->request, 'default', '/_interact/update');
+        $snapshot = $this->factory
+            ->create(new TemplateView($this->request), $context)
+            ->mount('Counter', [], null, $context)
+            ->snapshot;
+        $request = $this->request
+            ->withMethod('POST')
+            ->withParsedBody([
+                'version' => 1,
+                'snapshot' => $snapshot,
+                'action' => 'adjust',
+                'args' => [2],
+            ]);
+        $handler = new UpdateHandler($this->factory, new FailureResponder());
+
+        $this->expectException(AuthorizationRequiredException::class);
+        $this->middleware(PolicyFixture::service())->process($request, new CallbackHandler(
+            static fn(ServerRequest $request): Response => $handler->handle($request, new Response()),
+        ));
     }
 
     public function testNativePolicyDenialsBecomeSafe403UpdateResponses(): void
