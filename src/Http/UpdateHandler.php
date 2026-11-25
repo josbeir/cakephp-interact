@@ -6,9 +6,11 @@ namespace Interact\Http;
 use Cake\Http\Exception\HttpException;
 use Cake\Http\Response;
 use Cake\Http\ServerRequest;
+use Interact\Authorization\RejectedRequest;
 use Interact\Debugging\Diagnostics;
 use Interact\Debugging\OutputCapture;
 use Interact\Runtime\Factory;
+use Interact\Runtime\PreparedUpdate;
 use Interact\Security\InvalidSnapshotException;
 use Interact\Streaming\RequestContext;
 use Interact\Streaming\SseResponse;
@@ -59,6 +61,7 @@ class UpdateHandler
      */
     protected function execute(ServerRequest $request, Response $response, ?OutputCapture $capture): Response
     {
+        $update = null;
         try {
             $request->allowMethod(['post']);
             $body = new UpdatePayload()->read($request);
@@ -89,11 +92,16 @@ class UpdateHandler
             }
 
             $failure = $this->failures->fromException($exception);
+            $status = $failure->getStatusCode();
+            if (!$update instanceof PreparedUpdate && in_array($status, [400, 405, 409, 413], true)) {
+                RejectedRequest::acknowledge($request);
+            }
+
             foreach ($failure->getHeaders() as $name => $values) {
                 $response = $response->withHeader($name, $values);
             }
 
-            return $response->withStatus($failure->getStatusCode())->withBody($failure->getBody());
+            return $response->withStatus($status)->withBody($failure->getBody());
         }
     }
 }
